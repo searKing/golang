@@ -1,0 +1,124 @@
+package lru
+
+import (
+	"container/list"
+	"github.com/pkg/errors"
+)
+
+// LRU takes advantage of list's sequence and map's efficient locate
+type LRU struct {
+	ll *list.List // list.Element.Value type is of interface{}
+	m  map[interface{}]*list.Element
+}
+type Pair struct {
+	Key   interface{}
+	Value interface{}
+}
+
+func NewLRU() *LRU {
+	return &LRU{}
+}
+
+// Init initializes or clears list l.
+func (lru *LRU) Init() *LRU {
+	lru.ll = &list.List{}
+	lru.m = make(map[interface{}]*list.Element)
+	return lru
+}
+
+// lazyInit lazily initializes a zero List value.
+func (lru *LRU) lazyInit() {
+	if lru.ll == nil {
+		lru.Init()
+	}
+}
+
+func (lru *LRU) Keys() []interface{} {
+	keys := []interface{}{}
+	for key, _ := range lru.m {
+		keys = append(keys, key)
+	}
+	return keys
+}
+func (lru *LRU) Values() []interface{} {
+	values := []interface{}{}
+	for _, value := range lru.m {
+		values = append(values, value)
+	}
+	return values
+}
+
+func (lru *LRU) Pairs() []Pair {
+	pairs := []Pair{}
+	for key, value := range lru.m {
+		pairs = append(pairs, Pair{
+			Key:   key,
+			Value: value,
+		})
+	}
+	return pairs
+}
+func (lru *LRU) AddPair(pair Pair) error {
+	return lru.Add(pair.Key, pair.Value)
+}
+
+// add adds Key to the head of the linked list.
+func (lru *LRU) Add(key interface{}, value interface{}) error {
+	lru.lazyInit()
+	ele := lru.ll.PushFront(Pair{
+		Key:   key,
+		Value: value,
+	})
+	if _, ok := lru.m[key]; ok {
+		return errors.New("Key was already in LRU")
+	}
+	lru.m[key] = ele
+	return nil
+}
+
+func (lru *LRU) AddOrUpdate(key interface{}, value interface{}) {
+	lru.Remove(key)
+	lru.Add(key, value)
+}
+
+func (lru *LRU) RemoveOldest() interface{} {
+	if lru.ll == nil {
+		return nil
+	}
+	ele := lru.ll.Back()
+	pair := ele.Value.(Pair)
+	v := lru.ll.Remove(ele)
+	delete(lru.m, pair.Key)
+	return v
+}
+
+// Remove removes Key from cl.
+func (lru *LRU) Remove(key interface{}) interface{} {
+	if ele, ok := lru.m[key]; ok {
+		v := lru.ll.Remove(ele)
+		delete(lru.m, key)
+		return v
+	}
+	return nil
+}
+
+func (lru *LRU) Find(key interface{}) (interface{}, bool) {
+	e, ok := lru.m[key]
+	if !ok {
+		return nil, ok
+	}
+	return e.Value.(Pair).Value, true
+}
+
+func (lru *LRU) Peek(key interface{}) (interface{}, bool) {
+	e, ok := lru.m[key]
+	if ok {
+		lru.Remove(key)
+	}
+	return e.Value.(Pair).Value, ok
+}
+
+// Len returns the number of items in the cache.
+func (lru *LRU) Len() int {
+	return len(lru.m)
+}

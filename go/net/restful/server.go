@@ -1,0 +1,56 @@
+package restful
+
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"strings"
+)
+
+func HttpGetHandler(v interface{}, w http.ResponseWriter, r *http.Request) {
+	body, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		body = []byte("[]")
+	}
+
+	// response
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(body)), 10))
+	w.Header().Set("Connection", "close")
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
+
+func HttpPostHandler(v interface{}, w http.ResponseWriter, r *http.Request) (finished bool) {
+	if r.Method == http.MethodPost {
+		r.ParseForm()
+		if r.ContentLength == -1 {
+			http.NotFound(w, r)
+			return true
+		} else {
+			ctype := strings.ToLower(r.Header.Get("Content-Type"))
+			if ctype != "application/json" {
+				http.NotFound(w, r)
+				return true
+			}
+
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return true
+			}
+
+			err = json.Unmarshal(body, v)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.NotFound(w, r)
+				return true
+			}
+			return false
+		}
+	} else {
+		http.NotFound(w, r)
+		return true
+	}
+}
