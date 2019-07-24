@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/searKing/go-atomicvalue.svg?branch=master)](https://travis-ci.org/searKing/go-atomicvalue)
-[![GoDoc](https://godoc.org/github.com/searKing/go-atomicvalue?status.svg)](https://godoc.org/github.com/searKing/go-atomicvalue)
+[![Build Status](https://travis-ci.org/searKing/golang/tools/cmd/go-atomicvalue.svg?branch=master)](https://travis-ci.org/searKing/golang/tools/cmd/go-atomicvalue)
+[![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-atomicvalue?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-atomicvalue)
 # go-atomicvalue
 Generates Go code using a package as a generic template for atomic.Value.
 
