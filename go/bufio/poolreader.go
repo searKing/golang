@@ -14,6 +14,7 @@ type ReaderPool struct {
 func NewReaderPool() *ReaderPool {
 	return &ReaderPool{}
 }
+
 func NewReaderPoolSize(size int) *ReaderPool {
 	return &ReaderPool{
 		size: size,
@@ -35,8 +36,10 @@ func (p *ReaderPool) Get(r io.Reader) *bufio.Reader {
 	// TestHandlerBodyClose's assumptions.
 	return bufio.NewReaderSize(r, p.size)
 }
+
 func (p *ReaderPool) Clear() {
 	// Get One elem in the pool
+	// for p.pool.New is nil, so p.pool.New will return nil if empty
 	if p.pool.Get() == nil {
 		// The pool is empty
 		return

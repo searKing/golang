@@ -14,6 +14,7 @@ type WriterPool struct {
 func NewWriterPool() *WriterPool {
 	return &WriterPool{}
 }
+
 func NewWriterPoolSize(size int) *WriterPool {
 	return &WriterPool{
 		size: size,
@@ -38,6 +39,7 @@ func (p *WriterPool) Get(w io.Writer) *bufio.Writer {
 
 func (p *WriterPool) Clear() {
 	// Get One elem in the pool
+	// for p.pool.New is nil, so p.pool.New will return nil if empty
 	if p.pool.Get() == nil {
 		// The pool is empty
 		return
