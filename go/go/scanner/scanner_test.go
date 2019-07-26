@@ -21,21 +21,33 @@ var (
 			input:  []byte("cos(x) + 1i*sin(x) // Euler"),
 			output: [][]byte{[]byte("cos(x)"), []byte("+"), []byte("1i*sin(x)"), []byte("//"), []byte("Euler")},
 		},
-		//{
-		//	split:  bufio.ScanBytes,
-		//	input:  []byte("cos(x) + 1i*sin(x) // Euler"),
-		//	output: [][]byte{[]byte("cos(x)"), []byte("+"), []byte("+"), []byte("1i*sin(x)"), []byte("//"), []byte("Euler")},
-		//},
-		//{
-		//	split:  bufio.ScanLines,
-		//	input:  []byte("cos(x) + 1i*sin(x) // Euler"),
-		//	output: [][]byte{[]byte("cos(x)"), []byte("+"), []byte("+"), []byte("1i*sin(x)"), []byte("//"), []byte("Euler")},
-		//},
-		//{
-		//	split:  bufio.ScanRunes,
-		//	input:  []byte("cos(x) + 1i*sin(x) // Euler"),
-		//	output: [][]byte{[]byte("cos(x)"), []byte("+"), []byte("+"), []byte("1i*sin(x)"), []byte("//"), []byte("Euler")},
-		//},
+		{
+			split: bufio.ScanBytes,
+			input: []byte("cos(x) + 1i*sin(x) // Euler"),
+			output: [][]byte{[]byte("c"), []byte("o"), []byte("s"), []byte("("), []byte("x"), []byte(")"),
+				[]byte(" "), []byte("+"), []byte(" "),
+				[]byte("1"), []byte("i"), []byte("*"), []byte("s"), []byte("i"), []byte("n"), []byte("("), []byte("x"), []byte(")"),
+				[]byte(" "),
+				[]byte("/"), []byte("/"),
+				[]byte(" "),
+				[]byte("E"), []byte("u"), []byte("l"), []byte("e"), []byte("r")},
+		},
+		{
+			split:  bufio.ScanLines,
+			input:  []byte("cos(x) + 1i*sin(x) \n// Euler"),
+			output: [][]byte{[]byte("cos(x) + 1i*sin(x) "), []byte("// Euler")},
+		},
+		{
+			split: bufio.ScanRunes,
+			input: []byte("cos(x) + 1i*sin(x) // Euler"),
+			output: [][]byte{[]byte("c"), []byte("o"), []byte("s"), []byte("("), []byte("x"), []byte(")"),
+				[]byte(" "), []byte("+"), []byte(" "),
+				[]byte("1"), []byte("i"), []byte("*"), []byte("s"), []byte("i"), []byte("n"), []byte("("), []byte("x"), []byte(")"),
+				[]byte(" "),
+				[]byte("/"), []byte("/"),
+				[]byte(" "),
+				[]byte("E"), []byte("u"), []byte("l"), []byte("e"), []byte("r")},
+		},
 	}
 )
 
