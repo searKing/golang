@@ -96,13 +96,14 @@ func (s *Scanner) Consume() {
 	}
 
 	for _, line := range lines {
+		lineLen := len(line)
 		if hasCL {
-			line = append(line, '\n')
+			lineLen++
 			s.lineOffset = s.offset
 			s.file.AddLine(s.offset)
 		}
 
-		s.offset = s.offset + len(line)
+		s.offset = s.offset + lineLen
 	}
 	s.offset = s.rdOffset
 }
@@ -203,7 +204,7 @@ func (s *Scanner) NextRegexp(expectStrs ...string) {
 }
 
 // PeekRegexpAny returns the string following the most recently read character which matches the regexp case without
-// advancing the scanner. If the scanner is at EOF or regexp unmatched, PeekByte returns nil.
+// advancing the scanner. If the scanner is at EOF or regexp unmatched, PeekRegexpAny returns nil.
 func (s *Scanner) PeekRegexpAny(expectStrs ...string) string {
 	if s.AtEOF() {
 		return ""
@@ -248,6 +249,8 @@ func (s *Scanner) peekRegexpPosix(expectStrs ...string) string {
 
 	// regex mode
 	for _, expect := range expectStrs {
+		expect = "^" + strings.TrimPrefix(expect, "^")
+
 		reg := regexp.MustCompilePOSIX(expect)
 		matches := reg.FindStringSubmatch(string(s.src[s.rdOffset:]))
 		if len(matches) == 0 {
@@ -266,6 +269,8 @@ func (s *Scanner) peekRegexpPerl(expectStrs ...string) string {
 
 	// regex mode
 	for _, expect := range expectStrs {
+		expect = "^" + strings.TrimPrefix(expect, "^")
+
 		reg := regexp.MustCompile(expect)
 		matches := reg.FindStringSubmatch(string(s.src[s.rdOffset:]))
 		if len(matches) == 0 {
@@ -531,25 +536,36 @@ func (s *Scanner) Split(split bufio.SplitFunc) {
 // After Scan returns false, the Err method will return any error that
 // occurred during scanning, except that if it was io.EOF, Err
 // will return nil.
-// Scan panics if the split function returns too many empty
-// tokens without advancing the input. This is a common error mode for
-// scanners.
 func (s *Scanner) Scan() ([]byte, bool) {
+	return s.ScanSplits(s.split)
+}
+
+// ScanSplits advances the Scanner to the next token by splits when first meet, which will then be
+// available through the Bytes or Text method. It returns false when the
+// scan stops, either by reaching the end of the input or an error.
+// After Scan returns false, the Err method will return any error that
+// occurred during scanning, except that if it was io.EOF, Err
+// will return nil.
+func (s *Scanner) ScanSplits(splits ...bufio.SplitFunc) ([]byte, bool) {
 	s.Consume()
-	if s.split == nil {
-		return nil, false
-	}
-	// See if we can get a token with what we already have.
-	// If we've run out of data but have an error, give the split function
-	// a chance to recover any remaining, possibly empty token.
-	advance, token, err := s.split(s.src[s.rdOffset:], s.AtEOF())
-	if err != nil && err != bufio.ErrFinalToken {
-		s.error(s.offset, err.Error())
-		return nil, false
-	}
-	s.NextBytesN(advance)
-	if token != nil {
-		return token, true
+
+	for _, split := range splits {
+		if split == nil {
+			continue
+		}
+		// See if we can get a token with what we already have.
+		// If we've run out of data but have an error, give the split function
+		// a chance to recover any remaining, possibly empty token.
+		// atEOF is true always, for we consume by a byte slice
+		advance, token, err := split(s.src[s.rdOffset:], true)
+		if err != nil && err != bufio.ErrFinalToken {
+			s.error(s.offset, err.Error())
+			return nil, false
+		}
+		s.NextBytesN(advance)
+		if token != nil {
+			return token, true
+		}
 	}
 	return nil, false
 }
