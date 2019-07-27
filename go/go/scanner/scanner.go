@@ -36,12 +36,11 @@ type ErrorHandler func(pos token.Position, msg string)
 //
 type Scanner struct {
 	// immutable state
-	file  *token.File     // source file handle
-	dir   string          // directory portion of file.Name()
-	src   []byte          // source
-	err   ErrorHandler    // error reporting; or nil
-	mode  Mode            // scanning mode
-	split bufio.SplitFunc // The function to split the tokens.
+	file *token.File  // source file handle
+	dir  string       // directory portion of file.Name()
+	src  []byte       // source
+	err  ErrorHandler // error reporting; or nil
+	mode Mode         // scanning mode
 
 	// scanning state
 	offset     int // character offset
@@ -522,24 +521,6 @@ func (s *Scanner) ScanLine() string {
 	return string(s.src[offs:s.offset])
 }
 
-// Split sets the split function for the Scanner.
-// The default split function is ScanLines.
-//
-// Split panics if it is called after scanning has started.
-func (s *Scanner) Split(split bufio.SplitFunc) {
-	s.split = split
-}
-
-// Scan advances the Scanner to the next token, which will then be
-// available through the Bytes or Text method. It returns false when the
-// scan stops, either by reaching the end of the input or an error.
-// After Scan returns false, the Err method will return any error that
-// occurred during scanning, except that if it was io.EOF, Err
-// will return nil.
-func (s *Scanner) Scan() ([]byte, bool) {
-	return s.ScanSplits(s.split)
-}
-
 // ScanSplits advances the Scanner to the next token by splits when first meet, which will then be
 // available through the Bytes or Text method. It returns false when the
 // scan stops, either by reaching the end of the input or an error.
@@ -563,7 +544,7 @@ func (s *Scanner) ScanSplits(splits ...bufio.SplitFunc) ([]byte, bool) {
 			return nil, false
 		}
 		s.NextBytesN(advance)
-		if token != nil {
+		if len(token) != 0 {
 			return token, true
 		}
 	}
