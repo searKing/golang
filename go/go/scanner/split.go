@@ -493,8 +493,8 @@ func isLetter(ch rune) bool {
 func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9' || ch >= utf8.RuneSelf && unicode.IsDigit(ch)
 }
-func ScanIdentifier(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
+func ScanIdentifier(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return needMoreData()
 	}
@@ -512,14 +512,58 @@ func ScanIdentifier(data []byte, atEOF bool) (advance int, token []byte, err err
 		for isLetter(ch) || isDigit(ch) {
 			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
 			off = off + advance
-			if err != nil || len(token) == 0 {
+			if err != nil {
 				return advance, token, err
+			}
+			if token == nil {
+				return off, data[:off], nil
 			}
 			ch = bytes.Runes(token)[0]
 		}
 	}
 	off -= utf8.RuneLen(ch) // backward
 	return off, data[:off], nil
+}
+
+func ScanUntil(filter func(r rune) bool) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return ScanWhile(func(r rune) bool {
+		if filter == nil {
+			return false
+		}
+		return !filter(r)
+	})
+}
+
+func ScanWhile(filter func(r rune) bool) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if filter == nil || atEOF && len(data) == 0 {
+			return needMoreData()
+		}
+		var off int
+
+		// First character 1: \.
+		advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+		off = off + advance
+		if err != nil || len(token) == 0 {
+			return advance, token, err
+		}
+		ch := bytes.Runes(token)[0]
+
+		for filter(ch) {
+			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if token == nil {
+				return off, data[:off], nil
+			}
+			ch = bytes.Runes(token)[0]
+		}
+		off -= utf8.RuneLen(ch) // backward
+
+		return off, data[:off], nil
+	}
 }
 
 func needMoreData() (advance int, token []byte, err error) {

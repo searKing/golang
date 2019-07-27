@@ -6,6 +6,7 @@ import (
 	"github.com/searKing/golang/go/go/scanner"
 	"go/token"
 	"testing"
+	"unicode"
 )
 
 type ScanTests struct {
@@ -142,6 +143,21 @@ var (
 			split:  scanner.ScanIdentifier,
 			input:  []byte("0你好_&"),
 			output: [][]byte{},
+		},
+		{
+			split:  scanner.ScanIdentifier,
+			input:  []byte("H"),
+			output: [][]byte{[]byte("H")},
+		},
+		{
+			split:  scanner.ScanUntil(unicode.IsSpace),
+			input:  []byte("Hello World"),
+			output: [][]byte{[]byte("Hello")},
+		},
+		{
+			split:  scanner.ScanWhile(unicode.IsSpace),
+			input:  []byte("  \t Hello World"),
+			output: [][]byte{[]byte("  \t ")},
 		},
 	}
 )
