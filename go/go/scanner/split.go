@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -402,6 +404,66 @@ func ScanWhile(filter func(r rune) bool) func(data []byte, atEOF bool) (advance 
 		return off, data[:off], nil
 	}
 }
+
+// ScanRegexp is a split function wrapper for a Scanner that returns each string until regexp case is not meet.
+// The returned line may be empty.
+func ScanRegexp(regs ...*regexp.Regexp) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return needMoreData()
+		}
+		var off int
+
+		// First character 1: \.
+		// regex mode
+		for _, reg := range regs {
+			if reg == nil {
+				continue
+			}
+
+			locs := reg.FindStringIndex(string(data[off:]))
+			if len(locs) == 0 {
+				continue
+			}
+			off = locs[1]
+			return off, data[locs[0]:off], nil
+		}
+
+		return off, data[:off], nil
+	}
+}
+
+// ScanRegexpPerl is a split function wrapper for a Scanner that returns each string until regexp case is not meet.
+// The returned line may be empty.
+// This so-called leftmost-first matching is the same semantics
+// that Perl, Python, and other implementations use, although this
+// package implements it without the expense of backtracking.
+// For POSIX leftmost-longest matching, see ScanRegexpPosix.
+func ScanRegexpPerl(expectStrs ...string) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var regs []*regexp.Regexp
+	for _, expect := range expectStrs {
+		expect = "^" + strings.TrimPrefix(expect, "^")
+
+		regs = append(regs, regexp.MustCompile(expect))
+	}
+	return ScanRegexp(regs...)
+}
+
+// ScanRegexpPosix is a split function wrapper for a Scanner that returns each string until regexp case is not meet.
+// The returned line may be empty.
+// ScanRegexpPosix is like ScanRegexpPerl but restricts the regular expression
+// to POSIX ERE (egrep) syntax and changes the match semantics to
+// leftmost-longest.
+func ScanRegexpPosix(expectStrs ...string) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var regs []*regexp.Regexp
+	for _, expect := range expectStrs {
+		expect = "^" + strings.TrimPrefix(expect, "^")
+
+		regs = append(regs, regexp.MustCompilePOSIX(expect))
+	}
+	return ScanRegexp(regs...)
+}
+
 
 // https://golang.org/ref/spec#String_literals
 // string_lit             = raw_string_lit | interpreted_string_lit .

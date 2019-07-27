@@ -159,6 +159,16 @@ var (
 			input:  []byte("  \t Hello World"),
 			output: [][]byte{[]byte("  \t ")},
 		},
+		{
+			split:  scanner.ScanRegexpPosix(`^Hello.*[ W]`),
+			input:  []byte("Hello World"),
+			output: [][]byte{[]byte("Hello W")},
+		},
+		{
+			split:  scanner.ScanRegexpPerl(`^Hello.*[ W]`),
+			input:  []byte("Hello World"),
+			output: [][]byte{[]byte("Hello W")},
+		},
 	}
 )
 
