@@ -68,6 +68,341 @@ func ScanInterpretedStrings(data []byte, atEOF bool) (advance int, token []byte,
 	return scanStrings(data, atEOF, '"')
 }
 
+// ScanEscapes is a split function wrapper for a Scanner that returns each string which is an escape format of
+// text. The returned line may be empty.
+func ScanEscapes(quote rune) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		return scanEscapes(data, atEOF, quote)
+	}
+}
+
+// ScanMantissas is a split function wrapper for a Scanner that returns each string which is an n-base number format of
+// text. The returned line may be empty.
+func ScanMantissas(base int) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return ScanWhile(func(r rune) bool {
+		return digitVal(r) < base
+	})
+}
+
+// https://golang.org/ref/spec#Integer_literals
+// https://golang.org/ref/spec#Floating-point_literals
+// https://golang.org/ref/spec#Imaginary_literals
+// ScanNumbers is a split function wrapper for a Scanner that returns each string which is an integer, floating-point
+// or imaginary format of text. The returned line may be empty.
+func ScanNumbers(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return needMoreData()
+	}
+	var off int
+	var seenSign bool
+	var seenDecimalPoint bool
+	var seenDecimalNumber bool
+
+	var lookforFraction bool
+	var lookforExponent bool
+	// First character 1: digitVal(ch) < 10.
+	// Handle .989 or 0x888
+	for {
+		// read a rune
+		advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
+		off = off + advance
+		if err != nil || len(token) == 0 {
+			return advance, token, err
+		}
+		ch := bytes.Runes(token)[0]
+		if ch == '.' {
+			// . can be seen once only
+			if seenDecimalPoint {
+				off--
+				return off, data[:off], nil
+			}
+			seenDecimalPoint = true
+			continue
+		}
+
+		// sign can be seen leading or after E or e
+		if ch == '+' || ch == '-' {
+			// sign can be seen once only, and can never be after "."
+			if seenSign || seenDecimalPoint {
+				off--
+				return off, data[:off], nil
+			}
+			seenSign = true
+			continue
+		}
+
+		// number must be leading with "." "+" "-" or "0-9"
+		if !seenDecimalNumber && digitVal(ch) > 10 {
+			msg := fmt.Sprintf("illegal character %#U leading escape sequence, expect \\", token)
+			return 0, nil, errors.New(msg)
+		}
+		seenDecimalNumber = true
+
+		// .989777
+		if seenDecimalPoint {
+			advance, token, err := handleSplitError(ScanMantissas(10)(data[off:], atEOF))
+			off = off + advance
+			if err != nil || len(token) == 0 {
+				return advance, token, err
+			}
+			// look for "E" or "e"
+			lookforExponent = true
+			break
+		}
+
+		// 0x12
+		if ch == '0' {
+			// int or float
+			advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if len(token) == 0 {
+				return off, data[:off], nil
+			}
+			ch = bytes.Runes(token)[0]
+
+			if ch == 'x' || ch == 'X' {
+				// hexadecimal int
+				advance, token, err := handleSplitError(ScanMantissas(16)(data[off:], atEOF))
+				off = off + advance
+				if err != nil || len(token) == 0 {
+					return advance, token, err
+				}
+				if len(token) <= 0 {
+					// only scanned "0x" or "0X"
+					return 0, nil, errors.New("illegal hexadecimal number")
+				}
+				return off, data[:off], nil
+			} else {
+				// octal int or float
+				seenDecimalDigit := false
+				advance, token, err := handleSplitError(ScanMantissas(8)(data[off:], atEOF))
+				off = off + advance
+				if err != nil {
+					return advance, token, err
+				}
+
+				// read new rune
+				advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+				off = off + advance
+				if err != nil {
+					return advance, token, err
+				}
+				if len(token) == 0 {
+					return off, data[:off], nil
+				}
+				ch = bytes.Runes(token)[0]
+
+				if ch == '8' || ch == '9' {
+					// illegal octal int or float
+					seenDecimalDigit = true
+					advance, token, err := handleSplitError(ScanMantissas(10)(data[off:], atEOF))
+					off = off + advance
+					if err != nil || len(token) == 0 {
+						return advance, token, err
+					}
+					advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+					off = off + advance
+					if err != nil || len(token) == 0 {
+						return advance, token, err
+					}
+					ch = bytes.Runes(token)[0]
+				}
+				if ch == '.' || ch == 'e' || ch == 'E' || ch == 'i' {
+					off-- //backward for fraction "." "e" "E" or "i"
+					lookforFraction = true
+					break
+				}
+				// octal int
+				if seenDecimalDigit {
+					return 0, nil, errors.New("illegal octal number")
+				}
+
+				off-- //backward for exit
+
+			}
+			return off, data[:off], nil
+		}
+
+		// decimal int or float
+		advance, token, err = handleSplitError(ScanMantissas(10)(data[off:], atEOF))
+		off = off + advance
+		if err != nil || len(token) == 0 {
+			return advance, token, err
+		}
+		lookforFraction = true
+		break
+	}
+
+	// read a rune
+	advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+	off = off + advance
+	if err != nil {
+		return advance, token, err
+	}
+	if len(token) == 0 {
+		return off, data[:off], nil
+	}
+	ch := bytes.Runes(token)[0]
+
+	if lookforFraction && ch == '.' {
+		advance, token, err := handleSplitError(ScanMantissas(10)(data[off:], atEOF))
+		off = off + advance
+		if err != nil {
+			return advance, token, err
+		}
+		if len(token) == 0 {
+			return off, data[:off], nil
+		}
+		lookforExponent = true
+
+		// read new rune
+		advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+		off = off + advance
+		if err != nil {
+			return advance, token, err
+		}
+		if len(token) == 0 {
+			return off, data[:off], nil
+		}
+		ch = bytes.Runes(token)[0]
+	}
+
+	if lookforExponent && (ch == 'e' || ch == 'E') {
+		advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
+		off = off + advance
+		if err != nil {
+			return advance, token, err
+		}
+		if len(token) == 0 {
+			return off, data[:off], nil
+		}
+		ch = bytes.Runes(token)[0]
+
+		if ch == '-' || ch == '+' {
+			advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if len(token) == 0 {
+				return off, data[:off], nil
+			}
+			ch = bytes.Runes(token)[0]
+		}
+		if digitVal(ch) < 10 {
+			advance, token, err := handleSplitError(ScanMantissas(10)(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if len(token) == 0 {
+				return off, data[:off], nil
+			}
+
+			// read new rune
+			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if len(token) == 0 {
+				return off, data[:off], nil
+			}
+		} else {
+			return 0, nil, errors.New("illegal floating-point exponent")
+		}
+	}
+
+	if ch != 'i' {
+		// backward
+		off = off - utf8.RuneLen(ch)
+	}
+	return off, data[:off], nil
+}
+
+// https://golang.org/ref/spec#Identifiers
+// ScanIdentifier is a split function wrapper for a Scanner that returns each string which is an identifier format of text.
+// The returned line may be empty.
+// identifier = letter { letter | unicode_digit } .
+func ScanIdentifier(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return needMoreData()
+	}
+	var off int
+
+	// First character 1: \.
+	advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+	off = off + advance
+	if err != nil || len(token) == 0 {
+		return advance, token, err
+	}
+	ch := bytes.Runes(token)[0]
+
+	if isLetter(ch) {
+		for isLetter(ch) || isDigit(ch) {
+			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if token == nil {
+				return off, data[:off], nil
+			}
+			ch = bytes.Runes(token)[0]
+		}
+	}
+	off -= utf8.RuneLen(ch) // backward
+	return off, data[:off], nil
+}
+
+// ScanUntil is a split function wrapper for a Scanner that returns each string until filter case is meet.
+// The returned line may be empty.
+func ScanUntil(filter func(r rune) bool) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return ScanWhile(func(r rune) bool {
+		if filter == nil {
+			return false
+		}
+		return !filter(r)
+	})
+}
+
+// ScanUntil is a split function wrapper for a Scanner that returns each string until filter case is not meet.
+// The returned line may be empty.
+func ScanWhile(filter func(r rune) bool) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if filter == nil || atEOF && len(data) == 0 {
+			return needMoreData()
+		}
+		var off int
+
+		// First character 1: \.
+		advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+		off = off + advance
+		if err != nil || len(token) == 0 {
+			return advance, token, err
+		}
+		ch := bytes.Runes(token)[0]
+
+		for filter(ch) {
+			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil {
+				return advance, token, err
+			}
+			if token == nil {
+				return off, data[:off], nil
+			}
+			ch = bytes.Runes(token)[0]
+		}
+		off -= utf8.RuneLen(ch) // backward
+
+		return off, data[:off], nil
+	}
+}
+
 // https://golang.org/ref/spec#String_literals
 // string_lit             = raw_string_lit | interpreted_string_lit .
 // raw_string_lit         = "`" { unicode_char | newline } "`" .
@@ -116,14 +451,6 @@ func scanStrings(data []byte, atEOF bool, quote rune) (advance int, token []byte
 		}
 	}
 	return off, data[:off], nil
-}
-
-// ScanEscapes is a split function wrapper for a Scanner that returns each string which is an escape format of
-// text. The returned line may be empty.
-func ScanEscapes(quote rune) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		return scanEscapes(data, atEOF, quote)
-	}
 }
 
 func scanEscapes(data []byte, atEOF bool, quote rune) (advance int, token []byte, err error) {
@@ -213,357 +540,12 @@ func scanEscapes(data []byte, atEOF bool, quote rune) (advance int, token []byte
 	return off, data[:off], nil
 }
 
-func ScanMantissas(base int) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		return scanMantissas(data, atEOF, base)
-	}
-}
-
-func scanMantissas(data []byte, atEOF bool, base int) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return needMoreData()
-	}
-	var off int
-
-	var ch = '0' // force for as do{}while()
-
-	for digitVal(ch) < base {
-		advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
-		off += advance
-		if err != nil {
-			return advance, token, err
-		}
-
-		if len(token) == 0 {
-			return off, data[:off], nil
-		}
-		ch = bytes.Runes(token)[0]
-	}
-
-	off -= utf8.RuneLen(ch)
-	if off < 0 { // handle ch never updated
-		off = 0
-	}
-	return off, data[:off], nil
-
-}
-
-// https://golang.org/ref/spec#String_literals
-// string_lit             = raw_string_lit | interpreted_string_lit .
-// raw_string_lit         = "`" { unicode_char | newline } "`" .
-// interpreted_string_lit = `"` { unicode_value | byte_value } `"` .
-func ScanNumbers(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return needMoreData()
-	}
-	var off int
-	var seenSign bool
-	var seenDecimalPoint bool
-	var seenDecimalNumber bool
-
-	var lookforFraction bool
-	var lookforExponent bool
-	// First character 1: digitVal(ch) < 10.
-	// Handle .989 or 0x888
-	for {
-		// read a rune
-		advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
-		off = off + advance
-		if err != nil || len(token) == 0 {
-			return advance, token, err
-		}
-		ch := bytes.Runes(token)[0]
-		if ch == '.' {
-			// . can be seen once only
-			if seenDecimalPoint {
-				off--
-				return off, data[:off], nil
-			}
-			seenDecimalPoint = true
-			continue
-		}
-
-		// sign can be seen leading or after E or e
-		if ch == '+' || ch == '-' {
-			// sign can be seen once only, and can never be after "."
-			if seenSign || seenDecimalPoint {
-				off--
-				return off, data[:off], nil
-			}
-			seenSign = true
-			continue
-		}
-
-		// number must be leading with "." "+" "-" or "0-9"
-		if !seenDecimalNumber && digitVal(ch) > 10 {
-			msg := fmt.Sprintf("illegal character %#U leading escape sequence, expect \\", token)
-			return 0, nil, errors.New(msg)
-		}
-		seenDecimalNumber = true
-
-		// .989777
-		if seenDecimalPoint {
-			advance, token, err := handleSplitError(scanMantissas(data[off:], atEOF, 10))
-			off = off + advance
-			if err != nil || len(token) == 0 {
-				return advance, token, err
-			}
-			// look for "E" or "e"
-			lookforExponent = true
-			break
-		}
-
-		// 0x12
-		if ch == '0' {
-			// int or float
-			advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
-			off = off + advance
-			if err != nil {
-				return advance, token, err
-			}
-			if len(token) == 0 {
-				return off, data[:off], nil
-			}
-			ch = bytes.Runes(token)[0]
-
-			if ch == 'x' || ch == 'X' {
-				// hexadecimal int
-				advance, token, err := handleSplitError(scanMantissas(data[off:], atEOF, 16))
-				off = off + advance
-				if err != nil || len(token) == 0 {
-					return advance, token, err
-				}
-				if len(token) <= 0 {
-					// only scanned "0x" or "0X"
-					return 0, nil, errors.New("illegal hexadecimal number")
-				}
-				return off, data[:off], nil
-			} else {
-				// octal int or float
-				seenDecimalDigit := false
-				advance, token, err := handleSplitError(scanMantissas(data[off:], atEOF, 8))
-				off = off + advance
-				if err != nil {
-					return advance, token, err
-				}
-
-				// read new rune
-				advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-				off = off + advance
-				if err != nil {
-					return advance, token, err
-				}
-				if len(token) == 0 {
-					return off, data[:off], nil
-				}
-				ch = bytes.Runes(token)[0]
-
-				if ch == '8' || ch == '9' {
-					// illegal octal int or float
-					seenDecimalDigit = true
-					advance, token, err := handleSplitError(scanMantissas(data[off:], atEOF, 10))
-					off = off + advance
-					if err != nil || len(token) == 0 {
-						return advance, token, err
-					}
-					advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-					off = off + advance
-					if err != nil || len(token) == 0 {
-						return advance, token, err
-					}
-					ch = bytes.Runes(token)[0]
-				}
-				if ch == '.' || ch == 'e' || ch == 'E' || ch == 'i' {
-					off-- //backward for fraction "." "e" "E" or "i"
-					lookforFraction = true
-					break
-				}
-				// octal int
-				if seenDecimalDigit {
-					return 0, nil, errors.New("illegal octal number")
-				}
-
-				off-- //backward for exit
-
-			}
-			return off, data[:off], nil
-		}
-
-		// decimal int or float
-		advance, token, err = handleSplitError(scanMantissas(data[off:], atEOF, 10))
-		off = off + advance
-		if err != nil || len(token) == 0 {
-			return advance, token, err
-		}
-		lookforFraction = true
-		break
-	}
-
-	// read a rune
-	advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-	off = off + advance
-	if err != nil {
-		return advance, token, err
-	}
-	if len(token) == 0 {
-		return off, data[:off], nil
-	}
-	ch := bytes.Runes(token)[0]
-
-	if lookforFraction && ch == '.' {
-		advance, token, err := handleSplitError(scanMantissas(data[off:], atEOF, 10))
-		off = off + advance
-		if err != nil {
-			return advance, token, err
-		}
-		if len(token) == 0 {
-			return off, data[:off], nil
-		}
-		lookforExponent = true
-
-		// read new rune
-		advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-		off = off + advance
-		if err != nil {
-			return advance, token, err
-		}
-		if len(token) == 0 {
-			return off, data[:off], nil
-		}
-		ch = bytes.Runes(token)[0]
-	}
-
-	if lookforExponent && (ch == 'e' || ch == 'E') {
-		advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
-		off = off + advance
-		if err != nil {
-			return advance, token, err
-		}
-		if len(token) == 0 {
-			return off, data[:off], nil
-		}
-		ch = bytes.Runes(token)[0]
-
-		if ch == '-' || ch == '+' {
-			advance, token, err := handleSplitError(ScanRunes(data[off:], atEOF))
-			off = off + advance
-			if err != nil {
-				return advance, token, err
-			}
-			if len(token) == 0 {
-				return off, data[:off], nil
-			}
-			ch = bytes.Runes(token)[0]
-		}
-		if digitVal(ch) < 10 {
-			advance, token, err := handleSplitError(scanMantissas(data[off:], atEOF, 10))
-			off = off + advance
-			if err != nil {
-				return advance, token, err
-			}
-			if len(token) == 0 {
-				return off, data[:off], nil
-			}
-
-			// read new rune
-			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-			off = off + advance
-			if err != nil {
-				return advance, token, err
-			}
-			if len(token) == 0 {
-				return off, data[:off], nil
-			}
-		} else {
-			return 0, nil, errors.New("illegal floating-point exponent")
-		}
-	}
-
-	if ch != 'i' {
-		// backward
-		off = off - utf8.RuneLen(ch)
-	}
-	return off, data[:off], nil
-}
-
 func isLetter(ch rune) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch >= utf8.RuneSelf && unicode.IsLetter(ch)
 }
 
 func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9' || ch >= utf8.RuneSelf && unicode.IsDigit(ch)
-}
-
-func ScanIdentifier(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return needMoreData()
-	}
-	var off int
-
-	// First character 1: \.
-	advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-	off = off + advance
-	if err != nil || len(token) == 0 {
-		return advance, token, err
-	}
-	ch := bytes.Runes(token)[0]
-
-	if isLetter(ch) {
-		for isLetter(ch) || isDigit(ch) {
-			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-			off = off + advance
-			if err != nil {
-				return advance, token, err
-			}
-			if token == nil {
-				return off, data[:off], nil
-			}
-			ch = bytes.Runes(token)[0]
-		}
-	}
-	off -= utf8.RuneLen(ch) // backward
-	return off, data[:off], nil
-}
-
-func ScanUntil(filter func(r rune) bool) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	return ScanWhile(func(r rune) bool {
-		if filter == nil {
-			return false
-		}
-		return !filter(r)
-	})
-}
-
-func ScanWhile(filter func(r rune) bool) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if filter == nil || atEOF && len(data) == 0 {
-			return needMoreData()
-		}
-		var off int
-
-		// First character 1: \.
-		advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-		off = off + advance
-		if err != nil || len(token) == 0 {
-			return advance, token, err
-		}
-		ch := bytes.Runes(token)[0]
-
-		for filter(ch) {
-			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
-			off = off + advance
-			if err != nil {
-				return advance, token, err
-			}
-			if token == nil {
-				return off, data[:off], nil
-			}
-			ch = bytes.Runes(token)[0]
-		}
-		off -= utf8.RuneLen(ch) // backward
-
-		return off, data[:off], nil
-	}
 }
 
 func needMoreData() (advance int, token []byte, err error) {
