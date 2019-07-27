@@ -123,6 +123,26 @@ var (
 			input:  []byte("0xFG"),
 			output: [][]byte{[]byte("0xF")},
 		},
+		{
+			split:  scanner.ScanIdentifier,
+			input:  []byte("_HelloWorld_&"),
+			output: [][]byte{[]byte("_HelloWorld_")},
+		},
+		{
+			split:  scanner.ScanIdentifier,
+			input:  []byte("_Hello World_&"),
+			output: [][]byte{[]byte("_Hello")},
+		},
+		{
+			split:  scanner.ScanIdentifier,
+			input:  []byte("_你好_&"),
+			output: [][]byte{[]byte("_你好_")},
+		},
+		{
+			split:  scanner.ScanIdentifier,
+			input:  []byte("0你好_&"),
+			output: [][]byte{},
+		},
 	}
 )
 

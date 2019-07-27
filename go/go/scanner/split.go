@@ -486,6 +486,42 @@ func ScanNumbers(data []byte, atEOF bool) (advance int, token []byte, err error)
 	return off, data[:off], nil
 }
 
+func isLetter(ch rune) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch >= utf8.RuneSelf && unicode.IsLetter(ch)
+}
+
+func isDigit(ch rune) bool {
+	return '0' <= ch && ch <= '9' || ch >= utf8.RuneSelf && unicode.IsDigit(ch)
+}
+func ScanIdentifier(data []byte, atEOF bool) (advance int, token []byte, err error) {
+
+	if atEOF && len(data) == 0 {
+		return needMoreData()
+	}
+	var off int
+
+	// First character 1: \.
+	advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+	off = off + advance
+	if err != nil || len(token) == 0 {
+		return advance, token, err
+	}
+	ch := bytes.Runes(token)[0]
+
+	if isLetter(ch) {
+		for isLetter(ch) || isDigit(ch) {
+			advance, token, err = handleSplitError(ScanRunes(data[off:], atEOF))
+			off = off + advance
+			if err != nil || len(token) == 0 {
+				return advance, token, err
+			}
+			ch = bytes.Runes(token)[0]
+		}
+	}
+	off -= utf8.RuneLen(ch) // backward
+	return off, data[:off], nil
+}
+
 func needMoreData() (advance int, token []byte, err error) {
 	return 0, nil, nil
 }
