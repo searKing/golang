@@ -501,20 +501,17 @@ func (s *Scanner) ScanRawString() string {
 
 func (s *Scanner) ScanLine() string {
 	// '"' opening already consumed
-	offs := s.offset - 1
+	offs := s.offset
 
 	for {
 		var ch = s.CurrentRune()
-		if ch == '\n' || ch < 0 {
+		if ch < 0 {
 			s.error(offs, "string literal not terminated")
 			break
 		}
 		s.NextRune()
-		if ch == '"' {
+		if ch == '\n' {
 			break
-		}
-		if ch == '\\' {
-			s.ScanEscape('"')
 		}
 	}
 
