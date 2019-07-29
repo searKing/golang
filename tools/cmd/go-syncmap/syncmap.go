@@ -280,7 +280,7 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	}
 
 	if len(values) == 0 {
-		log.Fatalf("no values defined for type %s", typeInfo)
+		log.Fatalf("no values defined for type %+v", typeInfo)
 	}
 	g.buildOneRun(values[0])
 }
