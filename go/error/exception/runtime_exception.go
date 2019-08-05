@@ -16,13 +16,13 @@ func NewRuntimeException1(message string) *RuntimeException {
 	}
 }
 
-func NewRuntimeException2(message string, cause ThrowableInterface) *RuntimeException {
+func NewRuntimeException2(message string, cause Throwable) *RuntimeException {
 	return &RuntimeException{
 		Exception: NewException2(message, cause),
 	}
 }
 
-func NewRuntimeException4(message string, cause *Throwable, enableSuppression, writableStackTrace bool) *RuntimeException {
+func NewRuntimeException4(message string, cause Throwable, enableSuppression, writableStackTrace bool) *RuntimeException {
 	return &RuntimeException{
 		Exception: NewException4(message, cause, enableSuppression, writableStackTrace),
 	}
