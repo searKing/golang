@@ -2,12 +2,13 @@ package optional
 
 import (
 	"errors"
+	"github.com/searKing/golang/go/util/function/consumer"
+	"github.com/searKing/golang/go/util/function/predicate"
 	"github.com/searKing/golang/go/util/object"
 )
 
-var empty = &Optional{}
 var (
-	ErrorNoValuePresent = errors.New("No value present")
+	ErrorNoValuePresent = errors.New("no value present")
 )
 
 // Optional is a container object which may or may not contain a non-{@code null} value.
@@ -15,25 +16,28 @@ var (
 // value is present, the object is considered <i>empty</i> and
 // {@code isPresent()} returns {@code false}.
 type Optional struct {
-	value interface{}
+	isPresent bool
+	value     interface{}
 }
 
 // Empty returns an empty {@code Optional} instance.  No value is present for this
 // {@code Optional}.
-func Empty() *Optional {
-	return empty
+func Empty() Optional {
+	return Optional{}
 }
 
 // Of Returns an {@code Optional} describing the given value.
-func Of(value interface{}) *Optional {
-	return &Optional{
-		value: value,
+func Of(value interface{}) Optional {
+	object.RequireNonNull(value)
+	return Optional{
+		isPresent: true,
+		value:     value,
 	}
 }
 
 // Of Returns an {@code Optional} describing the given value, if
 // non-{@code null}, otherwise returns an empty {@code Optional}.
-func OfNillable(value interface{}) *Optional {
+func OfNillable(value interface{}) Optional {
 	if value == nil {
 		return Empty()
 	}
@@ -42,36 +46,17 @@ func OfNillable(value interface{}) *Optional {
 
 // Get returns the value if a value is present, otherwise throws
 // {@code ErrorNoValuePresent}.
-func (o *Optional) Get() interface{} {
-	object.RequireNonNil(o.value)
+func (o Optional) Get() interface{} {
 	return o.value
 }
 
 // IsPresent returns {@code true} if a value is present, otherwise {@code false}.
-func (o *Optional) IsPresent() bool {
-	object.RequireNonNil(o)
-	return o.value != nil
+func (o Optional) IsPresent() bool {
+	return o.isPresent
 }
 
-type Consumer interface {
-	Accept(value interface{})
-}
 type EmptyConsumer interface {
 	Run()
-}
-
-/**
- * Represents a predicate (boolean-valued function) of one argument.
- */
-type Predicater interface {
-	/**
-	 * Evaluates this predicate on the given argument.
-	 *
-	 * @param t the input argument
-	 * @return {@code true} if the input argument matches the predicate,
-	 * otherwise {@code false}
-	 */
-	test(value interface{}) bool
 }
 
 /**
@@ -82,7 +67,7 @@ type Predicater interface {
  * @throws ErrorNilPointer if value is present and the given action is
  *         {@code null}
  */
-func (o *Optional) IfPresent(action Consumer) {
+func (o Optional) IfPresent(action consumer.Consumer) {
 	if o.IsPresent() {
 		action.Accept(o.value)
 	}
@@ -100,7 +85,7 @@ func (o *Optional) IfPresent(action Consumer) {
  *         action is {@code null}.
  * @since 9
  */
-func (o *Optional) IfPresentOrElse(action Consumer, emptyAction EmptyConsumer) {
+func (o Optional) IfPresentOrElse(action consumer.Consumer, emptyAction EmptyConsumer) {
 	if o.IsPresent() {
 		action.Accept(o.value)
 		return
@@ -119,11 +104,12 @@ func (o *Optional) IfPresentOrElse(action Consumer, emptyAction EmptyConsumer) {
  *         given predicate, otherwise an empty {@code Optional}
  * @throws NullPointerException if the predicate is {@code null}
  */
-func (o *Optional) Filter(predicate Predicater) *Optional {
+func (o Optional) Filter(predicate predicate.Predicater) Optional {
+	object.RequireNonNull(predicate)
 	if !o.IsPresent() {
 		return o
 	}
-	if predicate.test(o.value) {
+	if predicate.Test(o.value) {
 		return o
 	}
 	return Empty()
@@ -162,7 +148,7 @@ func (o *Optional) Filter(predicate Predicater) *Optional {
  *         present, otherwise an empty {@code Optional}
  * @throws NullPointerException if the mapping function is {@code null}
  */
-func (o *Optional) Map(mapper func(interface{}) interface{}) *Optional {
+func (o Optional) Map(mapper func(interface{}) interface{}) Optional {
 	object.RequireNonNil(mapper)
 	if !o.IsPresent() {
 		return Empty()
@@ -190,7 +176,7 @@ func (o *Optional) Map(mapper func(interface{}) interface{}) *Optional {
  * @throws NullPointerException if the mapping function is {@code null} or
  *         returns a {@code null} result
  */
-func (o *Optional) FlatMap(mapper func(interface{}) interface{}) *Optional {
+func (o *Optional) FlatMap(mapper func(interface{}) interface{}) Optional {
 	object.RequireNonNil(mapper)
 	if !o.IsPresent() {
 		return Empty()
