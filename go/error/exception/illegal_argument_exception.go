@@ -16,7 +16,7 @@ func NewIllegalArgumentException1(message string) *IllegalArgumentException {
 	}
 }
 
-func NewIllegalArgumentException2(message string, cause ThrowableInterface) *IllegalArgumentException {
+func NewIllegalArgumentException2(message string, cause Throwable) *IllegalArgumentException {
 	return &IllegalArgumentException{
 		RuntimeException: NewRuntimeException2(message, cause),
 	}
