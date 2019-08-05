@@ -2,6 +2,7 @@ package object
 
 import (
 	"errors"
+	"github.com/searKing/golang/go/util/function/supplier"
 	"reflect"
 	"strings"
 )
@@ -12,10 +13,6 @@ type ErrorMissMatch error
 var (
 	errorNilPointer = errors.New("nil pointer")
 )
-
-type Supplier interface {
-	Get() interface{}
-}
 
 // IsNil returns {@code true} if the provided reference is {@code nil} otherwise
 // returns {@code false}.
@@ -64,6 +61,11 @@ func RequireNonNil(obj interface{}, msg ...string) interface{} {
 	return obj
 }
 
+// grammer surgar for RequireNonNil
+func RequireNonNull(obj interface{}, msg ...string) interface{} {
+	return RequireNonNil(obj, msg...)
+}
+
 // RequireNonNullElse returns the first argument if it is non-{@code nil} and
 // otherwise returns the non-{@code nil} second argument.
 func RequireNonNullElse(obj, defaultObj interface{}) interface{} {
@@ -75,11 +77,11 @@ func RequireNonNullElse(obj, defaultObj interface{}) interface{} {
 
 // RequireNonNullElseGet returns the first argument if it is non-{@code nil} and
 // returns the non-{@code nil} value of {@code supplier.Get()}.
-func RequireNonNullElseGet(obj interface{}, supplier Supplier) interface{} {
+func RequireNonNullElseGet(obj interface{}, sup supplier.Supplier) interface{} {
 	if NoneNil(obj) {
 		return obj
 	}
-	return RequireNonNil(RequireNonNil(supplier, "supplier").(Supplier).Get(), "supplier.Get()")
+	return RequireNonNil(RequireNonNil(sup, "supplier").(supplier.Supplier).Get(), "supplier.Get()")
 }
 
 func IsEmptyValue(obj interface{}) bool {
