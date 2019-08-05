@@ -29,38 +29,6 @@ func TestEndToEnd(t *testing.T) {
 	defer os.RemoveAll(dir)
 	// Read the testdata directory.
 	walkDir(dir, goatomicvalue, "testdata", t)
-
-	//fd, err := os.Open("testdata")
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//defer fd.Close()
-	//names, err := fd.Readdirnames(-1)
-	//if err != nil {
-	//	t.Fatalf("Readdirnames: %s", err)
-	//}
-	//// Generate, compile, and run the test programs.
-	//for _, name := range names {
-	//	if isDirectory(name) {
-	//
-	//	}
-	//
-	//	if !strings.HasSuffix(name, ".go") {
-	//		t.Errorf("%s is not a Go file", name)
-	//		continue
-	//	}
-	//	if strings.HasPrefix(name, "tag_") || strings.HasPrefix(name, "vary_") {
-	//		// This file is used for tag processing in TestTags or TestConstValueChange, below.
-	//		continue
-	//	}
-	//	if name == "cgo.go" && !build.Default.CgoEnabled {
-	//		t.Logf("cgo is not enabled for %s", name)
-	//		continue
-	//	}
-	//	// Names are known to be ASCII and long enough.
-	//	typeName := fmt.Sprintf("%c%s", name[0]+'A'-'a', name[1:len(name)-len(".go")])
-	//	goatomicvalueCompileAndRun(t, dir, goatomicvalue, typeName, name)
-	//}
 }
 
 func walkDir(dir, goatomicvalue, dirname string, t *testing.T) {
