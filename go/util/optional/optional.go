@@ -28,7 +28,6 @@ func Empty() Optional {
 
 // Of Returns an {@code Optional} describing the given value.
 func Of(value interface{}) Optional {
-	object.RequireNonNull(value)
 	return Optional{
 		isPresent: true,
 		value:     value,
