@@ -32,10 +32,10 @@ func (supplier SupplierFunc) Get() interface{} {
 	return supplier()
 }
 
-type SupplierClass struct {
+type AbstractSupplierClass struct {
 	class.Class
 }
 
-func (supplier *SupplierClass) Get() interface{} {
+func (sup *AbstractSupplierClass) Get() interface{} {
 	panic(exception.NewIllegalStateException1("called wrong Get method"))
 }

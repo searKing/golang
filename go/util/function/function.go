@@ -94,22 +94,22 @@ func (f FunctionFunc) AndThen(after Function) Function {
 	})
 }
 
-type FunctionClass struct {
+type AbstractFunction struct {
 	class.Class
 }
 
-func (f *FunctionClass) Apply(t interface{}) interface{} {
+func (f *AbstractFunction) Apply(t interface{}) interface{} {
 	panic(exception.NewIllegalStateException1("called wrong Apply method"))
 }
 
-func (f *FunctionClass) Compose(before Function) Function {
+func (f *AbstractFunction) Compose(before Function) Function {
 	object.RequireNonNil(before)
 	return FunctionFunc(func(t interface{}) interface{} {
 		return f.GetDerivedElse(f).(Function).Apply(before.Apply(t))
 	})
 }
 
-func (f *FunctionClass) AndThen(after Function) Function {
+func (f *AbstractFunction) AndThen(after Function) Function {
 	object.RequireNonNil(after)
 	return FunctionFunc(func(t interface{}) interface{} {
 		return after.Apply(f.GetDerivedElse(f).(Function).Apply(t))
