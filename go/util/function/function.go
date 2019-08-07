@@ -75,7 +75,7 @@ func Identity() Function {
 
 type FunctionFunc func(t interface{}) interface{}
 
-// Accept calls f(t).
+// Apply calls f(t).
 func (f FunctionFunc) Apply(t interface{}) interface{} {
 	return f(t)
 }
