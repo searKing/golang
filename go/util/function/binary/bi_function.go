@@ -60,15 +60,15 @@ func (f BiFunctionFunc) AndThen(after function.Function) BiFunction {
 	})
 }
 
-type BiFunctionClass struct {
+type AbstractBiFunctionClass struct {
 	class.Class
 }
 
-func (f *BiFunctionClass) Apply(t interface{}, u interface{}) interface{} {
+func (f *AbstractBiFunctionClass) Apply(t interface{}, u interface{}) interface{} {
 	panic(exception.NewIllegalStateException1("called wrong Apply method"))
 }
 
-func (f *BiFunctionClass) AndThen(after function.Function) BiFunction {
+func (f *AbstractBiFunctionClass) AndThen(after function.Function) BiFunction {
 	object.RequireNonNil(after)
 	return BiFunctionFunc(func(t interface{}, u interface{}) interface{} {
 		return after.Apply(f.GetDerivedElse(f).(BiFunction).Apply(t, u))

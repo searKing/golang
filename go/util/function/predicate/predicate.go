@@ -112,34 +112,34 @@ func (f PredicaterFunc) IsEqual(targetRef interface{}) Predicater {
 	})
 }
 
-type PredicaterClass struct {
+type AbstractPredicaterClass struct {
 	class.Class
 }
 
-func (f *PredicaterClass) Test(value interface{}) bool {
+func (pred *AbstractPredicaterClass) Test(value interface{}) bool {
 	panic(exception.NewIllegalStateException1("called wrong Test method"))
 }
 
-func (f *PredicaterClass) And(other Predicater) Predicater {
+func (pred *AbstractPredicaterClass) And(other Predicater) Predicater {
 	return PredicaterFunc(func(value interface{}) bool {
-		return f.GetDerivedElse(f).(Predicater).Test(value) && other.Test(value)
+		return pred.GetDerivedElse(pred).(Predicater).Test(value) && other.Test(value)
 	})
 }
 
-func (f *PredicaterClass) Negate() Predicater {
+func (pred *AbstractPredicaterClass) Negate() Predicater {
 	return PredicaterFunc(func(value interface{}) bool {
-		return !f.GetDerivedElse(f).(Predicater).Test(value)
+		return !pred.GetDerivedElse(pred).(Predicater).Test(value)
 	})
 }
 
-func (f *PredicaterClass) Or(other Predicater) Predicater {
+func (pred *AbstractPredicaterClass) Or(other Predicater) Predicater {
 	object.RequireNonNil(other)
 	return PredicaterFunc(func(value interface{}) bool {
-		return f.GetDerivedElse(f).(Predicater).Test(value) || other.Test(value)
+		return pred.GetDerivedElse(pred).(Predicater).Test(value) || other.Test(value)
 	})
 }
 
-func (f *PredicaterClass) IsEqual(targetRef interface{}) Predicater {
+func (pred *AbstractPredicaterClass) IsEqual(targetRef interface{}) Predicater {
 	if targetRef == nil {
 		return PredicaterFunc(object.IsNil)
 	}
