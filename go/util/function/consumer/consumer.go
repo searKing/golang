@@ -1,34 +1,76 @@
+// A sequence of elements supporting sequential and parallel aggregate
+// operations.  The following example illustrates an aggregate operation using
+// SEE java/util/function/Consumer.java
 package consumer
 
 import (
+	"github.com/searKing/golang/go/error/exception"
+	"github.com/searKing/golang/go/util/class"
 	"github.com/searKing/golang/go/util/object"
 )
 
-// Consumer represents an operation that accepts a single input argument and returns no
-// result. Unlike most other functional interfaces, {@code Consumer} is expected
-// to operate via side-effects.
+/**
+ * Represents an operation that accepts a single input argument and returns no
+ * result. Unlike most other functional interfaces, {@code Consumer} is expected
+ * to operate via side-effects.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #accept(Object)}.
+ *
+ * @param <T> the type of the input to the operation
+ *
+ * @since 1.8
+ */
 type Consumer interface {
-	Accept(value interface{})
+	/**
+	 * Performs this operation on the given argument.
+	 *
+	 * @param t the input argument
+	 */
+	Accept(t interface{})
+
+	/**
+	 * Returns a composed {@code Consumer} that performs, in sequence, this
+	 * operation followed by the {@code after} operation. If performing either
+	 * operation throws an exception, it is relayed to the caller of the
+	 * composed operation.  If performing this operation throws an exception,
+	 * the {@code after} operation will not be performed.
+	 *
+	 * @param after the operation to perform after this operation
+	 * @return a composed {@code Consumer} that performs in sequence this
+	 * operation followed by the {@code after} operation
+	 * @throws NullPointerException if {@code after} is null
+	 */
+	AndThen(after Consumer) Consumer
 }
 
-var NopThenableConsumer = ThenableConsumer(func(value interface{}) {})
+type ConsumerFunc func(t interface{})
 
-type ThenableConsumer func(value interface{})
-
-func (c ThenableConsumer) Accept(value interface{}) {
-	object.RequireNonNil(c)
-	acceptFn := (func(value interface{}))(c)
-	acceptFn(value)
+// Accept calls f(t).
+func (f ConsumerFunc) Accept(t interface{}) {
+	f(t)
 }
 
-func (c ThenableConsumer) AndThen(consumer Consumer) ThenableConsumer {
-	return ThenableConsumer(
-		func(value interface{}) {
-			c.Accept(value)
-			consumer.Accept(value)
-		})
+func (f ConsumerFunc) AndThen(after Consumer) Consumer {
+	object.RequireNonNil(after)
+	return ConsumerFunc(func(t interface{}) {
+		f.Accept(t)
+		after.Accept(t)
+	})
 }
 
-type EmptyConsumer interface {
-	Run()
+type AbstractConsumer struct {
+	class.Class
+}
+
+func (_ AbstractConsumer) Accept(t interface{}) {
+	panic(exception.NewIllegalStateException1("called wrong Accept method"))
+}
+
+func (f AbstractConsumer) AndThen(after Consumer) Consumer {
+	object.RequireNonNil(after)
+	return ConsumerFunc(func(t interface{}) {
+		f.GetDerived().(Consumer).Accept(t)
+		after.Accept(t)
+	})
 }
