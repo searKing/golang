@@ -1,7 +1,7 @@
 package object
 
 import (
-	"github.com/searKing/golang/go/util/preconditions"
+	"github.com/searKing/golang/go/util/object/internal/preconditions"
 )
 
 // Checks if the {@code index} is within the bounds of the range from
