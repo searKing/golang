@@ -1,10 +1,5 @@
 package supplier
 
-import (
-	"github.com/searKing/golang/go/error/exception"
-	"github.com/searKing/golang/go/util/class"
-)
-
 /**
  * Represents a supplier of results.
  *
@@ -30,12 +25,4 @@ type SupplierFunc func() interface{}
 
 func (supplier SupplierFunc) Get() interface{} {
 	return supplier()
-}
-
-type AbstractSupplierClass struct {
-	class.Class
-}
-
-func (sup *AbstractSupplierClass) Get() interface{} {
-	panic(exception.NewIllegalStateException1("called wrong Get method"))
 }
