@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -o pipefail
 
 # 获取输入参数
 THIS_BASE_PARAM="$*"
