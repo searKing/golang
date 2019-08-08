@@ -24,6 +24,12 @@ rm -Rf .travis.workspace/ || exit
 git clone https://github.com/searKing/golang.git .travis.workspace/golang || exit
 pushd .travis.workspace/golang/ || exit
 git filter-branch --prune-empty --subdirectory-filter tools/cmd/go-syncpool/ master || exit
+# reset and clean .git
+git reset --hard
+git for-each-ref --format="%(refname)" refs/original | xargs -n 1 git update-ref -d || exit
+git reflog expire --expire=now --all || exit
+git gc --aggressive --prune=now || exit
+
 git remote set-url origin https://github.com/searKing/travis-ci.git || exit
 git push -f origin master:go-syncpool || exit
 popd || exit
