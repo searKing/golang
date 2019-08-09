@@ -83,3 +83,20 @@ func LoadX509Certificates(
 	}
 	return x509Certs, nil
 }
+
+func LoadCertificateAndPool(
+	certPool *x509.CertPool,
+	certString, keyString string,
+	certFile, keyFile string,
+) ([]tls.Certificate, *x509.CertPool, error) {
+	certs, err := LoadCertificates(certString, keyString, certFile, keyFile)
+	if err != nil {
+		return nil, nil, err
+	}
+	certPool, err = LoadX509CertificatePool(certPool, "", "", certs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return certs, certPool, nil
+
+}
