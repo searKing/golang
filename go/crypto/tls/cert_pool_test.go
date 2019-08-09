@@ -48,7 +48,7 @@ func TestLoadX509CertificatePool(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 6. valid TLS cert
-	certPool, err = tls.LoadX509CertificatePool(nil, "", "", tmpCert[0])
+	certPool, err = tls.LoadX509CertificatePool(nil, "", "", tmpCert)
 	assert.NotNil(t, certPool)
 	assert.NoError(t, err)
 

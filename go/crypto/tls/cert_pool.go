@@ -37,7 +37,7 @@ func LoadX509CertificatePool(
 		}
 	} else {
 		var loaded bool
-		for _, cert := range certs {
+		for _, cert := range of(certs...) {
 			if certPool == nil {
 				certPool = x509.NewCertPool()
 			}
@@ -50,6 +50,7 @@ func LoadX509CertificatePool(
 				x509Cert := cert.(x509.Certificate)
 				certPool.AddCert(&x509Cert)
 				loaded = true
+
 			case *tls.Certificate:
 				tlsCert := cert.(*tls.Certificate)
 				for _, certBytes := range tlsCert.Certificate {
@@ -87,4 +88,39 @@ func LoadX509CertificatePool(
 		return nil, fmt.Errorf("credentials: failed to append certificates")
 	}
 	return certPool, nil
+}
+
+func of(certs ...interface{}) []interface{} {
+	var uniformedCerts []interface{}
+	for _, cert := range certs {
+		switch cert.(type) {
+		case *x509.Certificate, x509.Certificate, *tls.Certificate, tls.Certificate:
+		case []*x509.Certificate:
+			tlsCerts := cert.([]*x509.Certificate)
+			for _, cert_ := range tlsCerts {
+				uniformedCerts = append(uniformedCerts, cert_)
+			}
+		case []x509.Certificate:
+			x509Certs := cert.([]x509.Certificate)
+			for _, cert_ := range x509Certs {
+				uniformedCerts = append(uniformedCerts, cert_)
+			}
+		case []*tls.Certificate:
+			tlsCerts := cert.([]*tls.Certificate)
+			for _, cert_ := range tlsCerts {
+				uniformedCerts = append(uniformedCerts, cert_)
+			}
+		case []tls.Certificate:
+			tlsCerts := cert.([]tls.Certificate)
+			for _, cert_ := range tlsCerts {
+				uniformedCerts = append(uniformedCerts, cert_)
+			}
+		case []interface{}:
+			certs_ := cert.([]interface{})
+			uniformedCerts = append(uniformedCerts, certs_...)
+		default:
+			uniformedCerts = append(uniformedCerts, cert)
+		}
+	}
+	return uniformedCerts
 }
