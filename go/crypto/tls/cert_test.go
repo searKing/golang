@@ -1,6 +1,7 @@
-package tls
+package tls_test
 
 import (
+	"github.com/searKing/golang/go/crypto/tls"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -116,62 +117,62 @@ RHMZNMoDTRhmhQhj8M7N+FMtZAUOMddZ/1cvREtFW7+66w+XZvj9CQ/uectp/qb+
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// 1. no TLS
-	cert, err := LoadCertificate("", "", "", "")
+	cert, err := tls.LoadCertificates("", "", "", "")
 	assert.Nil(t, cert)
-	assert.EqualError(t, err, ErrNoCertificatesConfigured.Error())
+	assert.EqualError(t, err, tls.ErrNoCertificatesConfigured.Error())
 
 	// 2. inconsistent TLS (i): warning only
-	cert, err = LoadCertificate("", "", "", "x")
+	cert, err = tls.LoadCertificates("", "", "", "x")
 	assert.Nil(t, cert)
-	assert.EqualError(t, err, ErrInvalidCertificateConfiguration.Error())
+	assert.EqualError(t, err, tls.ErrInvalidCertificateConfiguration.Error())
 
-	// 2. inconsistent TLS (ii): warning only
-	cert, err = LoadCertificate("x", "", "", "")
+	// 3. inconsistent TLS (ii): warning only
+	cert, err = tls.LoadCertificates("x", "", "", "")
 	assert.Nil(t, cert)
-	assert.EqualError(t, err, ErrInvalidCertificateConfiguration.Error())
+	assert.EqualError(t, err, tls.ErrInvalidCertificateConfiguration.Error())
 
-	// 3. invalid TLS file
-	cert, err = LoadCertificate("", "", tmpCert, "x")
-	assert.Nil(t, cert)
-	assert.Error(t, err)
-
-	// 4. invalid TLS string (i)
-	cert, err = LoadCertificate(certFixture, "{}", "", "")
+	// 4. invalid TLS file
+	cert, err = tls.LoadCertificates("", "", tmpCert, "x")
 	assert.Nil(t, cert)
 	assert.Error(t, err)
 
-	// 4. invalid TLS string (ii)
-	cert, err = LoadCertificate("{}", keyFixture, "", "")
+	// 5. invalid TLS string (i)
+	cert, err = tls.LoadCertificates(certFixture, "{}", "", "")
 	assert.Nil(t, cert)
 	assert.Error(t, err)
 
-	// 5. valid TLS files
-	cert, err = LoadCertificate("", "", tmpCert, tmpKey)
+	// 6. invalid TLS string (ii)
+	cert, err = tls.LoadCertificates("{}", keyFixture, "", "")
+	assert.Nil(t, cert)
+	assert.Error(t, err)
+
+	// 7. valid TLS files
+	cert, err = tls.LoadCertificates("", "", tmpCert, tmpKey)
 	assert.NotNil(t, cert)
 	assert.NoError(t, err)
 
-	// 6. valid TLS strings
-	cert, err = LoadCertificate(certFixture, keyFixture, "", "")
+	// 8. valid TLS strings
+	cert, err = tls.LoadCertificates(certFixture, keyFixture, "", "")
 	assert.NotNil(t, cert)
 	assert.NoError(t, err)
 
-	// 7. invalid TLS file content
-	cert, err = LoadCertificate("", "", certFixture, keyFixture)
+	// 9. invalid TLS file content
+	cert, err = tls.LoadCertificates("", "", certFixture, keyFixture)
 	assert.Nil(t, cert)
 	assert.Error(t, err)
 
-	// 8. invalid TLS string content
-	cert, err = LoadCertificate(certFileContent, keyFileContent, "", "")
+	// 10. invalid TLS string content
+	cert, err = tls.LoadCertificates(certFileContent, keyFileContent, "", "")
 	assert.Nil(t, cert)
 	assert.Error(t, err)
 
-	// 9. mismatched TLS file content
-	cert, err = LoadCertificate("", "", keyFileContent, certFileContent)
+	// 11. mismatched TLS file content
+	cert, err = tls.LoadCertificates("", "", keyFileContent, certFileContent)
 	assert.Nil(t, cert)
 	assert.Error(t, err)
 
-	// 10. mismatched TLS string content
-	cert, err = LoadCertificate(keyFixture, certFixture, "", "")
+	// 12. mismatched TLS string content
+	cert, err = tls.LoadCertificates(keyFixture, certFixture, "", "")
 	assert.Nil(t, cert)
 	assert.Error(t, err)
 }
