@@ -2,6 +2,7 @@ package tls
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"github.com/pkg/errors"
@@ -56,4 +57,29 @@ func LoadCertificates(
 	}
 
 	return nil, errors.WithStack(ErrInvalidCertificateConfiguration)
+}
+
+// LoadX509Certificates returns loads a TLS LoadCertificates of x509.
+func LoadX509Certificates(
+	certString, keyString string,
+	certFile, keyFile string,
+) ([]*x509.Certificate, error) {
+	certs, err := LoadCertificates(certString, keyString, certFile, keyFile)
+	if err != nil {
+		return nil, err
+	}
+	var x509Certs []*x509.Certificate
+	for _, cert := range certs {
+		for _, certBytes := range cert.Certificate {
+			x509Cert, err := x509.ParseCertificate(certBytes)
+			if err != nil {
+				return nil, err
+			}
+			x509Certs = append(x509Certs, x509Cert)
+		}
+	}
+	if len(x509Certs) == 0 {
+		return nil, ErrNoCertificatesConfigured
+	}
+	return x509Certs, nil
 }

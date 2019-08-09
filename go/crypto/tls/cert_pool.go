@@ -9,13 +9,13 @@ import (
 	"io/ioutil"
 )
 
-// LoadCertificatePool returns loads a TLS x509.CertPool or update a TLS x509.CertPool if nil.
+// LoadX509CertificatePool returns loads a TLS x509.CertPool or update a TLS x509.CertPool if nil.
 // certString: Base64 encoded (without padding) string of the TLS certificate (PEM encoded) to be used for HTTP over TLS (HTTPS).
 // Example: certString="-----BEGIN CERTIFICATE-----\nMIIDZTCCAk2gAwIBAgIEV5xOtDANBgkqhkiG9w0BAQ0FADA0MTIwMAYDVQQDDClP..."
 // certPath: The path to the TLS certificate (pem encoded).
 // Example: certPath=~/cert.pem
 // certs: certs of x509.Certificate, tls.Certificate, *x509.Certificate, *tls.Certificate
-func LoadCertificatePool(
+func LoadX509CertificatePool(
 	certPool *x509.CertPool,
 	certString string,
 	certFile string,

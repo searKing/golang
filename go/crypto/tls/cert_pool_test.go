@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestHTTPSCertificatePool(t *testing.T) {
+func TestLoadX509CertificatePool(t *testing.T) {
 	tmpCertFile, _ := ioutil.TempFile("", "test-cert")
 	tmpCertPath := tmpCertFile.Name()
 	defer func() {
@@ -23,42 +23,42 @@ func TestHTTPSCertificatePool(t *testing.T) {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// 1. no TLS
-	certPool, err := tls.LoadCertificatePool(nil, "", "")
+	certPool, err := tls.LoadX509CertificatePool(nil, "", "")
 	assert.Nil(t, certPool)
 	assert.EqualError(t, err, tls.ErrNoCertificatesConfigured.Error())
 
 	// 2. inconsistent TLS (ii): warning only
-	certPool, err = tls.LoadCertificatePool(nil, "x", "")
+	certPool, err = tls.LoadX509CertificatePool(nil, "x", "")
 	assert.Nil(t, certPool)
 	assert.Error(t, err)
 
 	// 3. invalid TLS string (ii)
-	certPool, err = tls.LoadCertificatePool(nil, "{}", "")
+	certPool, err = tls.LoadX509CertificatePool(nil, "{}", "")
 	assert.Nil(t, certPool)
 	assert.Error(t, err)
 
 	// 4. valid TLS files
-	certPool, err = tls.LoadCertificatePool(nil, "", tmpCertPath)
+	certPool, err = tls.LoadX509CertificatePool(nil, "", tmpCertPath)
 	assert.NotNil(t, certPool)
 	assert.NoError(t, err)
 
 	// 5. valid TLS strings
-	certPool, err = tls.LoadCertificatePool(nil, certFixture, "")
+	certPool, err = tls.LoadX509CertificatePool(nil, certFixture, "")
 	assert.NotNil(t, certPool)
 	assert.NoError(t, err)
 
 	// 6. valid TLS cert
-	certPool, err = tls.LoadCertificatePool(nil, "", "", tmpCert[0])
+	certPool, err = tls.LoadX509CertificatePool(nil, "", "", tmpCert[0])
 	assert.NotNil(t, certPool)
 	assert.NoError(t, err)
 
 	// 7. invalid TLS file content
-	certPool, err = tls.LoadCertificatePool(nil, "", certFixture)
+	certPool, err = tls.LoadX509CertificatePool(nil, "", certFixture)
 	assert.Nil(t, certPool)
 	assert.Error(t, err)
 
 	// 8. invalid TLS string content
-	certPool, err = tls.LoadCertificatePool(nil, certFileContent, "")
+	certPool, err = tls.LoadX509CertificatePool(nil, certFileContent, "")
 	assert.Nil(t, certPool)
 	assert.Error(t, err)
 }
