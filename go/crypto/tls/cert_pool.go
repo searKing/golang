@@ -1,6 +1,7 @@
 package tls
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
@@ -13,14 +14,16 @@ import (
 // Example: certString="-----BEGIN CERTIFICATE-----\nMIIDZTCCAk2gAwIBAgIEV5xOtDANBgkqhkiG9w0BAQ0FADA0MTIwMAYDVQQDDClP..."
 // certPath: The path to the TLS certificate (pem encoded).
 // Example: certPath=~/cert.pem
+// certs: certs of x509.Certificate, tls.Certificate, *x509.Certificate, *tls.Certificate
 func LoadCertificatePool(
 	certPool *x509.CertPool,
 	certString string,
 	certFile string,
+	certs ...interface{},
 ) (*x509.CertPool, error) {
 	var tlsCertBytes []byte
 	var err error
-	if certString == "" && certFile == "" {
+	if certString == "" && certFile == "" && len(certs) == 0 {
 		return nil, errors.WithStack(ErrNoCertificatesConfigured)
 	} else if certString != "" {
 		tlsCertBytes, err = base64.StdEncoding.DecodeString(certString)
@@ -32,7 +35,48 @@ func LoadCertificatePool(
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		var loaded bool
+		for _, cert := range certs {
+			if certPool == nil {
+				certPool = x509.NewCertPool()
+			}
+			switch cert.(type) {
+			case *x509.Certificate:
+				x509Cert := cert.(*x509.Certificate)
+				certPool.AddCert(x509Cert)
+				loaded = true
+			case x509.Certificate:
+				x509Cert := cert.(x509.Certificate)
+				certPool.AddCert(&x509Cert)
+				loaded = true
+			case *tls.Certificate:
+				tlsCert := cert.(*tls.Certificate)
+				for _, certBytes := range tlsCert.Certificate {
+					x509Cert, err := x509.ParseCertificate(certBytes)
+					if err != nil {
+						continue
+					}
+					certPool.AddCert(x509Cert)
+					loaded = true
+				}
+			case tls.Certificate:
+				tlsCert := cert.(tls.Certificate)
+				for _, certBytes := range tlsCert.Certificate {
+					x509Cert, err := x509.ParseCertificate(certBytes)
+					if err != nil {
+						continue
+					}
+					certPool.AddCert(x509Cert)
+					loaded = true
+				}
+			}
+		}
+		if loaded {
+			return certPool, nil
+		}
 	}
+
 	if len(tlsCertBytes) == 0 {
 		return nil, errors.WithStack(ErrInvalidCertificateConfiguration)
 	}
@@ -43,5 +87,4 @@ func LoadCertificatePool(
 		return nil, fmt.Errorf("credentials: failed to append certificates")
 	}
 	return certPool, nil
-
 }
