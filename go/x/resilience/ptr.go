@@ -1,4 +1,4 @@
-package resillience
+package resilience
 
 type Ptr interface {
 	Value() interface{} //actual instance

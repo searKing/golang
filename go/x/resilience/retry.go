@@ -20,7 +20,7 @@
 
 // Package resilience provides helpers for dealing with resilience.
 // This code is borrowed from https://github.com/ory/x/tree/master/resilience/retry.go
-package resillience
+package resilience
 
 import (
 	"context"

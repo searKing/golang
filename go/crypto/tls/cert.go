@@ -25,13 +25,16 @@ var ErrInvalidCertificateConfiguration = errors.New("tls configuration is invali
 // Example: certPath=~/cert.pem
 // keyPath: The path to the TLS private key (pem encoded).
 // Example: keyPath=~/key.pem
+// certs: certs of tls.Certificate, *tls.Certificate
 func LoadCertificates(
 	certString, keyString string,
 	certFile, keyFile string,
+	certs ...interface{},
 ) ([]tls.Certificate, error) {
-	if certString == "" && keyString == "" && certFile == "" && keyFile == "" {
+	if certString == "" && keyString == "" && certFile == "" && keyFile == "" && len(certs) == 0 {
 		return nil, errors.WithStack(ErrNoCertificatesConfigured)
-	} else if certString != "" && keyString != "" {
+	}
+	if certString != "" && keyString != "" {
 		tlsCertBytes, err := base64.StdEncoding.DecodeString(certString)
 		if err != nil {
 			return nil, fmt.Errorf("unable to base64 decode the TLS certificate: %v", err)
@@ -54,6 +57,19 @@ func LoadCertificates(
 			return nil, fmt.Errorf("unable to load X509 key pair from files: %v", err)
 		}
 		return []tls.Certificate{cert}, nil
+	}
+	var uniformedCerts []tls.Certificate
+	for _, cert := range of(certs...) {
+		switch cert.(type) {
+		case *tls.Certificate:
+			tlsCert := cert.(*tls.Certificate)
+			uniformedCerts = append(uniformedCerts, *tlsCert)
+		case tls.Certificate:
+			tlsCert := cert.(tls.Certificate)
+			uniformedCerts = append(uniformedCerts, tlsCert)
+		default:
+			return nil, fmt.Errorf("unable to load X509 key pair from cert: %v", cert)
+		}
 	}
 
 	return nil, errors.WithStack(ErrInvalidCertificateConfiguration)
