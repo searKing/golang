@@ -25,7 +25,8 @@ func LoadX509CertificatePool(
 	var err error
 	if certString == "" && certFile == "" && len(certs) == 0 {
 		return nil, errors.WithStack(ErrNoCertificatesConfigured)
-	} else if certString != "" {
+	}
+	if certString != "" {
 		tlsCertBytes, err = base64.StdEncoding.DecodeString(certString)
 		if err != nil {
 			return nil, fmt.Errorf("unable to base64 decode the TLS certificate: %v", err)
@@ -94,7 +95,6 @@ func of(certs ...interface{}) []interface{} {
 	var uniformedCerts []interface{}
 	for _, cert := range certs {
 		switch cert.(type) {
-		case *x509.Certificate, x509.Certificate, *tls.Certificate, tls.Certificate:
 		case []*x509.Certificate:
 			tlsCerts := cert.([]*x509.Certificate)
 			for _, cert_ := range tlsCerts {

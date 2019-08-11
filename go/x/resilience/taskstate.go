@@ -1,4 +1,4 @@
-package resillience
+package resilience
 
 //go:generate stringer -type TaskState -trimprefix=TaskState
 //go:generate jsonenums -type TaskState
