@@ -53,7 +53,7 @@ var (
 
 func TestCamelCaseSlices(t *testing.T) {
 	for n, test := range camelCaseSliceTests {
-		out := strings_.CamelCaseSlice(test.input)
+		out := strings_.CamelCaseSlice(test.input...)
 		if !strings.EqualFold(out, test.output) {
 			t.Errorf("#%d: got %v; expected %v", n, out, test.output)
 		}
@@ -97,7 +97,7 @@ var (
 
 func TestSmallCamelCaseSlices(t *testing.T) {
 	for n, test := range smallCamelCaseSliceTests {
-		out := strings_.SmallCamelCaseSlice(test.input)
+		out := strings_.SmallCamelCaseSlice(test.input...)
 		if !strings.EqualFold(out, test.output) {
 			t.Errorf("#%d: got %v; expected %v", n, out, test.output)
 		}
