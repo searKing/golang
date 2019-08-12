@@ -84,11 +84,11 @@ func ExtractFirstRune(s string) (rune, string) {
 
 // CamelCaseSlice is like CamelCase, but the argument is a slice of strings to
 // be joined with "_".
-func CamelCaseSlice(elem []string) string { return CamelCase(strings.Join(elem, "_")) }
+func CamelCaseSlice(elem ...string) string { return CamelCase(strings.Join(elem, "_")) }
 
 // SmallCamelCaseSlice is like SmallCamelCase, but the argument is a slice of strings to
 // be joined with "_".
-func SmallCamelCaseSlice(elem []string) string { return SmallCamelCase(strings.Join(elem, "_")) }
+func SmallCamelCaseSlice(elem ...string) string { return SmallCamelCase(strings.Join(elem, "_")) }
 
 // DottedSlice turns a sliced name into a dotted name.
-func DottedSlice(elem []string) string { return strings.Join(elem, ".") }
+func DottedSlice(elem ...string) string { return strings.Join(elem, ".") }
