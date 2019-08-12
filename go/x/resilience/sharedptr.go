@@ -39,7 +39,7 @@ type SharedPtr struct {
 
 func NewSharedPtr(ctx context.Context, new func() (Ptr, error), l logrus.FieldLogger) *SharedPtr {
 	return &SharedPtr{
-		sp: NewSharedPtrSafe(ctx, new, l),
+		sp: newSharedPtrSafe(ctx, new, l),
 	}
 }
 

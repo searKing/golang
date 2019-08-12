@@ -34,7 +34,7 @@ type sharedPtr struct {
 	eventC chan Event
 }
 
-func NewSharedPtrSafe(ctx context.Context, new func() (Ptr, error), l logrus.FieldLogger) *sharedPtr {
+func newSharedPtrSafe(ctx context.Context, new func() (Ptr, error), l logrus.FieldLogger) *sharedPtr {
 	return &sharedPtr{
 		New:                  new,
 		FieldLogger:          log.New(l),
