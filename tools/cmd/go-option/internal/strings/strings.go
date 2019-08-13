@@ -2,7 +2,7 @@
 package strings
 
 import (
-	unicode_ "github.com/searKing/golang/tools/cmd/go-options/internal/unicode"
+	unicode_ "github.com/searKing/golang/tools/cmd/go-option/internal/unicode"
 	"strings"
 	"unicode"
 	"unicode/utf8"
