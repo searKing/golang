@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// go-options Generates Go code using a package as a graceful options.
+// go-option Generates Go code using a package as a graceful options.
 // Given the name of a type T
-// go-options will create a new self-contained Go source file implementing
+// go-option will create a new self-contained Go source file implementing
 //	func apply(*Pill)
 // The file is created in the same package and directory as the package that defines T.
 // It has helpful defaults designed for use with go generate.
@@ -19,7 +19,7 @@
 //
 // running this command
 //
-//	go-options -type=Pill
+//	go-option -type=Pill
 //
 // in the same directory will create the file pill_options.go, in package painkiller,
 // containing a definition of
@@ -60,7 +60,7 @@
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate go-options -type=Pill
+//	//go:generate go-option -type=Pill
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
@@ -71,13 +71,13 @@
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
 //
-package main // import "github.com/searKing/golang/tools/cmd/go-options"
+package main // import "github.com/searKing/golang/tools/cmd/go-option"
 
 import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings_ "github.com/searKing/golang/tools/cmd/go-options/internal/strings"
+	strings_ "github.com/searKing/golang/tools/cmd/go-option/internal/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -101,21 +101,21 @@ var (
 
 // Usage is a replacement usage function for the flags package.
 func Usage() {
-	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-options:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-options [flags] -type T [directory]\n")
+	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-option:\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-option [flags] -type T [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttp://godoc.org/github.com/searKing/go-options\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttp://godoc.org/github.com/searKing/go-option\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
 
 const (
-	goOptionsToolName = "go-options"
+	goOptionsToolName = "go-option"
 )
 
 func main() {
 	log.SetFlags(0)
-	log.SetPrefix("go-options: ")
+	log.SetPrefix("go-option: ")
 	flag.Usage = Usage
 	flag.Parse()
 	if len(*typeInfos) == 0 {

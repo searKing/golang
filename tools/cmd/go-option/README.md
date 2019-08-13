@@ -1,11 +1,11 @@
-[![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-options)](https://travis-ci.org/searKing/travis-ci)
-[![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-options?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-options)
-# go-options
-Generates Go code using a package as a graceful options.
+[![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-option)](https://travis-ci.org/searKing/travis-ci)
+[![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-option?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-option)
+# go-option
+Generates Go code using a package as a graceful option.
 
-go-options Generates Go code using a package as a graceful options
+go-option Generates Go code using a package as a graceful options
 Given the name of a atomic.Value type T
-go-options will create a new self-contained Go source file implementing
+go-option will create a new self-contained Go source file implementing
 ```
 // type TOption interface{
 	apply(*Number)
@@ -27,7 +27,7 @@ type Pill struct{}
 
 running this command
 ```bash
-go-options -type=Pill
+go-option -type=Pill
 ```
 
 in the same directory will create the file pill_options.go, in package painkiller,
@@ -70,7 +70,7 @@ func (o *Pill) ApplyOptions(options ...PillOption) *Pill {
 
 Typically this process would be run using go generate, like this:
 ```bash
-//go:generate go-options -type=Pill
+//go:generate go-option -type=Pill
 ```
 
 If multiple constants have the same value, the lexically first matching name will
@@ -87,6 +87,6 @@ with the -output flag.
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-options`. You can
-also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-options`.
+The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-option`. You can
+also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-option`.
 
