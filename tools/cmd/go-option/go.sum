@@ -1,3 +1,5 @@
+github.com/searKing/golang/tools/cmd/go-options v0.0.0-20190813034558-a4da9b8bded4 h1:lrTO61YLeWHiH+o4Bih6npHk9ge2JYwVu+Gd9h3LkjE=
+github.com/searKing/golang/tools/cmd/go-options v0.0.0-20190813034558-a4da9b8bded4/go.mod h1:jD8hlRxLjMYaX7VNSEt73dja9vh9sHyapbxX+RrK+tg=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
