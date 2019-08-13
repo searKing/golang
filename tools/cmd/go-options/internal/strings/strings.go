@@ -1,5 +1,6 @@
 // This is borrowed from https://github.com/searKing/golang/blob/master/go/strings/strings.go
 package strings
+
 import (
 	unicode_ "github.com/searKing/golang/tools/cmd/go-options/internal/unicode"
 	"strings"
