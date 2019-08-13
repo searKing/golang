@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-//go:generate go-options -type "Number"
+//go:generate go-option -type "Number"
 type Number struct {
 	name string
 }
@@ -35,7 +35,6 @@ func main() {
 	ck(num, "")
 	num = NewNumber(WithName("Name"))
 	ck(num, "")
-
 }
 
 func ck(num *Number, str string) {
