@@ -28,8 +28,8 @@ type _token struct {
 
 type typeInfo struct {
 	// These fields are reset for each type being generated.
-	eleName     string // Name of the atomic.Value type.
-	eleImport   string // import path of the atomic.Value type.
+	eleName   string // Name of the atomic.Value type.
+	eleImport string // import path of the atomic.Value type.
 }
 
 // type <value>, type <value>
