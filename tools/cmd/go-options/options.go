@@ -77,7 +77,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings_ "github.com/searKing/golang/go/strings"
+	strings_ "github.com/searKing/golang/tools/cmd/go-options/internal/strings"
 	"go/ast"
 	"go/format"
 	"go/token"

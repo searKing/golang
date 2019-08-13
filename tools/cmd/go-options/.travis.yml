@@ -7,8 +7,6 @@ os:
 
 go:
   - 1.12.x
-env:
-  - GO111MODULE=on
 go_import_path: "github.com/searKing/golang/tools/cmd/go-options"
 
 # Only clone the most recent commit.
