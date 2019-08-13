@@ -7,4 +7,4 @@ Useful libs or tools for Golang
 * [go-syncmap](https://godoc.org/github.com/searKing/golang/tools/cmd/go-syncmap) - Generates Go code using a package as a generic template for sync.Map.
 * [go-syncpool](https://godoc.org/github.com/searKing/golang/tools/cmd/go-syncpool) - Generates Go code using a package as a generic template for sync.Pool.
 * [go-atomicvalue](https://godoc.org/github.com/searKing/golang/tools/cmd/go-atomicvalue) - Generates Go code using a package as a generic template for atomic.Value.
-* [go-atomicvalue](https://godoc.org/github.com/searKing/golang/tools/cmd/go-option) - Generates Go code using a package as a graceful option.
+* [go-option](https://godoc.org/github.com/searKing/golang/tools/cmd/go-option) - Generates Go code using a package as a graceful option.
