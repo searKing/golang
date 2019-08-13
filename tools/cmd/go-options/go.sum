@@ -204,10 +204,10 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
-github.com/searKing/golang/go v0.0.0-20190812165836-23396991884d h1:fhJCk3TvrM4PYRgIsboMozSPZoKg7iANERtp6YGq5TI=
-github.com/searKing/golang/go v0.0.0-20190812165836-23396991884d/go.mod h1:nPCx+wvMsb368Cn0Mp0k88z79/Az2eUxFfYONAH6fAU=
 github.com/searKing/golang/go v0.0.0-20190812182120-0195b91c9b31 h1:QpZ2hJLcxdGDPsxUGGO6I35tvjsUKeHv9zLGmGDWO/Y=
 github.com/searKing/golang/go v0.0.0-20190812182120-0195b91c9b31/go.mod h1:nPCx+wvMsb368Cn0Mp0k88z79/Az2eUxFfYONAH6fAU=
+github.com/searKing/golang/go v0.0.0-20190813022152-221f789a1bbe h1:NV0qk8rnwa6M/phwmNDdeBPUWYri6hpqkKZfCGG/0sY=
+github.com/searKing/golang/go v0.0.0-20190813022152-221f789a1bbe/go.mod h1:2gxtvv4Zd5QVfC21zijzeBEobU/hM4r/0s45zCJkJrY=
 github.com/searKing/golib v1.0.17/go.mod h1:o9oosVlpNi37dL+u0rUUw/TnOQ6BOk+CZtuYo5DacsQ=
 github.com/searKing/golib v1.0.21/go.mod h1:o9oosVlpNi37dL+u0rUUw/TnOQ6BOk+CZtuYo5DacsQ=
 github.com/searKing/tusd v1.0.1/go.mod h1:vrOHNGUhZcLc2gujFHE5ihcmcsQMSKA/9JsGLjXGiN8=
@@ -334,8 +334,6 @@ golang.org/x/tools v0.0.0-20190606124116-d0a3d012864b/go.mod h1:/rFqwRUd4F7ZHNgw
 golang.org/x/tools v0.0.0-20190620191750-1fa568393b23/go.mod h1:/rFqwRUd4F7ZHNgwSSTFct+R/Kf4OFW1sUzUTQQTgfc=
 golang.org/x/tools v0.0.0-20190621195816-6e04913cbbac/go.mod h1:/rFqwRUd4F7ZHNgwSSTFct+R/Kf4OFW1sUzUTQQTgfc=
 golang.org/x/tools v0.0.0-20190628153133-6cdbf07be9d0/go.mod h1:/rFqwRUd4F7ZHNgwSSTFct+R/Kf4OFW1sUzUTQQTgfc=
-golang.org/x/tools v0.0.0-20190723021737-8bb11ff117ca h1:SqwJrz6xPBlCUltcEHz2/p01HRPR+VGD+aYLikk8uas=
-golang.org/x/tools v0.0.0-20190723021737-8bb11ff117ca/go.mod h1:jcCCGcm9btYwXyDqrUWc6MKQKKGJCWEQ3AfLSRIbEuI=
 golang.org/x/tools v0.0.0-20190812233024-afc3694995b6 h1:TDcU4GQ226bJxMRWvn7/cVmdet+ms7oAElM2dabOio0=
 golang.org/x/tools v0.0.0-20190812233024-afc3694995b6/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
