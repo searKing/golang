@@ -64,17 +64,17 @@ func walkDir(dir, gooptions, dirname string, t *testing.T) {
 	}
 }
 
-// buildOptions creates a temporary directory and installs go-options there.
+// buildOptions creates a temporary directory and installs go-option there.
 func buildOptions(t *testing.T) (dir string, gooptions string) {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "go-options")
+	dir, err := ioutil.TempDir("", "go-option")
 	if err != nil {
 		t.Fatal(err)
 	}
-	gooptions = filepath.Join(dir, "go-options.exe")
+	gooptions = filepath.Join(dir, "go-option.exe")
 	err = run("go", "build", "-o", gooptions)
 	if err != nil {
-		t.Fatalf("building go-options: %s", err)
+		t.Fatalf("building go-option: %s", err)
 	}
 	return dir, gooptions
 }
