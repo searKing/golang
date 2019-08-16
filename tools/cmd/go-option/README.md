@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-option)](https://travis-ci.org/searKing/travis-ci)
 [![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-option?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-option)
-[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-atomicvalue)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-atomicvalue) 
-[![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-atomicvalue?badge)
+[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-option)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-option) 
+[![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-option?badge)
 # go-option
 Generates Go code using a package as a graceful option.
 
