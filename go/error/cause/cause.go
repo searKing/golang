@@ -6,10 +6,14 @@ import (
 )
 
 // WithError annotates cause error with a new error.
-// If err is nil, WithError returns new error.
+// If cause is nil, WithError returns new error.
+// If err is nil, WithError returns nil.
 func WithError(cause error, err error) error {
 	if cause == nil {
 		return err
+	}
+	if err == nil {
+		return nil
 	}
 	return &withError{
 		cause: cause,
