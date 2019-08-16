@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-syncmap)](https://travis-ci.org/searKing/travis-ci)
 [![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-syncmap?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-syncmap)
+[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-syncmap)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-syncmap) 
+[![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-syncmap?badge)
 # go-syncmap
 Generates Go code using a package as a generic template for sync.Map.
 

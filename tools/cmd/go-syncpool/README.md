@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-syncpool)](https://travis-ci.org/searKing/travis-ci)
 [![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-syncpool?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-syncpool)
+[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-syncpool)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-syncpool) 
+[![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-syncpool?badge)
 # go-syncpool
 Generates Go code using a package as a generic template for sync.Pool.
 
