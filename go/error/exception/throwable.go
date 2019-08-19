@@ -413,7 +413,7 @@ func (t *ThrowableObject) InitCause(cause Throwable) Throwable {
  * @return a string representation of this throwable.
  */
 func (t *ThrowableObject) String() string {
-	s := object.GetStruct().Name()
+	s := object.GetFunc().Name()
 	message := t.GetLocalizedMessage()
 	if len(message) != 0 {
 		return s + ":" + message
