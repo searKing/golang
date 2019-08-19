@@ -3,6 +3,12 @@ package http
 import (
 	"net/http"
 	"net/url"
+	"regexp"
+)
+
+var (
+	reForwardedHost  = regexp.MustCompile(`host=([^,]+)`)
+	reForwardedProto = regexp.MustCompile(`proto=(https?)`)
 )
 
 // GetProxySchemeAndHost extracts the host and used protocol (either HTTP or HTTPS)
