@@ -72,7 +72,7 @@ func (srv *Server) CheckError(conn WebSocketReadWriteCloser, err error) error {
 	if err == nil {
 		return nil
 	}
-	return srv.onErrorHandler.OnError(conn, err)
+	return OnError(conn, err)
 }
 
 // OnHandshake takes over the http handler
@@ -89,14 +89,14 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) error {
 	defer ws.Close()
 	ctx := context.WithValue(context.Background(), ServerContextKey, srv)
 	// Handle HTTP Handshake
-	err = srv.onHandshakeHandler.OnHandshake(w, r)
+	err = OnHandshake(w, r)
 	if srv.CheckError(nil, err) != nil {
 		return err
 	}
 	// takeover the connect
 	c := srv.newConn(ws)
 	// Handle websocket On
-	err = srv.onOpenHandler.OnOpen(c.rwc)
+	err = OnOpen(c.rwc)
 	if err = srv.CheckError(c.rwc, err); err != nil {
 		c.close()
 		return err

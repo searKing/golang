@@ -54,7 +54,7 @@ func (cli *Client) DialAndServe(urlStr string, requestHeader http.Header) error 
 		return err
 	}
 	// Handle HTTP Response
-	err = cli.httpRespHandler.OnHTTPResponse(resp)
+	err = OnHTTPResponse(resp)
 	if cli.Server.CheckError(nil, err) != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (cli *Client) DialAndServe(urlStr string, requestHeader http.Header) error 
 	// takeover the connect
 	c := cli.Server.newConn(ws)
 	// Handle websocket On
-	err = cli.Server.onOpenHandler.OnOpen(c.rwc)
+	err = OnOpen(c.rwc)
 	if err = cli.Server.CheckError(c.rwc, err); err != nil {
 		c.close()
 		return err
