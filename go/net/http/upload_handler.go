@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/bmizerany/pat"
 	"github.com/pkg/errors"
-	log2 "github.com/searKing/golang/go/x/log"
+	"github.com/searKing/golang/thirdparty/github.com/sirupsen/logrus"
 	"github.com/searKing/tusd"
 	"github.com/searKing/tusd/filestore"
 	"io"
@@ -40,7 +40,7 @@ type UploadHandler struct {
 	// absolute URL containing a scheme, e.g. "http://tus.io"
 	BasePath *url.URL
 
-	*log2.FieldLogger
+	*logrus.FieldLogger
 
 	// CompleteUploads is used to send notifications whenever an upload is
 	// completed by a user. The FileInfo will contain information about this
@@ -81,7 +81,7 @@ type UploadHandler struct {
 // a router (aka mux) of your choice. If you are looking for preconfigured
 // handler see NewHandler.
 func NewUploadHandler(config tusd.Config) (*UploadHandler, error) {
-	l := log2.New(nil)
+	l := logrus.New(nil)
 	l.SetStdLogger(config.Logger)
 
 	base := config.BasePath
