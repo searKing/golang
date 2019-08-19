@@ -3,6 +3,7 @@ package dispatch_test
 import (
 	"context"
 	"errors"
+	"github.com/searKing/golang/go/x/dispatch"
 	"log"
 )
 
@@ -12,23 +13,24 @@ type DispatchMsg struct {
 
 func ExampleDispatch() {
 	var conn chan DispatchMsg
-	NewDispatch(
-		ReaderFunc(func(ctx context.Context) (interface{}, error) {
+	dispatch.NewDispatch(
+		dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
 			return ReadMessage(conn)
 		}),
-		HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
 			m := msg.(*DispatchMsg)
 			return HandleMessage(m)
 		})).Start()
 }
+
 func ExampleDispatcher_Join() {
 	var conn chan DispatchMsg
 
-	workflow := NewDispatch(
-		ReaderFunc(func(ctx context.Context) (interface{}, error) {
+	workflow := dispatch.NewDispatch(
+		dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
 			return ReadMessage(conn)
 		}),
-		HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
 			m := msg.(*DispatchMsg)
 			return HandleMessage(m)
 		})).Joinable()
@@ -45,11 +47,11 @@ func ExampleDispatcher_Join() {
 func ExampleDispatcher_Context() {
 	var conn chan DispatchMsg
 
-	workflow := NewDispatch(
-		ReaderFunc(func(ctx context.Context) (interface{}, error) {
+	workflow := dispatch.NewDispatch(
+		dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
 			return ReadMessage(conn)
 		}),
-		HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
 			m := msg.(*DispatchMsg)
 			return HandleMessage(m)
 		})).Joinable()
