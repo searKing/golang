@@ -13,37 +13,37 @@ func (srv *Server) maxBytes() int {
 	}
 	return DefaultMaxBytes
 }
-func (s *Server) idleTimeout() time.Duration {
-	if s.IdleTimeout != 0 {
-		return s.IdleTimeout
+func (srv *Server) idleTimeout() time.Duration {
+	if srv.IdleTimeout != 0 {
+		return srv.IdleTimeout
 	}
-	return s.ReadTimeout
+	return srv.ReadTimeout
 }
-func (s *Server) readTimeout() time.Duration {
-	if s.ReadTimeout != 0 {
-		return s.ReadTimeout
+func (srv *Server) readTimeout() time.Duration {
+	if srv.ReadTimeout != 0 {
+		return srv.ReadTimeout
 	}
-	return s.ReadTimeout
+	return srv.ReadTimeout
 }
 
-func (s *Server) shuttingDown() bool {
-	return s.inShutdown.Load()
+func (srv *Server) shuttingDown() bool {
+	return srv.inShutdown.Load()
 }
-func (s *Server) getDoneChan() <-chan struct{} {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.getDoneChanLocked()
+func (srv *Server) getDoneChan() <-chan struct{} {
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
+	return srv.getDoneChanLocked()
 }
 
-func (s *Server) getDoneChanLocked() chan struct{} {
-	if s.doneChan == nil {
-		s.doneChan = make(chan struct{})
+func (srv *Server) getDoneChanLocked() chan struct{} {
+	if srv.doneChan == nil {
+		srv.doneChan = make(chan struct{})
 	}
-	return s.doneChan
+	return srv.doneChan
 }
 
-func (s *Server) closeDoneChanLocked() {
-	ch := s.getDoneChanLocked()
+func (srv *Server) closeDoneChanLocked() {
+	ch := srv.getDoneChanLocked()
 	select {
 	case <-ch:
 		// Already closed. Don't close again.
