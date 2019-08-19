@@ -4,7 +4,7 @@ import (
 	"runtime"
 )
 
-func GetStruct() *runtime.Func {
+func GetFunc() *runtime.Func {
 	pc, _, _, ok := runtime.Caller(1)
 	if !ok {
 		return nil

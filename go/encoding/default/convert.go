@@ -2,7 +2,7 @@ package _default
 
 import (
 	"github.com/searKing/golang/go/encoding/internal/tag"
-	reflect2 "github.com/searKing/golang/go/reflect"
+	reflect_ "github.com/searKing/golang/go/reflect"
 	"gopkg.in/yaml.v2"
 	"reflect"
 )
@@ -14,7 +14,7 @@ func Convert(val interface{}) error {
 	return tag.Tag(val, func(val reflect.Value, tag reflect.StructTag) error {
 		fn := newTypeConverter(func(val reflect.Value, tag reflect.StructTag) (isUserDefined bool, err error) {
 			isUserDefined = false
-			if !reflect2.IsEmptyValue(val) {
+			if !reflect_.IsEmptyValue(val) {
 				return
 			}
 			defaultTag, ok := tag.Lookup(TagDefault)

@@ -2,12 +2,10 @@ package tls_test
 
 import (
 	"github.com/searKing/golang/go/crypto/tls"
+	testing_ "github.com/searKing/golang/go/testing"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 )
 
 // This code is borrowed from https://github.com/ory/x/blob/master/tlsx/cert_test.go
@@ -116,65 +114,128 @@ func TestHTTPSCertificate(t *testing.T) {
 	}()
 	_ = ioutil.WriteFile(tmpCert, []byte(certFileContent), 0600)
 	_ = ioutil.WriteFile(tmpKey, []byte(keyFileContent), 0600)
-	viper.AutomaticEnv() // read in environment variables that match
 
 	// 1. no TLS
 	cert, err := tls.LoadCertificates("", "", "", "")
-	assert.Nil(t, cert)
-	assert.EqualError(t, err, tls.ErrNoCertificatesConfigured.Error())
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+	if ok, msg := testing_.EqualError(err, tls.ErrNoCertificatesConfigured); !ok {
+		t.Error(msg)
+	}
 
 	// 2. inconsistent TLS (i): warning only
 	cert, err = tls.LoadCertificates("", "", "", "x")
-	assert.Nil(t, cert)
-	assert.EqualError(t, err, tls.ErrInvalidCertificateConfiguration.Error())
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+	if ok, msg := testing_.EqualError(err, tls.ErrInvalidCertificateConfiguration); !ok {
+		t.Error(msg)
+	}
 
 	// 3. inconsistent TLS (ii): warning only
 	cert, err = tls.LoadCertificates("x", "", "", "")
-	assert.Nil(t, cert)
-	assert.EqualError(t, err, tls.ErrInvalidCertificateConfiguration.Error())
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+	if ok, msg := testing_.EqualError(err, tls.ErrInvalidCertificateConfiguration); !ok {
+		t.Error(msg)
+	}
 
 	// 4. invalid TLS file
 	cert, err = tls.LoadCertificates("", "", tmpCert, "x")
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
 
 	// 5. invalid TLS string (i)
 	cert, err = tls.LoadCertificates(certFixture, "{}", "", "")
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
 
 	// 6. invalid TLS string (ii)
 	cert, err = tls.LoadCertificates("{}", keyFixture, "", "")
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
 
 	// 7. valid TLS files
 	cert, err = tls.LoadCertificates("", "", tmpCert, tmpKey)
-	assert.NotNil(t, cert)
-	assert.NoError(t, err)
+	if ok, msg := testing_.NonNil(cert); !ok {
+		t.Error(msg)
+	}
+
+	if ok, msg := testing_.NonError(err); !ok {
+		t.Error(msg)
+	}
 
 	// 8. valid TLS strings
 	cert, err = tls.LoadCertificates(certFixture, keyFixture, "", "")
-	assert.NotNil(t, cert)
-	assert.NoError(t, err)
+	testing_.NonZero(t, cert)
+
+	if ok, msg := testing_.NonError(err); !ok {
+		t.Error(msg)
+	}
 
 	// 9. invalid TLS file content
 	cert, err = tls.LoadCertificates("", "", certFixture, keyFixture)
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
 
 	// 10. invalid TLS string content
 	cert, err = tls.LoadCertificates(certFileContent, keyFileContent, "", "")
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
 
 	// 11. mismatched TLS file content
 	cert, err = tls.LoadCertificates("", "", keyFileContent, certFileContent)
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
 
 	// 12. mismatched TLS string content
 	cert, err = tls.LoadCertificates(keyFixture, certFixture, "", "")
-	assert.Nil(t, cert)
-	assert.Error(t, err)
+
+	if ok, msg := testing_.Nil(cert); !ok {
+		t.Error(msg)
+	}
+
+	if ok, msg := testing_.Error(err); !ok {
+		t.Error(msg)
+	}
+
 }

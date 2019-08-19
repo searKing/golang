@@ -12,6 +12,7 @@ import (
 // it's borrowed from https://github.com/golang/go/blob/master/src/reflect/value.go from go1.13
 func IsZero(obj interface{}) bool {
 	var v reflect.Value
+
 	if vv, ok := obj.(reflect.Value); ok {
 		v = vv
 	} else {
@@ -51,7 +52,7 @@ func IsZero(obj interface{}) bool {
 	default:
 		// This should never happens, but will act as a safeguard for
 		// later, as a default value doesn't makes sense here.
-		panic(&reflect.ValueError{"reflect.Value.IsZero", v.Kind()})
+		panic(&reflect.ValueError{Method: "reflect.Value.IsZero", Kind: v.Kind()})
 	}
 }
 
