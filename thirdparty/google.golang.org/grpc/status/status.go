@@ -24,8 +24,8 @@ func Newe(c codes.Code, err error, details ...proto.Message) *status.Status {
 }
 
 // Errore returns an error representing c and error.  If err is nil, returns nil.
-func Errore(c codes.Code, err error) error {
-	return Newe(c, err).Err()
+func Errore(c codes.Code, err error, details ...proto.Message) error {
+	return Newe(c, err, details...).Err()
 }
 
 // FromError returns a Status representing err if it was produced from this
