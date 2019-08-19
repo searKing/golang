@@ -15,14 +15,14 @@ type inputType struct {
 }
 type Name string
 
-func (thiz *Name) ConvertDefault(_ reflect.Value, _ reflect.StructTag) error {
-	if *thiz == "" {
-		*thiz = "Bob"
+func (name *Name) ConvertDefault(_ reflect.Value, _ reflect.StructTag) error {
+	if *name == "" {
+		*name = "Bob"
 	}
 	return nil
 }
 
-func (thiz *Name) Hello() error {
+func (name *Name) Hello() error {
 	fmt.Printf("Hello\n")
 	return nil
 }
