@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gorilla/websocket"
-	dispatch2 "github.com/searKing/golang/pkg/x/dispatch"
+	"github.com/searKing/golang/go/x/dispatch"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -44,7 +44,7 @@ type conn struct {
 
 // Close the connection.
 func (c *conn) close() error {
-	err := OnClose(checkConnErrorWebSocket{c: c})
+	err := c.server.onCloseHandler.OnClose(checkConnErrorWebSocket{c: c})
 	c.rwc.Close()
 	return err
 }
@@ -105,7 +105,7 @@ func (c *conn) readRequest(ctx context.Context) (req interface{}, err error) {
 		}()
 	}
 	c.rwc.SetReadLimit(c.server.initialReadLimitSize())
-	req, err = OnMsgRead(checkConnErrorWebSocket{c: c})
+	req, err = c.server.onMsgReadHandler.OnMsgRead(checkConnErrorWebSocket{c: c})
 	if err != nil {
 		if err == websocket.ErrReadLimit {
 			return nil, errTooLarge
@@ -147,7 +147,7 @@ func (c *conn) serve(ctx context.Context) {
 	defer cancelCtx()
 
 	// read and handle the msg
-	dispatch2.NewDispatch(dispatch2.ReaderFunc(func(ctx context.Context) (interface{}, error) {
+	dispatch.NewDispatch(dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
 		msg, err := c.readRequest(ctx)
 		if err = c.server.CheckError(c.rwc, err); err != nil {
 			if isCommonNetReadError(err) {
@@ -157,8 +157,8 @@ func (c *conn) serve(ctx context.Context) {
 		}
 		c.setState(c.rwc, StateActive)
 		return msg, nil
-	}), dispatch2.HandlerFunc(func(ctx context.Context, msg interface{}) error {
-		return c.server.CheckError(c.rwc, OnMsgHandle(checkConnErrorWebSocket{c: c}, msg))
+	}), dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		return c.server.CheckError(c.rwc, c.server.onMsgHandleHandler.OnMsgHandle(checkConnErrorWebSocket{c: c}, msg))
 	})).WithContext(ctx).Start()
 	return
 }
