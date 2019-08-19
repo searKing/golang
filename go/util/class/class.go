@@ -1,9 +1,5 @@
 package class
 
-import (
-	"github.com/searKing/golang/go/language/class"
-)
-
 // Classer is an interface to enhance go's embed struct with virtual member function in C++|Java
 // It's used like this:
 //import "github.com/searKing/golang/go/util/class"
@@ -49,7 +45,6 @@ type Classer interface {
 }
 
 type Class struct {
-	class.Class
 	derived Classer
 }
 
