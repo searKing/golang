@@ -3,7 +3,7 @@ package tcp
 import (
 	"context"
 	"github.com/searKing/golang/go/sync/atomic"
-	time2 "github.com/searKing/golang/go/time"
+	time_ "github.com/searKing/golang/go/time"
 	"github.com/searKing/golang/go/util/object"
 	"io"
 	"log"
@@ -94,7 +94,7 @@ func (srv *Server) Serve(l net.Listener) error {
 	l = &onceCloseListener{Listener: l}
 	defer l.Close()
 
-	var tempDelay = time2.NewDefaultDelay() // how long to sleep on accept failure
+	var tempDelay = time_.NewDefaultDelay() // how long to sleep on accept failure
 	ctx := context.WithValue(context.Background(), ServerContextKey, srv)
 	for {
 		rw, e := l.Accept()
@@ -130,16 +130,16 @@ func (srv *Server) Serve(l net.Listener) error {
 	}
 }
 
-func (s *Server) trackConn(c *conn, add bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.activeConn == nil {
-		s.activeConn = make(map[*conn]struct{})
+func (srv *Server) trackConn(c *conn, add bool) {
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
+	if srv.activeConn == nil {
+		srv.activeConn = make(map[*conn]struct{})
 	}
 	if add {
-		s.activeConn[c] = struct{}{}
+		srv.activeConn[c] = struct{}{}
 	} else {
-		delete(s.activeConn, c)
+		delete(srv.activeConn, c)
 	}
 }
 
@@ -152,9 +152,9 @@ func (srv *Server) newConn(rwc net.Conn) *conn {
 	return c
 }
 
-func (s *Server) logf(format string, args ...interface{}) {
-	if s.ErrorLog != nil {
-		s.ErrorLog.Printf(format, args...)
+func (srv *Server) logf(format string, args ...interface{}) {
+	if srv.ErrorLog != nil {
+		srv.ErrorLog.Printf(format, args...)
 	} else {
 		log.Printf(format, args...)
 	}
