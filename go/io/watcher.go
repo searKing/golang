@@ -12,8 +12,8 @@ func (f WatcherFunc) Watch(p []byte, n int, err error) (int, error) {
 }
 
 type watchReader struct {
-	source io.Reader
-	f      Watcher
+	source  io.Reader
+	watcher Watcher
 }
 
 func (r *watchReader) Read(p []byte) (int, error) {
@@ -24,14 +24,14 @@ func (r *watchReader) Read(p []byte) (int, error) {
 		dummy = r.source
 	}
 	n, err := dummy.Read(p)
-	if r.f == nil {
+	if r.watcher == nil {
 		return n, err
 	}
-	return r.f.Watch(p, n, err)
+	return r.watcher.Watch(p, n, err)
 }
 
 // WatchReader returns a Reader that's watch the Read state of
 // the provided input reader.
-func WatchReader(r io.Reader) io.Reader {
-	return &watchReader{source: r}
+func WatchReader(r io.Reader, watcher Watcher) io.Reader {
+	return &watchReader{source: r, watcher: watcher}
 }
