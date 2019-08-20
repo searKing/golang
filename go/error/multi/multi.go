@@ -6,7 +6,18 @@ import (
 )
 
 // New returns an error with the supplied errors.
+// If no error contained, return nil.
 func New(errs ...error) error {
+	var has bool
+	for _, err := range errs {
+		if err != nil {
+			has = true
+			break
+		}
+	}
+	if !has {
+		return nil
+	}
 	return &multiError{
 		errs: errs,
 	}
