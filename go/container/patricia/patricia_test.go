@@ -3,15 +3,16 @@
 // license that can be found in the LICENSE file.
 // it's borrowed from https://github.com/soheilhy/cmux/blob/master/patricia_test.go
 
-package patricia
+package patricia_test
 
 import (
+	"github.com/searKing/golang/go/container/patricia"
 	"strings"
 	"testing"
 )
 
-func testPTree(t *testing.T, strs ...string) {
-	pt := NewWithString(strs...)
+func run(t *testing.T, strs ...string) {
+	pt := patricia.NewWithString(strs...)
 	for _, s := range strs {
 		if !pt.Match(strings.NewReader(s)) {
 			t.Errorf("%s is not matched by %s", s, s)
@@ -35,13 +36,13 @@ func testPTree(t *testing.T, strs ...string) {
 }
 
 func TestPatriciaOnePrefix(t *testing.T) {
-	testPTree(t, "prefix")
+	run(t, "prefix")
 }
 
 func TestPatriciaNonOverlapping(t *testing.T) {
-	testPTree(t, "foo", "bar", "dummy")
+	run(t, "foo", "bar", "dummy")
 }
 
 func TestPatriciaOverlapping(t *testing.T) {
-	testPTree(t, "foo", "far", "farther", "boo", "ba", "bar")
+	run(t, "foo", "far", "farther", "boo", "ba", "bar")
 }
