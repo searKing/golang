@@ -2,6 +2,7 @@ package net
 
 import (
 	"fmt"
+	"github.com/searKing/golang/go/error/multi"
 	"net"
 )
 
@@ -22,26 +23,29 @@ func IsLoopbackHost(host string) bool {
 	return false
 }
 
-// LoopbackListener returns a loopback listener on port or 0 if port is empty
-func LoopbackListener(port string) net.Listener {
-	var err error
-	var l net.Listener
-	if len(port) == 0 {
-		port = "0"
+// LoopbackListener returns a loopback listener on a first usable port in ports or 0 if ports is empty
+func LoopbackListener(ports ...string) (net.Listener, error) {
+	var errs []error
+	if len(ports) == 0 {
+		ports = append(ports, "0")
 	}
 
-	for _, host := range Ipv4LoopbackHosts {
-		l, err = net.Listen("tcp", net.JoinHostPort(host, port))
-		if err == nil {
-			return l
+	for _, port := range ports {
+		for _, host := range Ipv4LoopbackHosts {
+			l, err := net.Listen("tcp", net.JoinHostPort(host, port))
+			if err == nil {
+				errs = append(errs, err)
+				return l, nil
+			}
 		}
-	}
-	for _, host := range Ipv6LoopbackHosts {
-		l, err = net.Listen("tcp6", net.JoinHostPort(host, port))
-		if err == nil {
-			return l
+		for _, host := range Ipv6LoopbackHosts {
+			l, err := net.Listen("tcp6", net.JoinHostPort(host, port))
+			if err == nil {
+				errs = append(errs, err)
+				return l, nil
+			}
 		}
 	}
 
-	panic(fmt.Sprintf("net: failed to listen on a port: %v", err))
+	return nil, fmt.Errorf("net: failed to listen on ports: %v", multi.New(errs...))
 }
