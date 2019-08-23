@@ -21,31 +21,29 @@ package traversal
 // TODO template in Go2.0 is expected
 // DepthFirstSearchOrder traversals from node ele by Depth-first search (DFS)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|Middleer|Righter
-func DepthFirstSearchOrder(node interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
-	traversal([]levelNode{{node: node,}}, true, dfs, filterFn, processFn)
+// LeftNode|MiddleNode|RightNode
+func DepthFirstSearchOrder(node interface{}, handler Handler) {
+	traversal(node, traversalerFunc(dfs), handler)
 }
 
-// isRoot root needs to be filtered first time
-func dfs(current []levelNode, filterFn func(node levelNode) (gotoNextLayer bool), processFn func(node levelNode) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
-	if len(current) == 0 {
-		return false
+func dfs(currents []levelNode, handler levelNodeHandler) (goon bool) {
+	if len(currents) == 0 {
+		return true
 	}
 	// Step 1: brothers
-	for _, node := range current {
-		// filter root
-		if isRoot {
-			if !filterFn(node) {
-				return false
-			}
-		}
-		if !processFn(node) {
+	for _, node := range currents {
+		if !handler.Handle(node) {
 			return false
 		}
-		// filter children
-		dfs(filterChildren(node, node.middleLevelNodes(), filterFn), filterFn, processFn, false)
-		dfs(filterChildren(node, node.leftLevelNodes(), filterFn), filterFn, processFn, false)
-		dfs(filterChildren(node, node.rightLevelNodes(), filterFn), filterFn, processFn, false)
+		if !dfs(node.middleLevelNodes(), handler) {
+			return false
+		}
+		if !dfs(node.leftLevelNodes(), handler) {
+			return false
+		}
+		if !dfs(node.rightLevelNodes(), handler) {
+			return false
+		}
 	}
 	return true
 }
