@@ -2,7 +2,7 @@ package traversal
 
 // TODO template in Go2.0 is expected
 // Depth First Search
-func TraversalDFS(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
+func DFS(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	traversalDFS([]Node{{
 		ele: ele,
 	}}, func(node Node) (gotoNextLayer bool) {

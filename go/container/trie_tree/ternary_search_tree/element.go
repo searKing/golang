@@ -1,4 +1,4 @@
-package tst
+package ternary_search_tree
 
 import "fmt"
 
@@ -6,17 +6,15 @@ const (
 	NilKey = 0
 )
 
-type (
-	Element struct {
-		// The Key stored with this element.
-		Key byte
-		// The value stored with this element.
-		Value interface{}
+type Element struct {
+	// The Key stored with this element.
+	Key byte
+	// The value stored with this element.
+	Value interface{}
 
-		left, middle, right *Element
-		tree                *TernarySearchTree
-	}
-)
+	left, middle, right *Element
+	tree                *TernarySearchTree
+}
 
 // Left returns the left list element or nil.
 func (e *Element) Left() *Element {

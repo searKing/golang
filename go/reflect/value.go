@@ -3,8 +3,8 @@ package reflect
 import (
 	"bytes"
 	"fmt"
-	bytes2 "github.com/searKing/golang/go/bytes"
-	traversal2 "github.com/searKing/golang/go/container/traversal"
+	bytes_ "github.com/searKing/golang/go/bytes"
+	"github.com/searKing/golang/go/container/traversal"
 	"reflect"
 )
 
@@ -138,7 +138,7 @@ func (thiz *FieldValueInfo) String() string {
 	}() + "]"
 }
 func WalkValueDFS(val reflect.Value, parseFn func(info FieldValueInfo) (goon bool)) {
-	traversal2.TraversalBFS(FieldValueInfo{
+	traversal.BFS(FieldValueInfo{
 		value: val,
 	}, nil, func(ele interface{}, depth int) (gotoNextLayer bool) {
 		return parseFn(ele.(FieldValueInfo))
@@ -147,7 +147,7 @@ func WalkValueDFS(val reflect.Value, parseFn func(info FieldValueInfo) (goon boo
 
 // Breadth First Search
 func WalkValueBFS(val reflect.Value, parseFn func(info FieldValueInfo) (goon bool)) {
-	traversal2.TraversalBFS(FieldValueInfo{value: val},
+	traversal.BFS(FieldValueInfo{value: val},
 		nil, func(ele interface{}, depth int) (gotoNextLayer bool) {
 			return parseFn(ele.(FieldValueInfo))
 		})
@@ -159,9 +159,9 @@ func DumpValueInfoDFS(v reflect.Value) string {
 	WalkValueDFS(v, func(info FieldValueInfo) (goon bool) {
 		if first {
 			first = false
-			bytes2.NewIndent(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewIndent(dumpInfo, "", "\t", info.Depth())
 		} else {
-			bytes2.NewLine(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewLine(dumpInfo, "", "\t", info.Depth())
 		}
 		dumpInfo.WriteString(fmt.Sprintf("%+v", info.String()))
 		return true
@@ -175,9 +175,9 @@ func DumpValueInfoBFS(v reflect.Value) string {
 	WalkValueBFS(v, func(info FieldValueInfo) (goon bool) {
 		if first {
 			first = false
-			bytes2.NewIndent(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewIndent(dumpInfo, "", "\t", info.Depth())
 		} else {
-			bytes2.NewLine(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewLine(dumpInfo, "", "\t", info.Depth())
 		}
 		dumpInfo.WriteString(fmt.Sprintf("%+v", info.String()))
 		return true

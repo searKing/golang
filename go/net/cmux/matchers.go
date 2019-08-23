@@ -7,7 +7,7 @@ package cmux
 import (
 	"bufio"
 	"crypto/tls"
-	"github.com/searKing/golang/go/container/patricia"
+	"github.com/searKing/golang/go/container/trie_tree/patricia_tree"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -25,14 +25,14 @@ func Any() MatcherFunc {
 // PrefixMatcher returns a matcher that matches a connection if it
 // starts with any of the strings in strs.
 func PrefixMatcher(strs ...string) MatcherFunc {
-	pt := patricia.NewWithString(strs...)
+	pt := patricia_tree.NewWithString(strs...)
 	return func(w io.Writer, r io.Reader) bool {
 		return pt.MatchPrefix(r)
 	}
 }
 
 func prefixByteMatcher(list ...[]byte) MatcherFunc {
-	pt := patricia.New(list...)
+	pt := patricia_tree.New(list...)
 	return func(w io.Writer, r io.Reader) bool {
 		return pt.MatchPrefix(r)
 	}
