@@ -17,6 +17,12 @@ package traversal
 // 		inorder(node.left)
 // 		visit(node)
 // 		inorder(node.right)
+
+// TODO template in Go2.0 is expected
+// Inorder traversals from node ele by In-order (LNR)
+// ele is a node which may have some interfaces implemented:
+// Lefter|Middleer|Righter
+// Lefters|Middleers|Righters
 func Inorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	inorder([]Node{{
 		ele: ele,
