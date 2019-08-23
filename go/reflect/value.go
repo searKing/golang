@@ -138,7 +138,7 @@ func (thiz *FieldValueInfo) String() string {
 	}() + "]"
 }
 func WalkValueDFS(val reflect.Value, parseFn func(info FieldValueInfo) (goon bool)) {
-	traversal.BFS(FieldValueInfo{
+	traversal.BreadthFirstSearchOrder(FieldValueInfo{
 		value: val,
 	}, nil, func(ele interface{}, depth int) (gotoNextLayer bool) {
 		return parseFn(ele.(FieldValueInfo))
@@ -147,7 +147,7 @@ func WalkValueDFS(val reflect.Value, parseFn func(info FieldValueInfo) (goon boo
 
 // Breadth First Search
 func WalkValueBFS(val reflect.Value, parseFn func(info FieldValueInfo) (goon bool)) {
-	traversal.BFS(FieldValueInfo{value: val},
+	traversal.BreadthFirstSearchOrder(FieldValueInfo{value: val},
 		nil, func(ele interface{}, depth int) (gotoNextLayer bool) {
 			return parseFn(ele.(FieldValueInfo))
 		})

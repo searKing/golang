@@ -76,7 +76,7 @@ func (thiz FieldTypeInfo) String() string {
 
 // Breadth First Search
 func WalkTypeBFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool)) {
-	traversal.BFS(FieldTypeInfo{
+	traversal.BreadthFirstSearchOrder(FieldTypeInfo{
 		structField: reflect.StructField{
 			Type: typ,
 		},
@@ -87,7 +87,7 @@ func WalkTypeBFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool))
 
 // Wid First Search
 func WalkTypeDFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool)) {
-	traversal.DFS(FieldTypeInfo{
+	traversal.DepthFirstSearchOrder(FieldTypeInfo{
 		structField: reflect.StructField{
 			Type: typ,
 		},

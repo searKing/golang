@@ -2,23 +2,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// https://en.wikipedia.org/wiki/Tree_traversal#In-order_(LNR)
+// https://en.wikipedia.org/wiki/Tree_traversal#Out-order_(RNL)
 package traversal
 
-// In-order (LNR)
+// Out-order (RNL)
 // 1. Check if the current node is empty or null.
-// 2. Traverse the left subtree by recursively calling the in-order function.
+// 2. Traverse the right subtree by recursively calling the out-order function.
 // 3. Display the data part of the root (or current node).
-// 4. Traverse the right subtree by recursively calling the in-order function.
+// 4. Traverse the left subtree by recursively calling the out-order function.
 // Implement:
-// 	inorder(node)
+// 	outorder(node)
 // 		if (node = null)
 // 			return
-// 		inorder(node.left)
+// 		outorder(node.right)
 // 		visit(node)
-// 		inorder(node.right)
-func Inorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
-	inorder([]Node{{
+// 		outorder(node.left)
+func Outorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
+	outorder([]Node{{
 		ele: ele,
 	}}, func(node Node) (gotoNextLayer bool) {
 		if filterFn == nil {
@@ -36,7 +36,7 @@ func Inorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNex
 }
 
 // isRoot root needs to be filtered first time
-func inorder(current []Node, filterFn func(node Node) (gotoNextLayer bool), processFn func(node Node) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
+func outorder(current []Node, filterFn func(node Node) (gotoNextLayer bool), processFn func(node Node) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
 	if len(current) == 0 {
 		return false
 	}
@@ -49,16 +49,16 @@ func inorder(current []Node, filterFn func(node Node) (gotoNextLayer bool), proc
 			}
 		}
 		// filter children
-		inorder(filterChildren(node, node.LeftNodes(), filterFn), filterFn, processFn, false)
+		outorder(filterChildren(node, node.RightNodes(), filterFn), filterFn, processFn, false)
 
 		// process root
 		if !processFn(node) {
 			return false
 		}
 		// filter children
-		inorder(filterChildren(node, node.MiddleNodes(), filterFn), filterFn, processFn, false)
+		outorder(filterChildren(node, node.MiddleNodes(), filterFn), filterFn, processFn, false)
 
-		inorder(filterChildren(node, node.RightNodes(), filterFn), filterFn, processFn, false)
+		outorder(filterChildren(node, node.LeftNodes(), filterFn), filterFn, processFn, false)
 
 	}
 	return true
