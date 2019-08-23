@@ -1,6 +1,7 @@
 package ternary_search_tree_test
 
 import (
+	"github.com/searKing/golang/go/container/traversal"
 	"github.com/searKing/golang/go/container/trie_tree/ternary_search_tree"
 	"testing"
 )
@@ -15,19 +16,46 @@ func TestTernarySearchTree(t *testing.T) {
 		t.Errorf("expecting to find key=test")
 	}
 
+	val, ok := tree.Get("test")
+	if !ok {
+		t.Errorf("expecting to find key=test")
+	}
+	if val.(int) != 1 {
+		t.Errorf("expecting test's value=1")
+	}
+
 	tree.Insert("testing", 2)
 	tree.Insert("abcd", 0)
 
 	found := false
-	tree.TraversalInOrderFunc(func(key string, val interface{}) bool {
-		if key == "test" && val.(int) == 1 {
-			found = true
-		}
-		return true
-	})
+	tree.Traversal(traversal.Preorder, ternary_search_tree.HandlerFunc(
+		func(key []byte, val interface{}) bool {
+			if string(key) == "test" && val.(int) == 1 {
+				found = true
+				return false
+			}
+			return true
+		}))
 	if !found {
 		t.Errorf("expecting iterator to find test")
 	}
+
+	val, ok = tree.Get("testing")
+	if !ok {
+		t.Errorf("expecting to find key=testing")
+	}
+	if val.(int) != 2 {
+		t.Errorf("expecting testing's value=2")
+	}
+
+	val, ok = tree.Get("abcd")
+	if !ok {
+		t.Errorf("expecting to find key=abcd")
+	}
+	if val.(int) != 0 {
+		t.Errorf("expecting abcd's value=0")
+	}
+
 	tree.Remove("testing")
 	tree.Remove("abcd")
 

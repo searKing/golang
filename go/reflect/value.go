@@ -69,7 +69,7 @@ type FieldValueInfo struct {
 	index       []int
 }
 
-func (info FieldValueInfo) Middles() []interface{} {
+func (info FieldValueInfo) MiddleNodes() []interface{} {
 
 	if !info.value.IsValid() {
 		return nil

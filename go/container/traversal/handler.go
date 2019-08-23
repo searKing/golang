@@ -1,5 +1,7 @@
 package traversal
 
+type Order func(node interface{}, handler Handler)
+
 type Handler interface {
 	Handle(node interface{}, depth int) (goon bool)
 }

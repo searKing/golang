@@ -21,7 +21,7 @@ package traversal
 // TODO template in Go2.0 is expected
 // Outorder traversals from node ele by Out-order (RNL)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|MiddleNode|RightNode
+// LeftNodes|MiddleNodes|RightNodes
 func Outorder(node interface{}, handler Handler) {
 	traversal(node, traversalerFunc(outorder), handler)
 }

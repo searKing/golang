@@ -28,7 +28,7 @@ type FieldTypeInfo struct {
 	index       []int
 }
 
-func (info FieldTypeInfo) Middles() []interface{} {
+func (info FieldTypeInfo) MiddleNodes() []interface{} {
 	typ := info.structField.Type
 	var middles []interface{}
 	typ = FollowTypePointer(typ)

@@ -21,7 +21,7 @@ package traversal
 // TODO template in Go2.0 is expected
 // Preorder traversals from node ele by Pre-order (NLR)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|MiddleNode|RightNode
+// LeftNodes|MiddleNodes|RightNodes
 func Preorder(node interface{}, handler Handler) {
 	traversal(node, traversalerFunc(preorder), handler)
 }
