@@ -27,26 +27,19 @@ package traversal
 // TODO template in Go2.0 is expected
 // BreadthFirstSearchOrder traversals from node ele by Breadth-first search (BFS)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|Middleer|Righter
-func BreadthFirstSearchOrder(node interface{}, filterFn func(node interface{}, depth int) (gotoNextLayer bool), processFn func(node interface{}, depth int) (gotoNextLayer bool)) {
-	traversal([]levelNode{{node: node,}}, true, bfs, filterFn, processFn)
+// LeftNode|MiddleNode|RightNode
+func BreadthFirstSearchOrder(node interface{}, processFn Handler) {
+	traversal(node, traversalerFunc(bfs), processFn)
 }
 
-// isRoot root needs to be filtered first time
-func bfs(current []levelNode, filterFn func(node levelNode) (gotoNextLayer bool), processFn func(node levelNode) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
-	if len(current) == 0 {
-		return false
+func bfs(currents []levelNode, handler levelNodeHandler) (goon bool) {
+	if len(currents) == 0 {
+		return true
 	}
 	// Step 1: brothers layer
 	var nextBrothers []levelNode
-	for _, node := range current {
-		// filter root
-		if isRoot {
-			if !filterFn(node) {
-				return false
-			}
-		}
-		if !processFn(node) {
+	for _, node := range currents {
+		if !handler.Handle(node) {
 			return false
 		}
 		// filter brothers
@@ -58,10 +51,10 @@ func bfs(current []levelNode, filterFn func(node levelNode) (gotoNextLayer bool)
 	// filter children
 	for _, node := range nextBrothers {
 		// Scan node for nodes to include.
-		nextChildren = append(nextChildren, filterChildren(node, node.leftLevelNodes(), filterFn)...)
-		nextChildren = append(nextChildren, filterChildren(node, node.middleLevelNodes(), filterFn)...)
-		nextChildren = append(nextChildren, filterChildren(node, node.rightLevelNodes(), filterFn)...)
+		nextChildren = append(nextChildren, node.leftLevelNodes()...)
+		nextChildren = append(nextChildren, node.middleLevelNodes()...)
+		nextChildren = append(nextChildren, node.rightLevelNodes()...)
 	}
-	bfs(nextChildren, filterFn, processFn, false)
-	return true
+
+	return bfs(nextChildren, handler)
 }

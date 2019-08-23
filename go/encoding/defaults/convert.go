@@ -1,16 +1,15 @@
-package _default
+package defaults
 
 import (
 	"github.com/searKing/golang/go/encoding/internal/tag"
 	reflect_ "github.com/searKing/golang/go/reflect"
-	"gopkg.in/yaml.v2"
 	"reflect"
 )
 
 const TagDefault = "default"
 
 // Convert wrapper of convertState
-func Convert(val interface{}) error {
+func Convert(val interface{}, unmarshal func(data []byte, v interface{}) error) error {
 	return tag.Tag(val, func(val reflect.Value, tag reflect.StructTag) error {
 		fn := newTypeConverter(func(val reflect.Value, tag reflect.StructTag) (isUserDefined bool, err error) {
 			isUserDefined = false
@@ -21,7 +20,7 @@ func Convert(val interface{}) error {
 			if !ok {
 				return
 			}
-			return isUserDefined, yaml.Unmarshal([]byte(defaultTag), val.Addr().Interface())
+			return isUserDefined, unmarshal([]byte(defaultTag), val.Addr().Interface())
 		}, val.Type(), true)
 
 		_, err := fn(val, tag)

@@ -21,36 +21,33 @@ package traversal
 // TODO template in Go2.0 is expected
 // Inorder traversals from node ele by In-order (LNR)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|Middleer|Righter
-func Inorder(node interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
-	traversal([]levelNode{{node: node,}}, true, inorder, filterFn, processFn)
+// LeftNode|MiddleNode|RightNode
+func Inorder(node interface{}, handler Handler) {
+	traversal(node, traversalerFunc(inorder), handler)
 }
 
-// isRoot root needs to be filtered first time
-func inorder(current []levelNode, filterFn func(node levelNode) (gotoNextLayer bool), processFn func(node levelNode) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
-	if len(current) == 0 {
-		return false
+func inorder(currents []levelNode, handler levelNodeHandler) (goon bool) {
+	if len(currents) == 0 {
+		return true
 	}
 	// Step 1: brothers
-	for _, node := range current {
-		// filter root
-		if isRoot {
-			if !filterFn(node) {
-				return false
-			}
-		}
-		// filter children
-		inorder(filterChildren(node, node.leftLevelNodes(), filterFn), filterFn, processFn, false)
-
-		// process root
-		if !processFn(node) {
+	for _, node := range currents {
+		// process children
+		if !inorder(node.leftLevelNodes(), handler) {
 			return false
 		}
-		// filter children
-		inorder(filterChildren(node, node.middleLevelNodes(), filterFn), filterFn, processFn, false)
 
-		inorder(filterChildren(node, node.rightLevelNodes(), filterFn), filterFn, processFn, false)
-
+		// process root
+		if !handler.Handle(node) {
+			return false
+		}
+		// process children
+		if !inorder(node.middleLevelNodes(), handler) {
+			return false
+		}
+		if !inorder(node.rightLevelNodes(), handler) {
+			return false
+		}
 	}
 	return true
 }

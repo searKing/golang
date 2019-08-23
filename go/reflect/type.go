@@ -28,9 +28,9 @@ type FieldTypeInfo struct {
 	index       []int
 }
 
-func (thiz FieldTypeInfo) Middles() []interface{} {
-	typ := thiz.structField.Type
-	middles := []interface{}{}
+func (info FieldTypeInfo) Middles() []interface{} {
+	typ := info.structField.Type
+	var middles []interface{}
 	typ = FollowTypePointer(typ)
 	if IsNilType(typ) {
 		return nil
@@ -40,9 +40,9 @@ func (thiz FieldTypeInfo) Middles() []interface{} {
 	}
 	// Scan typ for fields to include.
 	for i := 0; i < typ.NumField(); i++ {
-		index := make([]int, len(thiz.index)+1)
-		copy(index, thiz.index)
-		index[len(thiz.index)] = i
+		index := make([]int, len(info.index)+1)
+		copy(index, info.index)
+		index[len(info.index)] = i
 		sf := typ.Field(i)
 		middles = append(middles, FieldTypeInfo{
 			structField: sf,
@@ -52,53 +52,62 @@ func (thiz FieldTypeInfo) Middles() []interface{} {
 	return middles
 }
 
-func (thiz FieldTypeInfo) Depth() int {
-	return len(thiz.index)
+func (info FieldTypeInfo) Depth() int {
+	return len(info.index)
 }
 
-func (thiz FieldTypeInfo) StructField() (reflect.StructField, bool) {
-	if IsEmptyValue(reflect.ValueOf(thiz.structField)) {
-		return thiz.structField, false
+func (info FieldTypeInfo) StructField() (reflect.StructField, bool) {
+	if IsEmptyValue(reflect.ValueOf(info.structField)) {
+		return info.structField, false
 	}
-	return thiz.structField, true
+	return info.structField, true
 }
 
-func (thiz FieldTypeInfo) Index() []int {
-	return thiz.index
+func (info FieldTypeInfo) Index() []int {
+	return info.index
 }
 
-func (thiz FieldTypeInfo) String() string {
-	if thiz.structField.Type == nil {
+func (info FieldTypeInfo) String() string {
+	if info.structField.Type == nil {
 		return fmt.Sprintf("%+v", nil)
 	}
-	return fmt.Sprintf("%+v", thiz.structField.Type.String())
+	return fmt.Sprintf("%+v", info.structField.Type.String())
 }
 
+type FieldTypeInfoHandler interface {
+	Handler(info FieldTypeInfo) (goon bool)
+}
+type FieldTypeInfoHandlerFunc func(info FieldTypeInfo) (goon bool)
+
+func (f FieldTypeInfoHandlerFunc) Handler(info FieldTypeInfo) (goon bool) {
+	return f(info)
+}
 // Breadth First Search
-func WalkTypeBFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool)) {
+func WalkTypeBFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 	traversal.BreadthFirstSearchOrder(FieldTypeInfo{
 		structField: reflect.StructField{
 			Type: typ,
 		},
-	}, nil, func(ele interface{}, depth int) (gotoNextLayer bool) {
-		return parseFn(ele.(FieldTypeInfo))
-	})
+	}, traversal.HandlerFunc(func(node interface{}, depth int) (goon bool) {
+		return handler.Handler(node.(FieldTypeInfo))
+	}))
 }
 
 // Wid First Search
-func WalkTypeDFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool)) {
+func WalkTypeDFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 	traversal.DepthFirstSearchOrder(FieldTypeInfo{
 		structField: reflect.StructField{
 			Type: typ,
 		},
-	}, nil, func(ele interface{}, depth int) (gotoNextLayer bool) {
-		return parseFn(ele.(FieldTypeInfo))
-	})
+	}, traversal.HandlerFunc(func(node interface{}, depth int) (goon bool) {
+		return handler.Handler(node.(FieldTypeInfo))
+	}))
 }
+
 func DumpTypeInfoDFS(t reflect.Type) string {
 	dumpInfo := &bytes.Buffer{}
 	first := true
-	WalkTypeDFS(t, func(info FieldTypeInfo) (goon bool) {
+	WalkTypeDFS(t, FieldTypeInfoHandlerFunc(func(info FieldTypeInfo) (goon bool) {
 		if first {
 			first = false
 			bytes_.NewIndent(dumpInfo, "", "\t", info.Depth())
@@ -107,13 +116,14 @@ func DumpTypeInfoDFS(t reflect.Type) string {
 		}
 		dumpInfo.WriteString(fmt.Sprintf("%+v", info.String()))
 		return true
-	})
+	}))
 	return dumpInfo.String()
 }
+
 func DumpTypeInfoBFS(t reflect.Type) string {
 	dumpInfo := &bytes.Buffer{}
 	first := true
-	WalkTypeBFS(t, func(info FieldTypeInfo) (goon bool) {
+	WalkTypeBFS(t, FieldTypeInfoHandlerFunc(func(info FieldTypeInfo) (goon bool) {
 		if first {
 			first = false
 			bytes_.NewIndent(dumpInfo, "", "\t", info.Depth())
@@ -122,6 +132,6 @@ func DumpTypeInfoBFS(t reflect.Type) string {
 		}
 		dumpInfo.WriteString(fmt.Sprintf("%+v", info.String()))
 		return true
-	})
+	}))
 	return dumpInfo.String()
 }

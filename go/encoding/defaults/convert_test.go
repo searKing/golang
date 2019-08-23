@@ -1,7 +1,9 @@
-package _default
+package defaults_test
 
 import (
 	"fmt"
+	"github.com/searKing/golang/go/encoding/defaults"
+	"gopkg.in/yaml.v2"
 	"reflect"
 	"testing"
 )
@@ -36,7 +38,7 @@ func TestConvert(t *testing.T) {
 		StringArray: []string{"stdout", "./logs"},
 		Map:         map[string]string{"name": "Alice", "age": "18"},
 	}
-	err := Convert(i)
+	err := defaults.Convert(i, yaml.Unmarshal)
 	if err != nil {
 		t.Error(err)
 	}
