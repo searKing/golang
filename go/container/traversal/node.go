@@ -19,6 +19,13 @@ type RightNode interface {
 	Rights() []interface{}
 }
 
+// a uniform node
+type Node interface {
+	LeftNode
+	MiddleNode
+	RightNode
+}
+
 // levelNode represents a single node with depth found in a structure.
 type levelNode struct {
 	node  interface{}
