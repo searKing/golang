@@ -17,7 +17,12 @@ package traversal
 // 		visit(node)
 // 		postorder(node.left)
 // 		postorder(node.right)
+
 // TODO template in Go2.0 is expected
+// Preorder traversals from node ele by Pre-order (NLR)
+// ele is a node which may have some interfaces implemented:
+// Lefter|Middleer|Righter
+// Lefters|Middleers|Righters
 func Preorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	preorder([]Node{{
 		ele: ele,

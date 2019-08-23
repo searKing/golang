@@ -17,6 +17,12 @@ package traversal
 // 		outorder(node.right)
 // 		visit(node)
 // 		outorder(node.left)
+
+// TODO template in Go2.0 is expected
+// Outorder traversals from node ele by Out-order (RNL)
+// ele is a node which may have some interfaces implemented:
+// Lefter|Middleer|Righter
+// Lefters|Middleers|Righters
 func Outorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	outorder([]Node{{
 		ele: ele,

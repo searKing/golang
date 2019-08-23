@@ -23,7 +23,12 @@ package traversal
 //					label w as discovered
 //					w.parent = v
 //					Q.enqueue(w)
+
 // TODO template in Go2.0 is expected
+// BreadthFirstSearchOrder traversals from node ele by Breadth-first search (BFS)
+// ele is a node which may have some interfaces implemented:
+// Lefter|Middleer|Righter
+// Lefters|Middleers|Righters
 func BreadthFirstSearchOrder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	bfs([]Node{{
 		ele: ele,
