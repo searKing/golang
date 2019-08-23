@@ -32,6 +32,9 @@ func preorder(currents []levelNode, handler levelNodeHandler) (goon bool) {
 	}
 	// Step 1: brothers
 	for _, node := range currents {
+		if node.visited {
+			continue
+		}
 		// process root
 		if !handler.Handle(node) {
 			return false
