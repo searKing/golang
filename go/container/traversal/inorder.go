@@ -21,7 +21,7 @@ package traversal
 // TODO template in Go2.0 is expected
 // Inorder traversals from node ele by In-order (LNR)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|MiddleNode|RightNode
+// LeftNodes|MiddleNodes|RightNodes
 func Inorder(node interface{}, handler Handler) {
 	traversal(node, traversalerFunc(inorder), handler)
 }

@@ -13,15 +13,27 @@
 // auto-completion.
 package ternary_search_tree
 
-// TernarySearchTree represents a Ternary Search Tree.
+import "github.com/searKing/golang/go/container/traversal"
+
+type TernarySearchTree interface {
+	Len() int
+	Insert(prefix string, value interface{})
+	Get(prefix string) (value interface{}, ok bool)
+	Contains(prefix string) bool
+	Remove(prefix string) (value interface{}, ok bool)
+	String() string
+	Traversal(order traversal.Order, handler Handler)
+}
+
+// ternarySearchTree represents a Ternary Search Tree.
 // The zero value for List is an empty list ready to use.
-type TernarySearchTree struct {
-	root Element // sentinel list element, only &root, root.prev, and root.next are used
-	len  int     // current list length excluding (this) sentinel element
+type ternarySearchTree struct {
+	root node // sentinel list node, only &root, root.prev, and root.next are used
+	len  int  // current list length excluding (this) sentinel node
 }
 
 // Init initializes or clears tree l.
-func (l *TernarySearchTree) Init() *TernarySearchTree {
+func (l *ternarySearchTree) init() *ternarySearchTree {
 	l.root.left = &l.root
 	l.root.middle = &l.root
 	l.root.right = &l.root
@@ -31,32 +43,36 @@ func (l *TernarySearchTree) Init() *TernarySearchTree {
 }
 
 // Init initializes or clears Tree l.
-func New() *TernarySearchTree {
-	return (&TernarySearchTree{}).Init()
+func New() TernarySearchTree {
+	return (&ternarySearchTree{}).init()
+}
+
+func (l *ternarySearchTree) Node() traversal.Node {
+	return &(l.root)
 }
 
 // Len returns the number of elements of list l.
 // The complexity is O(1).
-func (l *TernarySearchTree) Len() int { return l.len }
+func (l *ternarySearchTree) Len() int { return l.len }
 
-// Front returns the first element of list l or nil if the list is empty.
-func (l *TernarySearchTree) Left() *Element {
+// Front returns the first node of list l or nil if the list is empty.
+func (l *ternarySearchTree) Left() *node {
 	if l.len == 0 {
 		return nil
 	}
 	return l.root.left
 }
 
-// Middle returns the first element of list l or nil if the list is empty.
-func (l *TernarySearchTree) Middle() *Element {
+// Middle returns the first node of list l or nil if the list is empty.
+func (l *ternarySearchTree) Middle() *node {
 	if l.len == 0 {
 		return nil
 	}
 	return l.root.middle
 }
 
-// Right returns the first element of list l or nil if the list is empty.
-func (l *TernarySearchTree) Right() *Element {
+// Right returns the first node of list l or nil if the list is empty.
+func (l *ternarySearchTree) Right() *node {
 	if l.len == 0 {
 		return nil
 	}
@@ -64,46 +80,35 @@ func (l *TernarySearchTree) Right() *Element {
 }
 
 // lazyInit lazily initializes a zero List value.
-func (l *TernarySearchTree) lazyInit() {
+func (l *ternarySearchTree) lazyInit() {
 	if l.root.right == nil {
-		l.Init()
+		l.init()
 	}
 }
 
-func (l *TernarySearchTree) TraversalPreOrderFunc(f func(prefix string, value interface{}) (goon bool)) (goon bool) {
-	return l.root.TraversalPreOrderFunc(func(pre []byte, v interface{}) (goon bool) {
-		return f(string(pre), v)
-	})
+func (l *ternarySearchTree) Traversal(order traversal.Order, handler Handler) {
+	l.root.Traversal(order, handler)
 }
-func (l *TernarySearchTree) TraversalInOrderFunc(f func(prefix string, value interface{}) (goon bool)) (goon bool) {
-	return l.root.TraversalInOrderFunc(func(pre []byte, v interface{}) (goon bool) {
-		return f(string(pre), v)
-	})
-}
-func (l *TernarySearchTree) TraversalPostOrderFunc(f func(prefix string, value interface{}) (goon bool)) (goon bool) {
-	return l.root.TraversalPostOrderFunc(func(pre []byte, v interface{}) (goon bool) {
-		return f(string(pre), v)
-	})
-}
-func (l *TernarySearchTree) Get(prefix string) (value interface{}, ok bool) {
+
+func (l *ternarySearchTree) Get(prefix string) (value interface{}, ok bool) {
 	return l.root.Get([]byte(prefix))
 }
-func (l *TernarySearchTree) Contains(prefix string) bool {
+func (l *ternarySearchTree) Contains(prefix string) bool {
 	return l.root.Contains([]byte(prefix))
 }
 
-func (l *TernarySearchTree) Insert(prefix string, value interface{}) {
+func (l *ternarySearchTree) Insert(prefix string, value interface{}) {
 	l.root.Insert([]byte(prefix), value)
 	l.len++
 }
 
-func (l *TernarySearchTree) Remove(prefix string) (value interface{}, ok bool) {
+func (l *ternarySearchTree) Remove(prefix string) (value interface{}, ok bool) {
 	value, ok = l.root.Remove([]byte(prefix))
 	if ok {
 		l.len--
 	}
 	return value, ok
 }
-func (l *TernarySearchTree) String() string {
+func (l *ternarySearchTree) String() string {
 	return l.root.String()
 }

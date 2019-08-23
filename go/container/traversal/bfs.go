@@ -27,7 +27,7 @@ package traversal
 // TODO template in Go2.0 is expected
 // BreadthFirstSearchOrder traversals from node ele by Breadth-first search (BFS)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|MiddleNode|RightNode
+// LeftNodes|MiddleNodes|RightNodes
 func BreadthFirstSearchOrder(node interface{}, handler Handler) {
 	traversal(node, traversalerFunc(bfs), handler)
 }

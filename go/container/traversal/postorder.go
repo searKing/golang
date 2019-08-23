@@ -21,7 +21,7 @@ package traversal
 // TODO template in Go2.0 is expected
 // Postorder traversals from node ele by Post-order (LRN)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|MiddleNode|RightNode
+// LeftNodes|MiddleNodes|RightNodes
 func Postorder(node interface{}, handler Handler) {
 	traversal(node, traversalerFunc(postorder), handler)
 }

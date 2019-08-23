@@ -21,7 +21,7 @@ package traversal
 // TODO template in Go2.0 is expected
 // DepthFirstSearchOrder traversals from node ele by Depth-first search (DFS)
 // ele is a node which may have some interfaces implemented:
-// LeftNode|MiddleNode|RightNode
+// LeftNodes|MiddleNodes|RightNodes
 func DepthFirstSearchOrder(node interface{}, handler Handler) {
 	traversal(node, traversalerFunc(dfs), handler)
 }
