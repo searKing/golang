@@ -3,16 +3,16 @@
 // license that can be found in the LICENSE file.
 // it's borrowed from https://github.com/soheilhy/cmux/blob/master/patricia_test.go
 
-package patricia_test
+package patricia_tree_test
 
 import (
-	"github.com/searKing/golang/go/container/patricia"
+	"github.com/searKing/golang/go/container/trie_tree/patricia_tree"
 	"strings"
 	"testing"
 )
 
 func run(t *testing.T, strs ...string) {
-	pt := patricia.NewWithString(strs...)
+	pt := patricia_tree.NewWithString(strs...)
 	for _, s := range strs {
 		if !pt.Match(strings.NewReader(s)) {
 			t.Errorf("%s is not matched by %s", s, s)

@@ -3,8 +3,8 @@ package reflect
 import (
 	"bytes"
 	"fmt"
-	bytes2 "github.com/searKing/golang/go/bytes"
-	traversal2 "github.com/searKing/golang/go/container/traversal"
+	bytes_ "github.com/searKing/golang/go/bytes"
+	"github.com/searKing/golang/go/container/traversal"
 	"reflect"
 )
 
@@ -76,7 +76,7 @@ func (thiz FieldTypeInfo) String() string {
 
 // Breadth First Search
 func WalkTypeBFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool)) {
-	traversal2.TraversalBFS(FieldTypeInfo{
+	traversal.BFS(FieldTypeInfo{
 		structField: reflect.StructField{
 			Type: typ,
 		},
@@ -87,7 +87,7 @@ func WalkTypeBFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool))
 
 // Wid First Search
 func WalkTypeDFS(typ reflect.Type, parseFn func(info FieldTypeInfo) (goon bool)) {
-	traversal2.TraversalDFS(FieldTypeInfo{
+	traversal.DFS(FieldTypeInfo{
 		structField: reflect.StructField{
 			Type: typ,
 		},
@@ -101,9 +101,9 @@ func DumpTypeInfoDFS(t reflect.Type) string {
 	WalkTypeDFS(t, func(info FieldTypeInfo) (goon bool) {
 		if first {
 			first = false
-			bytes2.NewIndent(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewIndent(dumpInfo, "", "\t", info.Depth())
 		} else {
-			bytes2.NewLine(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewLine(dumpInfo, "", "\t", info.Depth())
 		}
 		dumpInfo.WriteString(fmt.Sprintf("%+v", info.String()))
 		return true
@@ -116,9 +116,9 @@ func DumpTypeInfoBFS(t reflect.Type) string {
 	WalkTypeBFS(t, func(info FieldTypeInfo) (goon bool) {
 		if first {
 			first = false
-			bytes2.NewIndent(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewIndent(dumpInfo, "", "\t", info.Depth())
 		} else {
-			bytes2.NewLine(dumpInfo, "", "\t", info.Depth())
+			bytes_.NewLine(dumpInfo, "", "\t", info.Depth())
 		}
 		dumpInfo.WriteString(fmt.Sprintf("%+v", info.String()))
 		return true

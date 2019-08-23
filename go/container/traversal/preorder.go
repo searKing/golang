@@ -2,7 +2,7 @@ package traversal
 
 // TODO template in Go2.0 is expected
 // Preorder Traversal (DLR)
-func TraversalDLR(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
+func DLR(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	traversalDLR([]Node{{
 		ele: ele,
 	}}, func(node Node) (gotoNextLayer bool) {

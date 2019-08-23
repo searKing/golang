@@ -2,7 +2,7 @@ package traversal
 
 // TODO template in Go2.0 is expected
 // Breadth First Search
-func TraversalBFS(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
+func BFS(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
 	traversalBFS([]Node{{
 		ele: ele,
 	}}, func(node Node) (gotoNextLayer bool) {

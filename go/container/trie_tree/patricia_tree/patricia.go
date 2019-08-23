@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 // it's borrowed from https://github.com/soheilhy/cmux/blob/master/patricia.go
 
-package patricia
+package patricia_tree
 
 import (
 	"bytes"

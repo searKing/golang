@@ -1,9 +1,12 @@
-package tst
+package ternary_search_tree_test
 
-import "testing"
+import (
+	"github.com/searKing/golang/go/container/trie_tree/ternary_search_tree"
+	"testing"
+)
 
 func TestTernarySearchTree(t *testing.T) {
-	tree := New()
+	tree := ternary_search_tree.New()
 	tree.Insert("test", 1)
 	if tree.Len() != 1 {
 		t.Errorf("expecting len 1")
@@ -42,9 +45,10 @@ func TestTernarySearchTree(t *testing.T) {
 		t.Errorf("expecting value=1")
 	}
 }
+
 func TestTernarySearchTree_String1(t *testing.T) {
 
-	tree := New()
+	tree := ternary_search_tree.New()
 	tree.Insert("abcd", 0)
 	tree.Insert("abcd1234ABCD", 2)
 	tree.Insert("abcd1234", 1)
@@ -66,9 +70,10 @@ abcd1234ABCD:2
 		t.Errorf("expect %s", expect)
 	}
 }
+
 func TestTernarySearchTree_String2(t *testing.T) {
 
-	tree := New()
+	tree := ternary_search_tree.New()
 	tree.Insert("abcd", 0)
 	tree.Insert("1234", 1)
 	s := tree.String()
