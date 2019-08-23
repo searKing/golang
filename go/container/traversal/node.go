@@ -7,7 +7,7 @@ type Node struct {
 }
 
 func (n *Node) LeftNodes() []Node {
-	lefts := []Node{}
+	var lefts []Node
 	for _, e := range n.Lefts() {
 		node := Node{
 			ele:   e,
@@ -18,7 +18,7 @@ func (n *Node) LeftNodes() []Node {
 	return lefts
 }
 func (n *Node) MiddleNodes() []Node {
-	middles := []Node{}
+	var middles []Node
 	for _, e := range n.Middles() {
 		node := Node{
 			ele:   e,
@@ -29,7 +29,7 @@ func (n *Node) MiddleNodes() []Node {
 	return middles
 }
 func (n *Node) RightNodes() []Node {
-	rights := []Node{}
+	var rights []Node
 	for _, e := range n.Rights() {
 		node := Node{
 			ele:   e,
