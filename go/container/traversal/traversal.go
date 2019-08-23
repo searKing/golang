@@ -6,7 +6,7 @@ func traversal(node interface{},
 	handler Handler) {
 	traversalOrder.traversal([]levelNode{{
 		node: node,
-	}}, levelNodeHandlerFunc(func(ln levelNode) (gotoNextLayer bool) {
+	}}, levelNodeHandlerFunc(func(ln levelNode) (goon bool) {
 		if handler == nil {
 			// traversal no node
 			return false
