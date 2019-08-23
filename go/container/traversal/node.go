@@ -28,8 +28,9 @@ type Node interface {
 
 // levelNode represents a single node with depth found in a structure.
 type levelNode struct {
-	node  interface{}
-	depth int
+	node    interface{}
+	depth   int
+	visited bool
 }
 
 func (n *levelNode) leftLevelNodes() []levelNode {

@@ -32,6 +32,9 @@ func dfs(currents []levelNode, handler levelNodeHandler) (goon bool) {
 	}
 	// Step 1: brothers
 	for _, node := range currents {
+		if node.visited {
+			continue
+		}
 		if !handler.Handle(node) {
 			return false
 		}

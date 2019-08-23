@@ -39,6 +39,9 @@ func bfs(currents []levelNode, handler levelNodeHandler) (goon bool) {
 	// Step 1: brothers layer
 	var nextBrothers []levelNode
 	for _, node := range currents {
+		if node.visited {
+			continue
+		}
 		if !handler.Handle(node) {
 			return false
 		}

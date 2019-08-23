@@ -32,6 +32,9 @@ func postorder(currents []levelNode, handler levelNodeHandler) (goon bool) {
 	}
 	// Step 1: brothers
 	for _, node := range currents {
+		if node.visited {
+			continue
+		}
 		// process children
 		if !outorder(node.leftLevelNodes(), handler) {
 			return false
