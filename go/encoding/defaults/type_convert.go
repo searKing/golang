@@ -3,6 +3,7 @@ package defaults
 import "reflect"
 
 // Convert v
+// apply custom interface on v along with tag
 func userDefinedConvertFunc(v reflect.Value, tag reflect.StructTag) (isUserDefined bool, err error) {
 	isUserDefined = true
 	if v.Kind() == reflect.Ptr && v.IsNil() {
@@ -16,27 +17,29 @@ func userDefinedConvertFunc(v reflect.Value, tag reflect.StructTag) (isUserDefin
 }
 
 // Convert &v
+// apply custom interface on &v along with tag
 func addrUserDefinedConvertFunc(v reflect.Value, tag reflect.StructTag) (isUserDefined bool, err error) {
 	isUserDefined = true
-	va := v.Addr()
-	if va.IsNil() {
+	vaddr := v.Addr()
+	if vaddr.IsNil() {
 		return
 	}
-	m := va.Interface().(Converter)
+	m := vaddr.Interface().(Converter)
 	return isUserDefined, m.ConvertDefault(v, tag)
 }
 
-// newTypeConverter constructs an convertorFunc for a type.
+// newTypeConverter constructs an convertFunc for a type.
 // The returned encoder only checks CanAddr when allowAddr is true.
 func newTypeConverter(convFn convertFunc, t reflect.Type, allowAddr bool) convertFunc {
 	// Handle UserDefined Case
-	// Convert v
+	// t.ConvertDefault(value, tag)
 	if t.Implements(converterType) {
 		return userDefinedConvertFunc
 	}
 
 	// Handle UserDefined Case
 	// Convert &v, iterate only once
+	// (&t).ConvertDefault(value, tag) || convFn(value, tag)
 	if t.Kind() != reflect.Ptr && allowAddr {
 		if reflect.PtrTo(t).Implements(converterType) {
 			return newCondAddrConvertFunc(addrUserDefinedConvertFunc, newTypeConverter(convFn, t, false))
