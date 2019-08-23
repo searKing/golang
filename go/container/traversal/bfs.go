@@ -27,33 +27,18 @@ package traversal
 // TODO template in Go2.0 is expected
 // BreadthFirstSearchOrder traversals from node ele by Breadth-first search (BFS)
 // ele is a node which may have some interfaces implemented:
-// Lefter|Middleer|Righter
-// Lefters|Middleers|Righters
-func BreadthFirstSearchOrder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
-	bfs([]Node{{
-		ele: ele,
-	}}, func(node Node) (gotoNextLayer bool) {
-		if filterFn == nil {
-			// traversal every node
-			return true
-		}
-		return filterFn(node.ele, node.depth)
-	}, func(node Node) (gotoNextLayer bool) {
-		if processFn == nil {
-			// traversal no node
-			return false
-		}
-		return processFn(node.ele, node.depth)
-	}, true)
+// LeftNode|Middleer|Righter
+func BreadthFirstSearchOrder(node interface{}, filterFn func(node interface{}, depth int) (gotoNextLayer bool), processFn func(node interface{}, depth int) (gotoNextLayer bool)) {
+	traversal([]levelNode{{node: node,}}, true, bfs, filterFn, processFn)
 }
 
 // isRoot root needs to be filtered first time
-func bfs(current []Node, filterFn func(node Node) (gotoNextLayer bool), processFn func(node Node) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
+func bfs(current []levelNode, filterFn func(node levelNode) (gotoNextLayer bool), processFn func(node levelNode) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
 	if len(current) == 0 {
 		return false
 	}
 	// Step 1: brothers layer
-	var nextBrothers []Node
+	var nextBrothers []levelNode
 	for _, node := range current {
 		// filter root
 		if isRoot {
@@ -69,13 +54,13 @@ func bfs(current []Node, filterFn func(node Node) (gotoNextLayer bool), processF
 	}
 
 	// Step 2: children layer
-	var nextChildren []Node
+	var nextChildren []levelNode
 	// filter children
 	for _, node := range nextBrothers {
 		// Scan node for nodes to include.
-		nextChildren = append(nextChildren, filterChildren(node, node.LeftNodes(), filterFn)...)
-		nextChildren = append(nextChildren, filterChildren(node, node.MiddleNodes(), filterFn)...)
-		nextChildren = append(nextChildren, filterChildren(node, node.RightNodes(), filterFn)...)
+		nextChildren = append(nextChildren, filterChildren(node, node.leftLevelNodes(), filterFn)...)
+		nextChildren = append(nextChildren, filterChildren(node, node.middleLevelNodes(), filterFn)...)
+		nextChildren = append(nextChildren, filterChildren(node, node.rightLevelNodes(), filterFn)...)
 	}
 	bfs(nextChildren, filterFn, processFn, false)
 	return true

@@ -21,28 +21,13 @@ package traversal
 // TODO template in Go2.0 is expected
 // Preorder traversals from node ele by Pre-order (NLR)
 // ele is a node which may have some interfaces implemented:
-// Lefter|Middleer|Righter
-// Lefters|Middleers|Righters
-func Preorder(ele interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
-	preorder([]Node{{
-		ele: ele,
-	}}, func(node Node) (gotoNextLayer bool) {
-		if filterFn == nil {
-			// traversal every node
-			return true
-		}
-		return filterFn(node.ele, node.depth)
-	}, func(node Node) (gotoNextLayer bool) {
-		if processFn == nil {
-			// traversal no node
-			return false
-		}
-		return processFn(node.ele, node.depth)
-	}, true)
+// LeftNode|Middleer|Righter
+func Preorder(node interface{}, filterFn func(ele interface{}, depth int) (gotoNextLayer bool), processFn func(ele interface{}, depth int) (gotoNextLayer bool)) {
+	traversal([]levelNode{{node: node,}}, true, preorder, filterFn, processFn)
 }
 
 // isRoot root needs to be filtered first time
-func preorder(current []Node, filterFn func(node Node) (gotoNextLayer bool), processFn func(node Node) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
+func preorder(current []levelNode, filterFn func(node levelNode) (gotoNextLayer bool), processFn func(node levelNode) (gotoNextLayer bool), isRoot bool) (gotoNextLayer bool) {
 	if len(current) == 0 {
 		return false
 	}
@@ -59,11 +44,11 @@ func preorder(current []Node, filterFn func(node Node) (gotoNextLayer bool), pro
 			return false
 		}
 		// filter children
-		preorder(filterChildren(node, node.MiddleNodes(), filterFn), filterFn, processFn, false)
+		preorder(filterChildren(node, node.middleLevelNodes(), filterFn), filterFn, processFn, false)
 
 		// filter children
-		preorder(filterChildren(node, node.LeftNodes(), filterFn), filterFn, processFn, false)
-		preorder(filterChildren(node, node.RightNodes(), filterFn), filterFn, processFn, false)
+		preorder(filterChildren(node, node.leftLevelNodes(), filterFn), filterFn, processFn, false)
+		preorder(filterChildren(node, node.rightLevelNodes(), filterFn), filterFn, processFn, false)
 
 	}
 	return true
