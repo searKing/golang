@@ -1,114 +1,98 @@
+// Copyright 2019 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package traversal
 
-// A field represents a single Node found in a structure.
-type Node struct {
-	ele   interface{}
+type LeftNode interface {
+	// Left returns the left node list or nil.
+	Lefts() []interface{}
+}
+
+type MiddleNode interface {
+	// Middle returns the middle node list or nil.
+	Middles() []interface{}
+}
+
+type RightNode interface {
+	// Right returns the middle node list or nil.
+	Rights() []interface{}
+}
+
+// levelNode represents a single node with depth found in a structure.
+type levelNode struct {
+	node  interface{}
 	depth int
 }
 
-func (n *Node) LeftNodes() []Node {
-	var lefts []Node
-	for _, e := range n.Lefts() {
-		node := Node{
-			ele:   e,
+func (n *levelNode) leftLevelNodes() []levelNode {
+	var lefts []levelNode
+	for _, node := range n.leftNodes() {
+		ln := levelNode{
+			node:  node,
 			depth: n.depth + 1,
 		}
-		lefts = append(lefts, node)
+		lefts = append(lefts, ln)
 	}
 	return lefts
 }
-func (n *Node) MiddleNodes() []Node {
-	var middles []Node
-	for _, e := range n.Middles() {
-		node := Node{
-			ele:   e,
+
+func (n *levelNode) middleLevelNodes() []levelNode {
+	var middles []levelNode
+	for _, node := range n.middleNodes() {
+		ln := levelNode{
+			node:  node,
 			depth: n.depth + 1,
 		}
-		middles = append(middles, node)
+		middles = append(middles, ln)
 	}
 	return middles
 }
-func (n *Node) RightNodes() []Node {
-	var rights []Node
-	for _, e := range n.Rights() {
-		node := Node{
-			ele:   e,
+
+func (n *levelNode) rightLevelNodes() []levelNode {
+	var rights []levelNode
+	for _, node := range n.rightNodes() {
+		ln := levelNode{
+			node:  node,
 			depth: n.depth + 1,
 		}
-		rights = append(rights, node)
+		rights = append(rights, ln)
 	}
 	return rights
 }
 
 // children
-func (n *Node) Lefts() []interface{} {
-	if n.ele == nil {
+func (n *levelNode) leftNodes() []interface{} {
+	if n.node == nil {
 		return nil
 	}
-	lefters, ok := n.ele.(Leftser)
+	left, ok := n.node.(LeftNode)
 	if ok {
-		return lefters.Lefts()
-	}
-	lefter, ok := n.ele.(Lefter)
-	if ok {
-		return []interface{}{lefter.Left()}
+		return left.Lefts()
 	}
 	return nil
 }
 
-func (n *Node) Middles() []interface{} {
-	if n.ele == nil {
+func (n *levelNode) middleNodes() []interface{} {
+	if n.node == nil {
 		return nil
 	}
-	middleers, ok := n.ele.(Middleser)
+	middle, ok := n.node.(MiddleNode)
 	if ok {
-		return middleers.Middles()
-	}
-	middleer, ok := n.ele.(Middleer)
-	if ok {
-		return []interface{}{middleer.Middle()}
-	}
-	return nil
-
-}
-func (n *Node) Rights() []interface{} {
-	if n.ele == nil {
-		return nil
-	}
-	righters, ok := n.ele.(Rightser)
-	if ok {
-		return righters.Rights()
-	}
-	righter, ok := n.ele.(Righter)
-	if ok {
-		return []interface{}{righter.Right()}
+		return middle.Middles()
 	}
 	return nil
 
 }
 
-type Lefter interface {
-	// Left returns the left list element or nil.
-	Left() interface{}
-}
-type Middleer interface {
-	// Middle returns the middle list element or nil.
-	Middle() interface{}
-}
-type Righter interface {
-	// Right returns the middle list element or nil.
-	Right() interface{}
-}
+func (n *levelNode) rightNodes() []interface{} {
+	if n.node == nil {
+		return nil
+	}
+	right, ok := n.node.(RightNode)
+	if ok {
+		return right.Rights()
+	}
+	return nil
 
-type Leftser interface {
-	// Left returns the left list element or nil.
-	Lefts() []interface{}
-}
-type Middleser interface {
-	// Middle returns the middle list element or nil.
-	Middles() []interface{}
-}
-type Rightser interface {
-	// Right returns the middle list element or nil.
-	Rights() []interface{}
 }
