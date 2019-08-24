@@ -86,6 +86,15 @@ func (n *node) Traversal(order traversal.Order, handler Handler) {
 	return
 }
 
+func (n *node) Follow(prefix []byte) (subPrefix []byte, value interface{}, ok bool) {
+	graph := n.follow(prefix)
+	if len(graph) == 0 {
+		return nil, nil, false
+	}
+	tail := graph[len(graph)-1]
+	return tail.prefix, tail.value, tail.hasValue
+}
+
 func (n *node) Load(prefix []byte) (value interface{}, ok bool) {
 	cur, _, _, has := n.search(prefix)
 	if !has {
@@ -292,6 +301,54 @@ func (n *node) shrinkToFit(last *node, lastPos int) {
 	}
 }
 
+// return node graph until prefix matched
+func (n *node) follow(prefix []byte) (graph []*node) {
+	cur := n
+
+	for idx := 0; idx < len(prefix); {
+		// return if nilKey has been meet
+		if !cur.hasKey {
+			return
+		}
+		// create the idx layer if not exist
+		// otherwise, step to the next layer
+		k := prefix[idx]
+		if k < cur.key {
+			left := cur.Left()
+			if left == nil {
+				return
+			}
+			cur = left
+			continue
+		}
+		if k > cur.key {
+			right := cur.Right()
+			if right == nil {
+				return
+			}
+			cur = right
+			continue
+		}
+		if cur.hasValue {
+			graph = append(graph, cur)
+		}
+		// key match, goto match next layer
+		idx++
+		// all matched, goto remove the value
+		if idx == len(prefix) {
+			// match
+			return
+		}
+		// partial matched, goto middle on next layer
+		middle := cur.Middle()
+		if middle == nil {
+			return
+		}
+		cur = middle
+	}
+	return
+}
+
 // return true if prefix matches, no matter value exists
 func (n *node) search(prefix []byte) (cur, last *node, lastPos int, has bool) {
 	cur = n
@@ -343,4 +400,20 @@ func (n *node) search(prefix []byte) (cur, last *node, lastPos int, has bool) {
 		cur = middle
 	}
 	return
+}
+
+func (n *node) IsLeaf() bool {
+	if !n.hasKey {
+		return false
+	}
+	if n.Left() != nil {
+		return false
+	}
+	if n.Middle() != nil {
+		return false
+	}
+	if n.Right() != nil {
+		return false
+	}
+	return false
 }

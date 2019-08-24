@@ -22,7 +22,10 @@ type TernarySearchTree interface {
 	Depth() int
 	// Count returns the number of elements of list l, excluding (this) sentinel node.
 	Count() int
+	// Store stores value in prefix
 	Store(prefix string, value interface{})
+	// Follow returns node info of longest subPrefix of prefix
+	Follow(prefix string) (subPrefix string, value interface{}, ok bool)
 	Load(prefix string) (value interface{}, ok bool)
 	// return true if prefix with key and value
 	Contains(prefix string) bool
@@ -107,6 +110,11 @@ func (l *ternarySearchTree) lazyInit() {
 
 func (l *ternarySearchTree) Traversal(order traversal.Order, handler Handler) {
 	l.root.Traversal(order, handler)
+}
+
+func (l *ternarySearchTree) Follow(prefix string) (subPrefix string, value interface{}, ok bool) {
+	pre, val, ok := l.root.Follow([]byte(prefix))
+	return string(pre), val, ok
 }
 
 func (l *ternarySearchTree) Load(prefix string) (value interface{}, ok bool) {
