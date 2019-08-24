@@ -254,6 +254,18 @@ func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...util.Comparator)
 	return false
 }
 
+// Depth return max len of all prefixs
+func (n *node) Depth() int {
+	var depth int
+	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
+		if depth < len(prefix) {
+			depth = len(prefix)
+		}
+		return true
+	}))
+	return depth
+}
+
 // shrinkToFit cutoff lastnode's children nodes if all children nodes are empty
 func (n *node) shrinkToFit(last *node, lastPos int) {
 	var has bool
