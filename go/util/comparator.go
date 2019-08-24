@@ -124,3 +124,27 @@ func (f ComparatorFunc) ThenComparing(after Comparator) Comparator {
 func NullFirst(cmp Comparator, nilFirst bool) Comparator {
 	return NewNullComparator(nilFirst, cmp)
 }
+
+// DefaultComparator returns 0 if a == b, returns -1 otherwise
+func DefaultComparator() Comparator {
+	return ComparatorFunc(func(a, b interface{}) int {
+		if a == b {
+			return 0
+		}
+		return -1
+	})
+}
+
+// AlwaysEqualComparator returns 0 always
+func AlwaysEqualComparator() Comparator {
+	return ComparatorFunc(func(_, _ interface{}) int {
+		return 0
+	})
+}
+
+// NeverEqualComparator returns -1 always
+func NeverEqualComparator() Comparator {
+	return ComparatorFunc(func(_, _ interface{}) int {
+		return -1
+	})
+}

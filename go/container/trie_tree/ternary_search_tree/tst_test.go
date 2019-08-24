@@ -8,29 +8,43 @@ import (
 
 func TestTernarySearchTree(t *testing.T) {
 	tree := ternary_search_tree.New()
-	tree.Insert("test", 1)
+	tree.Store("test", 1)
 	if tree.Len() != 1 {
-		t.Errorf("expecting len 1")
+		t.Errorf("expecting len 1, actual = %v", tree.Len())
 	}
 	if !tree.Contains("test") {
 		t.Errorf("expecting to find key=test")
 	}
+	if !tree.ContainsPrefix("tes") {
+		t.Errorf("expecting to find key=tes")
+	}
 
-	val, ok := tree.Get("test")
+	val, ok := tree.Load("test")
 	if !ok {
 		t.Errorf("expecting to find key=test")
 	}
 	if val.(int) != 1 {
 		t.Errorf("expecting test's value=1")
 	}
+	tree.Store("test", 11)
+	val, ok = tree.Load("test")
+	if !ok {
+		t.Errorf("expecting to find key=test")
+	}
+	if val.(int) != 11 {
+		t.Errorf("expecting test's value=11, actual = %v", val)
+	}
 
-	tree.Insert("testing", 2)
-	tree.Insert("abcd", 0)
+	tree.Store("testing", 2)
+	tree.Store("abcd", 0)
+	if tree.Len() != 3 {
+		t.Errorf("expecting len 3, actual = %v", tree.Len())
+	}
 
 	found := false
 	tree.Traversal(traversal.Preorder, ternary_search_tree.HandlerFunc(
 		func(key []byte, val interface{}) bool {
-			if string(key) == "test" && val.(int) == 1 {
+			if string(key) == "test" && val.(int) == 11 {
 				found = true
 				return false
 			}
@@ -40,7 +54,7 @@ func TestTernarySearchTree(t *testing.T) {
 		t.Errorf("expecting iterator to find test")
 	}
 
-	val, ok = tree.Get("testing")
+	val, ok = tree.Load("testing")
 	if !ok {
 		t.Errorf("expecting to find key=testing")
 	}
@@ -48,7 +62,7 @@ func TestTernarySearchTree(t *testing.T) {
 		t.Errorf("expecting testing's value=2")
 	}
 
-	val, ok = tree.Get("abcd")
+	val, ok = tree.Load("abcd")
 	if !ok {
 		t.Errorf("expecting to find key=abcd")
 	}
@@ -56,65 +70,52 @@ func TestTernarySearchTree(t *testing.T) {
 		t.Errorf("expecting abcd's value=0")
 	}
 
-	tree.Remove("testing")
-	tree.Remove("abcd")
+	tree.Remove("testing", true)
+	tree.Remove("abcd", false)
 
-	v, ok := tree.Remove("test")
+	v, ok := tree.Remove("test",false)
 	if !ok {
 		t.Errorf("expecting test can be found to be removed")
 	}
+
 	if tree.Len() != 0 {
-		t.Errorf("expecting len 0")
+		t.Errorf("expecting len 3, actual = %v", tree.Len())
 	}
+
 	if tree.Contains("test") {
 		t.Errorf("expecting not to find key=test")
 	}
-	if v.(int) != 1 {
-		t.Errorf("expecting value=1")
+	if v.(int) != 11 {
+		t.Errorf("expecting test's value=11, actual = %v", val)
 	}
 }
 
 func TestTernarySearchTree_String1(t *testing.T) {
 
 	tree := ternary_search_tree.New()
-	tree.Insert("abcd", 0)
-	tree.Insert("abcd1234ABCD", 2)
-	tree.Insert("abcd1234", 1)
+	tree.Store("abcd", 0)
+	tree.Store("abcd1234ABCD", 2)
+	tree.Store("abcd1234", 1)
 	s := tree.String()
-	expect := `a:<nil>
-ab:<nil>
-abc:<nil>
-abcd:0
-abcd1:<nil>
-abcd12:<nil>
-abcd123:<nil>
+	expect := `abcd:0
 abcd1234:1
-abcd1234A:<nil>
-abcd1234AB:<nil>
-abcd1234ABC:<nil>
 abcd1234ABCD:2
 `
 	if s != expect {
-		t.Errorf("expect %s", expect)
+		t.Errorf("actual:\n%s\nexpect:\n%s", s, expect)
 	}
 }
 
 func TestTernarySearchTree_String2(t *testing.T) {
 
 	tree := ternary_search_tree.New()
-	tree.Insert("abcd", 0)
-	tree.Insert("1234", 1)
+	tree.Store("abcd", 0)
+	tree.Store("1234", 1)
 	s := tree.String()
-	expect := `1:<nil>
-12:<nil>
-123:<nil>
-1234:1
-a:<nil>
-ab:<nil>
-abc:<nil>
+	expect := `1234:1
 abcd:0
 `
 	if s != expect {
-		t.Errorf("expect %s", expect)
+		t.Errorf("actual:\n%s\nexpect:\n%s", s, expect)
 	}
 }

@@ -3,6 +3,7 @@ package ternary_search_tree
 import (
 	"fmt"
 	"github.com/searKing/golang/go/container/traversal"
+	"github.com/searKing/golang/go/util"
 )
 
 const (
@@ -85,7 +86,7 @@ func (n *node) Traversal(order traversal.Order, handler Handler) {
 	return
 }
 
-func (n *node) Get(prefix []byte) (value interface{}, ok bool) {
+func (n *node) Load(prefix []byte) (value interface{}, ok bool) {
 	cur, _, _, has := n.search(prefix)
 	if !has {
 		return nil, false
@@ -93,8 +94,16 @@ func (n *node) Get(prefix []byte) (value interface{}, ok bool) {
 	return cur.value, cur.hasValue
 }
 
+func (n *node) ContainsPrefix(prefix []byte) bool {
+	cur, _, _, has := n.search(prefix)
+	if !has {
+		return false
+	}
+	return cur.hasKey
+}
+
 func (n *node) Contains(prefix []byte) bool {
-	_, ok := n.Get(prefix)
+	_, ok := n.Load(prefix)
 	return ok
 }
 
@@ -105,7 +114,67 @@ const (
 	posButt
 )
 
-func (n *node) Insert(prefix []byte, value interface{}) {
+func (n *node) Store(prefix []byte, value interface{}) {
+	// force update
+	n.CAS(prefix, nil, value, util.AlwaysEqualComparator())
+}
+
+func (n *node) Remove(prefix []byte, shrinkToFit bool) (old interface{}, ok bool) {
+	cur, last, lastPos, has := n.search(prefix)
+	if !has {
+		return nil, false
+	}
+	if !cur.hasValue {
+		return nil, false
+	}
+	cur.hasValue = false
+	// shrinkToFit if cur's children are empty
+	if shrinkToFit {
+		cur.shrinkToFit(last, lastPos)
+	}
+	// all matched, goto remove the old
+	return cur.value, true
+}
+
+func (n *node) RemoveAll(prefix []byte) (value interface{}, ok bool) {
+	cur, last, lastPos, has := n.search(prefix)
+	if !has {
+		return nil, false
+	}
+
+	// match
+	switch lastPos {
+	case posLeft:
+		last.left = &n.tree.root
+	case posMiddle:
+		last.middle = &n.tree.root
+	case posRight:
+		last.right = &n.tree.root
+	case posButt:
+		last.left = &n.tree.root
+		last.middle = &n.tree.root
+		last.right = &n.tree.root
+	}
+
+	if !cur.hasValue {
+		return nil, false
+	}
+	cur.hasValue = false
+	// all matched, goto remove the value
+	return cur.value, true
+}
+
+func (n *node) String() string {
+	s := ""
+	n.Traversal(traversal.Inorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
+		s += fmt.Sprintf("%s:%v\n", string(prefix), value)
+		return true
+	}))
+
+	return s
+}
+
+func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...util.Comparator) bool {
 	newElement := func(prefix []byte, hasKey bool, key byte, hasValue bool, value interface{}) *node {
 		var p = make([]byte, len(prefix))
 		copy(p, prefix)
@@ -154,9 +223,25 @@ func (n *node) Insert(prefix []byte, value interface{}) {
 		idx++
 		// all matched, goto set the value
 		if idx == len(prefix) {
-			cur.hasValue = true
-			cur.value = value
-			return
+			// no old
+			if !cur.hasValue {
+				cur.value = new
+				cur.hasValue = true
+				return true
+			}
+			var cmp util.Comparator
+			if len(cmps) > 0 {
+				cmp = cmps[0]
+			}
+			if cmp == nil {
+				cmp = util.DefaultComparator()
+			}
+			if cmp.Compare(cur.value, old) == 0 {
+				cur.value = new
+				cur.hasValue = true
+				return true
+			}
+			return false
 		}
 		// partial matched, goto middle on next layer
 		middle := cur.Middle()
@@ -165,25 +250,12 @@ func (n *node) Insert(prefix []byte, value interface{}) {
 		}
 		cur = cur.middle
 	}
-	return
+	// never reach
+	return false
 }
 
-func (n *node) Remove(prefix []byte) (value interface{}, ok bool) {
-	cur, last, lastPos, has := n.search(prefix)
-	if !has {
-		return nil, false
-	}
-	if !cur.hasValue {
-		return nil, false
-	}
-	cur.hasValue = false
-	// shrink if cur's children are empty
-	cur.shrink(last, lastPos)
-	// all matched, goto remove the value
-	return cur.value, true
-}
-
-func (n *node) shrink(last *node, lastPos int) {
+// shrinkToFit cutoff lastnode's children nodes if all children nodes are empty
+func (n *node) shrinkToFit(last *node, lastPos int) {
 	var has bool
 	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
 		has = true
@@ -206,34 +278,6 @@ func (n *node) shrink(last *node, lastPos int) {
 		last.middle = &n.tree.root
 		last.right = &n.tree.root
 	}
-}
-
-func (n *node) RemoveAll(prefix []byte) (value interface{}, ok bool) {
-	cur, last, lastPos, has := n.search(prefix)
-	if !has {
-		return nil, false
-	}
-
-	// match
-	switch lastPos {
-	case posLeft:
-		last.left = &n.tree.root
-	case posMiddle:
-		last.middle = &n.tree.root
-	case posRight:
-		last.right = &n.tree.root
-	case posButt:
-		last.left = &n.tree.root
-		last.middle = &n.tree.root
-		last.right = &n.tree.root
-	}
-
-	if !cur.hasValue {
-		return nil, false
-	}
-	cur.hasValue = false
-	// all matched, goto remove the value
-	return cur.value, true
 }
 
 // return true if prefix matches, no matter value exists
@@ -287,14 +331,4 @@ func (n *node) search(prefix []byte) (cur, last *node, lastPos int, has bool) {
 		cur = middle
 	}
 	return
-}
-
-func (n *node) String() string {
-	s := ""
-
-	n.Traversal(traversal.Inorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
-		s += fmt.Sprintf("%s:%v\n", string(prefix), value)
-		return true
-	}))
-	return s
 }
