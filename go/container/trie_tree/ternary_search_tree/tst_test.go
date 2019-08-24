@@ -27,8 +27,20 @@ func TestTernarySearchTree(t *testing.T) {
 		t.Errorf("expecting to find key=test")
 	}
 	if val.(int) != 1 {
-		t.Errorf("expecting test's value=1")
+		t.Errorf("expecting test's value=1, actual = %v", val)
 	}
+
+	subPrefix, val, ok := tree.Follow("test_hello")
+	if !ok {
+		t.Errorf("expecting to follow key=test_hello")
+	}
+	if val.(int) != 1 {
+		t.Errorf("expecting test_hello's value=1, actual = %v", val)
+	}
+	if subPrefix != "test" {
+		t.Errorf("expecting test_hello's subprefix=test, actual = %v", subPrefix)
+	}
+
 	tree.Store("test", 11)
 	val, ok = tree.Load("test")
 	if !ok {
