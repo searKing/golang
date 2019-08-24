@@ -18,12 +18,19 @@ import (
 )
 
 type TernarySearchTree interface {
-	Len() int
+	// Depth return max len of all prefixs
+	Depth() int
+	// Count returns the number of elements of list l, excluding (this) sentinel node.
+	Count() int
 	Store(prefix string, value interface{})
 	Load(prefix string) (value interface{}, ok bool)
+	// return true if prefix with key and value
 	Contains(prefix string) bool
+	// return true if prefix with key
 	ContainsPrefix(prefix string) bool
+	// remove value with prefix
 	Remove(prefix string, shrinkToFit bool) (value interface{}, old bool)
+	// remove node with prefix
 	RemoveAll(prefix string) (value interface{}, ok bool)
 	String() string
 	Traversal(order traversal.Order, handler Handler)
@@ -45,17 +52,29 @@ func (l *ternarySearchTree) init() *ternarySearchTree {
 }
 
 // Init initializes or clears Tree l.
-func New() TernarySearchTree {
-	return (&ternarySearchTree{}).init()
+func New(prefixes ...string) TernarySearchTree {
+	tree := (&ternarySearchTree{}).init()
+	for _, prefix := range prefixes {
+		tree.Store(prefix, nil)
+	}
+	return tree
 }
 
-func (l *ternarySearchTree) Node() traversal.Node {
-	return &(l.root)
+func NewWithBytes(prefixes ...[]byte) TernarySearchTree {
+	tree := (&ternarySearchTree{}).init()
+	for _, prefix := range prefixes {
+		tree.Store(string(prefix), nil)
+	}
+	return tree
 }
 
-// Len returns the number of elements of list l, excluding (this) sentinel node.
-// The complexity is O(1).
-func (l *ternarySearchTree) Len() int {
+// Depth return max len of all prefixs
+func (l *ternarySearchTree) Depth() int {
+	return l.root.Depth()
+}
+
+// Count returns the number of elements of list l, excluding (this) sentinel node.
+func (l *ternarySearchTree) Count() int {
 	var len int
 	l.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
 		len++

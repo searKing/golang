@@ -9,8 +9,11 @@ import (
 func TestTernarySearchTree(t *testing.T) {
 	tree := ternary_search_tree.New()
 	tree.Store("test", 1)
-	if tree.Len() != 1 {
-		t.Errorf("expecting len 1, actual = %v", tree.Len())
+	if tree.Count() != 1 {
+		t.Errorf("expecting count 1, actual = %v", tree.Count())
+	}
+	if tree.Depth() != 4 {
+		t.Errorf("expecting depth 4, actual = %v", tree.Depth())
 	}
 	if !tree.Contains("test") {
 		t.Errorf("expecting to find key=test")
@@ -34,11 +37,20 @@ func TestTernarySearchTree(t *testing.T) {
 	if val.(int) != 11 {
 		t.Errorf("expecting test's value=11, actual = %v", val)
 	}
+	if tree.Depth() != 4 {
+		t.Errorf("expecting depth 4, actual = %v", tree.Depth())
+	}
 
 	tree.Store("testing", 2)
+	if tree.Depth() != 7 {
+		t.Errorf("expecting depth 7, actual = %v", tree.Depth())
+	}
 	tree.Store("abcd", 0)
-	if tree.Len() != 3 {
-		t.Errorf("expecting len 3, actual = %v", tree.Len())
+	if tree.Depth() != 7 {
+		t.Errorf("expecting depth 7, actual = %v", tree.Depth())
+	}
+	if tree.Count() != 3 {
+		t.Errorf("expecting count 3, actual = %v", tree.Count())
 	}
 
 	found := false
@@ -73,13 +85,17 @@ func TestTernarySearchTree(t *testing.T) {
 	tree.Remove("testing", true)
 	tree.Remove("abcd", false)
 
-	v, ok := tree.Remove("test",false)
+	v, ok := tree.Remove("test", false)
 	if !ok {
 		t.Errorf("expecting test can be found to be removed")
 	}
 
-	if tree.Len() != 0 {
-		t.Errorf("expecting len 3, actual = %v", tree.Len())
+	if tree.Count() != 0 {
+		t.Errorf("expecting count 3, actual = %v", tree.Count())
+	}
+
+	if tree.Depth() != 0 {
+		t.Errorf("expecting depth 0, actual = %v", tree.Depth())
 	}
 
 	if tree.Contains("test") {
