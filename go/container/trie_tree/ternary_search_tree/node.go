@@ -18,7 +18,7 @@ type node struct {
 	hasValue bool
 
 	left, middle, right *node
-	tree                *ternarySearchTree
+	tree                *TernarySearchTree
 }
 
 func (n *node) LeftNodes() []interface{} {
