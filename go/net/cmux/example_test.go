@@ -6,6 +6,7 @@ package cmux_test
 
 import (
 	"fmt"
+	"golang.org/x/net/http2/hpack"
 	"google.golang.org/grpc"
 	"io"
 	"log"
@@ -98,9 +99,14 @@ func ExampleListenAndServe() {
 
 	// We first match the connection against HTTP2 fields. If matched, the
 	// connection will be sent through the "grpcl" listener.
-	grpcl := m.Match(cmux.HTTP2HeaderFieldPrefix("content-type", "application/grpc"))
+	grpcl := m.Match(cmux.HTTP2HeaderFieldPrefix(false, hpack.HeaderField{
+		Name:  "content-type",
+		Value: "application/grpc",
+	}))
 	//Otherwise, we match it againts a websocket upgrade request.
-	wsl := m.Match(cmux.HTTP1HeaderField("Upgrade", "websocket"))
+	header := make(http.Header)
+	header.Set("Upgrade", "websocket")
+	wsl := m.Match(cmux.HTTP1HeaderEqual(header))
 
 	// Otherwise, we match it againts HTTP1 methods. If matched,
 	// it is sent through the "httpl" listener.

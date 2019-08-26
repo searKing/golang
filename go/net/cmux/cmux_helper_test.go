@@ -5,14 +5,20 @@
 package cmux_test
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	net_ "github.com/searKing/golang/go/net"
 	"github.com/searKing/golang/go/net/cmux"
+	"github.com/searKing/golang/go/sync/atomic"
 	"github.com/searKing/golang/go/testing/leakcheck"
 	"go/build"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/hpack"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -57,11 +63,19 @@ func safeDial(t *testing.T, addr net.Addr) (*rpc.Client, func()) {
 
 type chanListener struct {
 	net.Listener
-	connCh chan net.Conn
+	connCh     chan net.Conn
+	inShutdown atomic.Bool
 }
 
 func newChanListener() *chanListener {
 	return &chanListener{connCh: make(chan net.Conn, 1)}
+}
+
+func (l *chanListener) Notify(conn net.Conn) {
+	if l.inShutdown.Load() {
+		return
+	}
+	l.connCh <- conn
 }
 
 func (l *chanListener) Accept() (net.Conn, error) {
@@ -72,6 +86,14 @@ func (l *chanListener) Accept() (net.Conn, error) {
 }
 
 func (l *chanListener) Close() error {
+	if l.inShutdown.Load() {
+		return nil
+	}
+
+	l.inShutdown.Store(true)
+
+	close(l.connCh)
+
 	if l.Listener == nil {
 		return nil
 	}
@@ -229,5 +251,90 @@ func runTestRPCClient(t *testing.T, addr net.Addr) {
 
 	if num != rpcVal {
 		t.Errorf("wrong rpc response: want=%d got=%v", rpcVal, num)
+	}
+}
+
+func testHTTP2HeaderField(
+	t *testing.T,
+	matcherConstructor func(sendSetting bool,
+	expects ...hpack.HeaderField) cmux.MatcherFunc,
+	headerValue string,
+	matchValue string,
+	notMatchValue string,
+) {
+	defer leakcheck.Check(t)
+	errCh := make(chan error)
+	defer func() {
+		for {
+			select {
+			case err, ok := <-errCh:
+				if !ok {
+					return
+				}
+				t.Fatal(err)
+			default:
+				close(errCh)
+				return
+			}
+		}
+	}()
+	name := "name"
+	writer, reader := net.Pipe()
+	go func() {
+		if _, err := io.WriteString(writer, http2.ClientPreface); err != nil {
+			t.Fatal(err)
+		}
+		var buf bytes.Buffer
+		enc := hpack.NewEncoder(&buf)
+		if err := enc.WriteField(hpack.HeaderField{Name: name, Value: headerValue}); err != nil {
+			t.Fatal(err)
+		}
+		framer := http2.NewFramer(writer, nil)
+		if err := framer.WriteSettingsAck(); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := framer.WriteHeaders(http2.HeadersFrameParam{
+			StreamID:      1,
+			BlockFragment: buf.Bytes(),
+			EndStream:     true,
+			EndHeaders:    true,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	l := newChanListener()
+	l.Notify(reader)
+	muxl := cmux.New(context.Background())
+	defer muxl.Close()
+	// Register a bogus matcher that only reads one byte.
+	muxl.Match(cmux.MatcherFunc(func(w io.Writer, r io.Reader) bool {
+		var b [1]byte
+		_, _ = r.Read(b[:])
+		return false
+	}))
+	// Create a matcher that cannot match the response.
+	//muxl.Match(matcherConstructor(false, hpack.HeaderField{Name: name, Value: notMatchValue}))
+	// Then match with the expected field.
+	h2l := muxl.Match(matcherConstructor(false, hpack.HeaderField{Name: name, Value: matchValue}))
+	go func() {
+		safeServe(errCh, muxl, l)
+	}()
+	muxedConn, err := h2l.Accept()
+	_ = l.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var b [len(http2.ClientPreface)]byte
+	// We have the sniffed buffer first...
+	if _, err := muxedConn.Read(b[:]); err == io.EOF {
+		t.Fatal(err)
+	}
+	if string(b[:]) != http2.ClientPreface {
+		t.Errorf("got unexpected read %s, expected %s", b, http2.ClientPreface)
 	}
 }

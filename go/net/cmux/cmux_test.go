@@ -5,7 +5,6 @@
 package cmux_test
 
 import (
-	"bytes"
 	"context"
 	"github.com/searKing/golang/go/net/cmux"
 	"github.com/searKing/golang/go/testing/leakcheck"
@@ -18,7 +17,6 @@ import (
 	"time"
 
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/hpack"
 )
 
 const (
@@ -154,8 +152,8 @@ func TestRead(t *testing.T) {
 	}()
 
 	l := newChanListener()
-	defer close(l.connCh)
-	l.connCh <- reader
+	l.Notify(reader)
+	defer l.Close()
 	muxl := cmux.New(context.Background())
 	defer muxl.Close()
 
@@ -285,7 +283,7 @@ func TestHTTP2(t *testing.T) {
 	}()
 
 	l := newChanListener()
-	l.connCh <- reader
+	l.Notify(reader)
 	muxl := cmux.New(context.Background())
 	defer muxl.Close()
 	// Register a bogus matcher that only reads one byte.
@@ -297,7 +295,7 @@ func TestHTTP2(t *testing.T) {
 	h2l := muxl.Match(cmux.HTTP2())
 	go safeServe(errCh, muxl, l)
 	muxedConn, err := h2l.Accept()
-	close(l.connCh)
+	_ = l.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,90 +315,11 @@ func TestHTTP2(t *testing.T) {
 }
 
 func TestHTTP2MatchHeaderField(t *testing.T) {
-	testHTTP2MatchHeaderField(t, cmux.HTTP2HeaderField, "value", "value", "anothervalue")
+	testHTTP2HeaderField(t, cmux.HTTP2HeaderFieldEqual, "value", "value", "anothervalue")
 }
 
 func TestHTTP2MatchHeaderFieldPrefix(t *testing.T) {
-	testHTTP2MatchHeaderField(t, cmux.HTTP2HeaderFieldPrefix, "application/grpc+proto", "application/grpc", "application/json")
-}
-
-func testHTTP2MatchHeaderField(
-	t *testing.T,
-	matcherConstructor func(string, string) cmux.MatcherFunc,
-	headerValue string,
-	matchValue string,
-	notMatchValue string,
-) {
-	defer leakcheck.Check(t)
-	errCh := make(chan error)
-	defer func() {
-		for {
-			select {
-			case err, ok := <-errCh:
-				if !ok {
-					return
-				}
-				t.Fatal(err)
-			default:
-				close(errCh)
-				return
-			}
-		}
-	}()
-	name := "name"
-	writer, reader := net.Pipe()
-	go func() {
-		if _, err := io.WriteString(writer, http2.ClientPreface); err != nil {
-			t.Fatal(err)
-		}
-		var buf bytes.Buffer
-		enc := hpack.NewEncoder(&buf)
-		if err := enc.WriteField(hpack.HeaderField{Name: name, Value: headerValue}); err != nil {
-			t.Fatal(err)
-		}
-		framer := http2.NewFramer(writer, nil)
-		err := framer.WriteHeaders(http2.HeadersFrameParam{
-			StreamID:      1,
-			BlockFragment: buf.Bytes(),
-			EndStream:     true,
-			EndHeaders:    true,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := writer.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	l := newChanListener()
-	l.connCh <- reader
-	muxl := cmux.New(context.Background())
-	defer muxl.Close()
-	// Register a bogus matcher that only reads one byte.
-	muxl.Match(cmux.MatcherFunc(func(w io.Writer, r io.Reader) bool {
-		var b [1]byte
-		_, _ = r.Read(b[:])
-		return false
-	}))
-	// Create a matcher that cannot match the response.
-	muxl.Match(matcherConstructor(name, notMatchValue))
-	// Then match with the expected field.
-	h2l := muxl.Match(matcherConstructor(name, matchValue))
-	go safeServe(errCh, muxl, l)
-	muxedConn, err := h2l.Accept()
-	close(l.connCh)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var b [len(http2.ClientPreface)]byte
-	// We have the sniffed buffer first...
-	if _, err := muxedConn.Read(b[:]); err == io.EOF {
-		t.Fatal(err)
-	}
-	if string(b[:]) != http2.ClientPreface {
-		t.Errorf("got unexpected read %s, expected %s", b, http2.ClientPreface)
-	}
+	testHTTP2HeaderField(t, cmux.HTTP2HeaderFieldPrefix, "application/grpc+proto", "application/grpc", "application/json")
 }
 
 func TestHTTPGoRPC(t *testing.T) {
@@ -549,7 +468,7 @@ func TestClose(t *testing.T) {
 
 	go safeServe(errCh, muxl, l)
 
-	l.connCh <- c1
+	l.Notify(c1)
 
 	// First connection goes through.
 	if _, err := anyl.Accept(); err != nil {
@@ -557,10 +476,10 @@ func TestClose(t *testing.T) {
 	}
 
 	// Second connection is sent
-	l.connCh <- c2
+	l.Notify(c2)
 
 	// Listener is closed.
-	close(l.connCh)
+	l.Close()
 
 	// Second connection either goes through or it is closed.
 	if _, err := anyl.Accept(); err != nil {
