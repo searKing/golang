@@ -1,17 +1,20 @@
 package http2
 
 import (
+	"bytes"
 	"golang.org/x/net/http2"
 	"io"
-	"io/ioutil"
+)
+
+var (
+	clientPreface = []byte(http2.ClientPreface)
 )
 
 func HasClientPreface(w io.Writer, r io.Reader) bool {
-	r = io.LimitReader(r, int64(len(http2.ClientPreface)))
-
-	clientPrefaceLine, err := ioutil.ReadAll(r)
-	if err != nil {
+	// Check the validity of client preface.
+	preface := make([]byte, len(clientPreface))
+	if _, err := io.ReadFull(r, preface); err != nil {
 		return false
 	}
-	return string(clientPrefaceLine) == http2.ClientPreface
+	return bytes.Equal(preface, clientPreface)
 }

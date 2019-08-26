@@ -10,7 +10,7 @@ import (
 const maxHTTPRead = 4096
 
 // read first line of HTTP request
-func ReadRequestLine(w io.Writer, r io.Reader) *http.Request {
+func ReadRequestLine(r io.Reader) *http.Request {
 	br := bufio.NewReader(&io.LimitedReader{R: r, N: maxHTTPRead})
 	l, part, err := br.ReadLine()
 	if err != nil || part {
