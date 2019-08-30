@@ -6,6 +6,7 @@ import (
 	"github.com/searKing/golang/go/container/slice"
 	"github.com/searKing/golang/go/container/stack"
 	"io"
+	"unicode"
 )
 
 var (
@@ -197,13 +198,9 @@ func findMatchedTokenPair(c byte, pairs []DelimiterPair) (tokenPair DelimiterPai
 
 func nonSpace(b []byte) bool {
 	for _, c := range b {
-		if !isSpace(c) {
+		if !unicode.IsSpace(rune(c)) {
 			return true
 		}
 	}
 	return false
-}
-
-func isSpace(c byte) bool {
-	return c == ' ' || c == '\t' || c == '\r' || c == '\n'
 }
