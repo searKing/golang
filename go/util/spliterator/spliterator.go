@@ -1,136 +1,12 @@
 // A sequence of elements supporting sequential and parallel aggregate
 // operations.  The following example illustrates an aggregate operation using
 // SEE java/util/function/Consumer.java
-package util
+package spliterator
 
 import (
 	"context"
-	"github.com/searKing/golang/go/error/exception"
-	"github.com/searKing/golang/go/util/class"
 	"github.com/searKing/golang/go/util/function/consumer"
 	"github.com/searKing/golang/go/util/object"
-)
-
-type SpliteratorCharacteristic int
-
-const (
-	/**
-	 * Characteristic value signifying that an encounter order is defined for
-	 * elements. If so, this Spliterator guarantees that method
-	 * {@link #trySplit} splits a strict prefix of elements, that method
-	 * {@link #tryAdvance} steps by one element in prefix order, and that
-	 * {@link #forEachRemaining} performs actions in encounter order.
-	 *
-	 * <p>A {@link Collection} has an encounter order if the corresponding
-	 * {@link Collection#iterator} documents an order. If so, the encounter
-	 * order is the same as the documented order. Otherwise, a collection does
-	 * not have an encounter order.
-	 *
-	 * @apiNote Encounter order is guaranteed to be ascending index order for
-	 * any {@link List}. But no order is guaranteed for hash-based collections
-	 * such as {@link HashSet}. Clients of a Spliterator that reports
-	 * {@code ORDERED} are expected to preserve ordering constraints in
-	 * non-commutative parallel computations.
-	 */
-	SpliteratorOrdered SpliteratorCharacteristic = 0x00000010
-
-	/**
-	 * Characteristic value signifying that, for each pair of
-	 * encountered elements {@code x, y}, {@code !x.equals(y)}. This
-	 * applies for example, to a Spliterator based on a {@link Set}.
-	 */
-	SpliteratorDistinct SpliteratorCharacteristic = 0x00000001
-
-	/**
-	 * Characteristic value signifying that encounter order follows a defined
-	 * sort order. If so, method {@link #getComparator()} returns the associated
-	 * Comparator, or {@code null} if all elements are {@link Comparable} and
-	 * are sorted by their natural ordering.
-	 *
-	 * <p>A Spliterator that reports {@code SORTED} must also report
-	 * {@code ORDERED}.
-	 *
-	 * @apiNote The spliterators for {@code Collection} classes in the JDK that
-	 * implement {@link NavigableSet} or {@link SortedSet} report {@code SORTED}.
-	 */
-	SpliteratorSorted SpliteratorCharacteristic = 0x00000004
-
-	/**
-	 * Characteristic value signifying that the value returned from
-	 * {@code estimateSize()} prior to traversal or splitting represents a
-	 * finite size that, in the absence of structural source modification,
-	 * represents an exact count of the number of elements that would be
-	 * encountered by a complete traversal.
-	 *
-	 * @apiNote Most Spliterators for Collections, that cover all elements of a
-	 * {@code Collection} report this characteristic. Sub-spliterators, such as
-	 * those for {@link HashSet}, that cover a sub-set of elements and
-	 * approximate their reported size do not.
-	 */
-	SpliteratorSized SpliteratorCharacteristic = 0x00000040
-
-	/**
-	 * Characteristic value signifying that the source guarantees that
-	 * encountered elements will not be {@code null}. (This applies,
-	 * for example, to most concurrent collections, queues, and maps.)
-	 */
-	SpliteratorNonnulL SpliteratorCharacteristic = 0x00000100
-
-	/**
-	 * Characteristic value signifying that the element source cannot be
-	 * structurally modified; that is, elements cannot be added, replaced, or
-	 * removed, so such changes cannot occur during traversal. A Spliterator
-	 * that does not report {@code IMMUTABLE} or {@code CONCURRENT} is expected
-	 * to have a documented policy (for example throwing
-	 * {@link ConcurrentModificationException}) concerning structural
-	 * interference detected during traversal.
-	 */
-	SpliteratorImmutable SpliteratorCharacteristic = 0x00000400
-
-	/**
-	 * Characteristic value signifying that the element source may be safely
-	 * concurrently modified (allowing additions, replacements, and/or removals)
-	 * by multiple threads without external synchronization. If so, the
-	 * Spliterator is expected to have a documented policy concerning the impact
-	 * of modifications during traversal.
-	 *
-	 * <p>A top-level Spliterator should not report both {@code CONCURRENT} and
-	 * {@code SpliteratorSIZED}, since the finite size, if known, may change if the source
-	 * is concurrently modified during traversal. Such a Spliterator is
-	 * inconsistent and no guarantees can be made about any computation using
-	 * that Spliterator. Sub-spliterators may report {@code SpliteratorSIZED} if the
-	 * sub-split size is known and additions or removals to the source are not
-	 * reflected when traversing.
-	 *
-	 * <p>A top-level Spliterator should not report both {@code CONCURRENT} and
-	 * {@code IMMUTABLE}, since they are mutually exclusive. Such a Spliterator
-	 * is inconsistent and no guarantees can be made about any computation using
-	 * that Spliterator. Sub-spliterators may report {@code IMMUTABLE} if
-	 * additions or removals to the source are not reflected when traversing.
-	 *
-	 * @apiNote Most concurrent collections maintain a consistency policy
-	 * guaranteeing accuracy with respect to elements present at the point of
-	 * Spliterator construction, but possibly not reflecting subsequent
-	 * additions or removals.
-	 */
-	SpliteratorConcurrent SpliteratorCharacteristic = 0x00001000
-
-	/**
-	 * Characteristic value signifying that all Spliterators resulting from
-	 * {@code trySplit()} will be both {@link #SpliteratorSIZED} and {@link #SUBSIZED}.
-	 * (This means that all child Spliterators, whether direct or indirect, will
-	 * be {@code SpliteratorSIZED}.)
-	 *
-	 * <p>A Spliterator that does not report {@code SpliteratorSIZED} as required by
-	 * {@code SUBSIZED} is inconsistent and no guarantees can be made about any
-	 * computation using that Spliterator.
-	 *
-	 * @apiNote Some spliterators, such as the top-level spliterator for an
-	 * approximately balanced binary tree, will report {@code SpliteratorSIZED} but not
-	 * {@code SUBSIZED}, since it is common to know the size of the entire tree
-	 * but not the exact sizes of subtrees.
-	 */
-	SpliteratorSubsized SpliteratorCharacteristic = 0x00004000
 )
 
 /**
@@ -410,7 +286,7 @@ type Spliterator interface {
 	 * upon entry to this method, else {@code true}.
 	 * @throws NullPointerException if the specified action is null
 	 */
-	TryAdvance(action consumer.Consumer) bool
+	TryAdvance(ctx context.Context, consumer consumer.Consumer) bool
 
 	/**
 	 * Performs the given action for each remaining element, sequentially in
@@ -426,7 +302,7 @@ type Spliterator interface {
 	 * @param action The action
 	 * @throws NullPointerException if the specified action is null
 	 */
-	ForEachRemaining(ctx context.Context, action consumer.Consumer)
+	ForEachRemaining(ctx context.Context, consumer consumer.Consumer)
 
 	/**
 	 * If this spliterator can be partitioned, returns a Spliterator
@@ -531,7 +407,7 @@ type Spliterator interface {
 	 * @return a representation of characteristics
 	 */
 
-	Characteristics() SpliteratorCharacteristic
+	Characteristics() Characteristic
 
 	/**
 	 * Returns {@code true} if this Spliterator's {@link
@@ -545,7 +421,7 @@ type Spliterator interface {
 	 * @return {@code true} if all the specified characteristics are present,
 	 * else {@code false}
 	 */
-	HasCharacteristics(characteristics SpliteratorCharacteristic) bool
+	HasCharacteristics(characteristics Characteristic) bool
 
 	/**
 	 * If this Spliterator's source is {@link #SORTED} by a {@link Comparator},
@@ -562,48 +438,4 @@ type Spliterator interface {
 	 *         a characteristic of {@code SORTED}.
 	 */
 	GetComparator() object.Comparator
-}
-
-type AbstractSpliteratorClass struct {
-	class.Class
-}
-
-func (split *AbstractSpliteratorClass) TryAdvance(action consumer.Consumer) bool {
-	panic(exception.NewIllegalStateException1("called wrong TryAdvance method"))
-}
-
-func (split *AbstractSpliteratorClass) ForEachRemaining(ctx context.Context, action consumer.Consumer) {
-	class := split.GetDerivedElse(split).(Spliterator)
-	for class.TryAdvance(action) {
-	}
-	return
-}
-
-func (split *AbstractSpliteratorClass) TrySplit() Spliterator {
-	panic(exception.NewIllegalStateException1("called wrong TrySplit method"))
-}
-
-func (split *AbstractSpliteratorClass) EstimateSize() int {
-	panic(exception.NewIllegalStateException1("called wrong EstimateSize method"))
-}
-
-func (split *AbstractSpliteratorClass) GetExactSizeIfKnown() int {
-	class := split.GetDerivedElse(split).(Spliterator)
-	if class.Characteristics()&SpliteratorSized == 0 {
-		return -1
-	}
-	return class.EstimateSize()
-}
-
-func (split *AbstractSpliteratorClass) Characteristics() SpliteratorCharacteristic {
-	panic(exception.NewIllegalStateException1("called wrong Characteristics method"))
-}
-
-func (split *AbstractSpliteratorClass) HasCharacteristics(characteristics SpliteratorCharacteristic) bool {
-	class := split.GetDerivedElse(split).(Spliterator)
-	return (class.Characteristics() & characteristics) == characteristics
-}
-
-func (split *AbstractSpliteratorClass) GetComparator() object.Comparator {
-	panic(exception.NewIllegalStateException())
 }
