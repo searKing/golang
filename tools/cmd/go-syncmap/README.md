@@ -49,9 +49,9 @@ func (m *Pill) Range(f func(key int, value string) bool)
 
 Typically this process would be run using go generate, like this:
 ```
-//go:generate go-syncmap -type=Pill<int, string>
-//go:generate go-syncmap -type=Pill<int, time.Time>
-//go:generate go-syncmap -type=Pill<int, encoding.json.Token>
+//go:generate go-syncmap -type "Pill<int, string>"
+//go:generate go-syncmap -type "Pill<int, time.Time>"
+//go:generate go-syncmap -type "Pill<int, encoding.json.Token>"
 ```
 
 If multiple constants have the same value, the lexically first matching name will

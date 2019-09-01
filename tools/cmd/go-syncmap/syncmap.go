@@ -24,7 +24,7 @@
 //
 // running this command
 //
-//	go-syncmap -type=Pill<int,time.Time>
+//	go-syncmap -type Pill<int,time.Time>
 //
 // in the same directory will create the file pill_syncmap.go, in package painkiller,
 // containing a definition of
@@ -37,9 +37,9 @@
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate go-syncmap -type=Pill<int, string>
-//	//go:generate go-syncmap -type=Pill<int, time.Time>
-//	//go:generate go-syncmap -type=Pill<int, encoding.json.Token>
+//	//go:generate go-syncmap -type Pill<int, string>
+//	//go:generate go-syncmap -type Pill<int, time.Time>
+//	//go:generate go-syncmap -type Pill<int, encoding.json.Token>
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
