@@ -30,7 +30,7 @@ type Pill sync.Pool
 
 running this command
 ```
-go-syncpool -type=Pill<time.Time>
+go-syncpool -type "Pill<time.Time>"
 ```
 
 in the same directory will create the file pill_syncpool.go, in package painkiller,
@@ -43,10 +43,10 @@ func (m *Pill) Get() time.Time
 
 Typically this process would be run using go generate, like this:
 ```
-//go:generate go-syncpool -type=Pill<int>
-//go:generate go-syncpool -type=Pill<string>
-//go:generate go-syncpool -type=Pill<time.Time>
-//go:generate go-syncpool -type=Pill<encoding.json.Token>
+//go:generate go-syncpool -type "Pill<int>"
+//go:generate go-syncpool -type "Pill<string>"
+//go:generate go-syncpool -type "Pill<time.Time>"
+//go:generate go-syncpool -type "Pill<encoding.json.Token>"
 ```
 
 If multiple constants have the same value, the lexically first matching name will

@@ -84,6 +84,46 @@ func tokenizer(inputs []rune) []_token {
 				char = inputs[current]
 			}
 
+			// Special case: interface{}
+			if value.String() == "interface" {
+				for {
+					if unicode.IsSpace(char) {
+						current++
+						continue
+					}
+					break
+				}
+				// expect {}
+				if char == '{' {
+					current++
+					if current >= len(inputs) {
+						break
+					}
+					char = inputs[current]
+
+					for {
+						if unicode.IsSpace(char) {
+							current++
+							continue
+						}
+						break
+					}
+
+					if char == '}' {
+						current++
+						if current >= len(inputs) {
+							break
+						}
+						char = inputs[current]
+					} else {
+						panic(fmt.Sprintf("I dont know what this character at %d is: %q", current, string(char)))
+					}
+					value.WriteString("{}")
+				} else {
+					panic(fmt.Sprintf("I dont know what this character at %d is: %q", current, string(char)))
+				}
+			}
+
 			tokens = append(tokens, _token{
 				typ:   tokenTypeName,
 				value: value.String(),
