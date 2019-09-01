@@ -19,7 +19,7 @@ var (
 	tokenizerTests = []TokenizerTests{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{[]rune("NumValue<int, string>"), []_token{{
+		{[]rune("NumValue<int, *time.Time>"), []_token{{
 			typ:   tokenTypeName,
 			value: "NumValue",
 		}, {
@@ -32,8 +32,11 @@ var (
 			typ:   tokenTypeParen,
 			value: ",",
 		}, {
+			typ:   tokenTypeParen,
+			value: "*",
+		}, {
 			typ:   tokenTypeName,
-			value: "string",
+			value: "time.Time",
 		}, {
 			typ:   tokenTypeParen,
 			value: ">",
@@ -114,16 +117,20 @@ var (
 			typ:   tokenTypeParen,
 			value: "<",
 		}, {
+			typ:   tokenTypeParen,
+			value: "*",
+		}, {
 			typ:   tokenTypeName,
 			value: "int",
 		}, {
 			typ:   tokenTypeParen,
 			value: ">",
 		}}, []typeInfo{{
-			eleName:     "NumValue",
-			eleImport:   "",
-			valueType:   "int",
-			valueImport: "",
+			eleName:        "NumValue",
+			eleImport:      "",
+			valueType:      "int",
+			valueImport:    "",
+			valueIsPointer: true,
 		},
 		}},
 		{[]_token{{

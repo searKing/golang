@@ -32,9 +32,9 @@
 // Typically this process would be run using go generate, like this:
 //
 //	//go:generate go-atomicvalue -type=Pill<int>
-//	//go:generate go-atomicvalue -type=Pill<string>
+//	//go:generate go-atomicvalue -type=Pill<*string>
 //	//go:generate go-atomicvalue -type=Pill<time.Time>
-//	//go:generate go-atomicvalue -type=Pill<encoding.json.Token>
+//	//go:generate go-atomicvalue -type=Pill<*encoding.json.Token>
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
@@ -318,8 +318,9 @@ type Value struct {
 	eleImport string // import path of the atomic.Value type.
 	eleName   string // Name of the atomic.Value type.
 
-	valueImport string // import path of the atomic.Value's value.
-	valueType   string // The type of the value in atomic.Value.
+	valueImport    string // import path of the atomic.Value's value.
+	valueType      string // The type of the value in atomic.Value.
+	valueIsPointer bool   // whether the value's type is ptr
 }
 
 func (v *Value) String() string {
@@ -358,8 +359,9 @@ func (f *File) genDecl(node ast.Node) bool {
 				originalName: typ,
 				str:          typ,
 
-				valueImport: f.typeInfo.valueImport,
-				valueType:   f.typeInfo.valueType,
+				valueImport:    f.typeInfo.valueImport,
+				valueType:      f.typeInfo.valueType,
+				valueIsPointer: f.typeInfo.valueIsPointer,
 			}
 			if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
 				v.name = strings.TrimSpace(c.Text())
@@ -414,9 +416,16 @@ func (g *Generator) buildOneRun(value Value) {
 	g.Printf("\t	_ = (atomic.Value)(%s{})\n", value.eleName)
 	g.Printf("}\n")
 
-	nilValName := g.declareNameVar(value)
+	// pointer case
+	if value.valueIsPointer {
+		//The generated code is simple enough to write as a Printf format.
+		g.Printf(stringOneRun, value.eleName, "*"+value.valueType, "nil")
+		return
+	}
 
+	// value case
 	//The generated code is simple enough to write as a Printf format.
+	nilValName := g.declareNameVar(value)
 	g.Printf(stringOneRun, value.eleName, value.valueType, nilValName)
 }
 
