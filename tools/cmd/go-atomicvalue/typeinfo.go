@@ -28,10 +28,11 @@ type _token struct {
 
 type typeInfo struct {
 	// These fields are reset for each type being generated.
-	eleName     string // Name of the atomic.Value type.
-	eleImport   string // import path of the atomic.Value type.
-	valueType   string // The type of the value in atomic.Value.
-	valueImport string // import path of the atomic.Value's value.
+	eleName        string // Name of the atomic.Value type.
+	eleImport      string // import path of the atomic.Value type.
+	valueType      string // The type of the value in atomic.Value.
+	valueImport    string // import path of the atomic.Value's value.
+	valueIsPointer bool   // whether the value's type is ptr
 }
 
 // type <value>, type <value>
@@ -49,6 +50,7 @@ func tokenizer(inputs []rune) []_token {
 			current++
 			continue
 		}
+
 		if char == '>' {
 			tokens = append(tokens, _token{
 				typ:   tokenTypeParen,
@@ -58,8 +60,22 @@ func tokenizer(inputs []rune) []_token {
 			continue
 		}
 
+		// Special case: * Type
+		if char == '*' {
+			tokens = append(tokens, _token{
+				typ:   tokenTypeParen,
+				value: "*",
+			})
+			current++
+			continue
+		}
+
 		if unicode.IsSpace(char) {
 			current++
+			if current >= len(inputs) {
+				break
+			}
+			char = inputs[current]
 			continue
 		}
 
@@ -165,6 +181,7 @@ func splitImport(value string) (_import, _type string) {
 	return pkg, fmt.Sprintf("%s.%s", pkg[namPos+1:], name)
 }
 
+// walk for a full type once at a time
 func walk(tokens []_token, current int, tokenInfos []typeInfo) []typeInfo {
 	if len(tokens) <= current {
 		return tokenInfos
@@ -177,10 +194,10 @@ func walk(tokens []_token, current int, tokenInfos []typeInfo) []typeInfo {
 	}
 
 	if token.typ == tokenTypeName {
-		mapImport, mapName := splitImport(token.value)
+		typeImport, typeName := splitImport(token.value)
 		node := typeInfo{
-			eleImport: mapImport,
-			eleName:   mapName,
+			eleImport: typeImport,
+			eleName:   typeName,
 		}
 		current++
 		if current >= len(tokens) {
@@ -196,15 +213,26 @@ func walk(tokens []_token, current int, tokenInfos []typeInfo) []typeInfo {
 			}
 			token = tokens[current]
 
-			if token.typ == tokenTypeName {
-				keyImport, keyType := splitImport(token.value)
-				node.valueImport = keyImport
-				node.valueType = keyType
+			var valueIsPointer bool
+			if token.typ == tokenTypeParen && token.value == "*" {
+				valueIsPointer = true
 				current++
+				token = tokens[current]
+				if current >= len(tokens) {
+					panic(fmt.Sprintf("missing token: %s after %s", ">", token.value))
+				}
 			}
 
-			if current >= len(tokens) {
-				panic(fmt.Sprintf("missing token: %s after %s", ">", token.value))
+			if token.typ == tokenTypeName {
+				valueImport, valueType := splitImport(token.value)
+				node.valueIsPointer = valueIsPointer
+				node.valueImport = valueImport
+				node.valueType = valueType
+				current++
+
+				if current >= len(tokens) {
+					panic(fmt.Sprintf("missing token: %s after %s", ">", token.value))
+				}
 			}
 			token = tokens[current]
 			if token.typ == tokenTypeParen && token.value == ">" {
