@@ -29,7 +29,7 @@ type Pill struct{}
 
 running this command
 ```bash
-go-option -type=Pill
+go-option -type "Pill"
 ```
 
 in the same directory will create the file pill_options.go, in package painkiller,
@@ -72,7 +72,7 @@ func (o *Pill) ApplyOptions(options ...PillOption) *Pill {
 
 Typically this process would be run using go generate, like this:
 ```bash
-//go:generate go-option -type=Pill
+//go:generate go-option -type "Pill"
 ```
 
 If multiple constants have the same value, the lexically first matching name will

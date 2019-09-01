@@ -33,7 +33,7 @@ type Pill sync.Map
 
 running this command
 ```
-go-syncmap -type=Pill<int,string>
+go-syncmap -type="Pill<int,string>"
 ```
 
 in the same directory will create the file pill_syncmap.go, in package painkiller,
