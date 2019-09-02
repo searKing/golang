@@ -9,7 +9,7 @@ package main
 
 import (
 	"fmt"
-	generic2 "github.com/searKing/golang/tools/common/ast/generic"
+	"github.com/searKing/golang/tools/common/ast/generic"
 )
 
 type tokenType int
@@ -35,7 +35,7 @@ type typeInfo struct {
 
 func newTypeInfo(input string) []typeInfo {
 	var infos []typeInfo
-	for _, info := range generic2.New(input) {
+	for _, info := range generic.New(input) {
 		info_ := typeInfo{
 			Name:   info.Name,
 			Import: info.Import,
