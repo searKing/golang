@@ -408,7 +408,9 @@ func (g *Generator) declareNameVar(run Value) string {
 
 // createValAndNameDecl returns the pair of declarations for the run. The caller will add "var".
 func (g *Generator) createValAndNameDecl(val Value) (string, string) {
-	nilValName := fmt.Sprintf("_nil_%s_%s_value", val.mapName, strings.ReplaceAll(val.valueType, ".", "_"))
+	goRep := strings.NewReplacer(".", "_", "{", "_", "}", "_")
+
+	nilValName := fmt.Sprintf("_nil_%s_%s_value", val.mapName, goRep.Replace(val.valueType))
 	nilValDecl := fmt.Sprintf("%s = func() (val %s) { return }()", nilValName, val.valueType)
 
 	return nilValName, nilValDecl
