@@ -10,7 +10,7 @@ package generic
 import (
 	"bytes"
 	"fmt"
-	ast2 "github.com/searKing/golang/tools/common/ast"
+	"github.com/searKing/golang/tools/common/ast"
 
 	"strings"
 )
@@ -65,18 +65,18 @@ func joinImport(_import, _type string) string {
 	return strings.Join([]string{_import, typ[len(typ)-1]}, ".")
 }
 
-func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
+func walk(tokens []ast.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 	if len(tokens) <= current {
 		return tokenInfos
 	}
 
 	token := tokens[current]
-	if token.Type == ast2.TokenTypeParen && token.Value == "," {
+	if token.Type == ast.TokenTypeParen && token.Value == "," {
 		current++
 		return walk(tokens, current, tokenInfos)
 	}
 
-	if token.Type == ast2.TokenTypeName {
+	if token.Type == ast.TokenTypeName {
 		import_, name_ := splitImport(token.Value)
 		node := TypeInfo{
 			Import: import_,
@@ -89,7 +89,7 @@ func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 		}
 		token = tokens[current]
 
-		if token.Type == ast2.TokenTypeParen && token.Value == "<" {
+		if token.Type == ast.TokenTypeParen && token.Value == "<" {
 			current++
 			if current >= len(tokens) {
 				panic(fmt.Sprintf("missing token: %s after %s", ">", token.Value))
@@ -98,7 +98,7 @@ func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 
 			for {
 				var isPointer bool
-				if token.Type == ast2.TokenTypeParen && token.Value == "*" {
+				if token.Type == ast.TokenTypeParen && token.Value == "*" {
 					isPointer = true
 					current++
 					if current >= len(tokens) {
@@ -111,7 +111,7 @@ func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 					Import:    "",
 					IsPointer: isPointer,
 				}
-				if token.Type == ast2.TokenTypeName {
+				if token.Type == ast.TokenTypeName {
 					import_, type_ := splitImport(token.Value)
 					templateNode.Import = import_
 					templateNode.Type = type_
@@ -123,7 +123,7 @@ func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 				}
 				node.TemplateTypes = append(node.TemplateTypes, templateNode)
 
-				if token.Type == ast2.TokenTypeParen && token.Value == "," {
+				if token.Type == ast.TokenTypeParen && token.Value == "," {
 					current++
 					if current >= len(tokens) {
 						panic(fmt.Sprintf("missing token: %s after %s", ">", token.Value))
@@ -138,7 +138,7 @@ func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 			}
 
 			token = tokens[current]
-			if token.Type == ast2.TokenTypeParen && token.Value == ">" {
+			if token.Type == ast.TokenTypeParen && token.Value == ">" {
 				current++
 			} else {
 				// 最后如果我们没有匹配上任何类型的 token，那么我们抛出一个错误。
@@ -151,11 +151,11 @@ func walk(tokens []ast2.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 	return walk(tokens, current, tokenInfos)
 }
 
-func Parser(tokens []ast2.Token) []TypeInfo {
+func Parser(tokens []ast.Token) []TypeInfo {
 	// type <key, value>
 	return walk(tokens, 0, nil)
 }
 
 func New(input string) []TypeInfo {
-	return Parser(ast2.Tokenizer([]rune(input)))
+	return Parser(ast.Tokenizer([]rune(input)))
 }
