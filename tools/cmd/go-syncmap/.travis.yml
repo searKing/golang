@@ -25,6 +25,7 @@ before_script:
   # this will fail with an error message like "too many arguments"
   # or "M: binary operator expected"
   - git add .
+  - git reset  -- go.*
   - git diff-index --cached --exit-code HEAD
 
 script:
