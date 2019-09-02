@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-//go:generate go-syncmap -type "Nums<int, string>"
+//go:generate go-syncmap -type "Nums<int, *string>"
 type Nums sync.Map
 
 const (
@@ -25,10 +25,14 @@ const (
 
 func main() {
 	var numbers Nums
-	numbers.Store(One, "One")
-	numbers.Store(Two, "Two")
-	numbers.Store(Three, "Three")
-	numbers.Store(AnotherOne, "One")
+	valOne := "One"
+	numbers.Store(One, &valOne)
+	valTwo := "Two"
+	numbers.Store(Two, &valTwo)
+	valThree := "Three"
+	numbers.Store(Three, &valThree)
+	valAnotherOne := "One"
+	numbers.Store(AnotherOne, &valAnotherOne)
 	ck(numbers, One, "One")
 	ck(numbers, Two, "Two")
 	ck(numbers, Three, "Three")
@@ -40,11 +44,11 @@ func ck(nums Nums, num int, str string) {
 	val, loaded := nums.Load(num)
 	if num < One || num > Three {
 		if loaded {
-			panic(fmt.Sprintf("Nums<int,string>.go: %s", str))
+			panic(fmt.Sprintf("Nums<int,*string>.go: %s", str))
 		}
 		return
 	}
-	if !loaded || val != str {
-		panic(fmt.Sprintf("Nums<int,string>.go: %s", str))
+	if !loaded || *val != str {
+		panic(fmt.Sprintf("Nums<int,*string>.go: key %d, expect %v, got %s", num, *val, str))
 	}
 }

@@ -51,6 +51,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	strings2 "github.com/searKing/golang/tools/common/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -157,7 +158,7 @@ func main() {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_syncpool.go", types[0].eleName)
+		baseName := fmt.Sprintf("%s_syncpool.go", types[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, target, 0644)
@@ -318,8 +319,9 @@ type Value struct {
 	eleImport string // import path of the sync.Pool type.
 	eleName   string // Name of the sync.Pool type.
 
-	valueImport string // import path of the sync.Pool's value.
-	valueType   string // The type of the value in sync.Pool.
+	valueImport    string // import path of the sync.Pool's value.
+	valueType      string // The type of the value in sync.Pool.
+	valueIsPointer bool   // whether the value's type is ptr
 }
 
 func (v *Value) String() string {
@@ -350,7 +352,7 @@ func (f *File) genDecl(node ast.Node) bool {
 		}
 
 		if sExpr.X.(*ast.Ident).Name == "sync" && sExpr.Sel.Name == "Pool" {
-			if typ != f.typeInfo.eleName {
+			if typ != f.typeInfo.Name {
 				// This is not the type we're looking for.
 				continue
 			}
@@ -358,8 +360,9 @@ func (f *File) genDecl(node ast.Node) bool {
 				originalName: typ,
 				str:          typ,
 
-				valueImport: f.typeInfo.valueImport,
-				valueType:   f.typeInfo.valueType,
+				valueImport:    f.typeInfo.valueImport,
+				valueType:      f.typeInfo.valueType,
+				valueIsPointer: f.typeInfo.valueIsPointer,
 			}
 			if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
 				v.name = strings.TrimSpace(c.Text())
@@ -414,10 +417,12 @@ func (g *Generator) buildOneRun(value Value) {
 	g.Printf("\t	_ = (sync.Pool)(%s{})\n", value.eleName)
 	g.Printf("}\n")
 
-	nilValName := g.declareNameVar(value)
-
 	//The generated code is simple enough to write as a Printf format.
-	g.Printf(stringOneRun, value.eleName, value.valueType, nilValName)
+	g.Printf(stringOneRun, value.eleName,
+		strings2.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
+		strings2.LoadElseGet(value.valueIsPointer, "nil", func() string {
+			return g.declareNameVar(value)
+		}))
 }
 
 // Arguments to format are:
