@@ -464,7 +464,6 @@ func ScanRegexpPosix(expectStrs ...string) func(data []byte, atEOF bool) (advanc
 	return ScanRegexp(regs...)
 }
 
-
 // https://golang.org/ref/spec#String_literals
 // string_lit             = raw_string_lit | interpreted_string_lit .
 // raw_string_lit         = "`" { unicode_char | newline } "`" .

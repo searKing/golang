@@ -29,7 +29,7 @@ func HTTP1() MatcherFunc {
 	}
 }
 
-func HTTP1Header(match func(actual, expect http.Header) bool, expect http.Header, ) MatcherFunc {
+func HTTP1Header(match func(actual, expect http.Header) bool, expect http.Header) MatcherFunc {
 	return func(w io.Writer, r io.Reader) bool {
 		return http_util.MatchHTTPHeader(r, func(parsedHeader http.Header) bool {
 			return match(parsedHeader, expect)
