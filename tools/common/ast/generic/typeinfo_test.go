@@ -8,22 +8,23 @@ package generic_test
 
 import (
 	"github.com/searKing/golang/tools/common/ast"
+	"github.com/searKing/golang/tools/common/ast/generic"
 	"testing"
 )
 
 type NewTest struct {
 	input  string
-	output []TypeInfo
+	output []generic.TypeInfo
 }
 
 var (
 	newTests = []NewTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{"NumMap<int, *time.Time, *interface{}>", []TypeInfo{{
+		{"NumMap<int, *time.Time, *interface{}>", []generic.TypeInfo{{
 			Name:   "NumMap",
 			Import: "",
-			TemplateTypes: []TemplateType{{
+			TemplateTypes: []generic.TemplateType{{
 				Type:   "int",
 				Import: "",
 			}, {
@@ -34,15 +35,15 @@ var (
 				Type:      "interface{}",
 				IsPointer: true,
 			}}}}},
-		{"NumMap<a.b, *a.b.c>", []TypeInfo{{
+		{"NumMap<a.b, *a.b/c.d>", []generic.TypeInfo{{
 			Name:   "NumMap",
 			Import: "",
-			TemplateTypes: []TemplateType{{
+			TemplateTypes: []generic.TemplateType{{
 				Import: "a",
 				Type:   "a.b",
 			}, {
-				Import:    "a.b",
-				Type:      "b.c",
+				Import:    "a.b/c",
+				Type:      "c.d",
 				IsPointer: true,
 			}}}},
 		}}
@@ -51,7 +52,7 @@ var (
 func TestNew(t *testing.T) {
 Outer:
 	for n, test := range newTests {
-		runs := New(test.input)
+		runs := generic.New(test.input)
 		if len(runs) != len(test.output) {
 			t.Errorf("#%d: %v: got %d runs; expected %d", n, test.input, len(runs), len(test.output))
 			continue
@@ -92,7 +93,7 @@ Outer:
 
 type ParserTest struct {
 	input  []ast.Token
-	output []TypeInfo
+	output []generic.TypeInfo
 }
 
 var (
@@ -117,10 +118,10 @@ var (
 		}, {
 			Type:  ast.TokenTypeParen,
 			Value: ">",
-		}}, []TypeInfo{{
+		}}, []generic.TypeInfo{{
 			Name:   "NumMap",
 			Import: "",
-			TemplateTypes: []TemplateType{{
+			TemplateTypes: []generic.TemplateType{{
 				Type:   "int",
 				Import: "",
 			}, {
@@ -141,19 +142,19 @@ var (
 			Value: ",",
 		}, {
 			Type:  ast.TokenTypeName,
-			Value: "a.b.c",
+			Value: "a.b/c.d",
 		}, {
 			Type:  ast.TokenTypeParen,
 			Value: ">",
-		}}, []TypeInfo{{
+		}}, []generic.TypeInfo{{
 			Name:   "NumMap",
 			Import: "",
-			TemplateTypes: []TemplateType{{
+			TemplateTypes: []generic.TemplateType{{
 				Import: "a",
 				Type:   "a.b",
 			}, {
-				Import: "a.b",
-				Type:   "b.c",
+				Import: "a.b/c",
+				Type:   "c.d",
 			}}}},
 		}}
 )
@@ -161,7 +162,7 @@ var (
 func TestParserTests(t *testing.T) {
 Outer:
 	for n, test := range parserTests {
-		runs := Parser(test.input)
+		runs := generic.Parser(test.input)
 		if len(runs) != len(test.output) {
 			t.Errorf("#%d: %v: got %d runs; expected %d", n, test.input, len(runs), len(test.output))
 			continue

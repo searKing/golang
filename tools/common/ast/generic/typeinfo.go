@@ -30,7 +30,8 @@ func (typ *TemplateType) String() string {
 	return value.String()
 }
 
-//GenericType<TemplateType0,TemplateType1,...>
+// GenericType<TemplateType0,TemplateType1,...>
+// Map<github.com/searKing/golang/tools/common/ast/generic.TypeInfo, int>
 type TypeInfo struct {
 	// These fields are reset for each type being generated.
 	Name   string // Name of the sync.Map type.
