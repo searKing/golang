@@ -7,7 +7,7 @@
 package generic_test
 
 import (
-	ast2 "github.com/searKing/golang/tools/common/ast"
+	"github.com/searKing/golang/tools/common/ast"
 	"testing"
 )
 
@@ -91,7 +91,7 @@ Outer:
 }
 
 type ParserTest struct {
-	input  []ast2.Token
+	input  []ast.Token
 	output []TypeInfo
 }
 
@@ -99,23 +99,23 @@ var (
 	parserTests = []ParserTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{[]ast2.Token{{
-			Type:  ast2.TokenTypeName,
+		{[]ast.Token{{
+			Type:  ast.TokenTypeName,
 			Value: "NumMap",
 		}, {
-			Type:  ast2.TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: "<",
 		}, {
-			Type:  ast2.TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "int",
 		}, {
-			Type:  ast2.TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ",",
 		}, {
-			Type:  ast2.TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "string",
 		}, {
-			Type:  ast2.TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ">",
 		}}, []TypeInfo{{
 			Name:   "NumMap",
@@ -127,23 +127,23 @@ var (
 				Type:   "string",
 				Import: "",
 			}}}}},
-		{[]ast2.Token{{
-			Type:  ast2.TokenTypeName,
+		{[]ast.Token{{
+			Type:  ast.TokenTypeName,
 			Value: "NumMap",
 		}, {
-			Type:  ast2.TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: "<",
 		}, {
-			Type:  ast2.TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "a.b",
 		}, {
-			Type:  ast2.TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ",",
 		}, {
-			Type:  ast2.TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "a.b.c",
 		}, {
-			Type:  ast2.TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ">",
 		}}, []TypeInfo{{
 			Name:   "NumMap",
