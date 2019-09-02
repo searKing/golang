@@ -7,8 +7,9 @@ os:
 
 go:
   - 1.12.x
-
 go_import_path: "github.com/searKing/golang/tools/cmd/go-syncpool"
+env:
+  - GO111MODULE=on
 
 # Only clone the most recent commit.
 git:
