@@ -10,81 +10,26 @@ import (
 	"testing"
 )
 
-type TokenizerTests struct {
-	input  []rune
-	output []_token
-}
-
-var (
-	tokenizerTests = []TokenizerTests{
-		// No need for a test for the empty case; that's picked off before splitIntoRuns.
-		// Single value.
-		{[]rune("NumValue"), []_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}}},
-		{[]rune("NumValue, AnotherNumValue"), []_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: ",",
-		}, {
-			typ:   tokenTypeName,
-			value: "AnotherNumValue",
-		}}},
-	}
-)
-
-func TestTokenizers(t *testing.T) {
-Outer:
-	for n, test := range tokenizerTests {
-		runs := tokenizer(test.input)
-		if len(runs) != len(test.output) {
-			t.Errorf("#%d: %v: got %d runs; expected %d", n, string(test.input), len(runs), len(test.output))
-			continue
-		}
-		for i, run := range runs {
-			if run != test.output[i] {
-				t.Errorf("#%d: got %v; expected %v", n, runs, test.output)
-				continue Outer
-			}
-		}
-	}
-}
-
-type ParserTests struct {
-	input  []_token
+type ParserTest struct {
+	input  string
 	output []typeInfo
 }
 
 var (
-	parserTests = []ParserTests{
+	parserTests = []ParserTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{[]_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}}, []typeInfo{{
-			eleName:   "NumValue",
-			eleImport: "",
+		{"NumValue", []typeInfo{{
+			Name:   "NumValue",
+			Import: "",
 		},
 		}},
-		{[]_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
+		{"NumValue,AnotherNumValue", []typeInfo{{
+			Name:   "NumValue",
+			Import: "",
 		}, {
-			typ:   tokenTypeParen,
-			value: ",",
-		}, {
-			typ:   tokenTypeName,
-			value: "AnotherNumValue",
-		}}, []typeInfo{{
-			eleName:   "NumValue",
-			eleImport: "",
-		}, {
-			eleName:   "AnotherNumValue",
-			eleImport: "",
+			Name:   "AnotherNumValue",
+			Import: "",
 		}}},
 	}
 )
@@ -92,7 +37,7 @@ var (
 func TestParserTests(t *testing.T) {
 Outer:
 	for n, test := range parserTests {
-		runs := parser(test.input)
+		runs := newTypeInfo(test.input)
 		if len(runs) != len(test.output) {
 			t.Errorf("#%d: %v: got %d runs; expected %d", n, test.input, len(runs), len(test.output))
 			continue

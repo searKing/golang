@@ -51,6 +51,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	strings2 "github.com/searKing/golang/tools/common/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -157,7 +158,7 @@ func main() {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_atomicvalue.go", types[0].eleName)
+		baseName := fmt.Sprintf("%s_atomicvalue.go", types[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, target, 0644)
@@ -351,7 +352,7 @@ func (f *File) genDecl(node ast.Node) bool {
 		}
 
 		if sExpr.X.(*ast.Ident).Name == "atomic" && sExpr.Sel.Name == "Value" {
-			if typ != f.typeInfo.eleName {
+			if typ != f.typeInfo.Name {
 				// This is not the type we're looking for.
 				continue
 			}
@@ -416,17 +417,12 @@ func (g *Generator) buildOneRun(value Value) {
 	g.Printf("\t	_ = (atomic.Value)(%s{})\n", value.eleName)
 	g.Printf("}\n")
 
-	// pointer case
-	if value.valueIsPointer {
-		//The generated code is simple enough to write as a Printf format.
-		g.Printf(stringOneRun, value.eleName, "*"+value.valueType, "nil")
-		return
-	}
-
-	// value case
 	//The generated code is simple enough to write as a Printf format.
-	nilValName := g.declareNameVar(value)
-	g.Printf(stringOneRun, value.eleName, value.valueType, nilValName)
+	g.Printf(stringOneRun, value.eleName,
+		strings2.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
+		strings2.LoadElseGet(value.valueIsPointer, "nil", func() string {
+			return g.declareNameVar(value)
+		}))
 }
 
 // Arguments to format are:

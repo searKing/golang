@@ -179,7 +179,7 @@ func main() {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_options.go", types[0].eleName)
+		baseName := fmt.Sprintf("%s_options.go", types[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, target, 0644)
@@ -364,7 +364,7 @@ func (f *File) genDecl(node ast.Node) bool {
 		tspec := spec.(*ast.TypeSpec) // Guaranteed to succeed as this is TYPE.
 		typ = tspec.Name.Name
 
-		if typ != f.typeInfo.eleName {
+		if typ != f.typeInfo.Name {
 			// This is not the type we're looking for.
 			continue
 		}

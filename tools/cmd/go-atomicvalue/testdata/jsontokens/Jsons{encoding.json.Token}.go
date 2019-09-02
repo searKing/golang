@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 )
 
-//go:generate go-atomicvalue -type "Jsons<*encoding.json.Token>"
+//go:generate go-atomicvalue -type "Jsons<encoding.json.Token>"
 type Jsons atomic.Value
 
 const (
