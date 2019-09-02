@@ -19,7 +19,7 @@ before_install:
   - go get -v golang.org/x/lint/golint
 
 before_script:
-  - go fmt
+  - gofmt -d -e -l .
 
   # If `go generate` or `gofmt` yielded any changes,
   # this will fail with an error message like "too many arguments"

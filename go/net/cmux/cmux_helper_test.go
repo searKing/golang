@@ -257,7 +257,7 @@ func runTestRPCClient(t *testing.T, addr net.Addr) {
 func testHTTP2HeaderField(
 	t *testing.T,
 	matcherConstructor func(sendSetting bool,
-	expects ...hpack.HeaderField) cmux.MatcherFunc,
+		expects ...hpack.HeaderField) cmux.MatcherFunc,
 	headerValue string,
 	matchValue string,
 	notMatchValue string,

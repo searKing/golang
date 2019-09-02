@@ -4,6 +4,7 @@ import (
 	"github.com/searKing/golang/go/sync/atomic"
 	"time"
 )
+
 // https://github.com/golang/go/issues/27169
 // Timer to fix time: Timer.Stop documentation example easily leads to deadlocks
 type Timer struct {

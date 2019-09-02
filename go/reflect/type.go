@@ -82,6 +82,7 @@ type FieldTypeInfoHandlerFunc func(info FieldTypeInfo) (goon bool)
 func (f FieldTypeInfoHandlerFunc) Handler(info FieldTypeInfo) (goon bool) {
 	return f(info)
 }
+
 // Breadth First Search
 func WalkTypeBFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 	traversal.BreadthFirstSearchOrder(FieldTypeInfo{
