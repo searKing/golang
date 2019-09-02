@@ -77,7 +77,9 @@ func Tokenizer(inputs []rune) []Token {
 		// unicode_letter = /* a Unicode code point classified as "Letter" */ .
 		// unicode_digit  = /* a Unicode code point classified as "Number, decimal digit" */ .
 		if unicode.IsLetter(char) || char == '_' {
-			for unicode.IsLetter(char) || char == '_' || unicode.IsNumber(char) || char == '.' {
+			// '.' for import reference
+			// '/' for import path
+			for unicode.IsLetter(char) || char == '_' || unicode.IsNumber(char) || char == '.' || char == '/' {
 				value.WriteRune(char)
 				current++
 				if current >= len(inputs) {

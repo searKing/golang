@@ -1,78 +1,79 @@
 package ast_test
 
 import (
+	"github.com/searKing/golang/tools/common/ast"
 	"testing"
 )
 
 type TokenizerTest struct {
 	input  []rune
-	output []Token
+	output []ast.Token
 }
 
 var (
 	tokenizerTests = []TokenizerTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{[]rune("NumValue<int, *time.Time>"), []Token{{
-			Type:  TokenTypeName,
+		{[]rune("NumValue<int, *encoding/json.Time>"), []ast.Token{{
+			Type:  ast.TokenTypeName,
 			Value: "NumValue",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: "<",
 		}, {
-			Type:  TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "int",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ",",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: "*",
 		}, {
-			Type:  TokenTypeName,
-			Value: "time.Time",
+			Type:  ast.TokenTypeName,
+			Value: "encoding/json.Time",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ">",
 		}}},
-		{[]rune("NumValue<int, string>, AnotherNumValue<int, interface{}>"), []Token{{
-			Type:  TokenTypeName,
+		{[]rune("NumValue<int, string>, AnotherNumValue<int, interface{}>"), []ast.Token{{
+			Type:  ast.TokenTypeName,
 			Value: "NumValue",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: "<",
 		}, {
-			Type:  TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "int",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ",",
 		}, {
-			Type:  TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "string",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ">",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ",",
 		}, {
-			Type:  TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "AnotherNumValue",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: "<",
 		}, {
-			Type:  TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "int",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ",",
 		}, {
-			Type:  TokenTypeName,
+			Type:  ast.TokenTypeName,
 			Value: "interface{}",
 		}, {
-			Type:  TokenTypeParen,
+			Type:  ast.TokenTypeParen,
 			Value: ">",
 		}}},
 	}
@@ -81,7 +82,7 @@ var (
 func TestTokenizer(t *testing.T) {
 Outer:
 	for n, test := range tokenizerTests {
-		runs := Tokenizer(test.input)
+		runs := ast.Tokenizer(test.input)
 		if len(runs) != len(test.output) {
 			t.Errorf("#%d: %v: got %d runs; expected %d", n, string(test.input), len(runs), len(test.output))
 			continue
