@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 )
 
-//go:generate go-atomicvalue -type "Nums<string>"
+//go:generate go-atomicvalue -type "Nums<*string>"
 type Nums atomic.Value
 
 const (
@@ -25,21 +25,26 @@ const (
 
 func main() {
 	var numbers Nums
-	numbers.Store("One")
+	valOne := "One"
+	numbers.Store(&valOne)
 	ck(numbers, "One")
-	numbers.Store("Two")
+	valTwo := "Two"
+	numbers.Store(&valTwo)
 	ck(numbers, "Two")
-	numbers.Store("Three")
+	valThree := "Three"
+	numbers.Store(&valThree)
 	ck(numbers, "Three")
-	numbers.Store("One")
+	valAnotherOne := "One"
+	numbers.Store(&valAnotherOne)
 	ck(numbers, "One")
-	numbers.Store("Key(127)")
+	valKey := "Key(127)"
+	numbers.Store(&valKey)
 	ck(numbers, "Key(127)")
 }
 
 func ck(nums Nums, str string) {
 	val := nums.Load()
-	if val != str {
-		panic(fmt.Sprintf("Nums<string>.go: %s", str))
+	if *val != str {
+		panic(fmt.Sprintf("Nums<*string>.go: expect %v got %s", *val, str))
 	}
 }

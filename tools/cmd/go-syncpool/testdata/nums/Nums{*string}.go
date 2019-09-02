@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-//go:generate go-syncpool -type "Nums<string>"
+//go:generate go-syncpool -type "Nums<*string>"
 type Nums sync.Pool
 
 const (
@@ -25,21 +25,26 @@ const (
 
 func main() {
 	var numbers Nums
-	numbers.Put("One")
+	valOne := "One"
+	numbers.Put(&valOne)
 	ck(numbers, "One")
-	numbers.Put("Two")
+	valTwo := "Two"
+	numbers.Put(&valTwo)
 	ck(numbers, "Two")
-	numbers.Put("Three")
+	valThree := "Three"
+	numbers.Put(&valThree)
 	ck(numbers, "Three")
-	numbers.Put("One")
+	valAnotherOne := "One"
+	numbers.Put(&valAnotherOne)
 	ck(numbers, "One")
-	numbers.Put("Key(127)")
+	valKey := "Key(127)"
+	numbers.Put(&valKey)
 	ck(numbers, "Key(127)")
 }
 
 func ck(nums Nums, str string) {
 	val := nums.Get()
-	if val != str {
-		panic(fmt.Sprintf("Nums<string>.go: %s", str))
+	if *val != str {
+		panic(fmt.Sprintf("Nums<*string>.go: expect %v got %s", *val, str))
 	}
 }

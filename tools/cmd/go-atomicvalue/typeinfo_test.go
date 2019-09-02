@@ -10,162 +10,25 @@ import (
 	"testing"
 )
 
-type TokenizerTests struct {
-	input  []rune
-	output []_token
-}
-
-var (
-	tokenizerTests = []TokenizerTests{
-		// No need for a test for the empty case; that's picked off before splitIntoRuns.
-		// Single value.
-		{[]rune("NumValue<int, *time.Time>"), []_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: "<",
-		}, {
-			typ:   tokenTypeName,
-			value: "int",
-		}, {
-			typ:   tokenTypeParen,
-			value: ",",
-		}, {
-			typ:   tokenTypeParen,
-			value: "*",
-		}, {
-			typ:   tokenTypeName,
-			value: "time.Time",
-		}, {
-			typ:   tokenTypeParen,
-			value: ">",
-		}}},
-		{[]rune("NumValue<int, string>, AnotherNumValue<int, Time>"), []_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: "<",
-		}, {
-			typ:   tokenTypeName,
-			value: "int",
-		}, {
-			typ:   tokenTypeParen,
-			value: ",",
-		}, {
-			typ:   tokenTypeName,
-			value: "string",
-		}, {
-			typ:   tokenTypeParen,
-			value: ">",
-		}, {
-			typ:   tokenTypeParen,
-			value: ",",
-		}, {
-			typ:   tokenTypeName,
-			value: "AnotherNumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: "<",
-		}, {
-			typ:   tokenTypeName,
-			value: "int",
-		}, {
-			typ:   tokenTypeParen,
-			value: ",",
-		}, {
-			typ:   tokenTypeName,
-			value: "Time",
-		}, {
-			typ:   tokenTypeParen,
-			value: ">",
-		}}},
-	}
-)
-
-func TestTokenizers(t *testing.T) {
-Outer:
-	for n, test := range tokenizerTests {
-		runs := tokenizer(test.input)
-		if len(runs) != len(test.output) {
-			t.Errorf("#%d: %v: got %d runs; expected %d", n, string(test.input), len(runs), len(test.output))
-			continue
-		}
-		for i, run := range runs {
-			if run != test.output[i] {
-				t.Errorf("#%d: got %v; expected %v", n, runs, test.output)
-				continue Outer
-			}
-		}
-	}
-}
-
-type ParserTests struct {
-	input  []_token
+type ParserTest struct {
+	input  string
 	output []typeInfo
 }
 
 var (
-	parserTests = []ParserTests{
+	parserTests = []ParserTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{[]_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: "<",
-		}, {
-			typ:   tokenTypeParen,
-			value: "*",
-		}, {
-			typ:   tokenTypeName,
-			value: "int",
-		}, {
-			typ:   tokenTypeParen,
-			value: ">",
-		}}, []typeInfo{{
-			eleName:        "NumValue",
-			eleImport:      "",
+		{"NumMap<*int>", []typeInfo{{
+			Name:           "NumMap",
+			Import:         "",
 			valueType:      "int",
 			valueImport:    "",
 			valueIsPointer: true,
-		},
-		}},
-		{[]_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: "<",
-		}, {
-			typ:   tokenTypeName,
-			value: "a.b",
-		}, {
-			typ:   tokenTypeParen,
-			value: ">",
-		}}, []typeInfo{{
-			eleName:     "NumValue",
-			eleImport:   "",
-			valueType:   "a.b",
-			valueImport: "a",
 		}}},
-		{[]_token{{
-			typ:   tokenTypeName,
-			value: "NumValue",
-		}, {
-			typ:   tokenTypeParen,
-			value: "<",
-		}, {
-			typ:   tokenTypeName,
-			value: "a.b.c",
-		}, {
-			typ:   tokenTypeParen,
-			value: ">",
-		}}, []typeInfo{{
-			eleName:     "NumValue",
-			eleImport:   "",
+		{"NumMap<a.b.c>", []typeInfo{{
+			Name:        "NumMap",
+			Import:      "",
 			valueType:   "b.c",
 			valueImport: "a.b",
 		}}},
@@ -175,7 +38,7 @@ var (
 func TestParserTests(t *testing.T) {
 Outer:
 	for n, test := range parserTests {
-		runs := parser(test.input)
+		runs := newTypeInfo(test.input)
 		if len(runs) != len(test.output) {
 			t.Errorf("#%d: %v: got %d runs; expected %d", n, test.input, len(runs), len(test.output))
 			continue
