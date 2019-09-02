@@ -40,17 +40,22 @@ type TypeInfo struct {
 }
 
 func splitImport(value string) (_import, _type string) {
-	// a.b.c
-	// a.b c
+	// github.com/searKing/golang/tools/common/ast/generic.TypeInfo
+	// =>
+	// github.com/searKing/golang/tools/common/ast/generic generic.TypeInfo
 	extPos := strings.LastIndexByte(value, '.')
 	if extPos < 0 {
 		extPos = len(value) - 1
 		return "", value
 	}
+	// github.com/searKing/golang/tools/common/ast/generic
 	pkg := value[:extPos]
+	// TypeInfo
 	name := value[extPos+1:]
 
-	refPos := strings.LastIndexByte(pkg, '.')
+	// github.com/searKing/golang/tools/common/ast
+	// generic
+	refPos := strings.LastIndexByte(pkg, '/')
 	if refPos < 0 {
 		return pkg, fmt.Sprintf("%s.%s", pkg, name)
 	}
