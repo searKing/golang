@@ -88,8 +88,8 @@ func Tokenizer(inputs []rune) []Token {
 				char = inputs[current]
 			}
 
-			// Special case: interface{}
-			if value.String() == "interface" {
+			// Special case: interface{}|struct{}
+			if value.String() == "interface" || value.String() == "struct" {
 				for {
 					if unicode.IsSpace(char) {
 						current++
