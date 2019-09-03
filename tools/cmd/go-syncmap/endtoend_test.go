@@ -114,6 +114,7 @@ func gosyncmapCompileAndRun(t *testing.T, dir, gosyncmap, typeName, fileName str
 func castFileNameToTypeName(name string) string {
 	name = strings.ReplaceAll(name, "{", "<")
 	name = strings.ReplaceAll(name, "}", ">")
+	name = strings.ReplaceAll(name, "^", "/")
 	return name
 }
 
@@ -123,6 +124,8 @@ func castFileNameToTypeName(name string) string {
 func castTypeNameToFileName(name string) string {
 	name = strings.ReplaceAll(name, "<", "{")
 	name = strings.ReplaceAll(name, ">", "}")
+	name = strings.ReplaceAll(name, "/", "^")
+
 	return name
 }
 
