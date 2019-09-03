@@ -34,7 +34,7 @@
 //	//go:generate go-syncpool -type=Pill<int>
 //	//go:generate go-syncpool -type=Pill<string>
 //	//go:generate go-syncpool -type=Pill<time.Time>
-//	//go:generate go-syncpool -type=Pill<encoding.json.Token>
+//	//go:generate go-syncpool -type=Pill<encoding/json.Token>
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
