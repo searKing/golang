@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 )
 
-//go:generate go-atomicvalue -type "Jsons<encoding.json.Token>"
+//go:generate go-atomicvalue -type "Jsons<encoding/json.Token>"
 type Jsons atomic.Value
 
 const (
@@ -41,6 +41,6 @@ func main() {
 func ck(jsons Jsons, t json.Token) {
 	val := jsons.Load()
 	if val != t {
-		panic(fmt.Sprintf("Jsons<encoding.json.Token>.go: %s", t))
+		panic(fmt.Sprintf("Jsons<encoding/json.Token>.go: %s", t))
 	}
 }
