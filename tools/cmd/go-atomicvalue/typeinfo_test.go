@@ -26,11 +26,11 @@ var (
 			valueImport:    "",
 			valueIsPointer: true,
 		}}},
-		{"NumMap<a.b.c>", []typeInfo{{
+		{"NumMap<a.b/c.d>", []typeInfo{{
 			Name:        "NumMap",
 			Import:      "",
-			valueType:   "b.c",
-			valueImport: "a.b",
+			valueType:   "c.d",
+			valueImport: "a.b/c",
 		}}},
 	}
 )

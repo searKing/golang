@@ -32,11 +32,11 @@ var (
 			valueType:   "a.b",
 			valueImport: "a",
 		}}},
-		{"NumValue<a.b.c>", []typeInfo{{
+		{"NumValue<a.b/c.d>", []typeInfo{{
 			Name:        "NumValue",
 			Import:      "",
-			valueType:   "b.c",
-			valueImport: "a.b",
+			valueType:   "c.d",
+			valueImport: "a.b/c",
 		}}},
 	}
 )
