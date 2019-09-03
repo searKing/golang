@@ -45,8 +45,7 @@ var (
 				Import:    "a.b/c",
 				Type:      "c.d",
 				IsPointer: true,
-			}}}},
-		}}
+			}}}}}}
 )
 
 func TestNew(t *testing.T) {
