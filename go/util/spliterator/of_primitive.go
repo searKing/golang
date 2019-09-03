@@ -7,7 +7,7 @@ import (
 )
 
 type OfPrimitive struct {
-	Class
+	TODO
 }
 
 func NewOfPrimitive() *OfPrimitive {
