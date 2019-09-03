@@ -148,11 +148,13 @@ func walk(tokens []ast.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 				current++
 			} else {
 				// 最后如果我们没有匹配上任何类型的 token，那么我们抛出一个错误。
-				panic(fmt.Sprintf("unexpected token: %s", token.Value))
+				panic(fmt.Sprintf("unexpected token: %s, expect a %q", token.Value, '>'))
 			}
 
 		}
 		tokenInfos = append(tokenInfos, node)
+	} else {
+		panic(fmt.Sprintf("unexpected token: %s, expect a TokenTypeName", token.Value))
 	}
 	return walk(tokens, current, tokenInfos)
 }
