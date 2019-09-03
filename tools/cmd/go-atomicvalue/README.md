@@ -46,7 +46,7 @@ Typically this process would be run using go generate, like this:
 //go:generate go-atomicvalue -type "Pill<int>"
 //go:generate go-atomicvalue -type "Pill<*string>"
 //go:generate go-atomicvalue -type "Pill<time.Time>"
-//go:generate go-atomicvalue -type "Pill<*encoding.json.Token>"
+//go:generate go-atomicvalue -type "Pill<*encoding/json.Token>"
 ```
 
 If multiple constants have the same value, the lexically first matching name will
