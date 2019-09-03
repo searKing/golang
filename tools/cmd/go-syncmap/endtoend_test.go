@@ -108,23 +108,25 @@ func gosyncmapCompileAndRun(t *testing.T, dir, gosyncmap, typeName, fileName str
 	}
 }
 
-// castFileNameToTypeName replace "{" "}" with "<" ">"
+// castFileNameToTypeName replace "{" "}" "^" "@" with "<" ">" "/" "*"
 // to fulfill windows os's constraint
 // https://docs.microsoft.com/zh-cn/windows/win32/fileio/naming-a-file
 func castFileNameToTypeName(name string) string {
 	name = strings.ReplaceAll(name, "{", "<")
 	name = strings.ReplaceAll(name, "}", ">")
 	name = strings.ReplaceAll(name, "^", "/")
+	name = strings.ReplaceAll(name, "@", "*")
 	return name
 }
 
-// castTypeNameToFileName replace "<" ">" with "{" "}"
+// castFileNameToTypeName replace "<" ">" "/" "*" with "{" "}" "^" "@"
 // to fulfill windows os's constraint
 // https://docs.microsoft.com/zh-cn/windows/win32/fileio/naming-a-file
 func castTypeNameToFileName(name string) string {
 	name = strings.ReplaceAll(name, "<", "{")
 	name = strings.ReplaceAll(name, ">", "}")
 	name = strings.ReplaceAll(name, "/", "^")
+	name = strings.ReplaceAll(name, "*", "@")
 
 	return name
 }
