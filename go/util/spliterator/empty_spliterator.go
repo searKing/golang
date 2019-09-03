@@ -7,7 +7,7 @@ import (
 )
 
 type EmptySpliterator struct {
-	Class
+	TODO
 }
 
 func NewEmptySpliterator() *EmptySpliterator {

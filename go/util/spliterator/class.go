@@ -8,30 +8,30 @@ import (
 	"github.com/searKing/golang/go/util/object"
 )
 
-type Class struct {
+type TODO struct {
 	class.Class
 }
 
-func (split *Class) TryAdvance(action consumer.Consumer) bool {
+func (split *TODO) TryAdvance(action consumer.Consumer) bool {
 	panic(exception.NewIllegalStateException1("called unimplemented TryAdvance method"))
 }
 
-func (split *Class) ForEachRemaining(ctx context.Context, action consumer.Consumer) {
+func (split *TODO) ForEachRemaining(ctx context.Context, action consumer.Consumer) {
 	class := split.GetDerivedElse(split).(Spliterator)
 	for class.TryAdvance(ctx, action) {
 	}
 	return
 }
 
-func (split *Class) TrySplit() Spliterator {
+func (split *TODO) TrySplit() Spliterator {
 	panic(exception.NewIllegalStateException1("called unimplemented TrySplit method"))
 }
 
-func (split *Class) EstimateSize() int {
+func (split *TODO) EstimateSize() int {
 	panic(exception.NewIllegalStateException1("called unimplemented EstimateSize method"))
 }
 
-func (split *Class) GetExactSizeIfKnown() int {
+func (split *TODO) GetExactSizeIfKnown() int {
 	class := split.GetDerivedElse(split).(Spliterator)
 	if class.Characteristics()&CharacteristicSized == 0 {
 		return -1
@@ -39,15 +39,15 @@ func (split *Class) GetExactSizeIfKnown() int {
 	return class.EstimateSize()
 }
 
-func (split *Class) Characteristics() Characteristic {
+func (split *TODO) Characteristics() Characteristic {
 	panic(exception.NewIllegalStateException1("called unimplemented Characteristics method"))
 }
 
-func (split *Class) HasCharacteristics(characteristics Characteristic) bool {
+func (split *TODO) HasCharacteristics(characteristics Characteristic) bool {
 	class := split.GetDerivedElse(split).(Spliterator)
 	return (class.Characteristics() & characteristics) == characteristics
 }
 
-func (split *Class) GetComparator() object.Comparator {
+func (split *TODO) GetComparator() object.Comparator {
 	panic(exception.NewIllegalStateException())
 }

@@ -16,7 +16,7 @@ import (
 type delegatingSpliterator struct {
 	supplier supplier.Supplier
 	// The underlying spliterator
-	s        Spliterator
+	s Spliterator
 }
 
 func NewDelegatingSpliterator(supplier supplier.Supplier) Spliterator {

@@ -59,15 +59,15 @@ func (f ConsumerFunc) AndThen(after Consumer) Consumer {
 	})
 }
 
-type AbstractConsumerClass struct {
+type TODO struct {
 	class.Class
 }
 
-func (consumer *AbstractConsumerClass) Accept(t interface{}) {
+func (consumer *TODO) Accept(t interface{}) {
 	panic(exception.NewIllegalStateException1("called wrong Accept method"))
 }
 
-func (consumer *AbstractConsumerClass) AndThen(after Consumer) Consumer {
+func (consumer *TODO) AndThen(after Consumer) Consumer {
 	object.RequireNonNil(after)
 	return ConsumerFunc(func(t interface{}) {
 		consumer.GetDerived().(Consumer).Accept(t)
