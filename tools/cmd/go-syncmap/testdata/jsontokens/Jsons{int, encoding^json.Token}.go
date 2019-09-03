@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-//go:generate go-syncmap -type "Jsons<int, encoding.json.Token>"
+//go:generate go-syncmap -type "Jsons<int, encoding/json.Token>"
 type Jsons sync.Map
 
 const (
@@ -41,11 +41,11 @@ func ck(jsons Jsons, num int, t json.Token) {
 	val, loaded := jsons.Load(num)
 	if num < One || num > Three {
 		if loaded {
-			panic(fmt.Sprintf("Jsons<int, encoding.json.Token>.go: %s", t))
+			panic(fmt.Sprintf("Jsons<int, encoding/json.Token>.go: %s", t))
 		}
 		return
 	}
 	if !loaded || val != t {
-		panic(fmt.Sprintf("Jsons<int, encoding.json.Token>.go: %s", t))
+		panic(fmt.Sprintf("Jsons<int, encoding/json.Token>.go: %s", t))
 	}
 }

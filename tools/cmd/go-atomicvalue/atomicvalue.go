@@ -34,7 +34,7 @@
 //	//go:generate go-atomicvalue -type=Pill<int>
 //	//go:generate go-atomicvalue -type=Pill<*string>
 //	//go:generate go-atomicvalue -type=Pill<time.Time>
-//	//go:generate go-atomicvalue -type=Pill<*encoding.json.Token>
+//	//go:generate go-atomicvalue -type=Pill<*encoding/json.Token>
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
