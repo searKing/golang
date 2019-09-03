@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-//go:generate go-syncpool -type "Jsons<encoding.json.Token>"
+//go:generate go-syncpool -type "Jsons<encoding/json.Token>"
 type Jsons sync.Pool
 
 const (
@@ -41,6 +41,6 @@ func main() {
 func ck(jsons Jsons, t json.Token) {
 	val := jsons.Get()
 	if val != t {
-		panic(fmt.Sprintf("Jsons<encoding.json.Token>.go: %s", t))
+		panic(fmt.Sprintf("Jsons<encoding/json.Token>.go: %s", t))
 	}
 }
