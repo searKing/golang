@@ -1,4 +1,4 @@
-package _struct_test
+package struct__test
 
 import (
 	"github.com/golang/protobuf/jsonpb"
