@@ -1,4 +1,4 @@
-package _struct
+package struct_
 
 import (
 	"bytes"
