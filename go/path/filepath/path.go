@@ -5,6 +5,13 @@ import (
 	"path/filepath"
 )
 
+const (
+	// PrivateFileMode grants owner to read/write a file.
+	PrivateFileMode = 0600
+	// PrivateDirMode grants owner to make/remove files inside the directory.
+	PrivateDirMode = 0700
+)
+
 // Pathify Expand, Abs and Clean the path
 func Pathify(path string) string {
 	p := os.ExpandEnv(path)
@@ -18,4 +25,52 @@ func Pathify(path string) string {
 		return filepath.Clean(p)
 	}
 	return ""
+}
+
+// Exist returns a boolean indicating whether the file is known to
+// report that a file or directory does exist.
+func Exist(name string) bool {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true
+	}
+	return !os.IsNotExist(err)
+}
+
+// TouchAll creates a file or a directory only if it does not already exist.
+func TouchAll(path string, perm os.FileMode) error {
+	dir, file := filepath.Split(path)
+
+	fileInfo, err := os.Stat(path)
+	if err == nil {
+		// file type mismatched
+		if fileInfo.IsDir() && file != "" {
+			return os.ErrExist
+		}
+	} else {
+		// other errors
+		if !os.IsNotExist(err) {
+			return err
+		}
+		// Not Exist
+	}
+
+	// touch dir
+	if dir != "" && !Exist(dir) {
+		if err := os.MkdirAll(dir, perm); err != nil {
+			return err
+		}
+	}
+
+	// return if path is a dir
+	if file == "" {
+		return nil
+	}
+	// touch file
+	f, err := os.OpenFile(path, os.O_CREATE, perm)
+	if err != nil {
+		return err
+	}
+	_ = f.Close()
+	return nil
 }
