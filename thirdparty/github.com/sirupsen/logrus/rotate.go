@@ -20,7 +20,7 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 	if log == nil {
 		return nil
 	}
-	dir := filepath.Dir(path)
+	dir := filepath_.ToDir(filepath.Dir(path))
 	if err := filepath_.TouchAll(dir, filepath_.PrivateDirMode); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("create dir[%s] for log failed", dir))
 	}
