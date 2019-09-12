@@ -1,6 +1,7 @@
 package logrus
 
 import (
+	"fmt"
 	"github.com/lestrrat/go-file-rotatelogs"
 	"github.com/pkg/errors"
 	"github.com/rifflock/lfshook"
@@ -21,8 +22,7 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 	}
 	dir := filepath.Dir(path)
 	if err := filepath_.TouchAll(dir, filepath_.PrivateDirMode); err != nil {
-		go log.WithField("dir", dir).WithError(errors.WithStack(err)).Error("create dir for log failed")
-		return err
+		return errors.Wrap(err, fmt.Sprintf("create dir[%s] for log failed", dir))
 	}
 
 	writer, err := rotatelogs.New(
@@ -33,8 +33,7 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 		rotatelogs.WithMaxAge(maxAge),          // 文件最大保存时间
 	)
 	if err != nil {
-		go log.WithError(errors.WithStack(err)).Error("create rotate logs failed")
-		return err
+		return errors.Wrap(err, "create rotate logs failed")
 	}
 	lfHook := lfshook.NewHook(lfshook.WriterMap{
 		logrus.DebugLevel: writer, // 为不同级别设置不同的输出目的
