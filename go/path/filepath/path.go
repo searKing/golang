@@ -3,6 +3,7 @@ package filepath
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -25,6 +26,15 @@ func Pathify(path string) string {
 		return filepath.Clean(p)
 	}
 	return ""
+}
+
+// ToDir returns the dir format ends with OS-specific path separator.
+func ToDir(path string) string {
+	sep := string(filepath.Separator)
+	if strings.HasSuffix(path, sep) {
+		return path
+	}
+	return path + sep
 }
 
 // Exist returns a boolean indicating whether the file is known to
