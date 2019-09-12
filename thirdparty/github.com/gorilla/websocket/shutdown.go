@@ -38,12 +38,12 @@ func (srv *Server) RegisterOnShutdown(f func()) {
 
 // closeIdleConns closes all idle connections and reports whether the
 // server is quiescent.
-func (s *Server) closeIdleConns() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (srv *Server) closeIdleConns() bool {
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
 	quiescent := true
 
-	if c := s.activeConn; c != nil {
+	if c := srv.activeConn; c != nil {
 		st, unixSec := c.getState()
 		// Issue 22682: treat StateNew connections as if
 		// they're idle if we haven't read the first request's
@@ -58,7 +58,7 @@ func (s *Server) closeIdleConns() bool {
 			return quiescent
 		}
 		c.rwc.Close()
-		s.activeConn = nil
+		srv.activeConn = nil
 	}
 	return quiescent
 }

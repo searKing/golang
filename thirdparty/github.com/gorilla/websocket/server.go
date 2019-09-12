@@ -117,9 +117,9 @@ func (srv *Server) newConn(wc *websocket.Conn) *conn {
 	}
 	return c
 }
-func (s *Server) logf(format string, args ...interface{}) {
-	if s.ErrorLog != nil {
-		s.ErrorLog.Printf(format, args...)
+func (srv *Server) logf(format string, args ...interface{}) {
+	if srv.ErrorLog != nil {
+		srv.ErrorLog.Printf(format, args...)
 	} else {
 		log.Printf(format, args...)
 	}
