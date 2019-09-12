@@ -3,7 +3,6 @@ package websocket
 import (
 	"github.com/gorilla/websocket"
 	"github.com/searKing/golang/go/util/object"
-	"gitlab.hobot.cc/haixin.chen/go-mvc/transport"
 	"sync"
 )
 
@@ -15,7 +14,7 @@ type WebSocketConn struct {
 	muWrite sync.Mutex
 }
 
-func NewWebSocketConn(rw *websocket.Conn) transport.ReadWriteCloser {
+func NewWebSocketConn(rw *websocket.Conn) *WebSocketConn {
 	object.RequireNonNil(rw)
 	return &WebSocketConn{
 		Conn: rw,
