@@ -2,7 +2,6 @@ package object
 
 import (
 	"errors"
-	"github.com/searKing/golang/go/util/function/supplier"
 	"reflect"
 	"strings"
 )
@@ -77,11 +76,11 @@ func RequireNonNullElse(obj, defaultObj interface{}) interface{} {
 
 // RequireNonNullElseGet returns the first argument if it is non-{@code nil} and
 // returns the non-{@code nil} value of {@code supplier.Get()}.
-func RequireNonNullElseGet(obj interface{}, sup supplier.Supplier) interface{} {
+func RequireNonNullElseGet(obj interface{}, sup interface{ Get() interface{} }) interface{} {
 	if NoneNil(obj) {
 		return obj
 	}
-	return RequireNonNil(RequireNonNil(sup, "supplier").(supplier.Supplier).Get(), "supplier.Get()")
+	return RequireNonNil(RequireNonNil(sup, "supplier").(interface{ Get() interface{} }).Get(), "supplier.Get()")
 }
 
 // RequireNonNil checks that the specified object reference is not {@code nil}. This
