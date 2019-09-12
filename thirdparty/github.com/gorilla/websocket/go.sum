@@ -10,8 +10,8 @@ github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/gorilla/websocket v1.4.1 h1:q7AeDBpnBk8AogcD4DSag/Ukw/KV+YhzLj2bP5HvKCM=
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/searKing/golang/go v0.0.0-20190911115149-a50438c4c0f9 h1:zrFUoJD7V8qy5Jefda2BjCPDQsXMr+qkoX6PNPDdZx0=
-github.com/searKing/golang/go v0.0.0-20190911115149-a50438c4c0f9/go.mod h1:c+2RompknJiUmeCcnPi4KWAUBlF2Dhg04WEbJvwja2c=
+github.com/searKing/golang/go v0.0.0-20190912033048-3892493aa31f h1:kmQo8PhkHBvzLdR1ZFSPYf8khxnUDLdrfVEBdkXSiIc=
+github.com/searKing/golang/go v0.0.0-20190912033048-3892493aa31f/go.mod h1:c+2RompknJiUmeCcnPi4KWAUBlF2Dhg04WEbJvwja2c=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
 golang.org/x/net v0.0.0-20190311183353-d8887717615a/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
