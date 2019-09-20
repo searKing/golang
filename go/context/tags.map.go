@@ -9,9 +9,9 @@ func (t *mapTags) Set(key string, value interface{}) Tags {
 	return t
 }
 
-func (t *mapTags) Has(key string) bool {
-	_, ok := t.values[key]
-	return ok
+func (t *mapTags) Get(key string) (interface{}, bool) {
+	val, ok := t.values[key]
+	return val, ok
 }
 
 func (t *mapTags) Values() map[string]interface{} {

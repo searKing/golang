@@ -14,8 +14,8 @@ var (
 type Tags interface {
 	// Set sets the given key in the metadata tags.
 	Set(key string, value interface{}) Tags
-	// Has checks if the given key exists.
-	Has(key string) bool
+	// Get gets if the metadata tags got by the given key exists.
+	Get(key string) (interface{}, bool)
 	// Values returns a map of key to values.
 	// Do not modify the underlying map, please use Set instead.
 	Values() map[string]interface{}
