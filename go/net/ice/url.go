@@ -33,11 +33,11 @@ func ParseURL(raw string) (*URL, error) {
 	}
 
 	if u.Host = host; u.Host == "" {
-		return nil, fmt.Errorf("Missing host")
+		return nil, fmt.Errorf("missing host")
 	}
 
 	if u.Port = port; port == -1 {
-		return nil, fmt.Errorf("Missing port")
+		return nil, fmt.Errorf("missing port")
 	}
 
 	proto, err := parseProto(u.Scheme, standardUrl.RawQuery)
