@@ -37,6 +37,6 @@ func (t Scheme) String() string {
 	case SchemeSTUN, SchemeSTUNS, SchemeTURN, SchemeTURNS:
 		return string(t)
 	default:
-		return fmt.Errorf("malformed scheme %s", t).Error()
+		return fmt.Errorf("malformed scheme %s", string(t)).Error()
 	}
 }
