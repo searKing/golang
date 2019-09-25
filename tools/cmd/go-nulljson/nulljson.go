@@ -405,7 +405,7 @@ func (nj *%[1]s) Scan(src interface{}) error {
 		srcBytes, _ := json.Marshal(src)
 		err = json.Unmarshal(srcBytes, &nj.Data)
 	case nil:
-		nj.Data = nil
+		nj.Data = %[3]s
 		err = nil
 	default:
 		srcBytes, _ := json.Marshal(src)
