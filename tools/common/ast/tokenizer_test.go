@@ -36,7 +36,7 @@ var (
 			Type:  ast.TokenTypeParen,
 			Value: ">",
 		}}},
-		{[]rune("NumValue<int, string>, AnotherNumValue<int, interface{}>"), []ast.Token{{
+		{[]rune("NumValue<int, string>, AnotherNumValue<[]int, interface{}>"), []ast.Token{{
 			Type:  ast.TokenTypeName,
 			Value: "NumValue",
 		}, {
@@ -63,6 +63,12 @@ var (
 		}, {
 			Type:  ast.TokenTypeParen,
 			Value: "<",
+		}, {
+			Type:  ast.TokenTypeParen,
+			Value: "[",
+		}, {
+			Type:  ast.TokenTypeParen,
+			Value: "]",
 		}, {
 			Type:  ast.TokenTypeName,
 			Value: "int",

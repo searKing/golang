@@ -21,16 +21,17 @@ var (
 	newTests = []NewTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{"NumMap<int, *time.Time, *interface{}>", []generic.TypeInfo{{
+		{"NumMap<int, *[][]*[]time.Time, *interface{}>", []generic.TypeInfo{{
 			Name:   "NumMap",
 			Import: "",
 			TemplateTypes: []generic.TemplateType{{
 				Type:   "int",
 				Import: "",
 			}, {
-				Type:      "time.Time",
-				Import:    "time",
-				IsPointer: true,
+				Type:       "time.Time",
+				Import:     "time",
+				IsPointer:  true,
+				TypePrefix: "[][]*[]",
 			}, {
 				Type:      "interface{}",
 				IsPointer: true,
@@ -83,6 +84,10 @@ Outer:
 				}
 				if runTmpl.IsPointer != outTmpl.IsPointer {
 					t.Errorf("#%d: .TemplateTypes[%d].IsPointer got %v; expected %v", n, j, runTmpl.IsPointer, outTmpl.IsPointer)
+					continue Outer
+				}
+				if runTmpl.TypePrefix != outTmpl.TypePrefix {
+					t.Errorf("#%d: .TemplateTypes[%d].Prefix got %v; expected %v", n, j, runTmpl.TypePrefix, outTmpl.TypePrefix)
 					continue Outer
 				}
 			}
