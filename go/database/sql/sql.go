@@ -9,7 +9,10 @@ import (
 
 // NullJson represents an interface that may be null.
 // NullJson implements the Scanner interface so
-// it can be used as a scan destination, similar to NullString.
+// it can be used as a scan destination, similar to sql.NullString.
+// Deprecate, use go-nulljson instead.
+// For more information, see:
+// https://godoc.org/github.com/searKing/golang/tools/cmd/go-nulljson
 type NullJson struct {
 	Data interface{} // must be set with a pointer to zero value of expect type
 
@@ -17,15 +20,15 @@ type NullJson struct {
 }
 
 // Scan implements the sql.Scanner interface.
-func (nj *NullJson) Scan(value interface{}) error {
-	if value == nil {
+func (nj *NullJson) Scan(src interface{}) error {
+	if src == nil {
 		nj.Data, nj.Valid = nil, false
 		return nil
 	}
 	nj.Valid = true
 
 	var err error
-	switch src := value.(type) {
+	switch src := src.(type) {
 	case string:
 		err = json.Unmarshal([]byte(src), &nj.Data)
 	case []byte:
@@ -44,7 +47,7 @@ func (nj *NullJson) Scan(value interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T : %w", value, nj.Data, err)
+	return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T : %w", src, nj.Data, err)
 }
 
 // Value implements the driver.Valuer interface.

@@ -1,0 +1,41 @@
+language: go
+
+os:
+  - linux
+  - osx
+  - windows
+
+go:
+  - 1.12.x
+go_import_path: "github.com/searKing/golang/tools/cmd/go-nulljson"
+env:
+  - GO111MODULE=on
+
+# Only clone the most recent commit.
+git:
+  depth: 1
+
+before_install:
+  - go get -v golang.org/x/lint/golint
+
+before_script:
+  - gofmt -w .
+
+  # If `go generate` or `gofmt` yielded any changes,
+  # this will fail with an error message like "too many arguments"
+  # or "M: binary operator expected"
+  - git add .
+  - git reset  -- go.*
+  - git diff-index --cached --exit-code HEAD
+  # if use go mod, this will fails for package not found
+  - go mod vendor
+
+script:
+  - if [ "$TRAVIS_GO_VERSION" == "1.5" ] || [ "$TRAVIS_GO_VERSION" == "1.6" ] || [ "$TRAVIS_GO_VERSION" == "1.7" ] || [ "$TRAVIS_GO_VERSION" == "1.8" ]; then go list ./... | grep -v vendor | xargs go test -race -v -timeout 120s; else go test -mod vendor -race -v -timeout 120s ./...; fi
+
+notifications:
+  email:
+    recipients:
+      - searKingChan@gmail.com
+    on_success: change
+    on_failure: always

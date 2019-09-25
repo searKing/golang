@@ -82,7 +82,7 @@ func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncpool [flags] -type T,S [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncpool [flags] -type T<V>,S<V> [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttp://godoc.org/github.com/searKing/go-syncpool\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-syncpool\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
