@@ -16,23 +16,23 @@ type Value string
 
 func main() {
 	var numbers Numbers
-	err := numbers.Scan("One")
+	err := numbers.Scan(`"One"`)
 	ckError(err)
 	ck(numbers, "One")
 
-	err = numbers.Scan("Two")
+	err = numbers.Scan(`"Two"`)
 	ckError(err)
 	ck(numbers, "Two")
 
-	err = numbers.Scan("Three")
+	err = numbers.Scan(`"Three"`)
 	ckError(err)
 	ck(numbers, "Three")
 
-	err = numbers.Scan("One")
+	err = numbers.Scan(`"One"`)
 	ckError(err)
 	ck(numbers, "One")
 
-	err = numbers.Scan("Key(127)")
+	err = numbers.Scan(`"Key(127)"`)
 	ckError(err)
 	ck(numbers, "Key(127)")
 }
