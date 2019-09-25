@@ -2,44 +2,32 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// go-syncmap Generates Go code using a package as a generic template for sync.Map.
-// Given the name of a sync.Map type T , and the name of a type Key and Value
-// go-syncmap will create a new self-contained Go source file implementing
-//	func (m *T) Store(key Key, value Value)
-//	func (m *T) LoadOrStore(key Key, value Value) (Value, bool)
-//	func (m *T) Load(key Key) (Value, bool)
-//	func (m *T) Delete(key Key)
-//	func (m *T) Range(f func(key Key, value Value) bool
-// The file is created in the same package and directory as the package that defines T, Key and Value.
+// go-nulljson Generates Go code using a package as a generic template that implements sql.Scanner and sql.Valuer.
+// Given the name of a NullJson type T , and the name of a type Value
+// go-nulljson will create a new self-contained Go source file implementing
+//	func (m *T) Scan(src interface{}) error
+//	func (m *T) Value() (driver.Value, error)
+// The file is created in the same package and directory as the package that defines T, Key.
 // It has helpful defaults designed for use with go generate.
 //
 // For example, given this snippet,
 //
-//	package painkiller
-//
-//	import "sync"
-//
-//	type Pill sync.Map
-//
-//
 // running this command
 //
-//	go-syncmap -type Pill<int,time.Time>
+//	go-nulljson -type=Pill<time.Time>
 //
-// in the same directory will create the file pill_syncmap.go, in package painkiller,
+// in the same directory will create the file pill_nulljson.go, in package painkiller,
 // containing a definition of
 //
-//	func (m *Pill) Store(key int, value time.Time)
-//	func (m *Pill) LoadOrStore(key int, value time.Time) (time.Time, bool)
-//	func (m *Pill) Load(key int) (time.Time, bool)
-//	func (m *Pill) Delete(key int)
-//	func (m *Pill) Range(f func(key int, value time.Time) bool
+//	func (m *Pill) Scan(src interface{}) error
+//	func (m *Pill) Value() (driver.Value, error)
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate go-syncmap -type Pill<int, string>
-//	//go:generate go-syncmap -type Pill<int, time.Time>
-//	//go:generate go-syncmap -type Pill<int, encoding/json.Token>
+//	//go:generate go-nulljson -type=Pill<int>
+//	//go:generate go-nulljson -type=Pill<*string>
+//	//go:generate go-nulljson -type=Pill<time.Time>
+//	//go:generate go-nulljson -type=Pill<*encoding/json.Token>
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must name a single directory holding a Go package
@@ -50,16 +38,15 @@
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
 //
-package main // import "github.com/searKing/golang/tools/cmd/go-syncmap"
+package main // import "github.com/searKing/golang/tools/cmd/go-nulljson"
 
 import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings2 "github.com/searKing/golang/tools/common/strings"
+	strings_ "github.com/searKing/golang/tools/common/strings"
 	"go/ast"
 	"go/format"
-	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
@@ -80,25 +67,25 @@ var (
 
 // Usage is a replacement usage function for the flags package.
 func Usage() {
-	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-syncmap:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncmap [flags] -type T [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncmap [flags] -type T<K,V> [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncmap [flags] -type T<K,V> files... # Must be a single package\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncmap [flags] -type T,S [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-syncmap [flags] -type T<K,V>,S<K,V> [directory]\n")
+	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-nulljson:\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T [directory]\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T<V> [directory]\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T<V> files... # Must be a single package\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T,S [directory]\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T<V>,S<V> [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-syncmap\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-nulljson\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
 
 const (
-	goSyncMapToolName = "go-syncmap"
+	goNullJsonToolName = "go-nulljson"
 )
 
 func main() {
 	log.SetFlags(0)
-	log.SetPrefix("go-syncmap: ")
+	log.SetPrefix("go-nulljson: ")
 	flag.Usage = Usage
 	flag.Parse()
 	if len(*typeInfos) == 0 {
@@ -144,11 +131,15 @@ func main() {
 	g.parsePackage(args, tags)
 
 	// Print the header and package clause.
-	g.Printf("// Code generated by \"%s %s\"; DO NOT EDIT.\n", goSyncMapToolName, strings.Join(os.Args[1:], " "))
+	g.Printf("// Code generated by \"%s %s\"; DO NOT EDIT.\n", goNullJsonToolName, strings.Join(os.Args[1:], " "))
 	g.Printf("\n")
 	g.Printf("package %s", g.pkg.name)
 	g.Printf("\n")
-	g.Printf(stringImport, "sync") // Used by sync.Map.
+	g.Printf(stringImport, "database/sql")
+	g.Printf(stringImport, "database/sql/driver")
+	g.Printf(stringImport, "encoding/json")
+	g.Printf(stringImport, "fmt")
+	g.Printf(stringImport, "time")
 
 	// Run generate for each type.
 	for _, typeInfo := range types {
@@ -163,7 +154,7 @@ func main() {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_syncmap.go", types[0].mapName)
+		baseName := fmt.Sprintf("%s_nulljson.go", types[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, target, 0644)
@@ -270,14 +261,14 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 func (g *Generator) generate(typeInfo typeInfo) {
 	// <key, value>
 	values := make([]Value, 0, 100)
-	for _, file := range g.pkg.files {
-		// Set the state for this run of the walker.
-		file.typeInfo = typeInfo
-		file.values = nil
-		if file.file != nil {
-			ast.Inspect(file.file, file.genDecl)
-			values = append(values, file.values...)
-		}
+	if typeInfo.Name != "" {
+		values = append(values, Value{
+			eleImport:      typeInfo.Import,
+			eleName:        typeInfo.Name,
+			valueImport:    typeInfo.valueImport,
+			valueType:      typeInfo.valueType,
+			valueIsPointer: typeInfo.valueIsPointer,
+		})
 	}
 
 	if len(values) == 0 {
@@ -317,83 +308,12 @@ func (g *Generator) goimport(src []byte) []byte {
 
 // Value represents a declared constant.
 type Value struct {
-	originalName string // The name of the constant.
-	name         string // The name with trimmed prefix.
-	str          string // The string representation given by the "go/constant" package.
+	eleImport string // import path of the atomic.Value type.
+	eleName   string // Name of the atomic.Value type.
 
-	mapImport string // import path of the sync.Map type.
-	mapName   string // Name of the sync.Map type.
-
-	keyImport    string // import path of the sync.Map's key.
-	keyType      string // The type of the key in sync.Map.
-	keyIsPointer bool   // whether the value's type is ptr
-
-	valueImport    string // import path of the sync.Map's value.
-	valueType      string // The type of the value in sync.Map.
+	valueImport    string // import path of the atomic.Value's value.
+	valueType      string // The type of the value in atomic.Value.
 	valueIsPointer bool   // whether the value's type is ptr
-}
-
-func (v *Value) String() string {
-	return v.str
-}
-
-// genDecl processes one declaration clause.
-func (f *File) genDecl(node ast.Node) bool {
-	decl, ok := node.(*ast.GenDecl)
-	// Token must be in IMPORT, CONST, TYPE, VAR
-	if !ok || decl.Tok != token.TYPE {
-		// We only care about const declarations.
-		return true
-	}
-	// The name of the type of the constants we are declaring.
-	// Can change if this is a multi-element declaration.
-	typ := ""
-	// Loop over the elements of the declaration. Each element is a ValueSpec:
-	// a list of names possibly followed by a type, possibly followed by values.
-	// If the type and value are both missing, we carry down the type (and value,
-	// but the "go/types" package takes care of that).
-	for _, spec := range decl.Specs {
-		tspec := spec.(*ast.TypeSpec) // Guaranteed to succeed as this is TYPE.
-		typ = tspec.Name.Name
-		sExpr, ok := tspec.Type.(*ast.SelectorExpr)
-		if !ok {
-			continue
-		}
-
-		if sExpr.X.(*ast.Ident).Name == "sync" && sExpr.Sel.Name == "Map" {
-			if typ != f.typeInfo.mapName {
-				// This is not the type we're looking for.
-				continue
-			}
-			v := Value{
-				originalName: typ,
-				str:          typ,
-
-				keyImport:      f.typeInfo.keyImport,
-				keyType:        f.typeInfo.keyType,
-				keyIsPointer:   f.typeInfo.keyIsPointer,
-				valueImport:    f.typeInfo.valueImport,
-				valueType:      f.typeInfo.valueType,
-				valueIsPointer: f.typeInfo.valueIsPointer,
-			}
-			if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
-				v.name = strings.TrimSpace(c.Text())
-			} else {
-				v.name = strings.TrimPrefix(v.originalName, f.trimPrefix)
-			}
-			v.mapName = v.name
-
-			if strings.TrimSpace(v.keyType) == "" {
-				v.keyType = "interface{}"
-			}
-			if strings.TrimSpace(v.valueType) == "" {
-				v.valueType = "interface{}"
-			}
-			f.values = append(f.values, v)
-		}
-
-	}
-	return false
 }
 
 // Helpers
@@ -410,7 +330,9 @@ func (g *Generator) declareNameVar(run Value) string {
 func (g *Generator) createValAndNameDecl(val Value) (string, string) {
 	goRep := strings.NewReplacer(".", "_", "{", "_", "}", "_")
 
-	nilValName := fmt.Sprintf("_nil_%s_%s_value", val.mapName, goRep.Replace(val.valueType))
+	nilValName := fmt.Sprintf("_nil_%s_%s_value",
+		val.eleName,
+		goRep.Replace(val.valueType))
 	nilValDecl := fmt.Sprintf("%s = func() (val %s) { return }()", nilValName, val.valueType)
 
 	return nilValName, nilValDecl
@@ -420,11 +342,8 @@ func (g *Generator) createValAndNameDecl(val Value) (string, string) {
 func (g *Generator) buildOneRun(value Value) {
 	//values := run
 	g.Printf("\n")
-	if strings.TrimSpace(value.mapImport) != "" {
-		g.Printf(stringImport, value.mapImport)
-	}
-	if strings.TrimSpace(value.keyImport) != "" {
-		g.Printf(stringImport, value.keyImport)
+	if strings.TrimSpace(value.eleImport) != "" {
+		g.Printf(stringImport, value.eleImport)
 	}
 	if strings.TrimSpace(value.valueImport) != "" {
 		g.Printf(stringImport, value.valueImport)
@@ -432,16 +351,16 @@ func (g *Generator) buildOneRun(value Value) {
 
 	// Generate code that will fail if the constants change value.
 	g.Printf("func _() {\n")
-	g.Printf("\t// An \"cannot convert %s literal (type %s) to type sync.Map\" compiler error signifies that the base type have changed.\n", value.mapName, value.mapName)
-	g.Printf("\t// Re-run the go-syncmap command to generate them again.\n")
-	g.Printf("\t	_ = (sync.Map)(%s{})\n", value.mapName)
+	g.Printf("\t// An \"cannot convert %s literal (type %s) to type atomic.Value\" compiler error signifies that the base type have changed.\n", value.eleName, value.eleName)
+	g.Printf("\t// Re-run the go-nulljson command to generate them again.\n")
+	g.Printf("\t	_ = (sql.Scanner)(&%s{})\n", value.eleName)
+	g.Printf("\t	_ = (driver.Valuer)(&%s{})\n", value.eleName)
 	g.Printf("}\n")
 
 	//The generated code is simple enough to write as a Printf format.
-	g.Printf(stringOneRun, value.mapName,
-		strings2.LoadElse(value.keyIsPointer, "*", "")+value.keyType,
-		strings2.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
-		strings2.LoadElseGet(value.valueIsPointer, "nil", func() string {
+	g.Printf(stringOneRun, value.eleName,
+		strings_.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
+		strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
 		}))
 }
@@ -452,37 +371,56 @@ const stringImport = `import "%s"
 `
 
 // Arguments to format are:
-//	[1]: map type name
-//	[2]: key type name
-//	[3]: value type name
-//	[4]: nil value of map type
-const stringOneRun = `func (m *%[1]s) Store(key %[2]s, value %[3]s) {
-    (*sync.Map)(m).Store(key, value)
+//	[1]: NullJson type name
+//	[2]: value type name
+//	[3]: nil value of map type
+const stringOneRun = `
+
+// %[1]s represents an interface that may be null.
+// %[1]s implements the Scanner interface so
+// it can be used as a scan destination, similar to sql.NullString.
+type %[1]s struct {
+	Data %[2]s
+
+	Valid bool // Valid is true if Data is not NULL
 }
 
-func (m *%[1]s) LoadOrStore(key %[2]s, value %[3]s) (%[3]s, bool) {
-    actual, loaded := (*sync.Map)(m).LoadOrStore(key, value)
-	if actual == nil {
-        return %[4]s, loaded
-    }
-    return actual.(%[3]s), loaded
+// Scan implements the sql.Scanner interface.
+func (nj *%[1]s) Scan(src interface{}) error {
+	if src == nil {
+		nj.Data, nj.Valid = %[3]s, false
+		return nil
+	}
+	nj.Valid = true
+
+	var err error
+	switch src := src.(type) {
+	case string:
+		err = json.Unmarshal([]byte(src), &nj.Data)
+	case []byte:
+		err = json.Unmarshal(src, &nj.Data)
+	case time.Time:
+		srcBytes, _ := json.Marshal(src)
+		err = json.Unmarshal(srcBytes, &nj.Data)
+	case nil:
+		nj.Data = nil
+		err = nil
+	default:
+		srcBytes, _ := json.Marshal(src)
+		err = json.Unmarshal(srcBytes, &nj.Data)
+	}
+	if err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("unsupported Scan, storing driver.Value type %%T into type %%T : %%w", src, nj.Data, err)
 }
 
-func (m *%[1]s) Load(key %[2]s) (%[3]s, bool) {
-    value, ok := (*sync.Map)(m).Load(key)
-    if value == nil {
-    	return %[4]s, ok
-    }
-    return value.(%[3]s), ok
-}
-
-func (m *%[1]s) Delete(key %[2]s) {
-    (*sync.Map)(m).Delete(key)
-}
-
-func (m *%[1]s) Range(f func(key %[2]s, value %[3]s) bool) {
-    (*sync.Map)(m).Range(func(key, value interface{}) bool {
-        return f(key.(%[2]s), value.(%[3]s))
-    })
+// Value implements the driver.Valuer interface.
+func (nj %[1]s) Value() (driver.Value, error) {
+	if !nj.Valid {
+		return nil, nil
+	}
+	return json.Marshal(nj.Data)
 }
 `
