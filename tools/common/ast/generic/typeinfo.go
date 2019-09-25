@@ -16,9 +16,10 @@ import (
 )
 
 type TemplateType struct {
-	Type      string // The type's name.
-	Import    string // import path of the type.
-	IsPointer bool   // whether the value's type is ptr
+	Type       string // The type's name.
+	Import     string // import path of the type.
+	IsPointer  bool   // whether the value's type is ptr
+	TypePrefix string // The type's prefix, such as [][]
 }
 
 func (typ *TemplateType) String() string {
@@ -113,10 +114,44 @@ func walk(tokens []ast.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 					token = tokens[current]
 				}
 				templateNode := TemplateType{
-					Type:      "",
-					Import:    "",
 					IsPointer: isPointer,
 				}
+
+				var prefix bytes.Buffer
+				for {
+					if token.Type == ast.TokenTypeParen && token.Value == "*" {
+						prefix.WriteString("*")
+						current++
+						if current >= len(tokens) {
+							panic(fmt.Sprintf("missing token: after %s", token.Value))
+						}
+						token = tokens[current]
+						continue
+					}
+					if token.Type == ast.TokenTypeParen && token.Value == "[" {
+						current++
+						if current >= len(tokens) {
+							panic(fmt.Sprintf("missing token: %s after %s", "]", token.Value))
+						}
+						token = tokens[current]
+
+						if token.Type == ast.TokenTypeParen && token.Value == "]" {
+							prefix.WriteString("[]")
+							current++
+							if current >= len(tokens) {
+								panic(fmt.Sprintf("missing token: after %s", token.Value))
+							}
+							token = tokens[current]
+						} else {
+							// 最后如果我们没有匹配上任何类型的 token，那么我们抛出一个错误。
+							panic(fmt.Sprintf("unexpected token: %s, expect a %q", token.Value, ']'))
+						}
+						continue
+					}
+					break
+				}
+				templateNode.TypePrefix = prefix.String()
+
 				if token.Type == ast.TokenTypeName {
 					import_, type_ := splitImport(token.Value)
 					templateNode.Import = import_
