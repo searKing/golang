@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// go-nulljson Generates Go code using a package as a generic template that implements sql.Scanner and sql.Valuer.
+// go-nulljson Generates Go code using a package as a generic template that implements database/sql.Scanner and database/sql/driver.Valuer.
 // Given the name of a NullJson type T , and the name of a type Value
 // go-nulljson will create a new self-contained Go source file implementing
 //	func (m *T) Scan(src interface{}) error
