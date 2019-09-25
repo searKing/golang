@@ -19,11 +19,13 @@ var (
 	parserTests = []ParserTests{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{"NumValue<int>", []typeInfo{{
-			Name:        "NumValue",
-			Import:      "",
-			valueType:   "int",
-			valueImport: "",
+		{"NumValue<**[]*[]*int>", []typeInfo{{
+			Name:            "NumValue",
+			Import:          "",
+			valueType:       "int",
+			valueImport:     "",
+			valueIsPointer:  true,
+			valueTypePrefix: "*[]*[]*",
 		},
 		}},
 		{"NumValue<a.b>", []typeInfo{{
