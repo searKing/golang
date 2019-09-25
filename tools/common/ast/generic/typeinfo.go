@@ -27,6 +27,7 @@ func (typ *TemplateType) String() string {
 	if typ.IsPointer {
 		value.WriteByte('*')
 	}
+	value.WriteString(typ.TypePrefix)
 	value.WriteString(joinImport(typ.Import, typ.Type))
 	return value.String()
 }
