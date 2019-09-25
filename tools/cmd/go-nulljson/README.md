@@ -3,9 +3,9 @@
 [![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-nulljson)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-nulljson) 
 [![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-nulljson?badge)
 # go-nulljson
-Generates Go code using a package as a generic template that implements sql.Scanner and sql.Valuer.
+Generates Go code using a package as a generic template that implements database/sql.Scanner and database/sql/driver.Valuer.
 
-go-nulljson Generates Go code using a package as a generic template that implements sql.Scanner and sql.Valuer.
+go-nulljson Generates Go code using a package as a generic template that implements database/sql.Scanner and database/sql/driver.Valuer.
 Given the name of a NullJson type T , and the name of a type Value
 go-nulljson will create a new self-contained Go source file implementing
 
