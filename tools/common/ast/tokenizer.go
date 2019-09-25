@@ -46,11 +46,11 @@ func Tokenizer(inputs []rune) []Token {
 			continue
 		}
 
-		// Special case: * Type
-		if char == '*' {
+		// Special case: * [ ] Type
+		if char == '*' || char == '[' || char == ']' {
 			tokens = append(tokens, Token{
 				Type:  TokenTypeParen,
-				Value: "*",
+				Value: string(char),
 			})
 			current++
 			continue
