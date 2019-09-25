@@ -19,14 +19,16 @@ var (
 	parserTests = []ParserTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{"NumMap<int,*string>", []typeInfo{{
-			mapName:        "NumMap",
-			mapImport:      "",
-			keyType:        "int",
-			keyImport:      "",
-			valueType:      "string",
-			valueImport:    "",
-			valueIsPointer: true,
+		{"NumMap<[]*[]*int,**[]*[]*string>", []typeInfo{{
+			mapName:         "NumMap",
+			mapImport:       "",
+			keyType:         "int",
+			keyImport:       "",
+			keyTypePrefix:   "[]*[]*",
+			valueType:       "string",
+			valueImport:     "",
+			valueIsPointer:  true,
+			valueTypePrefix: "*[]*[]*",
 		}}},
 		{"NumMap<a.b, a.b/c.d>", []typeInfo{{
 			mapName:     "NumMap",

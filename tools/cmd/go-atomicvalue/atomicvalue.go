@@ -51,7 +51,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings2 "github.com/searKing/golang/tools/common/strings"
+	strings_ "github.com/searKing/golang/tools/common/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -319,9 +319,10 @@ type Value struct {
 	eleImport string // import path of the atomic.Value type.
 	eleName   string // Name of the atomic.Value type.
 
-	valueImport    string // import path of the atomic.Value's value.
-	valueType      string // The type of the value in atomic.Value.
-	valueIsPointer bool   // whether the value's type is ptr
+	valueImport     string // import path of the atomic.Value's value.
+	valueType       string // The type of the value in atomic.Value.
+	valueIsPointer  bool   // whether the value's type is ptr
+	valueTypePrefix string // The type's prefix, such as []*[]
 }
 
 func (v *Value) String() string {
@@ -360,9 +361,10 @@ func (f *File) genDecl(node ast.Node) bool {
 				originalName: typ,
 				str:          typ,
 
-				valueImport:    f.typeInfo.valueImport,
-				valueType:      f.typeInfo.valueType,
-				valueIsPointer: f.typeInfo.valueIsPointer,
+				valueImport:     f.typeInfo.valueImport,
+				valueType:       f.typeInfo.valueType,
+				valueIsPointer:  f.typeInfo.valueIsPointer,
+				valueTypePrefix: f.typeInfo.valueTypePrefix,
 			}
 			if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
 				v.name = strings.TrimSpace(c.Text())
@@ -423,8 +425,8 @@ func (g *Generator) buildOneRun(value Value) {
 
 	//The generated code is simple enough to write as a Printf format.
 	g.Printf(stringOneRun, value.eleName,
-		strings2.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
-		strings2.LoadElseGet(value.valueIsPointer, "nil", func() string {
+		strings_.LoadElse(value.valueIsPointer, "*", "")+value.valueTypePrefix+value.valueType,
+		strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
 		}))
 }

@@ -14,14 +14,17 @@ import (
 
 type typeInfo struct {
 	// These fields are reset for each type being generated.
-	mapName        string // Name of the sync.Map type.
-	mapImport      string // import path of the sync.Map type.
-	keyType        string // The type of the key in sync.Map.
-	keyImport      string // import path of the sync.Map's key.
-	keyIsPointer   bool   // whether the value's type is ptr
-	valueType      string // The type of the value in sync.Map.
-	valueImport    string // import path of the sync.Map's value.
-	valueIsPointer bool   // whether the value's type is ptr
+	mapName       string // Name of the sync.Map type.
+	mapImport     string // import path of the sync.Map type.
+	keyType       string // The type of the key in sync.Map.
+	keyImport     string // import path of the sync.Map's key.
+	keyIsPointer  bool   // whether the value's type is ptr
+	keyTypePrefix string // The type's prefix, such as []*[]
+
+	valueType       string // The type of the value in sync.Map.
+	valueImport     string // import path of the sync.Map's value.
+	valueIsPointer  bool   // whether the value's type is ptr
+	valueTypePrefix string // The type's prefix, such as []*[]
 }
 
 func newTypeInfo(input string) []typeInfo {
@@ -36,12 +39,14 @@ func newTypeInfo(input string) []typeInfo {
 				info_.keyImport = template.Import
 				info_.keyType = template.Type
 				info_.keyIsPointer = template.IsPointer
+				info_.keyTypePrefix = template.TypePrefix
 				continue
 			}
 			if i == 1 {
 				info_.valueImport = template.Import
 				info_.valueType = template.Type
 				info_.valueIsPointer = template.IsPointer
+				info_.valueTypePrefix = template.TypePrefix
 				continue
 			}
 			panic(fmt.Sprintf("unexpected redundant #%d template type: %s, only 2 is expected", i, &template))

@@ -56,7 +56,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings2 "github.com/searKing/golang/tools/common/strings"
+	strings_ "github.com/searKing/golang/tools/common/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -324,13 +324,16 @@ type Value struct {
 	mapImport string // import path of the sync.Map type.
 	mapName   string // Name of the sync.Map type.
 
-	keyImport    string // import path of the sync.Map's key.
-	keyType      string // The type of the key in sync.Map.
-	keyIsPointer bool   // whether the value's type is ptr
+	keyImport     string // import path of the sync.Map's key.
+	keyType       string // The type of the key in sync.Map.
+	keyIsPointer  bool   // whether the value's type is ptr
+	keyTypePrefix string // The type's prefix, such as []*[]
 
-	valueImport    string // import path of the sync.Map's value.
-	valueType      string // The type of the value in sync.Map.
-	valueIsPointer bool   // whether the value's type is ptr
+	valueImport     string // import path of the sync.Map's value.
+	valueType       string // The type of the value in sync.Map.
+	valueIsPointer  bool   // whether the value's type is ptr
+	valueTypePrefix string // The type's prefix, such as []*[]
+
 }
 
 func (v *Value) String() string {
@@ -369,12 +372,14 @@ func (f *File) genDecl(node ast.Node) bool {
 				originalName: typ,
 				str:          typ,
 
-				keyImport:      f.typeInfo.keyImport,
-				keyType:        f.typeInfo.keyType,
-				keyIsPointer:   f.typeInfo.keyIsPointer,
-				valueImport:    f.typeInfo.valueImport,
-				valueType:      f.typeInfo.valueType,
-				valueIsPointer: f.typeInfo.valueIsPointer,
+				keyImport:       f.typeInfo.keyImport,
+				keyType:         f.typeInfo.keyType,
+				keyIsPointer:    f.typeInfo.keyIsPointer,
+				keyTypePrefix:   f.typeInfo.keyTypePrefix,
+				valueImport:     f.typeInfo.valueImport,
+				valueType:       f.typeInfo.valueType,
+				valueIsPointer:  f.typeInfo.valueIsPointer,
+				valueTypePrefix: f.typeInfo.valueTypePrefix,
 			}
 			if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
 				v.name = strings.TrimSpace(c.Text())
@@ -439,9 +444,9 @@ func (g *Generator) buildOneRun(value Value) {
 
 	//The generated code is simple enough to write as a Printf format.
 	g.Printf(stringOneRun, value.mapName,
-		strings2.LoadElse(value.keyIsPointer, "*", "")+value.keyType,
-		strings2.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
-		strings2.LoadElseGet(value.valueIsPointer, "nil", func() string {
+		strings_.LoadElse(value.keyIsPointer, "*", "")+value.keyTypePrefix+value.keyType,
+		strings_.LoadElse(value.valueIsPointer, "*", "")+value.valueTypePrefix+value.valueType,
+		strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
 		}))
 }
