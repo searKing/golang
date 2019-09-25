@@ -47,8 +47,8 @@ func main() {
 
 func ck(jsons Jsons, t json.Token) {
 	val := jsons.Data
-	if val != t {
-		panic(fmt.Sprintf("Jsons<encoding/json.Token>.go: %s", t))
+	if int(val.(float64)) != t {
+		panic(fmt.Sprintf("Jsons<encoding/json.Token>.go:got %s expected %s", val, t))
 	}
 }
 
