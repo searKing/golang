@@ -263,11 +263,12 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	values := make([]Value, 0, 100)
 	if typeInfo.Name != "" {
 		values = append(values, Value{
-			eleImport:      typeInfo.Import,
-			eleName:        typeInfo.Name,
-			valueImport:    typeInfo.valueImport,
-			valueType:      typeInfo.valueType,
-			valueIsPointer: typeInfo.valueIsPointer,
+			eleImport:       typeInfo.Import,
+			eleName:         typeInfo.Name,
+			valueImport:     typeInfo.valueImport,
+			valueType:       typeInfo.valueType,
+			valueIsPointer:  typeInfo.valueIsPointer,
+			valueTypePrefix: typeInfo.valueTypePrefix,
 		})
 	}
 
@@ -311,9 +312,10 @@ type Value struct {
 	eleImport string // import path of the atomic.Value type.
 	eleName   string // Name of the atomic.Value type.
 
-	valueImport    string // import path of the atomic.Value's value.
-	valueType      string // The type of the value in atomic.Value.
-	valueIsPointer bool   // whether the value's type is ptr
+	valueImport     string // import path of the atomic.Value's value.
+	valueType       string // The type of the value in atomic.Value.
+	valueIsPointer  bool   // whether the value's type is ptr
+	valueTypePrefix string // The type's prefix, such as []*[]
 }
 
 // Helpers
@@ -359,7 +361,7 @@ func (g *Generator) buildOneRun(value Value) {
 
 	//The generated code is simple enough to write as a Printf format.
 	g.Printf(stringOneRun, value.eleName,
-		strings_.LoadElse(value.valueIsPointer, "*", "")+value.valueType,
+		strings_.LoadElse(value.valueIsPointer, "*", "")+value.valueTypePrefix+value.valueType,
 		strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
 		}))
