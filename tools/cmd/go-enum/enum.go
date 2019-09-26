@@ -2,49 +2,87 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// go-enum Generates Go code using a package as a generic template for atomic.Value.
-// Given the trimmedTypeName of a atomic.Value type T , and the trimmedTypeName of a type Value
-// go-enum will create a new self-contained Go source file implementing
-//	func (m *T) Store(value Value)
-//	func (m *T) Load() Value
-// The file is created in the same package and directory as the package that defines T, Key.
+// go-enum is a tool to automate the creation of methods that satisfy such interfaces:
+// 	fmt			==>  fmt.Stringer
+// 	binary		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+// 	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
+// 	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
+// 	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
+// 	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+//
+// Given the name of a (signed or unsigned) integer type T that has constants
+// defined, stringer will create a new self-contained Go source file implementing
+// 	fmt			==>  fmt.Stringer
+//		func (t T) String() string
+// 	json		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+//		func (t T) MarshalBinary() (data []byte, err error)
+//		func (t *T) UnmarshalBinary(data []byte) error
+// 	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
+//		func (t T) MarshalJSON() ([]byte, error)
+//		func (t *T) UnmarshalJSON(data []byte) error
+// 	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
+//		func (t T) MarshalText() ([]byte, error)
+//		func (t *T) UnmarshalText(text []byte) error
+// 	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
+//		func (t T) Value() (driver.Value, error)
+//		func (t *T) Scan(value interface{}) error
+// 	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+//		func (t T) MarshalYAML() (interface{}, error)
+//		func (t *T) UnmarshalYAML(unmarshal func(interface{}) error) error
+//
+// The file is created in the same package and directory as the package that defines T.
 // It has helpful defaults designed for use with go generate.
+//
+// go-enum works best with constants that are consecutive values such as created using iota,
+// but creates good code regardless. In the future it might also provide custom support for
+// constant sets that are bit patterns.
 //
 // For example, given this snippet,
 //
 //	package painkiller
 //
-//	import "sync/atomic"
+//	type Pill int
 //
-//	type Pill atomic.Value
-//
+//	const (
+//		Placebo Pill = iota
+//		Aspirin
+//		Ibuprofen
+//		Paracetamol
+//		Acetaminophen = Paracetamol
+//	)
 //
 // running this command
 //
-//	go-enum -type=Pill<time.Time>
+//	go-enum -type=Pill
 //
-// in the same directory will create the file pill_enum.go, in package painkiller,
-// containing a definition of
+// in the same directory will create the file pill_string.go, in package painkiller,
+// containing a definition of interfaces mentioned.
 //
-//	func (m *Pill) Store(value time.Time)
-//	func (m *Pill) Load() time.Time
+// That method will translate the value of a Pill constant to the string representation
+// of the respective constant name, so that the call fmt.Print(painkiller.Aspirin) will
+// print the string "Aspirin".
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate go-enum -type=Pill<int>
-//	//go:generate go-enum -type=Pill<*string>
-//	//go:generate go-enum -type=Pill<time.Time>
-//	//go:generate go-enum -type=Pill<*encoding/json.Token>
+//	//go:generate go-enum -type=Pill
+//
+// If multiple constants have the same value, the lexically first matching name will
+// be used (in the example, Acetaminophen will print as "Paracetamol").
 //
 // With no arguments, it processes the package in the current directory.
-// Otherwise, the arguments must trimmedTypeName a single directory holding a Go package
+// Otherwise, the arguments must name a single directory holding a Go package
 // or a set of Go source files that represent a single Go package.
 //
 // The -type flag accepts a comma-separated list of types so a single run can
 // generate methods for multiple types. The default output file is t_string.go,
-// where t is the lower-cased trimmedTypeName of the first type listed. It can be overridden
+// where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
 //
+// The -linecomment flag tells stringer to generate the text of any line comment, trimmed
+// of leading spaces, instead of the constant name. For instance, if the constants above had a
+// Pill prefix, one could write
+//   PillAspirin // Aspirin
+// to suppress it in the output.
 package main // import "github.com/searKing/golang/tools/cmd/go-enum"
 
 import (
@@ -68,14 +106,14 @@ import (
 
 var (
 	typeInfos = flag.String("type", "", "comma-separated list of type names; must be set")
-	useString = flag.Bool("string", true, "if true, the fmt.Stringer interface will be implemented.")
+	useString = flag.Bool("string", true, "if true, the fmt.Stringer interface will be implemented. Default: false, you can use stringer instead.")
 	useBinary = flag.Bool("binary", true, "if true, the encoding.BinaryMarshaler and encoding.BinaryUnmarshaler interface will be implemented. Default: false")
 	useText   = flag.Bool("text", true, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: false")
 	useJson   = flag.Bool("json", true, "if true, the encoding/json.Marshaler and encoding/json.Unmarshaler interface will be implemented. Default: false")
 	useSql    = flag.Bool("sql", true, "if true, the database/sql.Scanner and database/sql/driver.Valuer interface will be implemented.")
 	useYaml   = flag.Bool("yaml", true, "if true, the gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler interface will be implemented. Default: false")
 
-	transformMethod = flag.String("transform", "noop", "enum item name transformation method. Default: noop")
+	transformMethod = flag.String("transform", "nop", "enum item name transformation method [nop, upper, lower, snake, camel, small_camel, kebab, dotted]. Default: nop")
 
 	output      = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
 	trimprefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
@@ -282,6 +320,17 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 	}
 }
 
+func (g *Generator) buildEnumRegenerateCheck(values []Value) {
+	g.Printf("func _() {\n")
+	g.Printf("\t// An \"invalid array index\" compiler error signifies that the constant values have changed.\n")
+	g.Printf("\t// Re-run the stringer command to generate them again.\n")
+	g.Printf("\tvar x [1]struct{}\n")
+	for _, v := range values {
+		g.Printf("\t_ = x[%s - %s]\n", v.nameInfo.trimmedName, v.valueInfo.str)
+	}
+	g.Printf("}\n")
+}
+
 // generate produces the String method for the named type.
 func (g *Generator) generate(typeInfo typeInfo) {
 	// <key, value>
@@ -299,36 +348,85 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	if len(values) == 0 {
 		log.Fatalf("no values defined for type %+v", typeInfo)
 	}
+	g.transformValueNames(values, *transformMethod)
 	// Generate code that will fail if the constants change value.
-	g.Printf("func _() {\n")
-	g.Printf("\t// An \"invalid array index\" compiler error signifies that the constant values have changed.\n")
-	g.Printf("\t// Re-run the stringer command to generate them again.\n")
-	g.Printf("\tvar x [1]struct{}\n")
-	for _, v := range values {
-		g.Printf("\t_ = x[%s - %s]\n", v.nameInfo.trimmedName, v.valueInfo.str)
+	for _, im := range checkImportPackages {
+		g.Printf(stringImport, im)
 	}
-	g.Printf("}\n")
-	runs := splitIntoRuns(values)
 
-	// The decision of which pattern to use depends on the number of
-	// runs in the numbers. If there's only one, it's easy. For more than
-	// one, there's a tradeoff between complexity and size of the data
-	// and code vs. the simplicity of a map. A map takes more space,
-	// but so does the code. The decision here (crossover at 10) is
-	// arbitrary, but considers that for large numbers of runs the cost
-	// of the linear scan in the switch might become important, and
-	// rather than use yet another algorithm such as binary search,
-	// we punt and use a map. In any case, the likelihood of a map
-	// being necessary for any realistic example other than bitmasks
-	// is very low. And bitmasks probably deserve their own analysis,
-	// to be done some other day.
-	switch {
-	case len(runs) == 1:
-		g.buildOneRun(runs, typeInfo)
-	case len(runs) <= 10:
-		g.buildMultipleRuns(runs, typeInfo)
-	default:
-		g.buildMap(runs, typeInfo)
+	if *useBinary {
+		for _, im := range binaryImportPackages {
+			g.Printf(stringImport, im)
+		}
+	}
+	if *useJson {
+		for _, im := range jsonImportPackages {
+			g.Printf(stringImport, im)
+		}
+	}
+	if *useText {
+		for _, im := range textImportPackages {
+			g.Printf(stringImport, im)
+		}
+	}
+	if *useYaml {
+		for _, im := range yamlImportPackages {
+			g.Printf(stringImport, im)
+		}
+	}
+	if *useSql {
+		for _, im := range sqlImportPackages {
+			g.Printf(stringImport, im)
+		}
+	}
+
+	g.buildEnumRegenerateCheck(values)
+
+	runs := splitIntoRuns(values)
+	threshold := 10
+
+	if *useString {
+		// The decision of which pattern to use depends on the number of
+		// runs in the numbers. If there's only one, it's easy. For more than
+		// one, there's a tradeoff between complexity and size of the data
+		// and code vs. the simplicity of a map. A map takes more space,
+		// but so does the code. The decision here (crossover at 10) is
+		// arbitrary, but considers that for large numbers of runs the cost
+		// of the linear scan in the switch might become important, and
+		// rather than use yet another algorithm such as binary search,
+		// we punt and use a map. In any case, the likelihood of a map
+		// being necessary for any realistic example other than bitmasks
+		// is very low. And bitmasks probably deserve their own analysis,
+		// to be done some other day.
+		switch {
+		case len(runs) == 1:
+			g.buildOneRun(runs, typeInfo)
+		case len(runs) <= threshold:
+			g.buildMultipleRuns(runs, typeInfo)
+		default:
+			g.buildMap(runs, typeInfo)
+		}
+	}
+
+	if *useBinary {
+		g.buildCheck(runs, typeInfo.Name, threshold)
+		g.Printf(binaryTemplate, typeInfo.Name)
+	}
+	if *useJson {
+		g.buildCheck(runs, typeInfo.Name, threshold)
+		g.Printf(jsonTemplate, typeInfo.Name)
+	}
+	if *useText {
+		g.buildCheck(runs, typeInfo.Name, threshold)
+		g.Printf(textTemplate, typeInfo.Name)
+	}
+	if *useYaml {
+		g.buildCheck(runs, typeInfo.Name, threshold)
+		g.Printf(yamlTemplate, typeInfo.Name)
+	}
+	if *useSql {
+		g.buildCheck(runs, typeInfo.Name, threshold)
+		g.Printf(sqpTemplate, typeInfo.Name)
 	}
 }
 
