@@ -162,6 +162,54 @@ func TestSnakeCamelCases(t *testing.T) {
 }
 
 var (
+	kebabCamelCaseTests = []CamelCaseTest{
+		{
+			"name_2",
+			[]rune{'_'},
+			"name-2",
+		},
+		{
+			"_my_field_name_2",
+			[]rune{'_'},
+			"x-my-field-name-2",
+		},
+	}
+)
+
+func TestKebabCamelCases(t *testing.T) {
+	for n, test := range kebabCamelCaseTests {
+		out := strings_.KebabCase(test.input, test.seps...)
+		if strings.Compare(out, test.output) != 0 {
+			t.Errorf("#%d: got %v; expected %v", n, out, test.output)
+		}
+	}
+}
+
+var (
+	dotCamelCaseTests = []CamelCaseTest{
+		{
+			"name_2",
+			[]rune{'_'},
+			"name.2",
+		},
+		{
+			"_my_field_name_2",
+			[]rune{'_'},
+			"x.my.field.name.2",
+		},
+	}
+)
+
+func TestDotCamelCases(t *testing.T) {
+	for n, test := range dotCamelCaseTests {
+		out := strings_.DotCase(test.input, test.seps...)
+		if strings.Compare(out, test.output) != 0 {
+			t.Errorf("#%d: got %v; expected %v", n, out, test.output)
+		}
+	}
+}
+
+var (
 	smallCamelCaseSliceTests = []CamelCaseSliceTest{
 		{
 			[]string{"name", "2"},
