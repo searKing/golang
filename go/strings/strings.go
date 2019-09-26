@@ -16,6 +16,9 @@ func SliceContains(ss []string, s string) bool {
 // according to the mapping function. If mapping returns a negative value, the character is
 // dropped from the string with no replacement.
 func MapLeading(mapping func(rune) rune, s string) string {
+	if s == "" {
+		return s
+	}
 	rLeading, sRight := ExtractFirstRune(s)
 	srMapped := mapping(rLeading)
 	if srMapped < 0 {
