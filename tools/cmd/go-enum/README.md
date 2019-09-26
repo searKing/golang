@@ -1,52 +1,78 @@
-[![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-jsonenum)](https://travis-ci.org/searKing/travis-ci)
-[![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-jsonenum?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-jsonenum)
-[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-jsonenum)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-jsonenum) 
-[![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-jsonenum?badge)
-# go-jsonenum
-Generates Go code using a package as a generic template for atomic.Value.
+[![Build Status](https:travis-ci.org/searKing/travis-ci.svg?branch=go-enum)](https:travis-ci.org/searKing/travis-ci)
+[![GoDoc](https:godoc.org/github.com/searKing/golang/tools/cmd/go-enum?status.svg)](https:godoc.org/github.com/searKing/golang/tools/cmd/go-enum)
+[![Report card](https:goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-enum)](https:goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-enum) 
+[![Sourcegraph](https:sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https:sourcegraph.com/github.com/searKing/travis-ci@go-enum?badge)
+# go-enum
+Generates Go code using a package as a generic template which implements interface fmt.Stringer | binary | json | text | sql | yaml for enums.
 
-go-jsonenum Generates Go code using a package as a generic template for atomic.Value.
-Given the name of a atomic.Value type T , and the name of a type Value
-go-jsonenum will create a new self-contained Go source file implementing
-```
-// type T atomic.Value
-// T<Value>
-func (m *T) Store(value Value)
-func (m *T) Load() Value
-```
+go-enum is a tool to automate the creation of methods that satisfy such interfaces:
+	fmt			==>  fmt.Stringer
+	binary		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
+	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
+	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
+	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
 
-The file is created in the same package and directory as the package that defines T, Key.
+Given the name of a (signed or unsigned) integer type T that has constants
+defined, stringer will create a new self-contained Go source file implementing
+	fmt			==>  fmt.Stringer
+		func (t T) String() string
+	json		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+		func (t T) MarshalBinary() (data []byte, err error)
+		func (t *T) UnmarshalBinary(data []byte) error
+	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
+		func (t T) MarshalJSON() ([]byte, error)
+		func (t *T) UnmarshalJSON(data []byte) error
+	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
+		func (t T) MarshalText() ([]byte, error)
+		func (t *T) UnmarshalText(text []byte) error
+	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
+		func (t T) Value() (driver.Value, error)
+		func (t *T) Scan(value interface{}) error
+	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+		func (t T) MarshalYAML() (interface{}, error)
+		func (t *T) UnmarshalYAML(unmarshal func(interface{}) error) error
+
+The file is created in the same package and directory as the package that defines T.
 It has helpful defaults designed for use with go generate.
+
+go-enum works best with constants that are consecutive values such as created using iota,
+but creates good code regardless. In the future it might also provide custom support for
+constant sets that are bit patterns.
 
 For example, given this snippet,
 
 ```go
-package painkiller
+	package painkiller
 
-import "sync/atomic"
+	type Pill int
 
-type Pill atomic.Value
+	const (
+		Placebo Pill = iota
+		Aspirin
+		Ibuprofen
+		Paracetamol
+		Acetaminophen = Paracetamol
+	)
 ```
 
 running this command
-```
-go-jsonenum -type="Pill<time.Time>"
+
+```bash
+	go-enum -type=Pill
 ```
 
-in the same directory will create the file pill_jsonenum.go, in package painkiller,
-containing a definition of
+in the same directory will create the file pill_string.go, in package painkiller,
+containing a definition of interfaces mentioned.
 
-```
-func (m *Pill) Store(value time.Time)
-func (m *Pill) Load() time.Time
-```
+That method will translate the value of a Pill constant to the string representation
+of the respective constant name, so that the call fmt.Print(painkiller.Aspirin) will
+print the string "Aspirin".
 
 Typically this process would be run using go generate, like this:
-```
-//go:generate go-jsonenum -type "Pill<int>"
-//go:generate go-jsonenum -type "Pill<*string>"
-//go:generate go-jsonenum -type "Pill<time.Time>"
-//go:generate go-jsonenum -type "Pill<*encoding/json.Token>"
+
+```bash
+	go:generate go-enum -type=Pill
 ```
 
 If multiple constants have the same value, the lexically first matching name will
@@ -57,12 +83,18 @@ Otherwise, the arguments must name a single directory holding a Go package
 or a set of Go source files that represent a single Go package.
 
 The -type flag accepts a comma-separated list of types so a single run can
-generate methods for multiple types. The default output file is t_jsonenum.go,
+generate methods for multiple types. The default output file is t_string.go,
 where t is the lower-cased name of the first type listed. It can be overridden
 with the -output flag.
 
+The -linecomment flag tells stringer to generate the text of any line comment, trimmed
+of leading spaces, instead of the constant name. For instance, if the constants above had a
+Pill prefix, one could write
+  PillAspirin Aspirin
+to suppress it in the output.
+
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-jsonenum`. You can
-also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-jsonenum`.
+The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-enum`. You can
+also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-enum`.
 
