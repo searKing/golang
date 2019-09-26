@@ -25,13 +25,13 @@ import (
 // binary panics if the String method for X is not correct, including for error cases.
 
 func TestEndToEnd(t *testing.T) {
-	dir, gojsonenum := buildAtomicValue(t)
+	dir, goenum := buildEnum(t)
 	defer os.RemoveAll(dir)
 	// Read the testdata directory.
-	walkDir(dir, gojsonenum, "testdata", t)
+	walkDir(dir, goenum, "testdata", t)
 }
 
-func walkDir(dir, gojsonenum, dirname string, t *testing.T) {
+func walkDir(dir, goenum, dirname string, t *testing.T) {
 	// Generate, compile, and run the test programs.
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -41,7 +41,7 @@ func walkDir(dir, gojsonenum, dirname string, t *testing.T) {
 	for _, file := range files {
 		name := file.Name()
 		if file.IsDir() {
-			walkDir(dir, gojsonenum, filepath.Join(dirname, name), t)
+			walkDir(dir, goenum, filepath.Join(dirname, name), t)
 			continue
 		}
 		if file.Mode().IsRegular() {
@@ -59,29 +59,29 @@ func walkDir(dir, gojsonenum, dirname string, t *testing.T) {
 			}
 			// Names are known to be ASCII and long enough.
 			typeName := castFileNameToTypeName(name[:len(name)-len(".go")])
-			gojsonenumCompileAndRun(t, dir, gojsonenum, typeName, filepath.Join(dirname, name))
+			goenumCompileAndRun(t, dir, goenum, typeName, filepath.Join(dirname, name))
 		}
 	}
 }
 
-// buildAtomicValue creates a temporary directory and installs go-jsonenum there.
-func buildAtomicValue(t *testing.T) (dir string, gojsonenum string) {
+// buildEnum creates a temporary directory and installs go-enum there.
+func buildEnum(t *testing.T) (dir string, goenum string) {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "go-jsonenum")
+	dir, err := ioutil.TempDir("", "go-enum")
 	if err != nil {
 		t.Fatal(err)
 	}
-	gojsonenum = filepath.Join(dir, "go-jsonenum.exe")
-	err = run("go", "build", "-o", gojsonenum)
+	goenum = filepath.Join(dir, "go-enum.exe")
+	err = run("go", "build", "-o", goenum)
 	if err != nil {
-		t.Fatalf("building go-jsonenum: %s", err)
+		t.Fatalf("building go-enum: %s", err)
 	}
-	return dir, gojsonenum
+	return dir, goenum
 }
 
-// gojsonenumCompileAndRun runs stringer for the named file and compiles and
+// goenumCompileAndRun runs stringer for the named file and compiles and
 // runs the target binary in directory dir. That binary will panic if the String method is incorrect.
-func gojsonenumCompileAndRun(t *testing.T, dir, gojsonenum, typeName, fileName string) {
+func goenumCompileAndRun(t *testing.T, dir, goenum, typeName, fileName string) {
 	t.Helper()
 	t.Logf("run: %s %s\n", fileName, typeName)
 	source := filepath.Join(dir, fileName)
@@ -95,14 +95,14 @@ func gojsonenumCompileAndRun(t *testing.T, dir, gojsonenum, typeName, fileName s
 		t.Fatalf("copying file to temporary directory: %s", err)
 	}
 
-	jsonenumSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_jsonenum.go"))
-	// Run gojsonenum in temporary directory.
-	err = run(gojsonenum, "-type", typeName, "-output", jsonenumSource, source)
+	enumSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_enum.go"))
+	// Run goenum in temporary directory.
+	err = run(goenum, "-type", typeName, "-output", enumSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Run the binary in the temporary directory.
-	err = run("go", "run", jsonenumSource, source)
+	err = run("go", "run", enumSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}
