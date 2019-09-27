@@ -7,32 +7,32 @@ Generates Go code using a package as a generic template which implements interfa
 
 go-enum is a tool to automate the creation of methods that satisfy such interfaces:
 ```text
-	fmt			==>  fmt.Stringer
-	binary		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
-	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
-	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
-	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
-	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+	fmt         ==>  fmt.Stringer
+	binary      ==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+	json        ==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
+	text        ==>  encoding.TextMarshaler and encoding.TextUnmarshaler
+	sql         ==>  database/sql.Scanner and database/sql/driver.Valuer
+	yaml        ==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
 ```
 
 Given the name of a (signed or unsigned) integer type T that has constants
 defined, stringer will create a new self-contained Go source file implementing
 ```text
-	fmt			==>  fmt.Stringer
+	fmt         ==>  fmt.Stringer
 		func (t T) String() string
-	binary		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+	binary      ==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
 		func (t T) MarshalBinary() (data []byte, err error)
 		func (t *T) UnmarshalBinary(data []byte) error
-	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
+	json        ==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
 		func (t T) MarshalJSON() ([]byte, error)
 		func (t *T) UnmarshalJSON(data []byte) error
-	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
+	text        ==>  encoding.TextMarshaler and encoding.TextUnmarshaler
 		func (t T) MarshalText() ([]byte, error)
 		func (t *T) UnmarshalText(text []byte) error
-	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
+	sql         ==>  database/sql.Scanner and database/sql/driver.Valuer
 		func (t T) Value() (driver.Value, error)
 		func (t *T) Scan(value interface{}) error
-	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+	yaml        ==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
 		func (t T) MarshalYAML() (interface{}, error)
 		func (t *T) UnmarshalYAML(unmarshal func(interface{}) error) error
 ```
