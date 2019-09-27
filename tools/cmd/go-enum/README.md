@@ -101,3 +101,7 @@ to suppress it in the output.
 The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-enum`. You can
 also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-enum`.
 
+## Inspiring projects
+* [stringer](https://godoc.org/golang.org/x/tools/cmd/stringer)
+* [jsonenums](https://github.com/campoy/jsonenums)
+* [enumer](https://github.com/alvaroloes/enumer)

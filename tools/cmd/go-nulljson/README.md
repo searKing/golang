@@ -63,3 +63,5 @@ with the -output flag.
 The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-nulljson`. You can
 also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-nulljson`.
 
+## Inspiring projects
+* [stringer](https://godoc.org/golang.org/x/tools/cmd/stringer)
