@@ -82,8 +82,8 @@ func (g *Generator) buildCheck(runs [][]Value, typeName string, runsThreshold in
 			}
 
 			for _, value := range values {
-				g.Printf("\t_%s_name%s[%d:%d]: %s,\n", typeName, runID, n, n+len(value.nameInfo.originalName), &value)
-				n += len(value.nameInfo.originalName)
+				g.Printf("\t_%s_name%s[%d:%d]: %s,\n", typeName, runID, n, n+len(value.nameInfo.trimmedName), &value)
+				n += len(value.nameInfo.trimmedName)
 			}
 		}
 		g.Printf("}\n\n")

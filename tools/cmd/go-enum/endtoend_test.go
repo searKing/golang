@@ -96,10 +96,19 @@ func goenumCompileAndRun(t *testing.T, dir, goenum, typeName, fileName string) {
 	}
 
 	enumSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_enum.go"))
+
 	// Run goenum in temporary directory.
-	err = run(goenum, "-type", typeName, "-output", enumSource, source)
-	if err != nil {
-		t.Fatal(err)
+	if strings.Contains(strings.ToLower(typeName), "trimprefix") {
+		// trimprefix
+		err = run(goenum, "-type", typeName, " -trimprefix", typeName, "-output", enumSource, source)
+		if err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		err = run(goenum, "-type", typeName, "-output", enumSource, source)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	// Run the binary in the temporary directory.
 	err = run("go", "run", enumSource, source)
