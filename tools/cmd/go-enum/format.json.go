@@ -8,11 +8,11 @@ const jsonTemplate = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type json.Marshaler" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type json.Marshaler" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ json.Marshaler = _nil_%[1]s_value
 
-	// An "cannot convert %s literal (type %s) to type encoding.Unmarshaler" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type encoding.Unmarshaler" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ json.Unmarshaler = &_nil_%[1]s_value
 }
@@ -26,7 +26,7 @@ func (i %[1]s) MarshalJSON() ([]byte, error) {
 func (i *%[1]s) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("%[1]s should be a string, got %%s", data)
+		return fmt.Errorf("%[1]s should be a string, got %%[1]s", data)
 	}
 
 	var err error
