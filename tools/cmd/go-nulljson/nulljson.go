@@ -318,6 +318,10 @@ type Value struct {
 	valueTypePrefix string // The type's prefix, such as []*[]
 }
 
+func (val *Value) ValueFullType() string {
+	return strings_.LoadElse(val.valueIsPointer, "*", "") + val.valueTypePrefix + val.valueType
+}
+
 // Helpers
 
 // declareNameVar declares the concatenated names
@@ -335,7 +339,7 @@ func (g *Generator) createValAndNameDecl(val Value) (string, string) {
 	nilValName := fmt.Sprintf("_nil_%s_%s_value",
 		val.eleName,
 		goRep.Replace(val.valueType))
-	nilValDecl := fmt.Sprintf("%s = func() (val %s) { return }()", nilValName, val.valueType)
+	nilValDecl := fmt.Sprintf("%s = func() (val %s) { return }()", nilValName, val.ValueFullType())
 
 	return nilValName, nilValDecl
 }
@@ -361,7 +365,7 @@ func (g *Generator) buildOneRun(value Value) {
 
 	//The generated code is simple enough to write as a Printf format.
 	g.Printf(stringOneRun, value.eleName,
-		strings_.LoadElse(value.valueIsPointer, "*", "")+value.valueTypePrefix+value.valueType,
+		value.ValueFullType(),
 		strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
 		}))
