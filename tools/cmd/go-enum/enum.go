@@ -326,7 +326,7 @@ func (g *Generator) buildEnumRegenerateCheck(values []Value) {
 	g.Printf("\t// Re-run the stringer command to generate them again.\n")
 	g.Printf("\tvar x [1]struct{}\n")
 	for _, v := range values {
-		g.Printf("\t_ = x[%s - %s]\n", v.nameInfo.trimmedName, v.valueInfo.str)
+		g.Printf("\t_ = x[%s - %s]\n", v.nameInfo.originalName, v.valueInfo.str)
 	}
 	g.Printf("}\n")
 }
