@@ -8,11 +8,11 @@ const textTemplate = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type encoding.TextMarshaler" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type encoding.TextMarshaler" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ encoding.TextMarshaler = _nil_%[1]s_value
 
-	// An "cannot convert %s literal (type %s) to type encoding.TextUnmarshaler" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type encoding.TextUnmarshaler" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ encoding.TextUnmarshaler = &_nil_%[1]s_value
 }

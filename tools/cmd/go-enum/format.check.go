@@ -16,7 +16,7 @@ func Parse%[1]sString(s string) (%[1]s, error) {
 	if val, ok := _%[1]s_name_to_values[s]; ok {
 		return val, nil
 	}
-	return 0, fmt.Errorf("%%s does not belong to %[1]s values", s)
+	return 0, fmt.Errorf("%%[1]s does not belong to %[1]s values", s)
 }
 `
 
@@ -60,16 +60,16 @@ func (g *Generator) buildCheck(runs [][]Value, typeName string, runsThreshold in
 		// At this moment, either "g.declareIndexAndNameVars()" or "g.declareNameVars()" has been called
 
 		// Print the slice of values
-		g.Printf("\nvar _%s_values = []%s{", typeName, typeName)
+		g.Printf("\nvar _%[1]s_values = []%[1]s{", typeName)
 		for _, values := range runs {
 			for _, value := range values {
-				g.Printf("\t%s, ", value.valueInfo.str)
+				g.Printf("\t%[1]s, ", value.valueInfo.str)
 			}
 		}
 		g.Printf("}\n\n")
 
 		// Print the map between name and value
-		g.Printf("\nvar _%s_name_to_values = map[string]%s{\n", typeName, typeName)
+		g.Printf("\nvar _%[1]s_name_to_values = map[string]%[1]s{\n", typeName)
 		thereAreRuns := len(runs) > 1 && len(runs) <= runsThreshold
 		var n int
 		var runID string

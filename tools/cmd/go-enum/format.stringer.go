@@ -8,7 +8,7 @@ const stringOneRun = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type fmt.Stringer" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type fmt.Stringer" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ fmt.Stringer = _nil_%[1]s_value
 }
@@ -32,7 +32,7 @@ const stringOneRunWithOffset = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type fmt.Stringer" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type fmt.Stringer" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ fmt.Stringer = _nil_%[1]s_value
 }
@@ -51,7 +51,7 @@ const stringMap = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type fmt.Stringer" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type fmt.Stringer" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ fmt.Stringer = _nil_%[1]s_value
 }
