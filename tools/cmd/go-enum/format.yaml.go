@@ -1,6 +1,7 @@
 package main
 
 var yamlImportPackages []string
+
 //var yamlImportPackages = []string{`gopkg.in/yaml.v2`}
 
 // Arguments to format are:
