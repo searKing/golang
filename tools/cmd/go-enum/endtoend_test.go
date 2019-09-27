@@ -100,7 +100,7 @@ func goenumCompileAndRun(t *testing.T, dir, goenum, typeName, fileName string) {
 	// Run goenum in temporary directory.
 	if strings.Contains(strings.ToLower(typeName), "trimprefix") {
 		// trimprefix
-		err = run(goenum, "-type", typeName, " -trimprefix", typeName, "-output", enumSource, source)
+		err = run(goenum, "-type", typeName, "-trimprefix", typeName, "-output", enumSource, source)
 		if err != nil {
 			t.Fatal(err)
 		}

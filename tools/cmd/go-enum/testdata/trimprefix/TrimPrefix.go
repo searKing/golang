@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-////go:generate stringer -type TrimPrefix -trimprefix=TrimPrefix
 //go:generate go-enum -type TrimPrefix -trimprefix=TrimPrefix
 type TrimPrefix int
 
