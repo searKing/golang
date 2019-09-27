@@ -6,18 +6,21 @@
 Generates Go code using a package as a generic template which implements interface fmt.Stringer | binary | json | text | sql | yaml for enums.
 
 go-enum is a tool to automate the creation of methods that satisfy such interfaces:
+```text
 	fmt			==>  fmt.Stringer
 	binary		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
 	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
 	text		==>  encoding.TextMarshaler and encoding.TextUnmarshaler
 	sql			==>  database/sql.Scanner and database/sql/driver.Valuer
 	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+```
 
 Given the name of a (signed or unsigned) integer type T that has constants
 defined, stringer will create a new self-contained Go source file implementing
+```text
 	fmt			==>  fmt.Stringer
 		func (t T) String() string
-	json		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
+	binary		==>  encoding.BinaryMarshaler and encoding.BinaryUnmarshaler
 		func (t T) MarshalBinary() (data []byte, err error)
 		func (t *T) UnmarshalBinary(data []byte) error
 	json		==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
@@ -32,7 +35,7 @@ defined, stringer will create a new self-contained Go source file implementing
 	yaml		==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
 		func (t T) MarshalYAML() (interface{}, error)
 		func (t *T) UnmarshalYAML(unmarshal func(interface{}) error) error
-
+```
 The file is created in the same package and directory as the package that defines T.
 It has helpful defaults designed for use with go generate.
 
