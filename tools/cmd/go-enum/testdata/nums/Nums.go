@@ -10,7 +10,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 )
 
 //go:generate go-enum -type "Nums"
@@ -43,11 +42,17 @@ func main() {
 	ckJson(AnotherOne, `"One"`)
 	ckJson(Nums(127), `"Nums(127)"`)
 
-	ckYamlMarshal(One, "One\n")
-	ckYamlMarshal(Two, "Two\n")
-	ckYamlMarshal(Three, "Three\n")
-	ckYamlMarshal(AnotherOne, "One\n")
-	ckYamlMarshal(Nums(127), "Nums(127)\n")
+	//ckYamlMarshal(One, "One\n")
+	//ckYamlMarshal(Two, "Two\n")
+	//ckYamlMarshal(Three, "Three\n")
+	//ckYamlMarshal(AnotherOne, "One\n")
+	//ckYamlMarshal(Nums(127), "Nums(127)\n")
+
+	ckTextMarshal(One, "One")
+	ckTextMarshal(Two, "Two")
+	ckTextMarshal(Three, "Three")
+	ckTextMarshal(AnotherOne, "One")
+	ckTextMarshal(Nums(127), "Nums(127)")
 
 	ckSqlScan("One", One, false)
 	ckSqlScan("Two", Two, false)
@@ -87,10 +92,21 @@ func ckJson(nums Nums, str string) {
 	panic(fmt.Sprintf("Nums.go: got %s, expect %s", string(bytes), str))
 }
 
-func ckYamlMarshal(nums Nums, str string) {
-	bytes, err := yaml.Marshal(nums)
+//func ckYamlMarshal(nums Nums, str string) {
+//	bytes, err := yaml.Marshal(nums)
+//	if err != nil {
+//		panic(fmt.Sprintf("Nums.go: yaml.Marshal failed: %s", err))
+//	}
+//	if string(bytes) == str {
+//		return
+//	}
+//	panic(fmt.Sprintf("Nums.go: got %s, expect %s", string(bytes), str))
+//}
+
+func ckTextMarshal(nums Nums, str string) {
+	bytes, err := nums.MarshalText()
 	if err != nil {
-		panic(fmt.Sprintf("Nums.go: yaml.Marshal failed: %s", err))
+		panic(fmt.Sprintf("Nums.go: MarshalText failed: %s", err))
 	}
 	if string(bytes) == str {
 		return
