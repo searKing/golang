@@ -8,12 +8,12 @@ const sqpTemplate = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type driver.Valuer" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type driver.Valuer" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ driver.Valuer = _nil_%[1]s_value
 
 
-	// An "cannot convert %s literal (type %s) to type sql.Scanner" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type sql.Scanner" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ sql.Scanner = &_nil_%[1]s_value
 }

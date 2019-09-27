@@ -8,12 +8,12 @@ const binaryTemplate = `
 func _() {
 	var _nil_%[1]s_value = func() (val %[1]s) { return }()
 
-	// An "cannot convert %s literal (type %s) to type encoding.BinaryMarshaler" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type encoding.BinaryMarshaler" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ encoding.BinaryMarshaler = &_nil_%[1]s_value
 
 
-	// An "cannot convert %s literal (type %s) to type encoding.BinaryUnmarshaler" compiler error signifies that the base type have changed.
+	// An "cannot convert %[1]s literal (type %[1]s) to type encoding.BinaryUnmarshaler" compiler error signifies that the base type have changed.
 	// Re-run the go-enum command to generate them again.
 	var _ encoding.BinaryUnmarshaler = &_nil_%[1]s_value
 }
