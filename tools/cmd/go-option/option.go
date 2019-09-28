@@ -451,6 +451,13 @@ type %[2]sFunc func(*%[1]s)
 func (f %[2]sFunc) apply(do *%[1]s) {
 	f(do)
 }
+
+// sample code for option, default for nothing to change
+func _%[2]sWithDefault() %[2]s {
+	return %[2]sFunc(func( *%[1]s) {
+		// TODO nothing to change
+	})
+}
 `
 
 // Arguments to format are:
