@@ -18,7 +18,7 @@ type ClientHandler interface {
 }
 type Client struct {
 	*Server
-	httpRespHandler OnHTTPResponseHandler
+	onHttpResponseHandler OnHTTPResponseHandler
 }
 
 func NewClientFunc(onHTTPRespHandler OnHTTPResponseHandler,
@@ -28,8 +28,8 @@ func NewClientFunc(onHTTPRespHandler OnHTTPResponseHandler,
 	onCloseHandler OnCloseHandler,
 	onErrorHandler OnErrorHandler) *Client {
 	return &Client{
-		Server:          NewServerFunc(nil, onOpenHandler, onMsgReadHandler, onMsgHandleHandler, onCloseHandler, onErrorHandler),
-		httpRespHandler: object.RequireNonNullElse(onHTTPRespHandler, NopOnHTTPResponseHandler).(OnHTTPResponseHandler),
+		Server:                NewServerFunc(nil, onOpenHandler, onMsgReadHandler, onMsgHandleHandler, onCloseHandler, onErrorHandler),
+		onHttpResponseHandler: object.RequireNonNullElse(onHTTPRespHandler, NopOnHTTPResponseHandler).(OnHTTPResponseHandler),
 	}
 }
 func NewClient(h ClientHandler) *Client {
@@ -54,7 +54,7 @@ func (cli *Client) DialAndServe(urlStr string, requestHeader http.Header) error 
 		return err
 	}
 	// Handle HTTP Response
-	err = OnHTTPResponse(resp)
+	err = cli.onHttpResponseHandler.OnHTTPResponse(resp)
 	if cli.Server.CheckError(nil, err) != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (cli *Client) DialAndServe(urlStr string, requestHeader http.Header) error 
 	// takeover the connect
 	c := cli.Server.newConn(ws)
 	// Handle websocket On
-	err = OnOpen(c.rwc)
+	err = cli.onOpenHandler.OnOpen(c.rwc)
 	if err = cli.Server.CheckError(c.rwc, err); err != nil {
 		c.close()
 		return err
