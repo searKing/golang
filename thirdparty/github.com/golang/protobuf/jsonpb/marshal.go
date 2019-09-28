@@ -8,19 +8,22 @@ import (
 )
 
 //go:generate go-option -type=Marshaler
+
+// Marshaler is a configurable object for converting between
+// protocol buffer objects and a JSON representation for them.
 type Marshaler struct {
 	jsonpb.Marshaler
 }
 
 // Whether to render enum values as integers, as opposed to string values.
-func WithEnumsAsInts(enumsAsInts bool) MarshalerOption {
+func WithMarshalEnumsAsInts(enumsAsInts bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.EnumsAsInts = enumsAsInts
 	})
 }
 
 // Whether to render fields with zero values.
-func WithEmitDefaults(emitDefaults bool) MarshalerOption {
+func WithMarshalEmitDefaults(emitDefaults bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.EmitDefaults = emitDefaults
 	})
@@ -30,14 +33,14 @@ func WithEmitDefaults(emitDefaults bool) MarshalerOption {
 // also cause a space to appear between the field separator and
 // value, and for newlines to be appear between fields and array
 // elements.
-func WithIndent(indent string) MarshalerOption {
+func WithMarshalIndent(indent string) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.Indent = indent
 	})
 }
 
 // Whether to use the original (.proto) name for fields.
-func WithOrigName(origName bool) MarshalerOption {
+func WithMarshalOrigName(origName bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.OrigName = origName
 	})
@@ -47,7 +50,7 @@ func WithOrigName(origName bool) MarshalerOption {
 // If unset, the default resolution strategy is to extract the
 // fully-qualified type name from the type URL and pass that to
 // proto.MessageType(string).
-func WithAnyResolver(anyResolver jsonpb.AnyResolver) MarshalerOption {
+func WithMarshalAnyResolver(anyResolver jsonpb.AnyResolver) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.AnyResolver = anyResolver
 	})
