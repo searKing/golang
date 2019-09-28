@@ -12,8 +12,8 @@ require (
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
-	github.com/searKing/golang/go v0.0.0-20190912055851-7823b84832e8
+	github.com/searKing/golang/go v0.0.0-20190928074331-e018749e0b08
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tebeka/strftime v0.1.3 // indirect
-	golang.org/x/sys v0.0.0-20190911201528-7ad0cfa0b7b5 // indirect
+	golang.org/x/sys v0.0.0-20190927073244-c990c680b611 // indirect
 )
