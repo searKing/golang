@@ -106,12 +106,14 @@ import (
 
 var (
 	typeInfos = flag.String("type", "", "comma-separated list of type names; must be set")
-	useString = flag.Bool("string", true, "if true, the fmt.Stringer interface will be implemented. Default: false, you can use stringer instead.")
-	useBinary = flag.Bool("binary", true, "if true, the encoding.BinaryMarshaler and encoding.BinaryUnmarshaler interface will be implemented. Default: false")
-	useText   = flag.Bool("text", true, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: false")
-	useJson   = flag.Bool("json", true, "if true, the encoding/json.Marshaler and encoding/json.Unmarshaler interface will be implemented. Default: false")
-	useSql    = flag.Bool("sql", true, "if true, the database/sql.Scanner and database/sql/driver.Valuer interface will be implemented.")
-	useYaml   = flag.Bool("yaml", true, "if true, the gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler interface will be implemented. Default: false")
+	useString = flag.Bool("string", true, "if true, the fmt.Stringer interface will be implemented. Default: true, you can use stringer instead.")
+	useBinary = flag.Bool("binary", true, "if true, the encoding.BinaryMarshaler and encoding.BinaryUnmarshaler interface will be implemented. Default: true")
+	useText   = flag.Bool("text", true, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: true")
+	useJson   = flag.Bool("json", true, "if true, the encoding/json.Marshaler and encoding/json.Unmarshaler interface will be implemented. Default: true")
+	useSql    = flag.Bool("sql", true, "if true, the database/sql.Scanner and database/sql/driver.Valuer interface will be implemented. Default: true")
+	useYaml   = flag.Bool("yaml", true, "if true, the gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler interface will be implemented. Default: true")
+
+	useContains = flag.Bool("contains", true, "if true, the XXXSliceContains|XXXSliceContainsAny methods will be generated(XXX will be replaced by typename), such as strings.Contains|ContainsAny. Default: true")
 
 	transformMethod = flag.String("transform", "nop", "enum item name transformation method [nop, upper, lower, snake, camel, small_camel, kebab, dotted]. Default: nop")
 
@@ -427,6 +429,10 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	if *useSql {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(sqpTemplate, typeInfo.Name)
+	}
+
+	if *useContains {
+		g.Printf(containsTemplate, typeInfo.Name)
 	}
 }
 
