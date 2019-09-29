@@ -13,9 +13,11 @@ var (
 // The default implementation is *not* thread safe, and should be handled only in the context of the request.
 type Tags interface {
 	// Set sets the given key in the metadata tags.
-	Set(key string, value interface{}) Tags
+	Set(key string, value interface{})
 	// Get gets if the metadata tags got by the given key exists.
 	Get(key string) (interface{}, bool)
+	// Del deletes the values associated with key.
+	Del(key string)
 	// Values returns a map of key to values.
 	// Do not modify the underlying map, please use Set instead.
 	Values() map[string]interface{}
@@ -36,6 +38,8 @@ func WithTags(ctx context.Context, key interface{}, tags Tags) context.Context {
 	return context.WithValue(ctx, key, tags)
 }
 
-func NewTags() Tags {
-	return &mapTags{values: make(map[string]interface{})}
+func NewTags(options ...MapTagsOption) Tags {
+	t := &mapTags{values: make(map[string]interface{})}
+	t.ApplyOptions(options...)
+	return t
 }
