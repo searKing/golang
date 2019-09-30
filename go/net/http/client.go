@@ -9,11 +9,28 @@ import (
 	"strings"
 )
 
+type Client struct {
+	http.Client
+}
+
+func (c *Client) Use(h ...Handler) *Client {
+	_, ok := c.Transport.(*Transport)
+	if !ok {
+		c.Transport = &Transport{Base: c.Transport}
+	}
+
+	// above guarantee its type is *Transport
+	(c.Transport.(*Transport)).Use(h...)
+
+	// for chained call
+	return c
+}
+
 // parseURL is just url.Parse. It exists only so that url.Parse can be called
 // in places where url is shadowed for godoc. See https://golang.org/cl/49930.
 var parseURL = url.Parse
 
-func Client(u string) (*http.Client, error) {
+func NewClient(u string) (*http.Client, error) {
 	url, err := parseURL(u)
 	if err != nil {
 		return nil, err
@@ -33,7 +50,7 @@ func Client(u string) (*http.Client, error) {
 }
 
 func Head(url string) (resp *http.Response, err error) {
-	client, err := Client(url)
+	client, err := NewClient(url)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +59,7 @@ func Head(url string) (resp *http.Response, err error) {
 }
 
 func Get(url string) (resp *http.Response, err error) {
-	client, err := Client(url)
+	client, err := NewClient(url)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +67,7 @@ func Get(url string) (resp *http.Response, err error) {
 }
 
 func Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
-	client, err := Client(url)
+	client, err := NewClient(url)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +75,7 @@ func Post(url, contentType string, body io.Reader) (resp *http.Response, err err
 }
 
 func PostForm(url string, data url.Values) (resp *http.Response, err error) {
-	client, err := Client(url)
+	client, err := NewClient(url)
 	if err != nil {
 		return nil, err
 	}
