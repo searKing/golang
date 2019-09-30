@@ -17,7 +17,7 @@ type Transport struct {
 	// If nil, http.DefaultTransport is used.
 	Base http.RoundTripper
 
-	handlers HandlersChain
+	handlers handlersChain
 	aborted  bool
 	index    int8
 
@@ -59,7 +59,7 @@ func (t *Transport) CancelRequest(req *http.Request) {
 }
 
 // Use adds middleware handlers to the transport.
-func (t *Transport) Use(h ...Handler) *Transport {
+func (t *Transport) Use(h ...RoundTripHandler) *Transport {
 	t.handlers = append(t.handlers, h...)
 	return t
 }
