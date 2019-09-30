@@ -12,15 +12,15 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (resp *http.Response, err er
 	return f(req)
 }
 
-type Handler interface {
+type RoundTripHandler interface {
 	RoundTrip(req *http.Request) (resp *http.Response, err error)
 }
 
-// HandlersChain defines a HandlerFunc array.
-type HandlersChain []Handler
+// handlersChain defines a HandlerFunc array.
+type handlersChain []RoundTripHandler
 
 // Last returns the last handler in the chain. ie. the last handler is the main own.
-func (c HandlersChain) Last() Handler {
+func (c handlersChain) Last() RoundTripHandler {
 	if length := len(c); length > 0 {
 		return c[length-1]
 	}
