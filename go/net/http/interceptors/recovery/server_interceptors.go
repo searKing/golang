@@ -14,7 +14,7 @@ func ServerInterceptor(next http.Handler, out io.Writer, f func(w http.ResponseW
 			logger = log.New(out, "\n\n\x1b[31m", log.LstdFlags)
 		}
 		defer func() {
-			handleRecover(logger, func(err interface{}) {
+			Recover(logger, r, func(err interface{}) {
 				if f == nil {
 					return
 				}

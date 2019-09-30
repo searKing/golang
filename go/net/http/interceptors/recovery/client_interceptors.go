@@ -8,7 +8,7 @@ import (
 	http_ "github.com/searKing/golang/go/net/http"
 )
 
-// ServerInterceptor returns a new client interceptors with recovery from panic.
+// ClientInterceptor returns a new client interceptors with recovery from panic.
 func ClientInterceptor(next http_.RoundTripHandler, out io.Writer, f func(resp *http.Response, req *http.Request, err interface{})) http_.RoundTripHandler {
 	return http_.RoundTripFunc(func(req *http.Request) (resp *http.Response, err error) {
 		var logger *log.Logger
@@ -17,7 +17,7 @@ func ClientInterceptor(next http_.RoundTripHandler, out io.Writer, f func(resp *
 		}
 
 		defer func() {
-			handleRecover(logger, func(err interface{}) {
+			Recover(logger, req, func(err interface{}) {
 				if f == nil {
 					return
 				}
