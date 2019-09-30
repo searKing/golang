@@ -13,7 +13,7 @@ type Client struct {
 	http.Client
 }
 
-func (c *Client) Use(h ...Handler) *Client {
+func (c *Client) Use(h ...RoundTripHandler) *Client {
 	_, ok := c.Transport.(*Transport)
 	if !ok {
 		c.Transport = &Transport{Base: c.Transport}
