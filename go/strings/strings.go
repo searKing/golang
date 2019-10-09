@@ -12,6 +12,20 @@ func SliceContains(ss []string, s string) bool {
 	return false
 }
 
+// SliceUnique returns the given string slice with unique values.
+func SliceUnique(i []string) []string {
+	u := make([]string, 0, len(i))
+	m := make(map[string]bool)
+
+	for _, val := range i {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			u = append(u, val)
+		}
+	}
+	return u
+}
+
 // MapLeading returns a copy of the string s with its first characters modified
 // according to the mapping function. If mapping returns a negative value, the character is
 // dropped from the string with no replacement.
