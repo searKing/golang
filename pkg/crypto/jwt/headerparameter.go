@@ -6,26 +6,26 @@ const (
 	HeaderParameterContentType = "cty"  // RFC 7231, 5.2
 
 	// Replicating Claims as Header Parameters
-	HeaderParameterIssuer         = ClaimsIssuer         // RFC 7231, 5.3 RFC 7519, 10.4.1
-	HeaderParameterSubject        = ClaimsSubject        // RFC 7231, 5.3 RFC 7519, 10.4.1
-	HeaderParameterAudience       = ClaimsAudience       // RFC 7231, 5.3 RFC 7519, 10.4.1
-	HeaderParameterExpirationTime = ClaimsExpirationTime // RFC 7231, 5.3
-	HeaderParameterNotBefore      = ClaimsNotBefore      // RFC 7231, 5.3
-	HeaderParameterIssuedAt       = ClaimsIssuedAt       // RFC 7231, 5.3
-	HeaderParameterJWTID          = ClaimsJWTID          // RFC 7231, 5.3
+	HeaderParameterIssuer         = ClaimNameIssuer         // RFC 7231, 5.3 RFC 7519, 10.4.1
+	HeaderParameterSubject        = ClaimNameSubject        // RFC 7231, 5.3 RFC 7519, 10.4.1
+	HeaderParameterAudience       = ClaimNameAudience       // RFC 7231, 5.3 RFC 7519, 10.4.1
+	HeaderParameterExpirationTime = ClaimNameExpirationTime // RFC 7231, 5.3
+	HeaderParameterNotBefore      = ClaimNameNotBefore      // RFC 7231, 5.3
+	HeaderParameterIssuedAt       = ClaimNameIssuedAt       // RFC 7231, 5.3
+	HeaderParameterJWTID          = ClaimNameJWTID          // RFC 7231, 5.3
 )
 
 var headerParameterText = map[string]string{
 	HeaderParameterType:        "type",
 	HeaderParameterContentType: "Content Type",
 
-	HeaderParameterIssuer:         ClaimsText(ClaimsIssuer),
-	HeaderParameterSubject:        ClaimsText(ClaimsSubject),
-	HeaderParameterAudience:       ClaimsText(ClaimsAudience),
-	HeaderParameterExpirationTime: ClaimsText(ClaimsExpirationTime),
-	HeaderParameterNotBefore:      ClaimsText(ClaimsNotBefore),
-	HeaderParameterIssuedAt:       ClaimsText(ClaimsIssuedAt),
-	HeaderParameterJWTID:          ClaimsText(ClaimsJWTID),
+	HeaderParameterIssuer:         ClaimNamesText(ClaimNameIssuer),
+	HeaderParameterSubject:        ClaimNamesText(ClaimNameSubject),
+	HeaderParameterAudience:       ClaimNamesText(ClaimNameAudience),
+	HeaderParameterExpirationTime: ClaimNamesText(ClaimNameExpirationTime),
+	HeaderParameterNotBefore:      ClaimNamesText(ClaimNameNotBefore),
+	HeaderParameterIssuedAt:       ClaimNamesText(ClaimNameIssuedAt),
+	HeaderParameterJWTID:          ClaimNamesText(ClaimNameJWTID),
 }
 
 // HeaderParameterText returns a text for the Claim Names. It returns the empty

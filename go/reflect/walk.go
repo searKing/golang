@@ -7,7 +7,7 @@ import (
 // walks down v
 func Walk(t reflect.Type, visitedOnce bool, do func(s reflect.Type, sf reflect.StructField) (stop bool)) {
 	// Anonymous fields to explore at the current level and the next.
-	current := []reflect.Type{}
+	var current []reflect.Type
 	next := []reflect.Type{t}
 
 	// Count of queued names for current level and the next.

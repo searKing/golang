@@ -82,7 +82,7 @@ func (info FieldValueInfo) MiddleNodes() []interface{} {
 		return nil
 	}
 
-	middles := []interface{}{}
+	var middles []interface{}
 	// Scan typ for fields to include.
 	for i := 0; i < val.NumField(); i++ {
 		index := make([]int, len(info.index)+1)
