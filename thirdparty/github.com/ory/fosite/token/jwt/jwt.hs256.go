@@ -56,7 +56,7 @@ func (j *HS256JWTStrategy) Decode(ctx context.Context, token string) (*jwt.Token
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.Errorf("Unexpected signing method: %v", t.Header["alg"])
 		}
-		return &j.Key, nil
+		return j.Key, nil
 	})
 
 	if err != nil {
