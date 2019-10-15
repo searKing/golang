@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -o pipefail
+set -o errexit
+set -o nounset
+# set -o xtrace
 
 # 获取输入参数
 THIS_BASE_PARAM="$*"
@@ -18,12 +21,22 @@ THIS_BASH_FILE_BASE_NAME=$(basename "${THIS_BASH_FILE}")
 THIS_BASH_FILE_ABS_PATH="${THIS_BASH_FILE_ABS_DIR}/${THIS_BASH_FILE_BASE_NAME}"
 # 备份当前路径
 STACK_ABS_DIR=$(pwd)
+# 临时文件
+# Install the working tree in a tempdir.
+tmpdir=$(mktemp -d -t .build.XXXXXX)
+function cleanup() {
+  printf "Cleaning up...\n"
+  [ -d "${tmpdir}" ] && rm -Rf "${tmpdir}"
+  printf "Cleaning done."
+}
+trap cleanup EXIT
+[ -d "${tmpdir}" ] && rm -Rf "${tmpdir}"
+mkdir -p "${tmpdir}"
 # 路径隔离
 cd "${THIS_BASH_FILE_ABS_DIR}" || exit
-
-rm -Rf .travis.workspace/ || exit
-git clone https://github.com/searKing/golang.git .travis.workspace/golang || exit
-pushd .travis.workspace/golang/ || exit
+[ -d "${tmpdir}"/ ] && rm -Rf "${tmpdir}"/ || exit
+git clone https://github.com/searKing/golang.git "${tmpdir}/golang" || exit
+pushd "${tmpdir}/golang" 1>/dev/null 2>&1 || exit
 git filter-branch --prune-empty --subdirectory-filter tools/cmd/go-syncmap/ master || exit
 # reset and clean .git
 git reset --hard
@@ -33,5 +46,4 @@ git gc --aggressive --prune=now || exit
 
 git remote set-url origin https://github.com/searKing/travis-ci.git || exit
 git push -f origin master:go-syncmap || exit
-popd || exit
-rm -Rf .travis.workspace/ || exit
+popd 1>/dev/null 2>&1 || exit
