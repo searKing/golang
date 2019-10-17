@@ -3,7 +3,7 @@ package multiple_prefix_test
 import (
 	"testing"
 
-	"github.com/searKing/golang/go/format/unit"
+	"github.com/searKing/golang/go/format/multiple_prefix"
 )
 
 type DecimalFormatFloatCaseTest struct {
