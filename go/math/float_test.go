@@ -17,6 +17,21 @@ var (
 	truncPrecisionCaseTests = []TruncPrecisionCaseTest{
 		{
 			input:  1234.567890,
+			n:      -2,
+			output: 1200,
+		},
+		{
+			input:  1254.567890,
+			n:      -2,
+			output: 1300,
+		},
+		{
+			input:  1234.567890,
+			n:      -1,
+			output: 1230,
+		},
+		{
+			input:  1234.567890,
 			n:      0,
 			output: 1235,
 		},
