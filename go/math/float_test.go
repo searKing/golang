@@ -16,61 +16,50 @@ type TruncPrecisionCaseTest struct {
 var (
 	truncPrecisionCaseTests = []TruncPrecisionCaseTest{
 		{
-			input:  1234.567890,
-			n:      -2,
-			output: 1200,
-		},
-		{
+			input:  -100.00001,
+			n:      2,
+			output: -100,
+		}, {
 			input:  1254.567890,
 			n:      -2,
 			output: 1300,
-		},
-		{
+		}, {
 			input:  1234.567890,
 			n:      -1,
 			output: 1230,
-		},
-		{
+		}, {
 			input:  1234.567890,
 			n:      0,
 			output: 1235,
-		},
-		{
+		}, {
 			input:  1234.567890,
 			n:      1,
 			output: 1234.6,
-		},
-		{
+		}, {
 			input:  1234.567890,
 			n:      6,
 			output: 1234.56789,
-		},
-		{
+		}, {
 			input:  1234.567890,
 			n:      10,
 			output: 1234.56789,
-		},
-		{
+		}, {
 			input:  math_.Inf(-1),
 			n:      1,
 			output: math_.Inf(-1),
-		},
-		{
+		}, {
 			input:  math_.Copysign(0, -1),
 			n:      1,
 			output: math_.Copysign(0, -1),
-		},
-		{
+		}, {
 			input:  0,
 			n:      1,
 			output: 0,
-		},
-		{
+		}, {
 			input:  math_.Inf(1),
 			n:      1,
 			output: math_.Inf(1),
-		},
-		{
+		}, {
 			input:  math_.NaN(),
 			n:      1,
 			output: math_.NaN(),

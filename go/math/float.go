@@ -13,7 +13,7 @@ import "math"
 //	Trunc(NaN) = NaN
 func TruncPrecision(x float64, n int) float64 {
 	n10 := math.Pow10(n)
-	return math.Copysign(math.Trunc((x+0.5/n10)*n10)/n10, x)
+	return math.Copysign(math.Trunc((math.Abs(x)+0.5/n10)*n10)/n10, x)
 }
 
 func Tolerance(a, b, e float64) bool {
