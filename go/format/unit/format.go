@@ -6,35 +6,31 @@ import (
 	"github.com/searKing/golang/go/math"
 )
 
-func FormatInt(number int, baseFormat BaseFormat, precision int) string {
-	return FormatInt64(int64(number), baseFormat, precision)
+func FormatInt(number int, precision int) string {
+	return FormatInt64(int64(number), precision)
 }
 
-func FormatUint(number uint, baseFormat BaseFormat, precision int) string {
-	return FormatUint64(uint64(number), baseFormat, precision)
+func FormatUint(number uint, precision int) string {
+	return FormatUint64(uint64(number), precision)
 }
 
-func FormatInt64(number int64, baseFormat BaseFormat, precision int) string {
-	unit := ProbeUnitFromInt64(number, baseFormat)
-	return FormatFloatWithUnit(float64(number), baseFormat, unit, precision)
+func FormatInt64(number int64, precision int) string {
+	return FormatFloatWithUnit(float64(number), *DecimalPrefixTODO.Copy().SetInt64(number), precision)
 }
 
-func FormatUint64(number uint64, baseFormat BaseFormat, precision int) string {
-	unit := ProbeUnitFromUint64(number, baseFormat)
-	return FormatFloatWithUnit(float64(number), baseFormat, unit, precision)
-
+func FormatUint64(number uint64, precision int) string {
+	return FormatFloatWithUnit(float64(number), *DecimalPrefixTODO.Copy().SetUint64(number), precision)
 }
 
-func FormatFloat(number float64, baseFormat BaseFormat, precision int) string {
-	unit := ProbeUnitFromFloat64(number, baseFormat)
-	return FormatFloatWithUnit(number, baseFormat, unit, precision)
+func FormatFloat(number float64, precision int) string {
+	return FormatFloatWithUnit(number, *DecimalPrefixTODO.Copy().SetFloat64(number), precision)
 }
 
-func FormatFloatWithUnit(number float64, baseFormat BaseFormat, unit Unit, precision int) string {
-	humanBase := unit.Base(baseFormat).Uint64()
-	humanNumber := number / float64(humanBase)
+func FormatFloatWithUnit(number float64, prefix DecimalPrefix, precision int) string {
+	humanBase := prefix.Factor()
+	humanNumber := number / humanBase
 	if precision >= 0 {
 		humanNumber = math.TruncPrecision(humanNumber, precision)
 	}
-	return fmt.Sprintf("%g%s", humanNumber, unit)
+	return fmt.Sprintf("%g%s", humanNumber, prefix)
 }
