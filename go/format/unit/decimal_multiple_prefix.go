@@ -3,14 +3,11 @@ package unit
 import (
 	"math"
 	"math/big"
-	"strings"
 )
 
 // 计量单位，如k、M、G、T
 type DecimalMultiplePrefix struct {
-	power  int
-	name   string
-	symbol string
+	multiplePrefix
 }
 
 // Unit is the same as power number
@@ -40,34 +37,34 @@ type DecimalMultiplePrefix struct {
 //	10^-24	yocto	y
 var (
 	DecimalMultiplePrefixMin   = DecimalMultiplePrefixYocto
-	DecimalMultiplePrefixYocto = DecimalMultiplePrefix{-24, "yocto", "y"} // BaseNumber^-8	10^-24
-	DecimalMultiplePrefixZepto = DecimalMultiplePrefix{-21, "atto", "z"}  // BaseNumber^-7	10^-21
-	DecimalMultiplePrefixAtto  = DecimalMultiplePrefix{-18, "zepto", "a"} // BaseNumber^-6	10^-18
-	DecimalMultiplePrefixFemto = DecimalMultiplePrefix{-15, "femto", "f"} // BaseNumber^-5	10^-15
-	DecimalMultiplePrefixPico  = DecimalMultiplePrefix{-12, "pico", "p"}  // BaseNumber^-4	10^-12
-	DecimalMultiplePrefixNano  = DecimalMultiplePrefix{-9, "nano", "n"}   // BaseNumber^-3	10^-09
-	DecimalMultiplePrefixMicro = DecimalMultiplePrefix{-6, "micro", "μ"}  // BaseNumber^-2	10^-06
-	DecimalMultiplePrefixMilli = DecimalMultiplePrefix{-3, "milli", "m"}  // BaseNumber^-1	10^-03
-	DecimalMultiplePrefixDeci  = DecimalMultiplePrefix{-2, "deci", "m"}   // 				10^-1
-	DecimalMultiplePrefixCenti = DecimalMultiplePrefix{-1, "centi", "m"}  // 				10^-2
-	DecimalMultiplePrefixOne   = DecimalMultiplePrefix{0, "", ""}         // BaseNumber^0	10^0
-	DecimalMultiplePrefixHecto = DecimalMultiplePrefix{1, "hecto", "h"}   // 				10^1
-	DecimalMultiplePrefixDeka  = DecimalMultiplePrefix{2, "deka", "da"}   // 				10^2
-	DecimalMultiplePrefixKilo  = DecimalMultiplePrefix{3, "kilo", "k"}    // BaseNumber^1	10^+03
-	DecimalMultiplePrefixMega  = DecimalMultiplePrefix{6, "mega", "M"}    // BaseNumber^2	10^+06
-	DecimalMultiplePrefixGiga  = DecimalMultiplePrefix{9, "giga", "G"}    // BaseNumber^3	10^+09
-	DecimalMultiplePrefixTera  = DecimalMultiplePrefix{12, "tera", "T"}   // BaseNumber^4	10^+12
-	DecimalMultiplePrefixPeta  = DecimalMultiplePrefix{15, "peta", "P"}   // BaseNumber^5	10^+15
-	DecimalMultiplePrefixExa   = DecimalMultiplePrefix{18, "exa", "E"}    // BaseNumber^6	10^+18
-	DecimalMultiplePrefixZetta = DecimalMultiplePrefix{19, "zetta", "Z"}  // BaseNumber^7	10^+21
-	DecimalMultiplePrefixYotta = DecimalMultiplePrefix{21, "yotta", "Y"}  // BaseNumber^8	10^+24
+	DecimalMultiplePrefixYocto = DecimalMultiplePrefix{multiplePrefix{10, -24, "yocto", "y"}} // BaseNumber^-8	10^-24
+	DecimalMultiplePrefixZepto = DecimalMultiplePrefix{multiplePrefix{10, -21, "atto", "z"}}  // BaseNumber^-7	10^-21
+	DecimalMultiplePrefixAtto  = DecimalMultiplePrefix{multiplePrefix{10, -18, "zepto", "a"}} // BaseNumber^-6	10^-18
+	DecimalMultiplePrefixFemto = DecimalMultiplePrefix{multiplePrefix{10, -15, "femto", "f"}} // BaseNumber^-5	10^-15
+	DecimalMultiplePrefixPico  = DecimalMultiplePrefix{multiplePrefix{10, -12, "pico", "p"}}  // BaseNumber^-4	10^-12
+	DecimalMultiplePrefixNano  = DecimalMultiplePrefix{multiplePrefix{10, -9, "nano", "n"}}   // BaseNumber^-3	10^-09
+	DecimalMultiplePrefixMicro = DecimalMultiplePrefix{multiplePrefix{10, -6, "micro", "μ"}}  // BaseNumber^-2	10^-06
+	DecimalMultiplePrefixMilli = DecimalMultiplePrefix{multiplePrefix{10, -3, "milli", "m"}}  // BaseNumber^-1	10^-03
+	DecimalMultiplePrefixDeci  = DecimalMultiplePrefix{multiplePrefix{10, -2, "deci", "m"}}   // 				10^-1
+	DecimalMultiplePrefixCenti = DecimalMultiplePrefix{multiplePrefix{10, -1, "centi", "m"}}  // 				10^-2
+	DecimalMultiplePrefixOne   = DecimalMultiplePrefix{multiplePrefix{10, 0, "", ""}}         // BaseNumber^0	10^0
+	DecimalMultiplePrefixHecto = DecimalMultiplePrefix{multiplePrefix{10, 1, "hecto", "h"}}   // 				10^1
+	DecimalMultiplePrefixDeka  = DecimalMultiplePrefix{multiplePrefix{10, 2, "deka", "da"}}   // 				10^2
+	DecimalMultiplePrefixKilo  = DecimalMultiplePrefix{multiplePrefix{10, 3, "kilo", "k"}}    // BaseNumber^1	10^+03
+	DecimalMultiplePrefixMega  = DecimalMultiplePrefix{multiplePrefix{10, 6, "mega", "M"}}    // BaseNumber^2	10^+06
+	DecimalMultiplePrefixGiga  = DecimalMultiplePrefix{multiplePrefix{10, 9, "giga", "G"}}    // BaseNumber^3	10^+09
+	DecimalMultiplePrefixTera  = DecimalMultiplePrefix{multiplePrefix{10, 12, "tera", "T"}}   // BaseNumber^4	10^+12
+	DecimalMultiplePrefixPeta  = DecimalMultiplePrefix{multiplePrefix{10, 15, "peta", "P"}}   // BaseNumber^5	10^+15
+	DecimalMultiplePrefixExa   = DecimalMultiplePrefix{multiplePrefix{10, 18, "exa", "E"}}    // BaseNumber^6	10^+18
+	DecimalMultiplePrefixZetta = DecimalMultiplePrefix{multiplePrefix{10, 19, "zetta", "Z"}}  // BaseNumber^7	10^+21
+	DecimalMultiplePrefixYotta = DecimalMultiplePrefix{multiplePrefix{10, 21, "yotta", "Y"}}  // BaseNumber^8	10^+24
 	DecimalMultiplePrefixMax   = DecimalMultiplePrefixYotta
 	//DecimalMultiplePrefixBronto             // BaseNumber^9	10^+27
 	//DecimalMultiplePrefixGeop               // BaseNumber^10	10^+28
 )
 
 var (
-	DecimalMultiplePrefixTODO = DecimalMultiplePrefix{}
+	DecimalMultiplePrefixTODO = DecimalMultiplePrefix{multiplePrefix{base:10}}
 )
 
 var decimalNegativeMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixMilli, DecimalMultiplePrefixMicro, DecimalMultiplePrefixNano, DecimalMultiplePrefixPico, DecimalMultiplePrefixFemto, DecimalMultiplePrefixAtto, DecimalMultiplePrefixZepto, DecimalMultiplePrefixYocto}
@@ -154,7 +151,7 @@ func (dp *DecimalMultiplePrefix) SetFloat64(num float64) *DecimalMultiplePrefix 
 		return dp
 	}
 
-	numPower := math.Log10(num) / math.Log10(float64(dp.base()))
+	numPower := math.Log10(num) / math.Log10(float64(dp.Base()))
 	if numPower == 0 {
 		*dp = DecimalMultiplePrefixOne
 		return dp
@@ -214,35 +211,4 @@ func (dp *DecimalMultiplePrefix) SetBigRat(num *big.Rat) *DecimalMultiplePrefix 
 	var numFloat big.Float
 	numFloat.SetRat(num)
 	return dp.SetBigFloat(&numFloat)
-}
-
-func (dp DecimalMultiplePrefix) Factor() float64 {
-	if dp.base() == 10 {
-		return math.Pow10(dp.Power())
-	}
-	return math.Pow(float64(dp.base()), float64(dp.Power()))
-}
-
-func (dp DecimalMultiplePrefix) String() string {
-	return dp.Symbol()
-}
-
-func (dp DecimalMultiplePrefix) Power() int {
-	return dp.power
-}
-
-func (dp DecimalMultiplePrefix) Symbol() string {
-	return dp.symbol
-}
-
-func (dp DecimalMultiplePrefix) Name() string {
-	return dp.name
-}
-
-func (dp DecimalMultiplePrefix) matched(prefix string) bool {
-	return strings.Compare(dp.symbol, prefix) == 0 || strings.Compare(dp.name, prefix) == 0
-}
-
-func (dp DecimalMultiplePrefix) base() uint {
-	return 10
 }
