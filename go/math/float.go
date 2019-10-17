@@ -2,8 +2,11 @@ package math
 
 import "math"
 
-// TruncPrecision returns the float value of x, with the maximum n bits precision.
-//
+// TruncPrecision returns the float value of x, with
+// case n >= 0
+// 	the maximum n bits precision.
+// case n < 0
+//	-n bits of the magnitude of x trunked
 // Special cases are:
 //	Trunc(±0) = ±0
 //	Trunc(±Inf) = ±Inf
