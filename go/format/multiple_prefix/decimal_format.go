@@ -1,4 +1,4 @@
-package unit
+package multiple_prefix
 
 func DecimalFormatInt(number int, precision int) string {
 	return DecimalFormatInt64(int64(number), precision)
