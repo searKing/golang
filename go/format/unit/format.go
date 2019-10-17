@@ -15,18 +15,18 @@ func FormatUint(number uint, precision int) string {
 }
 
 func FormatInt64(number int64, precision int) string {
-	return FormatFloatWithUnit(float64(number), *DecimalPrefixTODO.Copy().SetInt64(number), precision)
+	return FormatFloatWithUnit(float64(number), *DecimalMultiplePrefixTODO.Copy().SetInt64(number), precision)
 }
 
 func FormatUint64(number uint64, precision int) string {
-	return FormatFloatWithUnit(float64(number), *DecimalPrefixTODO.Copy().SetUint64(number), precision)
+	return FormatFloatWithUnit(float64(number), *DecimalMultiplePrefixTODO.Copy().SetUint64(number), precision)
 }
 
 func FormatFloat(number float64, precision int) string {
-	return FormatFloatWithUnit(number, *DecimalPrefixTODO.Copy().SetFloat64(number), precision)
+	return FormatFloatWithUnit(number, *DecimalMultiplePrefixTODO.Copy().SetFloat64(number), precision)
 }
 
-func FormatFloatWithUnit(number float64, prefix DecimalPrefix, precision int) string {
+func FormatFloatWithUnit(number float64, prefix DecimalMultiplePrefix, precision int) string {
 	humanBase := prefix.Factor()
 	humanNumber := number / humanBase
 	if precision >= 0 {
