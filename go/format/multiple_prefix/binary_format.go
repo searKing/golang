@@ -1,4 +1,4 @@
-package unit
+package multiple_prefix
 
 func BinaryFormatInt(number int, precision int) string {
 	return BinaryFormatInt64(int64(number), precision)
