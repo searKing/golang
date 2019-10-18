@@ -65,7 +65,33 @@ var (
 func TestBinaryFormatFloat(t *testing.T) {
 	for n, test := range binaryFormatFloatCaseTests {
 		if got := multiple_prefix.BinaryFormatFloat(test.input, test.precision); got != test.output {
-			t.Errorf("#%d: FormatFloat(%g,%d) = %s, want %s", n, test.input, test.precision,
+			t.Errorf("#%d: BinaryFormatFloat(%g,%d) = %s, want %s", n, test.input, test.precision,
+				got, test.output)
+		}
+	}
+}
+
+type TrimBinaryMultiplePrefixCaseTest struct {
+	input  string
+	output string
+}
+
+var (
+	trimBinaryMultiplePrefixCaseTests = []TrimBinaryMultiplePrefixCaseTest{
+		{
+			input:  "+1234.567890KiB",
+			output: "B",
+		},	{
+			input:  "0xFFKiB",
+			output: "B",
+		},
+	}
+)
+
+func TestTrimBinaryMultiplePrefix(t *testing.T) {
+	for n, test := range trimBinaryMultiplePrefixCaseTests {
+		if got := multiple_prefix.TrimBinaryMultiplePrefix(test.input); got != test.output {
+			t.Errorf("#%d: TrimBinaryMultiplePrefix(%s) = %s, want %s", n, test.input,
 				got, test.output)
 		}
 	}

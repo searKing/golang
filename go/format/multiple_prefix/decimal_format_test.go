@@ -65,7 +65,7 @@ var (
 func TestDecimalFormatFloat(t *testing.T) {
 	for n, test := range decimalFormatFloatCaseTests {
 		if got := multiple_prefix.DecimalFormatFloat(test.input, test.precision); got != test.output {
-			t.Errorf("#%d: FormatFloat(%g,%d) = %s, want %s", n, test.input, test.precision,
+			t.Errorf("#%d: DecimalFormatFloat(%g,%d) = %s, want %s", n, test.input, test.precision,
 				got, test.output)
 		}
 	}
