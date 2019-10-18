@@ -71,28 +71,49 @@ func TestBinaryFormatFloat(t *testing.T) {
 	}
 }
 
-type TrimBinaryMultiplePrefixCaseTest struct {
-	input  string
-	output string
+type SplitBinaryCaseTest struct {
+	input              string
+	outputNumber       string
+	outputPrefixSymbol string
+	outputUnparsed     string
 }
 
 var (
-	trimBinaryMultiplePrefixCaseTests = []TrimBinaryMultiplePrefixCaseTest{
+	splitBinaryCaseTests = []SplitBinaryCaseTest{
 		{
-			input:  "+1234.567890KiB",
-			output: "B",
-		},	{
-			input:  "0xFFKiB",
-			output: "B",
+			input:              "1234.567890HelloWorld",
+			outputNumber:       "1234.567890",
+			outputPrefixSymbol: "",
+			outputUnparsed:     "HelloWorld",
+		}, {
+			input:              "+1234.567890KiB",
+			outputNumber:       "+1234.567890",
+			outputPrefixSymbol: "Ki",
+			outputUnparsed:     "B",
+		}, {
+			input:              "0xFFKiB",
+			outputNumber:       "0xFF",
+			outputPrefixSymbol: "Ki",
+			outputUnparsed:     "B",
+		}, {
+			input:              "0xFFkiB",
+			outputNumber:       "0xFF",
+			outputPrefixSymbol: "",
+			outputUnparsed:     "kiB",
 		},
 	}
 )
 
-func TestTrimBinaryMultiplePrefix(t *testing.T) {
-	for n, test := range trimBinaryMultiplePrefixCaseTests {
-		if got := multiple_prefix.TrimBinaryMultiplePrefix(test.input); got != test.output {
-			t.Errorf("#%d: TrimBinaryMultiplePrefix(%s) = %s, want %s", n, test.input,
-				got, test.output)
+func TestSplitBinary(t *testing.T) {
+	for n, test := range splitBinaryCaseTests {
+		gotNumber, gotPrefix, gotUnparsed := multiple_prefix.SplitBinary(test.input)
+		if gotPrefix == nil {
+			gotPrefix = multiple_prefix.BinaryMultiplePrefixTODO.Copy()
+		}
+		if gotNumber != test.outputNumber || gotPrefix.Symbol() != test.outputPrefixSymbol || gotUnparsed != test.outputUnparsed {
+			t.Errorf("#%d: BinaryFormatFloat(%s) = (%s, %s, %s), want (%s, %s, %s)", n, test.input,
+				gotNumber, gotPrefix.Symbol(), gotUnparsed,
+				test.outputNumber, test.outputPrefixSymbol, test.outputUnparsed)
 		}
 	}
 }

@@ -1,9 +1,9 @@
 package multiple_prefix
 
 import (
-	"fmt"
-	"io"
 	"strings"
+
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 func BinaryFormatInt(number int, precision int) string {
@@ -26,23 +26,29 @@ func BinaryFormatFloat(number float64, precision int) string {
 	return BinaryMultiplePrefixTODO.Copy().SetFloat64(number).FormatFloat(number, precision)
 }
 
-func TrimBinaryMultiplePrefix(s string) string {
-	var value float64
-	var unparsed string
-	count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
-
-	if (err != nil && err != io.EOF) || (count == 0) {
-		var value int64
-		count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
-		if (err != nil && err != io.EOF) || (count == 0) {
-			return s
-		}
+// SplitBinary splits s into number, multiple_prefix and unparsed strings
+func SplitBinary(s string) (number string, prefix *BinaryMultiplePrefix, unparsed string) {
+	splits := strings_.SplitPrefixNumber(s)
+	if len(splits) < 2 {
+		return "", nil, unparsed
 	}
+	number = splits[0]
+	unparsed = splits[1]
 
-	for _, prefix := range binaryPositiveeMultiplePrefixes {
+	for _, prefix := range binaryPositiveMultiplePrefixes {
 		if strings.HasPrefix(unparsed, prefix.Symbol()) {
-			return strings.TrimPrefix(unparsed, prefix.Symbol())
+			return number, prefix.Copy(), strings.TrimPrefix(unparsed, prefix.Symbol())
 		}
 	}
-	return unparsed
+	for _, prefix := range binaryNegativeMultiplePrefixes {
+		if strings.HasPrefix(unparsed, prefix.Symbol()) {
+			return number, prefix.Copy(), strings.TrimPrefix(unparsed, prefix.Symbol())
+		}
+	}
+	for _, prefix := range binaryZeroMultiplePrefixes {
+		if strings.HasPrefix(unparsed, prefix.Symbol()) {
+			return number, prefix.Copy(), strings.TrimPrefix(unparsed, prefix.Symbol())
+		}
+	}
+	return number, nil, unparsed
 }

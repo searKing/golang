@@ -1,9 +1,9 @@
 package multiple_prefix
 
 import (
-	"fmt"
-	"io"
 	"strings"
+
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 func DecimalFormatInt(number int, precision int) string {
@@ -26,23 +26,29 @@ func DecimalFormatFloat(number float64, precision int) string {
 	return DecimalMultiplePrefixTODO.Copy().SetFloat64(number).FormatFloat(number, precision)
 }
 
-func TrimDecimalMultiplePrefix(s string) string {
-	var value float64
-	var unparsed string
-	count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
-
-	if (err != nil && err != io.EOF) || (count == 0) {
-		var value int64
-		count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
-		if (err != nil && err != io.EOF) || (count == 0) {
-			return s
-		}
+// SplitDecimal splits s into number, multiple_prefix and unparsed strings
+func SplitDecimal(s string) (number string, prefix *DecimalMultiplePrefix, unparsed string) {
+	splits := strings_.SplitPrefixNumber(s)
+	if len(splits) < 2 {
+		return "", nil, unparsed
 	}
+	number = splits[0]
+	unparsed = splits[1]
 
-	for _, prefix := range binaryPositiveeMultiplePrefixes {
+	for _, prefix := range decimalPositiveMultiplePrefixes {
 		if strings.HasPrefix(unparsed, prefix.Symbol()) {
-			return strings.TrimPrefix(unparsed, prefix.Symbol())
+			return number, prefix.Copy(), strings.TrimPrefix(unparsed, prefix.Symbol())
 		}
 	}
-	return unparsed
+	for _, prefix := range decimalNegativeMultiplePrefixes {
+		if strings.HasPrefix(unparsed, prefix.Symbol()) {
+			return number, prefix.Copy(), strings.TrimPrefix(unparsed, prefix.Symbol())
+		}
+	}
+	for _, prefix := range decimalZeroMultiplePrefixes {
+		if strings.HasPrefix(unparsed, prefix.Symbol()) {
+			return number, prefix.Copy(), strings.TrimPrefix(unparsed, prefix.Symbol())
+		}
+	}
+	return number, nil, unparsed
 }

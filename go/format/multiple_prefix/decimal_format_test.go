@@ -70,3 +70,50 @@ func TestDecimalFormatFloat(t *testing.T) {
 		}
 	}
 }
+
+type SplitDecimalCaseTest struct {
+	input              string
+	outputNumber       string
+	outputPrefixSymbol string
+	outputUnparsed     string
+}
+
+var (
+	splitDecimalCaseTests = []SplitDecimalCaseTest{
+		{
+			input:              "1234.567890HelloWorld",
+			outputNumber:       "1234.567890",
+			outputPrefixSymbol: "",
+			outputUnparsed:     "HelloWorld",
+		}, {
+			input:              "+1234.567890\tkB",
+			outputNumber:       "+1234.567890\t",
+			outputPrefixSymbol: "k",
+			outputUnparsed:     "B",
+		}, {
+			input:              "0xFFkB",
+			outputNumber:       "0xFF",
+			outputPrefixSymbol: "k",
+			outputUnparsed:     "B",
+		}, {
+			input:              "0xFFKB",
+			outputNumber:       "0xFF",
+			outputPrefixSymbol: "",
+			outputUnparsed:     "KB",
+		},
+	}
+)
+
+func TestSplitDecimal(t *testing.T) {
+	for n, test := range splitDecimalCaseTests {
+		gotNumber, gotPrefix, gotUnparsed := multiple_prefix.SplitDecimal(test.input)
+		if gotPrefix == nil {
+			gotPrefix = multiple_prefix.DecimalMultiplePrefixTODO.Copy()
+		}
+		if gotNumber != test.outputNumber || gotPrefix.Symbol() != test.outputPrefixSymbol || gotUnparsed != test.outputUnparsed {
+			t.Errorf("#%d: DecimalFormatFloat(%s) = (%s, %s, %s), want (%s, %s, %s)", n, test.input,
+				gotNumber, gotPrefix.Symbol(), gotUnparsed,
+				test.outputNumber, test.outputPrefixSymbol, test.outputUnparsed)
+		}
+	}
+}
