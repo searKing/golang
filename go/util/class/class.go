@@ -53,13 +53,13 @@ func NewClass() *Class {
 }
 
 // GetDerived returns actual outermost struct
-func (task *Class) GetDerived() Classer {
+func (task Class) GetDerived() Classer {
 	return task.derived
 }
 
 // GetDerivedElse returns actual outermost struct if it is non-{@code nil} and
 // otherwise returns the non-{@code nil} argument.
-func (task *Class) GetDerivedElse(defaultClass Classer) Classer {
+func (task Class) GetDerivedElse(defaultClass Classer) Classer {
 	if task.derived == nil {
 		return defaultClass
 	}
