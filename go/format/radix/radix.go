@@ -1,6 +1,6 @@
 package radix
 
-//go:generate go-enum -type Radix -trimprefix=Radix
+//go:generate go-enum -type Radix
 type Radix int // 进制
 
 const (
