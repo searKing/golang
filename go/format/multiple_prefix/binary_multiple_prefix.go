@@ -37,12 +37,6 @@ var (
 
 var binaryPositiveeMultiplePrefixes = [...]BinaryMultiplePrefix{BinaryMultiplePrefixKibi, BinaryMultiplePrefixMebi, BinaryMultiplePrefixGibi, BinaryMultiplePrefixTebi, BinaryMultiplePrefixPebi, BinaryMultiplePrefixExbi}
 
-func NewBinaryMultiplePrefix(prefix BinaryMultiplePrefix) *BinaryMultiplePrefix {
-	var dp = &BinaryMultiplePrefix{}
-	*dp = prefix
-	return dp
-}
-
 func (dp BinaryMultiplePrefix) Copy() *BinaryMultiplePrefix {
 	var dp2 = &BinaryMultiplePrefix{}
 	*dp2 = dp

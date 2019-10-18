@@ -70,12 +70,6 @@ var (
 var decimalNegativeMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixMilli, DecimalMultiplePrefixMicro, DecimalMultiplePrefixNano, DecimalMultiplePrefixPico, DecimalMultiplePrefixFemto, DecimalMultiplePrefixAtto, DecimalMultiplePrefixZepto, DecimalMultiplePrefixYocto}
 var decimalPositiveeMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixKilo, DecimalMultiplePrefixMega, DecimalMultiplePrefixGiga, DecimalMultiplePrefixTera, DecimalMultiplePrefixPeta, DecimalMultiplePrefixExa, DecimalMultiplePrefixZetta, DecimalMultiplePrefixYotta}
 
-func NewDecimalMultiplePrefix(prefix DecimalMultiplePrefix) *DecimalMultiplePrefix {
-	var dp = &DecimalMultiplePrefix{}
-	*dp = prefix
-	return dp
-}
-
 func (dp DecimalMultiplePrefix) Copy() *DecimalMultiplePrefix {
 	var dp2 = &DecimalMultiplePrefix{}
 	*dp2 = dp
