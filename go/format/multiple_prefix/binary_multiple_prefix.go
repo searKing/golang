@@ -34,8 +34,9 @@ var (
 var (
 	BinaryMultiplePrefixTODO = BinaryMultiplePrefix{multiplePrefix{base: 2}}
 )
-
-var binaryPositiveeMultiplePrefixes = [...]BinaryMultiplePrefix{BinaryMultiplePrefixKibi, BinaryMultiplePrefixMebi, BinaryMultiplePrefixGibi, BinaryMultiplePrefixTebi, BinaryMultiplePrefixPebi, BinaryMultiplePrefixExbi}
+var binaryNegativeMultiplePrefixes = [...]BinaryMultiplePrefix{}
+var binaryZeroMultiplePrefixes = [...]BinaryMultiplePrefix{BinaryMultiplePrefixOne}
+var binaryPositiveMultiplePrefixes = [...]BinaryMultiplePrefix{BinaryMultiplePrefixKibi, BinaryMultiplePrefixMebi, BinaryMultiplePrefixGibi, BinaryMultiplePrefixTebi, BinaryMultiplePrefixPebi, BinaryMultiplePrefixExbi}
 
 func (dp BinaryMultiplePrefix) Copy() *BinaryMultiplePrefix {
 	var dp2 = &BinaryMultiplePrefix{}
@@ -46,7 +47,7 @@ func (dp BinaryMultiplePrefix) Copy() *BinaryMultiplePrefix {
 // number 123kb
 // symbolOrName is k or kilo
 func (dp *BinaryMultiplePrefix) SetPrefix(symbolOrName string) *BinaryMultiplePrefix {
-	for _, prefix := range binaryPositiveeMultiplePrefixes {
+	for _, prefix := range binaryPositiveMultiplePrefixes {
 		if prefix.matched(symbolOrName) {
 			*dp = prefix
 			return dp
@@ -63,7 +64,7 @@ func (dp *BinaryMultiplePrefix) SetPower(power int) *BinaryMultiplePrefix {
 		return dp
 	}
 	if power > 0 {
-		for _, prefix := range binaryPositiveeMultiplePrefixes {
+		for _, prefix := range binaryPositiveMultiplePrefixes {
 			if prefix.power == power {
 				*dp = prefix
 				return dp
@@ -111,7 +112,7 @@ func (dp *BinaryMultiplePrefix) SetFloat64(num float64) *BinaryMultiplePrefix {
 			return dp
 		}
 		lastPrefix := BinaryMultiplePrefixOne
-		for _, prefix := range binaryPositiveeMultiplePrefixes {
+		for _, prefix := range binaryPositiveMultiplePrefixes {
 			if numPower < float64(prefix.power) {
 				*dp = lastPrefix
 				return dp

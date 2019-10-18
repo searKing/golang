@@ -64,11 +64,11 @@ var (
 )
 
 var (
-	DecimalMultiplePrefixTODO = DecimalMultiplePrefix{multiplePrefix{base:10}}
+	DecimalMultiplePrefixTODO = DecimalMultiplePrefix{multiplePrefix{base: 10}}
 )
-
 var decimalNegativeMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixMilli, DecimalMultiplePrefixMicro, DecimalMultiplePrefixNano, DecimalMultiplePrefixPico, DecimalMultiplePrefixFemto, DecimalMultiplePrefixAtto, DecimalMultiplePrefixZepto, DecimalMultiplePrefixYocto}
-var decimalPositiveeMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixKilo, DecimalMultiplePrefixMega, DecimalMultiplePrefixGiga, DecimalMultiplePrefixTera, DecimalMultiplePrefixPeta, DecimalMultiplePrefixExa, DecimalMultiplePrefixZetta, DecimalMultiplePrefixYotta}
+var decimalZeroMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixOne}
+var decimalPositiveMultiplePrefixes = [...]DecimalMultiplePrefix{DecimalMultiplePrefixKilo, DecimalMultiplePrefixMega, DecimalMultiplePrefixGiga, DecimalMultiplePrefixTera, DecimalMultiplePrefixPeta, DecimalMultiplePrefixExa, DecimalMultiplePrefixZetta, DecimalMultiplePrefixYotta}
 
 func (dp DecimalMultiplePrefix) Copy() *DecimalMultiplePrefix {
 	var dp2 = &DecimalMultiplePrefix{}
@@ -79,7 +79,7 @@ func (dp DecimalMultiplePrefix) Copy() *DecimalMultiplePrefix {
 // number 123kb
 // symbolOrName is k or kilo
 func (dp *DecimalMultiplePrefix) SetPrefix(symbolOrName string) *DecimalMultiplePrefix {
-	for _, prefix := range decimalPositiveeMultiplePrefixes {
+	for _, prefix := range decimalPositiveMultiplePrefixes {
 		if prefix.matched(symbolOrName) {
 			*dp = prefix
 			return dp
@@ -102,7 +102,7 @@ func (dp *DecimalMultiplePrefix) SetPower(power int) *DecimalMultiplePrefix {
 		return dp
 	}
 	if power > 0 {
-		for _, prefix := range decimalPositiveeMultiplePrefixes {
+		for _, prefix := range decimalPositiveMultiplePrefixes {
 			if prefix.power == power {
 				*dp = prefix
 				return dp
@@ -157,7 +157,7 @@ func (dp *DecimalMultiplePrefix) SetFloat64(num float64) *DecimalMultiplePrefix 
 			return dp
 		}
 		lastPrefix := DecimalMultiplePrefixOne
-		for _, prefix := range decimalPositiveeMultiplePrefixes {
+		for _, prefix := range decimalPositiveMultiplePrefixes {
 			if numPower < float64(prefix.power) {
 				*dp = lastPrefix
 				return dp
