@@ -25,9 +25,11 @@ STACK_ABS_DIR=$(pwd)
 # Install the working tree in a tempdir.
 tmpdir=$(mktemp -d -t .build.XXXXXX)
 function cleanup() {
-  printf "Cleaning up...\n"
+  printf "Cleaning up %s..." "${tmpdir}"
   [ -d "${tmpdir}" ] && rm -Rf "${tmpdir}"
-  printf "Cleaning done."
+  printf "\r\033[KCleaning done."
+  # a space before \n to trick next print when executed by `go generate`
+  printf "\r\033[K \n"
 }
 trap cleanup EXIT
 [ -d "${tmpdir}" ] && rm -Rf "${tmpdir}"
