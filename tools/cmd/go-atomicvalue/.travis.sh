@@ -28,8 +28,7 @@ function cleanup() {
   printf "Cleaning up %s..." "${tmpdir}"
   [ -d "${tmpdir}" ] && rm -Rf "${tmpdir}"
   printf "\r\033[KCleaning done."
-  # a space before \n to trick next print when executed by `go generate`
-  printf "\r\033[K \n"
+  printf "\r\033[K"
 }
 trap cleanup EXIT
 [ -d "${tmpdir}" ] && rm -Rf "${tmpdir}"
