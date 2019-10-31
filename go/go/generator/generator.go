@@ -45,8 +45,11 @@ func (g *runtimeGenerator) stop() bool {
 	}
 }
 
+// Generator is as in python or ES6
+// Generator functions allow you to declare a function that behaves like an iterator, i.e. it can be used in a for loop.
+// see https://wiki.python.org/moin/Generators
 type Generator struct {
-	// Used by sendChan, to notify or deliver what is generated, as next in python or E
+	// Used by Next, to notify or deliver what is generated, as next in python or ES6
 	C <-chan interface{}
 
 	r runtimeGenerator
@@ -74,6 +77,13 @@ func (g *Generator) Stop() bool {
 	return g.r.stop()
 }
 
+// Next behaves like an iterator, i.e. it can be used in a for loop.
+// It's a grammar sugar for chan
+func (g *Generator) Next() (msg interface{}, ok bool) {
+	msg, ok = <-g.C
+	return
+}
+
 func NewGenerator(supplierC <-chan interface{}) *Generator {
 	c := make(chan interface{})
 
@@ -96,7 +106,7 @@ func NewGenerator(supplierC <-chan interface{}) *Generator {
 // GeneratorFunc waits for the supplierC to supply and then calls f
 // in its own goroutine every time. It returns a Generator that can
 // be used to cancel the call using its Stop method.
-// Consume will be stopped when ctx is Done of supplierC is closed.
+// Consume will be stopped when supplierC is closed.
 func GeneratorFunc(supplierC <-chan interface{}, f func(msg interface{})) *Generator {
 	ctx, cancel := context.WithCancel(context.Background())
 	g := &Generator{
