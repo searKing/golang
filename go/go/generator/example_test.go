@@ -81,9 +81,9 @@ func ExampleGeneratorWithSupplier() {
 	// 20
 }
 
-func ExampleGeneratorAdvanceFunc() {
+func ExampleGeneratorVariadicFunc() {
 	g := func(i int) *generator.Generator {
-		g := generator.GeneratorAdvanceFunc(func(yield generator.Yield, args ...interface{}) {
+		g := generator.GeneratorVariadicFunc(func(yield generator.Yield, args ...interface{}) {
 			i := (args[0]).(int)
 			if !yield(i) {
 				return

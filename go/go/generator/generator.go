@@ -119,7 +119,7 @@ func GeneratorWithSupplier(supplierC <-chan interface{}) *Generator {
 }
 
 // Deprecated: Use GeneratorFunc wrapped by closure instead.
-func GeneratorAdvanceFunc(f func(yield Yield, args ...interface{})) func(args ...interface{}) *Generator {
+func GeneratorVariadicFunc(f func(yield Yield, args ...interface{})) func(args ...interface{}) *Generator {
 	supplierC := make(chan interface{})
 	g := GeneratorWithSupplier(supplierC)
 	supplierF := func(args ...interface{}) {
