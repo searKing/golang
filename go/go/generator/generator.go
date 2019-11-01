@@ -1,53 +1,17 @@
 package generator
 
-import "context"
+import (
+	"context"
+)
 
-// runtimeGenerator is an implement of Generator's behavior actually.
-type runtimeGenerator struct {
-	// fired func, as callback when supplierC is consumed successfully
-	// arg for msg receiver
-	// msg for msg to be delivered
-	f   func(arg interface{}, msg interface{})
-	arg interface{}
-
-	ctx    context.Context
-	cancel context.CancelFunc
-
-	// data src
-	supplierC <-chan interface{}
-	// data dst
-	consumerC chan interface{}
-}
-
-func (g *runtimeGenerator) start() {
-	go func() {
-		for {
-			select {
-			case <-g.ctx.Done():
-				return
-			case s, ok := <-g.supplierC:
-				if !ok {
-					return
-				}
-				g.f(g.arg, s)
-			}
-		}
-	}()
-}
-
-func (g *runtimeGenerator) stop() bool {
-	select {
-	case <-g.ctx.Done():
-		return false
-	default:
-		g.cancel()
-		return true
-	}
-}
+type Yield func(msg interface{}) (ok bool)
 
 // Generator is as in python or ES6
+// Generator function contains one or more yield statement.
 // Generator functions allow you to declare a function that behaves like an iterator, i.e. it can be used in a for loop.
 // see https://wiki.python.org/moin/Generators
+// see https://www.programiz.com/python-programming/generator
+// see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*
 type Generator struct {
 	// Used by Next, to notify or deliver what is generated, as next in python or ES6
 	C <-chan interface{}
@@ -65,7 +29,7 @@ type Generator struct {
 // This cannot be done concurrent to other receives from the Generator's
 // channel.
 //
-// For a generator created with GeneratorFunc(supplierC, f), if t.Stop returns false, then the generator
+// For a generator created with GeneratorFuncWithSupplier(supplierC, f), if t.Stop returns false, then the generator
 // has already expired and the function f has been started in its own goroutine;
 // Stop does not wait for f to complete before returning.
 // If the caller needs to know whether f is completed, it must coordinate
@@ -77,6 +41,20 @@ func (g *Generator) Stop() bool {
 	return g.r.stop()
 }
 
+func (g *Generator) StoppedC() context.Context {
+	if g.r.f == nil || g.r.ctx == nil || g.r.cancel == nil {
+		panic("generator: StoppedC called on uninitialized Generator")
+	}
+	return g.r.ctx
+}
+
+func (g *Generator) Stopped() bool {
+	if g.r.f == nil || g.r.ctx == nil || g.r.cancel == nil {
+		panic("generator: Stopped called on uninitialized Generator")
+	}
+	return g.r.stopped()
+}
+
 // Next behaves like an iterator, i.e. it can be used in a for loop.
 // It's a grammar sugar for chan
 func (g *Generator) Next() (msg interface{}, ok bool) {
@@ -84,7 +62,36 @@ func (g *Generator) Next() (msg interface{}, ok bool) {
 	return
 }
 
-func NewGenerator(supplierC <-chan interface{}) *Generator {
+// Yield is a grammar sugar for data src of generator
+// ok returns true if msg sent; false if consume canceled
+// If a function contains at least one yield statement (it may contain other yield or return statements),
+// it becomes a generator function. Both yield and return will return some value from a function.
+// The difference is that, while a return statement terminates a function entirely,
+// yield statement pauses the function saving all its states and later continues from there on successive calls.
+func (g *Generator) Yield(supplierC chan<- interface{}) Yield {
+	return func(msg interface{}) (ok bool) {
+		select {
+		case <-g.StoppedC().Done():
+			return false
+		case supplierC <- msg:
+			return true
+		}
+	}
+}
+
+func GeneratorFunc(f func(yield Yield)) *Generator {
+	supplierC := make(chan interface{})
+	g := GeneratorWithSupplier(supplierC)
+	supplierF := func(args ...interface{}) {
+		yield := g.Yield(supplierC)
+		f(yield)
+		close(supplierC)
+	}
+	go supplierF()
+	return g
+}
+
+func GeneratorWithSupplier(supplierC <-chan interface{}) *Generator {
 	c := make(chan interface{})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -103,11 +110,26 @@ func NewGenerator(supplierC <-chan interface{}) *Generator {
 	return g
 }
 
-// GeneratorFunc waits for the supplierC to supply and then calls f
+// Deprecated: Use GeneratorFunc wrapped by closure instead.
+func GeneratorAdvanceFunc(f func(yield Yield, args ...interface{})) func(args ...interface{}) *Generator {
+	supplierC := make(chan interface{})
+	g := GeneratorWithSupplier(supplierC)
+	supplierF := func(args ...interface{}) {
+		yield := g.Yield(supplierC)
+		f(yield, args...)
+		close(supplierC)
+	}
+	return func(args ...interface{}) *Generator {
+		go supplierF(args...)
+		return g
+	}
+}
+
+// GeneratorFuncWithSupplier waits for the supplierC to supply and then calls f
 // in its own goroutine every time. It returns a Generator that can
 // be used to cancel the call using its Stop method.
 // Consume will be stopped when supplierC is closed.
-func GeneratorFunc(supplierC <-chan interface{}, f func(msg interface{})) *Generator {
+func GeneratorFuncWithSupplier(supplierC <-chan interface{}, f func(msg interface{})) *Generator {
 	ctx, cancel := context.WithCancel(context.Background())
 	g := &Generator{
 		r: runtimeGenerator{
@@ -123,19 +145,17 @@ func GeneratorFunc(supplierC <-chan interface{}, f func(msg interface{})) *Gener
 
 }
 
-func sendChan(c interface{}, msg interface{}) {
-	// Non-blocking send of msg on c.
-	// Used in NewGenerator, it cannot block anyway (buffer).
-	// Used in NewGeneratorTicker, dropping sends on the floor is
-	// the desired behavior when the reader gets behind,
-	// because the sends are periodic.
+func sendChan(ctx context.Context, c interface{}, msg interface{}) {
+	// Blocking send of msg on c.
 	select {
+	case <-ctx.Done():
+		return
 	case c.(chan interface{}) <- msg:
-	default:
 	}
 	return
 }
 
-func goFunc(arg interface{}, msg interface{}) {
-	go arg.(func(interface{}))(msg)
+// arg -> func
+func goFunc(ctx context.Context, f interface{}, msg interface{}) {
+	go f.(func(interface{}))(msg)
 }
