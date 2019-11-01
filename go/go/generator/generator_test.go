@@ -1,6 +1,7 @@
 package generator_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 // Test the basic function calling behavior. Correct queueing
 // behavior is tested elsewhere, since After and AfterFunc share
 // the same code.
-func TestGeneratorFunc(t *testing.T) {
+func TestGeneratorFuncWithSupplier(t *testing.T) {
 	const unit = 25 * time.Millisecond
 	var i, j int
 	n := 10
@@ -38,7 +39,7 @@ func TestGeneratorFunc(t *testing.T) {
 		}
 	}()
 
-	generator.GeneratorFunc(supplierC, f)
+	generator.GeneratorFuncWithSupplier(supplierC, f)
 	<-c
 }
 
@@ -73,7 +74,7 @@ func TestGenerator_Stop(t *testing.T) {
 		}
 	}()
 
-	g = generator.GeneratorFunc(supplierC, f)
+	g = generator.GeneratorFuncWithSupplier(supplierC, f)
 	<-c
 }
 
@@ -84,7 +85,6 @@ func TestGenerator_Next(t *testing.T) {
 	accept := 5
 	c := make(chan bool)
 	supplierC := make(chan interface{})
-	var g *generator.Generator
 	go func() {
 		for {
 			i++
@@ -100,7 +100,7 @@ func TestGenerator_Next(t *testing.T) {
 		}
 	}()
 
-	g = generator.NewGenerator(supplierC)
+	g := generator.GeneratorWithSupplier(supplierC)
 
 	go func() {
 		for {
@@ -117,4 +117,79 @@ func TestGenerator_Next(t *testing.T) {
 		c <- true
 	}()
 	<-c
+}
+
+func TestGenerator_Yield(t *testing.T) {
+	var g *generator.Generator
+
+	supplierC := make(chan interface{}, 100)
+	supplierF := func(i int) {
+		yield := g.Yield(supplierC)
+		if !yield(i) {
+			return
+		}
+		if !yield(i + 10) {
+			return
+		}
+		close(supplierC)
+	}
+	g = generator.GeneratorWithSupplier(supplierC)
+	supplierF(10)
+
+	for msg := range g.C {
+		fmt.Println(msg)
+	}
+}
+
+func TestGeneratorAdvanceFunc(t *testing.T) {
+	g := generator.GeneratorAdvanceFunc(func(yield generator.Yield, args ...interface{}) {
+		i := (args[0]).(int)
+		if !yield(i) {
+			return
+		}
+		if !yield(i + 10) {
+			return
+		}
+	})
+
+	gen := g(10)
+
+	for msg := range gen.C {
+		fmt.Println(msg)
+	}
+}
+
+func TestGeneratorFuncClosure(t *testing.T) {
+	g := func(i int) *generator.Generator {
+		return generator.GeneratorFunc(func(yield generator.Yield) {
+			if !yield(i) {
+				return
+			}
+			if !yield(i + 10) {
+				return
+			}
+		})
+	}
+
+	gen := g(10)
+
+	for msg := range gen.C {
+		fmt.Println(msg)
+	}
+}
+
+func TestNewGeneratorFunc(t *testing.T) {
+	i := 10
+	gen := generator.GeneratorFunc(func(yield generator.Yield) {
+		if !yield(i) {
+			return
+		}
+		if !yield(i + 10) {
+			return
+		}
+	})
+
+	for msg := range gen.C {
+		fmt.Println(msg)
+	}
 }
