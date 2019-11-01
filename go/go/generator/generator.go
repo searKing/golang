@@ -6,7 +6,7 @@ import (
 
 type Yield func(msg interface{}) (ok bool)
 
-// Generator is as in python or ES6
+// Generator behaves like Generator in python or ES6
 // Generator function contains one or more yield statement.
 // Generator functions allow you to declare a function that behaves like an iterator, i.e. it can be used in a for loop.
 // see https://wiki.python.org/moin/Generators
