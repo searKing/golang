@@ -6,19 +6,6 @@ import (
 	"github.com/searKing/golang/go/go/generator"
 )
 
-// see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*
-// function* generator(i) {
-//  yield i;
-//  yield i + 10;
-// }
-//
-// var gen = generator(10);
-//
-// console.log(gen.next().value);
-// // expected output: 10
-//
-// console.log(gen.next().value);
-// // expected output: 20
 func ExampleGeneratorFunc() {
 	g := func(i int) *generator.Generator {
 		return generator.GeneratorFunc(func(yield generator.Yield) {
