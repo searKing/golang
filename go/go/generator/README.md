@@ -3,11 +3,11 @@
 # Generator
 Generator behaves like Generator in [python](https://wiki.python.org/moin/Generators) or [ES6](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*), with yield and next statements.
 
-Generator function contains one or more yield statement.
-Generator functions allow you to declare a function that behaves like an iterator, i.e. it can be used in a for loop.
-Generator generators are a simple way of creating iterators. All the overhead we mentioned above are automatically handled by generators.
-Simply speaking, a generator is a function that returns an object (iterator) which we can iterate over (one value at a time).
-If desired, go to [python](https://wiki.python.org/moin/Generators) or [ES6](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*] for more information).
+Generator function contains one or more yield statement.  
+Generator functions allow you to declare a function that behaves like an iterator, i.e. it can be used in a for loop.  
+Generator generators are a simple way of creating iterators. All the overhead we mentioned above are automatically handled by generators.  
+Simply speaking, a generator is a function that returns an object (iterator) which we can iterate over (one value at a time).  
+If desired, go to [python](https://wiki.python.org/moin/Generators) or [ES6](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*) for more information.  
 ## Example
 
 ### Golang Generators
@@ -88,8 +88,8 @@ console.log(gen.next().value);
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/go/go/generator`. You can
-also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/go/go/generator`.
+The easiest way to install is to run `go get -u github.com/searKing/golang/go/go/generator`.   
+You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/go/go/generator`.
 
 ## Inspiring Generators
 * [Python](https://wiki.python.org/moin/Generators)
