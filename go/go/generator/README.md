@@ -15,41 +15,37 @@ If desired, go to [python](https://wiki.python.org/moin/Generators) or [ES6](htt
 package main
 
 import (
-	"fmt"
+    "fmt"
 
-	"github.com/searKing/golang/go/go/generator"
+    "github.com/searKing/golang/go/go/generator"
 )
 
 func main() {
-	g := func(i int) *generator.Generator {
-		return generator.GeneratorFunc(func(yield generator.Yield) {
-			if !yield(i) {
-				return
-			}
-			if !yield(i + 10) {
-				return
-			}
-		})
-	}
+    g := func(i int) *generator.Generator {
+        return generator.GeneratorFunc(func(yield generator.Yield) {
+            yield(i)
+            yield(i + 10)
+        })
+    }
 
-	gen := g(10)
+    gen := g(10)
     
     // WAY 1, by channel
-	for msg := range gen.C {
-		fmt.Println(msg)
-	}
+    for msg := range gen.C {
+        fmt.Println(msg)
+    }
     // WAY 2, by Next
-	//for {
-	//	msg, ok := gen.Next()
-	//	if !ok {
-	//		return
-	//	}
-	//	fmt.Println(msg)
-	//}
+    //for {
+    //	msg, ok := gen.Next()
+    //	if !ok {
+    //	    return
+    //	}
+    //	fmt.Println(msg)
+    //}
 
-	// Output:
-	// 10
-	// 20
+    // Output:
+    // 10
+    // 20
 }
 ```
 
