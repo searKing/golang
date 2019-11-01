@@ -5,7 +5,7 @@ Useful libs or tools for Golang
 
 # GoLibs
 
-* [generator](https://godoc.org/github.com/searKing/golang) - Generator behaves like Generator in python or ES6, with yield and next statements.
+* [generator](https://godoc.org/github.com/searKing/golang/go/go/generator) - Generator behaves like Generator in python or ES6, with yield and next statements.
 
 # GoGenerateTools
 [`go generate`](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete list of useful tools that generate code.
