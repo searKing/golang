@@ -141,8 +141,8 @@ func TestGenerator_Yield(t *testing.T) {
 	}
 }
 
-func TestGeneratorAdvanceFunc(t *testing.T) {
-	g := generator.GeneratorAdvanceFunc(func(yield generator.Yield, args ...interface{}) {
+func TestGeneratorVariadicFunc(t *testing.T) {
+	g := generator.GeneratorVariadicFunc(func(yield generator.Yield, args ...interface{}) {
 		i := (args[0]).(int)
 		if !yield(i) {
 			return
