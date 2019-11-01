@@ -79,6 +79,11 @@ func (g *Generator) Yield(supplierC chan<- interface{}) Yield {
 	}
 }
 
+// Simply speaking, a generator is a function that returns an object (iterator) which we can iterate over (one value at a time).
+
+// GeneratorFunc returns an object (iterator) which we can iterate over (one value at a time).
+// It returns a Generator that can be used to cancel the call using its Stop method.
+// Iterate will be stopped when f is return or Stop is called.
 func GeneratorFunc(f func(yield Yield)) *Generator {
 	supplierC := make(chan interface{})
 	g := GeneratorWithSupplier(supplierC)
@@ -91,6 +96,9 @@ func GeneratorFunc(f func(yield Yield)) *Generator {
 	return g
 }
 
+// GeneratorWithSupplier is like GeneratorFunc.
+// But it's data src is from supplierC.
+// Iterate will be stopped when supplierC is closed or Stop is called.
 func GeneratorWithSupplier(supplierC <-chan interface{}) *Generator {
 	c := make(chan interface{})
 
