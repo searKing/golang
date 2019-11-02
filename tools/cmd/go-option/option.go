@@ -77,18 +77,19 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings_ "github.com/searKing/golang/tools/cmd/go-option/internal/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
 	"go/types"
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/imports"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	strings_ "github.com/searKing/golang/go/strings"
+	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/imports"
 )
 
 var (
@@ -412,7 +413,7 @@ func (g *Generator) buildOneRun(value Value) {
 	g.declareNameVar(value)
 
 	//The generated code is simple enough to write as a Printf format.
-	optionInterfaceName := strings_.CamelCaseSlice(value.eleName, "option")
+	optionInterfaceName := strings_.UpperCamelCaseSlice(value.eleName, "option")
 	g.Printf(stringOneRun, value.eleName, optionInterfaceName)
 	if strings.TrimSpace(value.eleImport) != "" {
 		g.Printf("\n")
