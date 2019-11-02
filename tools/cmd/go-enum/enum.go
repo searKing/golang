@@ -115,7 +115,7 @@ var (
 
 	useContains = flag.Bool("contains", true, "if true, the XXXSliceContains|XXXSliceContainsAny methods will be generated(XXX will be replaced by typename), such as strings.Contains|ContainsAny. Default: true")
 
-	transformMethod = flag.String("transform", "nop", "enum item name transformation method [nop, upper, lower, snake, camel, small_camel, kebab, dotted]. Default: nop")
+	transformMethod = flag.String("transform", "nop", "enum item name transformation method [nop, upper, lower, snake, upper_camel, lower_camel, kebab, dotted]. Default: nop")
 
 	output      = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
 	trimprefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")

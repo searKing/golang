@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	strings_ "github.com/searKing/golang/go/strings"
 	"strings"
 	"unicode"
+
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 func (g *Generator) transformValueNames(values []Value, transformMethod string) {
@@ -29,13 +30,13 @@ func (g *Generator) transformValueNames(values []Value, transformMethod string) 
 		mapfunc = func(s string) string {
 			return strings_.SnakeCase(strings.Map(preFunc, s), split)
 		}
-	case "camel":
+	case "upper_camel":
 		mapfunc = func(s string) string {
-			return strings_.CamelCase(strings.Map(preFunc, s), split)
+			return strings_.UpperCamelCase(strings.Map(preFunc, s), split)
 		}
-	case "small_camel":
+	case "lower_camel":
 		mapfunc = func(s string) string {
-			return strings_.SmallCamelCase(strings.Map(preFunc, s), split)
+			return strings_.LowerCamelCase(strings.Map(preFunc, s), split)
 		}
 	case "kebab":
 		mapfunc = func(s string) string {
@@ -47,7 +48,6 @@ func (g *Generator) transformValueNames(values []Value, transformMethod string) 
 		}
 	default:
 		panic(fmt.Sprintf("unknown transform method %s, only [nop, upper, lower, snake, camel, small_camel, kebab, dotted] is supported.", transformMethod))
-		return
 	}
 
 	for i := range values {
