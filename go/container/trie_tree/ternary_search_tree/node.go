@@ -2,6 +2,8 @@ package ternary_search_tree
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/searKing/golang/go/container/traversal"
 	"github.com/searKing/golang/go/util"
 )
@@ -61,7 +63,7 @@ func (n *node) Middle() *node {
 	return nil
 }
 
-// Right returns the middle list node or nil.
+// Right returns the right list node or nil.
 func (n *node) Right() *node {
 	if p := n.right; n.tree != nil && p != &n.tree.root {
 		return p
@@ -86,7 +88,7 @@ func (n *node) Traversal(order traversal.Order, handler Handler) {
 	return
 }
 
-func (n *node) Follow(prefix []byte) (subPrefix []byte, value interface{}, ok bool) {
+func (n *node) Follow(prefix []byte) (key []byte, value interface{}, ok bool) {
 	graph := n.follow(prefix)
 	if len(graph) == 0 {
 		return nil, nil, false
@@ -116,11 +118,14 @@ func (n *node) Contains(prefix []byte) bool {
 	return ok
 }
 
+type pos int
+
 const (
-	posLeft = iota
+	posNotFound pos = iota // Root's middle, default
+	posLeft
 	posMiddle
 	posRight
-	posButt
+	posRoot
 )
 
 func (n *node) Store(prefix []byte, value interface{}) {
@@ -128,49 +133,30 @@ func (n *node) Store(prefix []byte, value interface{}) {
 	n.CAS(prefix, nil, value, util.AlwaysEqualComparator())
 }
 
-func (n *node) Remove(prefix []byte, shrinkToFit bool) (old interface{}, ok bool) {
+func (n *node) remove(prefix []byte, shrinkToFit bool, omitMiddle bool) (old interface{}, ok bool) {
 	cur, last, lastPos, has := n.search(prefix)
 	if !has {
 		return nil, false
 	}
+	// shrinkToFit if cur's children are empty
+	if shrinkToFit {
+		cur.shrinkToFit(last, lastPos, omitMiddle)
+	}
+
 	if !cur.hasValue {
 		return nil, false
 	}
 	cur.hasValue = false
-	// shrinkToFit if cur's children are empty
-	if shrinkToFit {
-		cur.shrinkToFit(last, lastPos)
-	}
 	// all matched, goto remove the old
 	return cur.value, true
 }
 
+func (n *node) Remove(prefix []byte, shrinkToFit bool) (old interface{}, ok bool) {
+	return n.remove(prefix, shrinkToFit, false)
+}
+
 func (n *node) RemoveAll(prefix []byte) (value interface{}, ok bool) {
-	cur, last, lastPos, has := n.search(prefix)
-	if !has {
-		return nil, false
-	}
-
-	// match
-	switch lastPos {
-	case posLeft:
-		last.left = &n.tree.root
-	case posMiddle:
-		last.middle = &n.tree.root
-	case posRight:
-		last.right = &n.tree.root
-	case posButt:
-		last.left = &n.tree.root
-		last.middle = &n.tree.root
-		last.right = &n.tree.root
-	}
-
-	if !cur.hasValue {
-		return nil, false
-	}
-	cur.hasValue = false
-	// all matched, goto remove the value
-	return cur.value, true
+	return n.remove(prefix, true, true)
 }
 
 func (n *node) String() string {
@@ -180,7 +166,7 @@ func (n *node) String() string {
 		return true
 	}))
 
-	return s
+	return strings.TrimRight(s, "\n")
 }
 
 func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...util.Comparator) bool {
@@ -275,8 +261,8 @@ func (n *node) Depth() int {
 	return depth
 }
 
-// shrinkToFit cutoff lastnode's children nodes if all children nodes are empty
-func (n *node) shrinkToFit(last *node, lastPos int) {
+// shrinkToFit cutoff last node's children nodes if all children nodes are empty
+func (n *node) shrinkToFit(last *node, lastPos pos, omitMiddle bool) {
 	var has bool
 	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
 		has = true
@@ -289,15 +275,13 @@ func (n *node) shrinkToFit(last *node, lastPos int) {
 	// match
 	switch lastPos {
 	case posLeft:
-		last.left = &n.tree.root
+		n.shrinkLeft(last, omitMiddle)
 	case posMiddle:
-		last.middle = &n.tree.root
+		n.shrinkMiddle(last, omitMiddle)
 	case posRight:
-		last.right = &n.tree.root
-	case posButt:
-		last.left = &n.tree.root
-		last.middle = &n.tree.root
-		last.right = &n.tree.root
+		n.shrinkRight(last, omitMiddle)
+	case posRoot:
+		n.shrinkRoot(last, omitMiddle)
 	}
 }
 
@@ -350,13 +334,13 @@ func (n *node) follow(prefix []byte) (graph []*node) {
 }
 
 // return true if prefix matches, no matter value exists
-func (n *node) search(prefix []byte) (cur, last *node, lastPos int, has bool) {
+func (n *node) search(prefix []byte) (cur, last *node, lastPos pos, has bool) {
 	cur = n
 	last = n
 
-	lastPos = posButt
+	lastPos = posNotFound
 	for idx := 0; idx < len(prefix); {
-		// return if nilKey has been meet
+		// return if nilKey has been met
 		if !cur.hasKey {
 			return
 		}
@@ -388,6 +372,10 @@ func (n *node) search(prefix []byte) (cur, last *node, lastPos int, has bool) {
 		// all matched, goto remove the value
 		if idx == len(prefix) {
 			// match
+			// Special case: prefix is Root node
+			if idx == 1 {
+				lastPos = posRoot
+			}
 			return cur, last, lastPos, true
 		}
 		// partial matched, goto middle on next layer
@@ -416,4 +404,169 @@ func (n *node) IsLeaf() bool {
 		return false
 	}
 	return false
+}
+
+func (n *node) shrinkLeft(last *node, omitMiddle bool) {
+	cur := last.left
+	if omitMiddle {
+		cur.middle = &n.tree.root
+	}
+	// L M R empty
+	// remove current node if all children nodes of current node are empty
+	if cur.Left() == nil && cur.Right() == nil && cur.Middle() == nil {
+		last.right = &n.tree.root
+		return
+	}
+
+	// M nonempty
+	if cur.Middle() != nil {
+		return
+	}
+	// M is empty below
+
+	// reconnect only one nonempty child[L|R] to be Parent Node's left node
+	if cur.Left() == nil {
+		last.left = cur.right
+		return
+	}
+	if cur.Right() == nil {
+		last.left = cur.left
+		return
+	}
+
+	// L|R both nonempty, M empty
+
+	// Step1. merge L onto R's left most node
+	node := cur.right
+	for {
+		if node.Left() == nil {
+			node.left = cur.left
+			break
+		}
+		node = node.left
+	}
+	// Step1. move R to be Parent Node's left node
+	last.left = cur.right
+}
+
+func (n *node) shrinkRight(last *node, omitMiddle bool) {
+	cur := last.middle
+	if omitMiddle {
+		cur.middle = &n.tree.root
+	}
+	// remove current node if all children nodes of current node are empty
+	if cur.Left() == nil && cur.Right() == nil && cur.Middle() == nil {
+		last.middle = &n.tree.root
+		return
+	}
+	// M nonempty
+	if cur.Middle() != nil {
+		return
+	}
+	// M is empty below
+
+	// reconnect only one nonempty child[L|R] to be Parent Node's middle node
+	if cur.Left() == nil {
+		last.middle = cur.right
+		return
+	}
+	if cur.Right() == nil {
+		last.middle = cur.left
+		return
+	}
+
+	// L|R both nonempty, M empty
+
+	// Step1. merge R onto L's right most node
+	node := cur.left
+	for {
+		if node.Right() == nil {
+			node.right = cur.right
+			break
+		}
+		node = node.right
+	}
+	// Step1. move L to be Parent Node's middle node
+	last.middle = cur.left
+}
+
+func (n *node) shrinkMiddle(last *node, omitMiddle bool) {
+	cur := last.middle
+	if omitMiddle {
+		cur.middle = &n.tree.root
+	}
+	// remove current node if all children nodes of current node are empty
+	if cur.Left() == nil && cur.Right() == nil && cur.Middle() == nil {
+		last.middle = &n.tree.root
+		return
+	}
+	// M nonempty
+	if cur.Middle() != nil {
+		return
+	}
+	// M is empty below
+
+	// reconnect only one nonempty child[L|R] to be Parent Node's middle node
+	if cur.Left() == nil {
+		last.middle = cur.right
+		return
+	}
+	if cur.Right() == nil {
+		last.middle = cur.left
+		return
+	}
+
+	// L|R both nonempty, M empty
+
+	// Step1. merge R onto L's right most node
+	node := cur.left
+	for {
+		if node.Right() == nil {
+			node.right = cur.right
+			break
+		}
+		node = node.right
+	}
+	// Step1. move L to be Parent Node's middle node
+	last.middle = cur.left
+}
+
+func (n *node) shrinkRoot(last *node, omitMiddle bool) {
+	cur := last
+	if omitMiddle {
+		cur.middle = &n.tree.root
+	}
+	// nop if all children nodes of current node are empty
+	if cur.Left() == nil && cur.Right() == nil && cur.Middle() == nil {
+		return
+	}
+	// M nonempty
+	if cur.Middle() != nil {
+		return
+	}
+	// M is empty below
+
+	// reconnect only one nonempty child[L|R] to be Parent Node
+	if cur.Left() == nil {
+		last = cur.right
+		return
+	}
+	if cur.Right() == nil {
+		last.middle = cur.left
+		return
+	}
+
+	// L|R both nonempty, M empty
+
+	// Step1. merge R onto L's right most node
+	node := cur.left
+	for {
+		if node.Right() == nil {
+			node.right = cur.right
+			break
+		}
+		node = node.right
+	}
+	// Step1. move L to be Parent Node
+	last = cur.left
 }

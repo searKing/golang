@@ -41,6 +41,7 @@ func New(prefixes ...string) *TernarySearchTree {
 	return tree
 }
 
+// NewWithBytes behaves like New, but receive ...[]byte
 func NewWithBytes(prefixes ...[]byte) *TernarySearchTree {
 	tree := (&TernarySearchTree{}).init()
 	for _, prefix := range prefixes {
@@ -91,36 +92,37 @@ func (l *TernarySearchTree) Traversal(order traversal.Order, handler Handler) {
 }
 
 // Follow returns node info of longest subPrefix of prefix
-func (l *TernarySearchTree) Follow(prefix string) (subPrefix string, value interface{}, ok bool) {
+func (l *TernarySearchTree) Follow(prefix string) (key string, value interface{}, ok bool) {
 	pre, val, ok := l.root.Follow([]byte(prefix))
 	return string(pre), val, ok
 }
 
-func (l *TernarySearchTree) Load(prefix string) (value interface{}, ok bool) {
-	return l.root.Load([]byte(prefix))
+// Load loads value by key
+func (l *TernarySearchTree) Load(key string) (value interface{}, ok bool) {
+	return l.root.Load([]byte(key))
 }
 
-// Store stores value in prefix
-func (l *TernarySearchTree) Store(prefix string, value interface{}) {
-	l.root.Store([]byte(prefix), value)
+// Store stores value by key
+func (l *TernarySearchTree) Store(key string, value interface{}) {
+	l.root.Store([]byte(key), value)
 }
 
-// return true if prefix with key and value
-func (l *TernarySearchTree) Contains(prefix string) bool {
-	return l.root.Contains([]byte(prefix))
+// return true if the node matched with key, with value nonempty
+func (l *TernarySearchTree) Contains(key string) bool {
+	return l.root.Contains([]byte(key))
 }
 
-// return true if prefix with key
+// return true if any node exists with key prefix, no matter value is empty or not
 func (l *TernarySearchTree) ContainsPrefix(prefix string) bool {
 	return l.root.ContainsPrefix([]byte(prefix))
 }
 
-// remove value with prefix
-func (l *TernarySearchTree) Remove(prefix string, shrinkToFit bool) (old interface{}, ok bool) {
-	return l.root.Remove([]byte(prefix), shrinkToFit)
+// remove the node matched with key
+func (l *TernarySearchTree) Remove(key string, shrinkToFit bool) (old interface{}, ok bool) {
+	return l.root.Remove([]byte(key), shrinkToFit)
 }
 
-// remove node with prefix
+// remove all nodes started with key prefix
 func (l *TernarySearchTree) RemoveAll(prefix string) (old interface{}, ok bool) {
 	return l.root.RemoveAll([]byte(prefix))
 }
