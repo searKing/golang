@@ -26,3 +26,23 @@ func IsASCIILower(r rune) bool {
 func IsASCIIDigit(r rune) bool {
 	return IsASCII(r) && unicode.IsDigit(r)
 }
+
+// IsVowel reports whether the rune is an ASCII and vowel case letter.
+func IsVowel(s rune) bool {
+	switch unicode.ToUpper(s) {
+	case 'A', 'E', 'I', 'O', 'U':
+		return true
+	default:
+		return false
+	}
+}
+
+// IsConsonant reports whether the rune is an ASCII and consonant case letter.
+func IsConsonant(s rune) bool {
+	switch unicode.ToUpper(s) {
+	case 'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z':
+		return true
+	default:
+		return false
+	}
+}
