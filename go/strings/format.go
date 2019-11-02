@@ -4,60 +4,148 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	unicode_ "github.com/searKing/golang/go/unicode"
 )
 
-// CamelCase returns the CamelCased name.
+// see https://en.wikipedia.org/wiki/Camel_case
+// Camel case (stylized as camelCase; also known as camel caps or more formally as medial capitals) is the practice of
+// writing phrases such that each word or abbreviation in the middle of the phrase begins with a capital letter,
+// with no intervening spaces or punctuation.
+// Common examples include "iPhone" and "eBay".
+
+var (
+	PascalCase           = UpperCamelCase
+	CapitalizedWordsCase = UpperCamelCase
+	CapWordsCase         = UpperCamelCase
+	CapitalizedWords     = UpperCamelCase
+
+	// SentenceCase is a mixed-case style in which the first word of the sentence is capitalised,
+	// as well as proper nouns and other words as required by a more specific rule.
+	// This is generally equivalent to the baseline universal standard of formal English orthography.
+	// https://en.wikipedia.org/wiki/Letter_case#Sentence_Case
+	// "The quick brown fox jumps over the lazy dog"
+	SentenceCase = strings.Title
+
+	// TitleCase capitalises all words but retains the spaces between them
+	// https://en.wikipedia.org/wiki/Letter_case#Title_Case
+	// "The Quick Brown Fox Jumps over the Lazy Dog"
+	TitleCase = strings.ToTitle
+
+	// AllCapsCase is an unicase style with capital letters only.
+	// https://en.wikipedia.org/wiki/Letter_case#All_caps
+	// "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"
+	AllCapsCase  = strings.ToUpper
+	AllUpperCase = AllCapsCase
+
+	// AllLowercase is an unicase style with no capital letters.
+	// https://en.wikipedia.org/wiki/Letter_case#All_lowercase
+	// "the quick brown fox jumps over the lazy dog"
+	AllLowercase = strings.ToLower
+)
+
+var (
+	DromedaryCase = LowerCamelCase
+	// Some people and organizations, notably Microsoft, use the term camel case only for lower camel case.
+	// Pascal case means only upper camel case.
+	CamelCase = LowerCamelCase
+
+	// MixedCase for lower camel case in Python
+	MixedCase = LowerCamelCase
+)
+
+var (
+	// lowercase
+	LowerCase = strings.ToLower
+)
+
+// UpperCamelCase returns the CamelCased name by initial uppercase letter.
 // If there is an interior split rune such as an underscore followed by a lower case letter,
 // drop the underscore and convert the letter to upper case.
 // There is a remote possibility of this rewrite causing a name collision,
 // but it's so remote we're prepared to pretend it's nonexistent - since the
-// C++ generator lowercases names, it's extremely unlikely to have two fields
+// C++ JoinGenerator lowercases names, it's extremely unlikely to have two fields
 // with different capitalizations.
 // In short, _my_field_name_2 becomes XMyFieldName_2.
-func CamelCase(s string, seps ...rune) string {
+// "TheQuickBrownFoxJumpsOverTheLazyDog"
+func UpperCamelCase(s string, seps ...rune) string {
 	return TransformCase(s, func(r string) string {
 		r = withDefault(leadingString, strings.ToLower)(r)
 		return ToUpperLeading(r)
 	}, seps...)
 }
 
-// SmallCamelCase returns the SmallCamelCased name.
+// LowerCamelCase returns the CamelCased name by lowercase uppercase letter.
 // In short, _my_field_name_2 becomes xMyFieldName_2.
-func SmallCamelCase(s string, seps ...rune) string {
-	s = CamelCase(s, seps...)
+// "theQuickBrownFoxJumpsOverTheLazyDog"
+func LowerCamelCase(s string, seps ...rune) string {
+	s = UpperCamelCase(s, seps...)
 	sr, s := ExtractFirstRune(s)
 	return ToLowerLeading(string(sr)) + s
 }
 
 // SnakeCase returns the SnakeCased name.
 // In short, _my_field_name_2 becomes x_my_field_name_2.
+// "the_quick_brown_fox_jumps_over_the_lazy_dog"
 func SnakeCase(s string, seps ...rune) string {
-	return TransformCase(s, MapAndJoin("_", withDefault(leadingString, strings.ToLower)), seps...)
+	return TransformCase(s, JoinGenerator("_", withDefault(leadingString, strings.ToLower)), seps...)
+}
+
+// DarwinCase returns the DarwinCased name.
+// Darwin case uses underscores between words with initial uppercase letters, as in "Sample_Type"
+// In short, _my_field_name_2 becomes X_My_Field_Name_2.
+// see https://en.wikipedia.org/wiki/Camel_case
+func DarwinCase(s string, seps ...rune) string {
+	return TransformCase(s, JoinGenerator("_", withDefault(leadingString, func(s string) string {
+		return strings.Title(strings.ToLower(s))
+	})), seps...)
 }
 
 // KebabCase returns the KebabCased name.
 // In short, _my_field_name_2 becomes x-my-field-name-2.
+// "the-quick-brown-fox-jumps-over-the-lazy-dog"
 func KebabCase(s string, seps ...rune) string {
-	return TransformCase(s, MapAndJoin("-", withDefault(leadingString, strings.ToLower)), seps...)
+	return TransformCase(s, JoinGenerator("-", withDefault(leadingString, strings.ToLower)), seps...)
 }
 
 // DotCase returns the KebabCased name.
 // In short, _my_field_name_2 becomes x.my.field.name.2.
 func DotCase(s string, seps ...rune) string {
-	return TransformCase(s, MapAndJoin(".", withDefault(leadingString, strings.ToLower)), seps...)
+	return TransformCase(s, JoinGenerator(".", withDefault(leadingString, strings.ToLower)), seps...)
 }
 
-func MapAndJoin(sep string, mapping func(r string) string) func(r string) string {
-	var written bool
-	return func(r string) string {
-		r = mapping(r)
-		if written {
-			r = sep + r
-		}
-		written = true
+// Studly caps is a form of text notation in which the capitalization of letters varies by some pattern, or arbitrarily,
+// usually also omitting spaces between words and often omitting some letters, for example, StUdLyCaPs or STuDLyCaPS.
+// Such patterns are identified by many users, ambiguously, as camel case.
+// The typical alternative is to just replace spaces with underscores (as in snake case).
+// Messages may be hidden in the capital and lower-case letters such as "ShoEboX" which spells
+// "SEX" in capitals and "hobo" in lower-case.
+// https://en.wikipedia.org/wiki/Studly_caps
+// "tHeqUicKBrOWnFoXJUmpsoVeRThElAzydOG"
+// "THiS iS aN eXCePTioNaLLy eLiTe SeNTeNCe"
+func StudlyCapsCase(upperCase unicode.SpecialCase, s string) string {
+	return strings.ToLowerSpecial(upperCase, s)
+}
 
-		return r
-	}
+// "thEqUIckbrOwnfOxjUmpsOvErthElAzydOg"
+func StudlyCapsVowelUpperCase(s string) string {
+	return strings.ToLowerSpecial(unicode_.VowelCase(nil, func(r rune) rune {
+		return unicode.ToUpper(r)
+	}, nil), s)
+}
+
+// "THeQuiCKBRoWNFoXJuMPSoVeRTHeLaZYDoG"
+func StudlyCapsConsonantUpperCase(s string) string {
+	return strings.ToLowerSpecial(unicode_.ConsonantCase(nil, func(r rune) rune {
+		return unicode.ToUpper(r)
+	}, nil), s)
+}
+
+// lower_case_with_underscores
+func LowerCaseWithUnderscores(s string, seps ...rune) string {
+	return func(s_ string) string {
+		return strings.ToLower(SnakeCase(s_, seps...))
+	}(s)
 }
 
 func ExtractFirstRune(s string) (rune, string) {
@@ -75,13 +163,13 @@ func ExtractFirstRune(s string) (rune, string) {
 	return sr, s
 }
 
-// CamelCaseSlice is like CamelCase, but the argument is a slice of strings to
+// UpperCamelCaseSlice is like UpperCamelCase, but the argument is a slice of strings to
 // be joined with "_".
-func CamelCaseSlice(elem ...string) string { return CamelCase(strings.Join(elem, "_"), '_') }
+func UpperCamelCaseSlice(elem ...string) string { return UpperCamelCase(strings.Join(elem, "_"), '_') }
 
-// SmallCamelCaseSlice is like SmallCamelCase, but the argument is a slice of strings to
+// LowerCamelCaseSlice is like LowerCamelCase, but the argument is a slice of strings to
 // be joined with "_".
-func SmallCamelCaseSlice(elem ...string) string { return SmallCamelCase(strings.Join(elem, "_"), '_') }
+func LowerCamelCaseSlice(elem ...string) string { return LowerCamelCase(strings.Join(elem, "_"), '_') }
 
 // DottedSlice turns a sliced name into a dotted name.
 func DottedSlice(elem ...string) string { return strings.Join(elem, ".") }
@@ -91,10 +179,10 @@ const (
 )
 
 // TransformCase Splits and apply map on every splits
-func TransformCase(s string, f func(r string) string, seps ...rune) string {
+func TransformCase(s string, join func(r string) string, seps ...rune) string {
 	var out strings.Builder
 	for _, sub := range splits(s, seps...) {
-		out.WriteString(f(sub))
+		out.WriteString(join(sub))
 	}
 	return out.String()
 }
