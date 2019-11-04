@@ -5,13 +5,13 @@ import (
 	"io"
 )
 
-// ReadCloser is the interface that groups the basic Read and Close methods.
+// ReadSniffer is the interface that groups the basic Read and Sniff methods.
 type ReadSniffer interface {
 	io.Reader
 	Sniff(sniffing bool)
 }
 
-type sinffReader struct {
+type sniffReader struct {
 	source io.Reader
 	buffer bytes.Buffer
 
@@ -20,7 +20,7 @@ type sinffReader struct {
 	sniffing bool
 }
 
-func (sr *sinffReader) Sniff(sniffing bool) {
+func (sr *sniffReader) Sniff(sniffing bool) {
 	if sr.sniffing == sniffing {
 		return
 	}
@@ -34,12 +34,24 @@ func (sr *sinffReader) Sniff(sniffing bool) {
 		}
 		return
 	}
+	sr.resetSelector()
+}
+
+func (sr *sniffReader) resetSelector() {
 	sr.selectorF = func() io.Reader {
-		return io.MultiReader(&sr.buffer, sr.source)
+		// clear if EOF meet
+		bufferReader := WatchReader(&sr.buffer, WatcherFunc(func(p []byte, n int, err error) (int, error) {
+			if err == io.EOF {
+				sr.buffer = bytes.Buffer{} // recycle memory
+			}
+			return n, err
+		}))
+
+		return io.MultiReader(bufferReader, sr.source)
 	}
 }
 
-func (sr *sinffReader) Read(p []byte) (n int, err error) {
+func (sr *sniffReader) Read(p []byte) (n int, err error) {
 	return sr.selectorF.Read(p)
 }
 
@@ -48,12 +60,9 @@ func (sr *sinffReader) Read(p []byte) (n int, err error) {
 // data is buffered if Sniff(true) is called.
 // buffered data is taken first, if Sniff(false) is called.
 func SniffReader(r io.Reader) ReadSniffer {
-	sr := &sinffReader{}
-	sr.source = WatchReader(r, WatcherFunc(func(p []byte, n int, err error) (int, error) {
-		if err == io.EOF {
-			sr.buffer = bytes.Buffer{}
-		}
-		return n, err
-	}))
+	sr := &sniffReader{
+		source: r,
+	}
+	sr.resetSelector()
 	return sr
 }
