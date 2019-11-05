@@ -9,10 +9,11 @@ import (
 )
 
 // 计量单位，如k、M、G、T
+// base^power [symbol|name]
 type multiplePrefix struct {
 	base   int
 	power  int
-	name   string
+	name   string // symbol's full name
 	symbol string
 }
 
@@ -33,6 +34,7 @@ func (dp multiplePrefix) FormatFloat(number float64, precision int) string {
 	return fmt.Sprintf("%g%s", humanNumber, dp)
 }
 
+// Factor return base^power
 func (dp multiplePrefix) Factor() float64 {
 	if dp.Base() == 10 {
 		return math.Pow10(dp.Power())
