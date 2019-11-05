@@ -8,6 +8,7 @@ Useful libs or tools for Golang
 * [ternary_search_tree](https://godoc.org/github.com/searKing/golang/go/container/trie_tree/ternary_search_tree) - A type of trie (sometimes called a prefix tree) where nodes are arranged in a manner similar to a binary search tree, but with up to three children rather than the binary tree's limit of two.
 * [connection mux](https://godoc.org/github.com/searKing/golang/go/net/cmux) - Connection Mux is a generic Go library to multiplex connections based on their payload. Using cmux, you can serve gRPC, SSH, HTTPS, HTTP, Go RPC, and pretty much any other protocol on the same TCP listener.
 * [SniffReader](https://godoc.org/github.com/searKing/golang/go/io) - A Reader that allows sniff and read from the provided input reader. data is buffered if Sniff(true) is called. buffered data is taken first, if Sniff(false) is called.
+* [multiple_prefix](https://godoc.org/github.com/searKing/golang/go/format/multiple_prefix) - Prefixes for decimal and binary multiples, [Prefixes for decimal multiples](https://physics.nist.gov/cuu/Units/prefixes.html), [Prefixes for binary multiples](https://physics.nist.gov/cuu/Units/binary.html).
 
 # GoGenerateTools
 [`go generate`](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete list of useful tools that generate code.
