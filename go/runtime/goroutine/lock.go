@@ -5,15 +5,19 @@ package goroutine
 
 import (
 	"errors"
-	"github.com/searKing/golang/go/error/must"
 	"os"
+
+	"github.com/searKing/golang/go/error/must"
 )
 
 var DebugGoroutines = os.Getenv("DEBUG_GOROUTINES") == "1"
 
+// Lock represents a goroutine ID, with goroutine ID checked, that is  whether GoRoutines of lock newer and check caller differ.
+// disable when DebugGoroutines equals false
 type Lock uint64
 
-// NewLock returns a GoRoutine Lock
+// NewLock returns a goroutine Lock, that checks whether goroutine of lock newer and check caller differ.
+// Code borrowed from https://github.com/golang/go/blob/master/src/net/http/h2_bundle.go
 func NewLock() Lock {
 	if !DebugGoroutines {
 		return 0
