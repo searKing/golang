@@ -17,8 +17,7 @@ func _() {
 var nilTimeDurationValue = func() (val time.Duration) { return }()
 
 // NullDuration represents an interface that may be null.
-// NullDuration implements the Scanner interface so
-// it can be used as a scan destination, similar to sql.NullString.
+// NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
 type NullDuration struct {
 	Data time.Duration
 

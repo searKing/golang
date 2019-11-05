@@ -8,8 +8,7 @@ import (
 )
 
 // NullJson represents an interface that may be null.
-// NullJson implements the Scanner interface so
-// it can be used as a scan destination, similar to sql.NullString.
+// NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
 // Deprecate, use go-nulljson instead.
 // For more information, see:
 // https://godoc.org/github.com/searKing/golang/tools/cmd/go-nulljson
