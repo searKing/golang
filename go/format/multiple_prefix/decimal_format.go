@@ -2,6 +2,7 @@ package multiple_prefix
 
 import (
 	"strings"
+	"unicode"
 
 	strings_ "github.com/searKing/golang/go/strings"
 )
@@ -33,7 +34,8 @@ func SplitDecimal(s string) (number string, prefix *DecimalMultiplePrefix, unpar
 		return "", nil, unparsed
 	}
 	number = splits[0]
-	unparsed = splits[1]
+	// trim any space between numbers and symbols
+	unparsed = strings.TrimLeftFunc(splits[1], unicode.IsSpace)
 
 	for _, prefix := range decimalPositiveMultiplePrefixes {
 		if strings.HasPrefix(unparsed, prefix.Symbol()) {

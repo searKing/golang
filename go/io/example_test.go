@@ -150,5 +150,4 @@ func ExampleDynamicReadSeeker() {
 	// some io.Reader stream to be read
 	// stream to be read
 	// stream to be read
-
 }
