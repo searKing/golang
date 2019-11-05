@@ -2,6 +2,11 @@ package math
 
 import "math"
 
+// Epsilon very small
+var Epsilon = 1e-6
+var EpsilonClose = 1e-14
+var EpsilonVeryClose = 1e-16
+
 // TruncPrecision returns the float value of x, with
 // case n >= 0
 // 	the maximum n bits precision.
@@ -16,6 +21,8 @@ func TruncPrecision(x float64, n int) float64 {
 	return math.Copysign(math.Trunc((math.Abs(x)+0.5/n10)*n10)/n10, x)
 }
 
+// Tolerance returns true if |a-b| < e
+// e usually can be set with  Epsilon(1e-6)
 func Tolerance(a, b, e float64) bool {
 	// Multiplying by e here can underflow denormal values to zero.
 	// Check a==b so that at least if a and b are small and identical
@@ -38,12 +45,17 @@ func Tolerance(a, b, e float64) bool {
 	}
 	return d < e
 }
-func Close(a, b float64) bool { return Tolerance(a, b, 1e-14) }
 
-func VeryClose(a, b float64) bool { return Tolerance(a, b, 4e-16) }
+// Close returns true if |a-b| < 1e14
+func Close(a, b float64) bool { return Tolerance(a, b, EpsilonClose) }
 
+// VeryClose returns true if |a-b| < 1e16
+func VeryClose(a, b float64) bool { return Tolerance(a, b, EpsilonVeryClose) }
+
+// SoClose is an alias of Tolerance
 func SoClose(a, b, e float64) bool { return Tolerance(a, b, e) }
 
+// Alike returns true if a,b is the same exactly (no tolerance) or both NaN
 func Alike(a, b float64) bool {
 	switch {
 	case math.IsNaN(a) && math.IsNaN(b):

@@ -3,6 +3,8 @@ package multiple_prefix
 import (
 	"math"
 	"math/big"
+
+	math_ "github.com/searKing/golang/go/math"
 )
 
 // 计量单位，如Ki、Mi、Gi、Ti
@@ -90,7 +92,7 @@ func (dp *BinaryMultiplePrefix) SetInt64(num int64) *BinaryMultiplePrefix {
 }
 
 func (dp *BinaryMultiplePrefix) SetFloat64(num float64) *BinaryMultiplePrefix {
-	if num == 0 {
+	if math_.Close(num, 0) {
 		*dp = BinaryMultiplePrefixOne
 		return dp
 	}
@@ -101,7 +103,7 @@ func (dp *BinaryMultiplePrefix) SetFloat64(num float64) *BinaryMultiplePrefix {
 	}
 
 	numPower := math.Log10(num) / math.Log10(float64(dp.Base()))
-	if numPower == 0 {
+	if math_.Close(numPower, 0) {
 		*dp = BinaryMultiplePrefixOne
 		return dp
 	}

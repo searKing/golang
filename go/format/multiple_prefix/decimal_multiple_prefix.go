@@ -3,6 +3,8 @@ package multiple_prefix
 import (
 	"math"
 	"math/big"
+
+	math_ "github.com/searKing/golang/go/math"
 )
 
 // 计量单位，如k、M、G、T
@@ -135,7 +137,7 @@ func (dp *DecimalMultiplePrefix) SetInt64(num int64) *DecimalMultiplePrefix {
 }
 
 func (dp *DecimalMultiplePrefix) SetFloat64(num float64) *DecimalMultiplePrefix {
-	if num == 0 {
+	if math_.Close(num, 0) {
 		*dp = DecimalMultiplePrefixOne
 		return dp
 	}
@@ -146,7 +148,7 @@ func (dp *DecimalMultiplePrefix) SetFloat64(num float64) *DecimalMultiplePrefix 
 	}
 
 	numPower := math.Log10(num) / math.Log10(float64(dp.Base()))
-	if numPower == 0 {
+	if math_.Close(numPower, 0) {
 		*dp = DecimalMultiplePrefixOne
 		return dp
 	}
