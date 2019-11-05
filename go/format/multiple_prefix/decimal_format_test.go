@@ -87,7 +87,7 @@ var (
 			outputUnparsed:     "HelloWorld",
 		}, {
 			input:              "+1234.567890\tkB",
-			outputNumber:       "+1234.567890\t",
+			outputNumber:       "+1234.567890",
 			outputPrefixSymbol: "k",
 			outputUnparsed:     "B",
 		}, {
