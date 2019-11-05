@@ -3,18 +3,12 @@ package flag_test
 import (
 	"flag"
 	"fmt"
-	flag_ "github.com/searKing/golang/go/flag"
-	"github.com/searKing/golang/go/util/object"
 	"sort"
 	"testing"
-)
 
-func boolString(s string) string {
-	if s == "0" {
-		return "false"
-	}
-	return "true"
-}
+	flag_ "github.com/searKing/golang/go/flag"
+	"github.com/searKing/golang/go/util/object"
+)
 
 func TestEverything(t *testing.T) {
 	ResetForTesting(nil)
