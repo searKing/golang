@@ -11,7 +11,8 @@ import (
 
 var goroutineSpace = []byte("goroutine ")
 
-// ID returns caller's goroutine ID
+// ID returns goroutine id of the goroutine that calls it.
+// It calls runtime.Stack with a large enough buffer to capture the entire trace.
 func ID() uint64 {
 	bp := littleBuf.Get().(*[]byte)
 	defer littleBuf.Put(bp)

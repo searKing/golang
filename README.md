@@ -10,6 +10,9 @@ Useful libs or tools for Golang
 * [SniffReader](https://godoc.org/github.com/searKing/golang/go/io) - A Reader that allows sniff and read from the provided input reader. data is buffered if Sniff(true) is called. buffered data is taken first, if Sniff(false) is called.
 * [multiple_prefix](https://godoc.org/github.com/searKing/golang/go/format/multiple_prefix) - Prefixes for decimal and binary multiples, [Prefixes for decimal multiples](https://physics.nist.gov/cuu/Units/prefixes.html), [Prefixes for binary multiples](https://physics.nist.gov/cuu/Units/binary.html).
 * [flag](https://godoc.org/github.com/searKing/golang/go/flag) - Enhance go std flag, such as StringSlice that is a flag.Value that accumulates strings, e.g. --flag=one --flag=two would produce []string{"one", "two"}.
+* [goroutine](https://godoc.org/github.com/searKing/golang/go/runtime/goroutine) - goroutine is a collection of apis about goroutine.
+    - ID() - returns goroutine id of the goroutine that calls it.
+    - Lock - represents a goroutine ID, with goroutine ID checked, that is  whether GoRoutines of lock newer and check caller differ.
 
 # GoGenerateTools
 [`go generate`](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete list of useful tools that generate code.

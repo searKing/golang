@@ -1,17 +1,19 @@
-package goroutine
+package goroutine_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/searKing/golang/go/runtime/goroutine"
 )
 
 func TestLock(t *testing.T) {
-	oldDebug := DebugGoroutines
-	DebugGoroutines = true
-	defer func() { DebugGoroutines = oldDebug }()
+	oldDebug := goroutine.DebugGoroutines
+	goroutine.DebugGoroutines = true
+	defer func() { goroutine.DebugGoroutines = oldDebug }()
 
-	g := NewLock()
+	g := goroutine.NewLock()
 	g.MustCheck()
 
 	sawPanic := make(chan interface{})
