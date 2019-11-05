@@ -3,6 +3,8 @@ package strings
 import (
 	"fmt"
 	"io"
+	"strings"
+	"unicode"
 )
 
 // SplitPrefixNumber slices s into number prefix and unparsed and
@@ -30,12 +32,27 @@ func TrimPrefixNumber(s string) string {
 func TrimPrefixFloat(s string) string {
 	var value float64
 	var unparsed string
-	count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
+	// Scanf, Fscanf, and Sscanf parse the arguments according to a format string, analogous to that of Printf.
+	// In the text that follows, 'space' means any Unicode whitespace character except newline.
+	// Input processed by verbs is implicitly space-delimited:
+	// the implementation of every verb except %c starts by discarding leading spaces from the remaining input,
+	// and the %s verb (and %v reading into a string) stops consuming input at the first space or newline character.
+	// see https://golang.org/pkg/fmt/#hdr-Scanning
+	space := strings.IndexFunc(s, func(r rune) bool {
+		if r == '\n' {
+			return false
+		}
+		return unicode.IsSpace(r)
+	})
+	if space < 0 {
+		space = len(s)
+	}
+	count, err := fmt.Sscanf(s[:space], `%v%s`, &value, &unparsed)
 
 	if (err != nil && err != io.EOF) || (count == 0) {
 		return s
 	}
-	return unparsed
+	return s[space-len(unparsed):]
 }
 
 // TrimPrefixInteger returns s without the leading integer prefix string.
@@ -43,12 +60,27 @@ func TrimPrefixFloat(s string) string {
 func TrimPrefixInteger(s string) string {
 	var value int64
 	var unparsed string
-	count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
+	// Scanf, Fscanf, and Sscanf parse the arguments according to a format string, analogous to that of Printf.
+	// In the text that follows, 'space' means any Unicode whitespace character except newline.
+	// Input processed by verbs is implicitly space-delimited:
+	// the implementation of every verb except %c starts by discarding leading spaces from the remaining input,
+	// and the %s verb (and %v reading into a string) stops consuming input at the first space or newline character.
+	// see https://golang.org/pkg/fmt/#hdr-Scanning
+	space := strings.IndexFunc(s, func(r rune) bool {
+		if r == '\n' {
+			return false
+		}
+		return unicode.IsSpace(r)
+	})
+	if space < 0 {
+		space = len(s)
+	}
+	count, err := fmt.Sscanf(s[:space], `%v%s`, &value, &unparsed)
 
 	if (err != nil && err != io.EOF) || (count == 0) {
 		return s
 	}
-	return unparsed
+	return s[space-len(unparsed):]
 }
 
 // TrimPrefixComplex returns s without the leading complex prefix string.
@@ -56,10 +88,25 @@ func TrimPrefixInteger(s string) string {
 func TrimPrefixComplex(s string) string {
 	var value complex128
 	var unparsed string
-	count, err := fmt.Sscanf(s, `%v%s`, &value, &unparsed)
+	// Scanf, Fscanf, and Sscanf parse the arguments according to a format string, analogous to that of Printf.
+	// In the text that follows, 'space' means any Unicode whitespace character except newline.
+	// Input processed by verbs is implicitly space-delimited:
+	// the implementation of every verb except %c starts by discarding leading spaces from the remaining input,
+	// and the %s verb (and %v reading into a string) stops consuming input at the first space or newline character.
+	// see https://golang.org/pkg/fmt/#hdr-Scanning
+	space := strings.IndexFunc(s, func(r rune) bool {
+		if r == '\n' {
+			return false
+		}
+		return unicode.IsSpace(r)
+	})
+	if space < 0 {
+		space = len(s)
+	}
+	count, err := fmt.Sscanf(s[:space], `%v%s`, &value, &unparsed)
 
 	if (err != nil && err != io.EOF) || (count == 0) {
 		return s
 	}
-	return unparsed
+	return s[space-len(unparsed):]
 }
