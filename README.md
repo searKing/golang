@@ -5,6 +5,14 @@ Useful libs or tools for Golang
 
 # GoLibs
 * [generator](https://godoc.org/github.com/searKing/golang/go/go/generator) - Generator behaves like Generator in python or ES6, with yield and next statements.
+* [sql](https://godoc.org/github.com/searKing/golang/go/database/sql) - Enhance go std sql.
+    - NullDuration - ```NullDuration represents an interface that may be null.
+                        NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
+    - NullJson - ```NullJson represents an interface that may be null.
+                 NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
+                 Deprecate, use go-nulljson instead.
+                 For more information, see:
+                 https://godoc.org/github.com/searKing/golang/tools/cmd/go-nulljson```
 * [ternary_search_tree](https://godoc.org/github.com/searKing/golang/go/container/trie_tree/ternary_search_tree) - A type of trie (sometimes called a prefix tree) where nodes are arranged in a manner similar to a binary search tree, but with up to three children rather than the binary tree's limit of two.
 * [connection mux](https://godoc.org/github.com/searKing/golang/go/net/cmux) - Connection Mux is a generic Go library to multiplex connections based on their payload. Using cmux, you can serve gRPC, SSH, HTTPS, HTTP, Go RPC, and pretty much any other protocol on the same TCP listener.
 * [SniffReader](https://godoc.org/github.com/searKing/golang/go/io) - A Reader that allows sniff and read from the provided input reader. data is buffered if Sniff(true) is called. buffered data is taken first, if Sniff(false) is called.
