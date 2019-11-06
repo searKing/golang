@@ -15,11 +15,8 @@ type DecimalMultiplePrefix struct {
 // Unit is the same as power number
 // https://physics.nist.gov/cuu/Units/prefixes.html
 //
-// https://physics.nist.gov/cuu/Units/binary.html
-//
-// Prefixes for multiples
-//
-// Factor	Name 	Symbol
+//	Prefixes for multiples
+//	Factor	Name 	Symbol
 //	10^24	yotta	Y
 //	10^21	zetta	Z
 //	10^18	exa	E
