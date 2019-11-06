@@ -416,6 +416,9 @@ func ExampleBinaryMultiplePrefix_SetPower() {
 	// Name:kibi
 }
 
+/*
+// for go vet
+
 func ExampleMultiplePrefix_Base() {
 	fmt.Printf("%d\n", multiple_prefix.DecimalMultiplePrefixTODO.Copy().Base())
 	fmt.Printf("%d\n", multiple_prefix.BinaryMultiplePrefixTODO.Copy().Base())
@@ -616,3 +619,4 @@ func ExampleMultiplePrefix_Symbol() {
 	// Pi
 	// Ei
 }
+*/
