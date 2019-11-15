@@ -44,4 +44,11 @@ std::string Backtrace(int skip) {
   return trace_buf.str();
 }
 
+void BacktraceFd(int fd) {
+  void *callstack[128];
+  const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
+  char buf[1024];
+  int nFrames = backtrace(callstack, nMaxFrames);
+  backtrace_symbols_fd(callstack, nFrames, fd);
+}
 } // namespace searking

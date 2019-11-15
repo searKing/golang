@@ -4,6 +4,6 @@
 #include <functional>
 #include <string>
 namespace searking {
-void SignalAction(bool enable, int signum);
+int SignalAction(bool enable, int signum);
 } // namespace searking
 #endif // SEARKING_GOLANG_GO_OS_SIGNAL_CGO_SIGNAL_WRAP_H_

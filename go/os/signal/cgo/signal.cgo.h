@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void CGOSignalAction(bool enable, int signum);
+int CGOSignalAction(bool enable, int signum);
 #ifdef __cplusplus
 }
 #endif
