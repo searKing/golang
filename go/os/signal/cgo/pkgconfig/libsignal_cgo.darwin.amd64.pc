@@ -1,0 +1,25 @@
+prefix=${pcfiledir}/..
+libdir=${prefix}
+includedir=${prefix}
+Name: signal_cgo
+Description: signal_cgo
+Version: 1
+
+Cflags: \
+	-I${includedir} \
+	-D_GLIBCXX_USE_CXX11_ABI=0 \
+	-DPOSIX
+CXXFLAGS: \
+    -std=c++11
+
+Libs: \
+    -L${libdir} \
+    -lsignal_cgo \
+	-lstdc++ \
+	-framework AppKit \
+	-framework CoreAudio \
+	-framework AudioToolbox \
+	-framework CoreMedia \
+	-framework AVFoundation \
+	-framework AudioToolBox \
+	-framework CoreVideo
