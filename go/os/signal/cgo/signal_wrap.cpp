@@ -1,10 +1,10 @@
 #include "signal_wrap.h"
 #include "backtrace.h"
+#include <unistd.h>
 
 #include <signal.h>
 #include <string.h>
 
-#include <iostream>
 #include <map>
 #include <mutex>
 #include <utility>
@@ -22,10 +22,60 @@ class SignalHandler {
 public:
   SignalHandler() : onSignalCtx_(nullptr), onSignal_(nullptr) {}
   void operator()(int signum, siginfo_t *info, void *context) {
-    auto bt = Backtrace(1);
+    int fd = 1;
+    // https://stackoverflow.com/questions/16891019/how-to-avoid-using-printf-in-a-signal-handler
+    write(fd, "Sig(", strlen("Sig("));
+    int _signum = signum;
 
-    std::cout << "Sig(" << signum << ") Backtrace:\n"
-              << bt << "\n" << std::endl;
+    char nums[10] = {0};
+    int idx = 0;
+    do {
+      switch (_signum % 10) {
+      case 0:
+        nums[idx] = '0';
+        break;
+      case 1:
+        nums[idx] = '1';
+        break;
+      case 2:
+        nums[idx] = '2';
+        break;
+      case 3:
+        nums[idx] = '3';
+        break;
+      case 4:
+        nums[idx] = '4';
+        break;
+      case 5:
+        nums[idx] = '5';
+        break;
+      case 6:
+        nums[idx] = '6';
+        break;
+      case 7:
+        nums[idx] = '7';
+        break;
+      case 8:
+        nums[idx] = '8';
+        break;
+      case 9:
+        nums[idx] = '9';
+        break;
+      }
+      idx++;
+      _signum /= 10;
+    } while (_signum && idx < sizeof(nums) / sizeof(nums[0]));
+    auto cnt = idx;
+    for (auto i = 0; i < cnt / 2; i++) {
+      nums[i] = nums[i] ^ nums[cnt - 1 - i];
+      nums[cnt - 1 - i] = nums[i] ^ nums[cnt - 1 - i];
+      nums[i] = nums[i] ^ nums[cnt - 1 - i];
+    }
+    write(fd, nums, cnt);
+    write(fd, ") Backtrace:\n", strlen(") Backtrace:\n"));
+    BacktraceFd(fd);
+    write(fd, "Backtrace End\n", strlen("Backtrace End\n"));
+
     auto it = sigactionHandlers_.find(signum);
     if (it != sigactionHandlers_.end()) {
       auto handlers = it->second;
@@ -51,7 +101,6 @@ public:
     if (onSignal) {
       onSignal(onSignalCtx, signum, info, context);
     }
-    std::cout << "Backtrace End" << std::endl;
 
     // SIGBUS, SIGFPE, SIGILL, or SIGSEGV
     if (signum == SIGBUS || signum == SIGFPE || signum == SIGILL ||
@@ -81,7 +130,7 @@ private:
 };
 SignalHandler gSignalHandler;
 
-void SignalAction(bool enable, int signum) {
+int SignalAction(bool enable, int signum) {
   SIGNAL_SA_ACTION_CALLBACK sa_sigaction_action = nullptr;
   SIGNAL_SA_HANDLER_CALLBACK sa_sigaction_handler = nullptr;
   if (enable) {
@@ -92,10 +141,7 @@ void SignalAction(bool enable, int signum) {
     sa_sigaction_handler = SIG_DFL;
   }
 
-  if (setsig(signum, sa_sigaction_action, sa_sigaction_handler) == -1) {
-    std::cout << "Cannot " << (enable ? "enable" : "disable")
-              << "sigaction with Signal(" << signum << ")" << std::endl;
-  }
+  return setsig(signum, sa_sigaction_action, sa_sigaction_handler);
 }
 
 int setsig(int signum, SIGNAL_SA_ACTION_CALLBACK action,
