@@ -8,6 +8,7 @@
 #include <map>
 #include <mutex>
 #include <utility>
+#include <atomic>
 
 namespace searking {
 
@@ -16,21 +17,26 @@ typedef void (*SIGNAL_SA_ACTION_CALLBACK)(int signum, siginfo_t *info,
                                           void *context);
 typedef void (*SIGNAL_SA_HANDLER_CALLBACK)(int signum);
 
+typedef void (*SIGNAL_ON_SIGNAL_CALLBACK)(void *ctx, int fd, int signum,
+                                          siginfo_t *info, void *context);
+
+typedef void (*SIGNAL_ON_BACKTRACE_DUMP_CALLBACK)(int fd);
+
 class SignalHandler {
 protected:
   SignalHandler()
-      : onSignalCtx_(nullptr), onSignal_(nullptr),
-        fd_(fileno(stdout)), backtrace_enabled_(true) {}
+      : onSignalCtx_(nullptr), onSignal_(nullptr), fd_(fileno(stdout)) {}
 
 public:
   // Thread safe GetInstance.
-  static SignalHandler& GetInstance();
+  static SignalHandler &GetInstance();
 
   void operator()(int signum, siginfo_t *info, void *context);
   void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
                                            siginfo_t *info, void *context)>
                             callback,
                         void *ctx);
+  void SetBacktraceDumpTo(std::function<void(int fd)> safe_dump_to);
 
   void SetFd(int fd);
 
@@ -39,6 +45,8 @@ public:
   void SetSigactionHandlers(int signum, SIGNAL_SA_ACTION_CALLBACK action,
                             SIGNAL_SA_HANDLER_CALLBACK handler);
 
+
+
   static int SignalAction(int signum);
   static int SignalAction(int signum, SIGNAL_SA_ACTION_CALLBACK action,
                           SIGNAL_SA_HANDLER_CALLBACK handler);
@@ -46,7 +54,7 @@ public:
 private:
   std::mutex mutex_;
   int fd_;
-  int backtrace_enabled_;
+  std::function<void(int fd)> backtrace_dump_to_;
   void *onSignalCtx_;
   std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
                      void *context)>
