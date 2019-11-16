@@ -3,6 +3,7 @@
 package cgo
 
 /*
+   #cgo LDFLAGS: -ldl
    #include "signal.cgo.h"
    #include <stdio.h>
    #include <stdlib.h>  // Needed for C.free

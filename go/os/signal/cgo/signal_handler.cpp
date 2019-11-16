@@ -1,4 +1,5 @@
 #include "signal_handler.h"
+#include "string.h"
 
 namespace searking {
 
