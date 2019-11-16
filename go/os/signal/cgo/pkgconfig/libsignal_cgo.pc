@@ -1,6 +1,7 @@
 prefix=${pcfiledir}/..
 libdir=${prefix}
 includedir=${prefix}
+
 Name: signal_cgo
 Description: signal_cgo
 Version: 1
