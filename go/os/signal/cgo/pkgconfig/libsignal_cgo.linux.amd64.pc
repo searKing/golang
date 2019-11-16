@@ -7,11 +7,11 @@ Version: 1
 
 Cflags: \
 	-I${includedir} \
-	-D_GLIBCXX_USE_CXX11_ABI=0 \
-	-rdynamic
+	-D_GLIBCXX_USE_CXX11_ABI=0
 
 CXXFLAGS: \
-    -std=c++11
+    -std=c++11 \
+    -rdynamic
 
 Libs: \
     -L${libdir} \

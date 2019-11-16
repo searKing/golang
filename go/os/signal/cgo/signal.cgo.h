@@ -1,10 +1,9 @@
 #ifndef SEARKING_GOLANG_GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
 #define SEARKING_GOLANG_GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
-#include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-int CGOSignalAction(bool enable, int signum);
+int CGOSignalAction(int signum);
 #ifdef __cplusplus
 }
 #endif

@@ -11,7 +11,7 @@ import (
 )
 
 func ExampleSignalAction() {
-	signal_.SignalAction(true, syscall.SIGINT)
+	signal_.SignalAction(syscall.SIGINT)
 
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal
