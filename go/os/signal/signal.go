@@ -1,29 +1,20 @@
-// +build aix darwin dragonfly freebsd js,wasm linux nacl netbsd openbsd solaris windows
-
 package signal
 
-/*
-#cgo linux,amd64 pkg-config: ${SRCDIR}/cgo/pkgconfig/libsignal_cgo.linux.amd64.pc
-#cgo darwin,amd64 pkg-config: ${SRCDIR}/cgo/pkgconfig/libsignal_cgo.darwin.amd64.pc
-#include <stdlib.h>  // Needed for C.free
-#include <stdio.h>
-#include "signal.cgo.h"
-*/
 import "C"
-import (
-	"os"
-)
+import "os"
 
+// SignalAction act as signal.Notify, which invokes the Go signal handler.
+// https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
 func SignalAction(sigs ...os.Signal) {
-	for _, sig := range sigs {
-		C.CGOSignalHandlerSignalAction(C.int(Signum(sig)))
-	}
+	signalAction(sigs...)
 }
 
+// SignalDumpTo redirect log to fd, stdout if not set.
 func SignalDumpTo(fd int) {
-	C.CGOSignalHandlerSetFd(C.int(fd))
+	signalDumpTo(fd)
 }
 
+// DumpBacktrace enables|disables log of bt when signal is triggered, disable if not set.
 func DumpBacktrace(enable bool) {
-	C.CGOSignalHandlerSetBacktraceDump(C._Bool(enable))
+	dumpBacktrace(enable)
 }
