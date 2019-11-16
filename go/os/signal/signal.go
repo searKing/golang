@@ -14,8 +14,8 @@ import (
 	"os"
 )
 
-func SignalAction(enable bool, sigs ...os.Signal) {
+func SignalAction(sigs ...os.Signal) {
 	for _, sig := range sigs {
-		C.CGOSignalAction(C._Bool(enable), C.int(Signum(sig)))
+		C.CGOSignalAction(C.int(Signum(sig)))
 	}
 }
