@@ -20,10 +20,10 @@ func SignalAction(sigs ...os.Signal) {
 	}
 }
 
-func SignalDumpTo(fd int){
+func SignalDumpTo(fd int) {
 	C.CGOSignalHandlerSetFd(C.int(fd))
 }
 
-func BacktraceDump(enable bool){
+func DumpBacktrace(enable bool) {
 	C.CGOSignalHandlerSetBacktraceDump(C._Bool(enable))
 }
