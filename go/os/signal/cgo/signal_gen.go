@@ -1,4 +1,9 @@
 package cgo
 
-//go:generate go clean -cache
+/*
+#cgo CXXFLAGS: -std=c++11
+#include "signal.cgo.h"
+*/
+import "C"
+
 //go:generate make rebuild
