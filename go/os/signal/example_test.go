@@ -11,7 +11,7 @@ import (
 )
 
 func ExampleSignalAction() {
-	signal_.BacktraceDump(true)
+	signal_.DumpBacktrace(true)
 	signal_.SignalDumpTo(syscall.Stdout)
 	signal_.SignalAction(syscall.SIGINT)
 
