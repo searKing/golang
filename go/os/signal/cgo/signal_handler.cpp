@@ -1,11 +1,11 @@
 #include "signal_handler.h"
-#include "backtrace.h"
 
 namespace searking {
+
 void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   // https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
   ::signal(signum, SIG_DFL);
-  if (backtrace_enabled_) {
+  if (backtrace_dump_to_) {
     // https://stackoverflow.com/questions/16891019/how-to-avoid-using-printf-in-a-signal-handler
     write(fd_, "Sig(", strlen("Sig("));
     int _signum = signum;
@@ -56,7 +56,7 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
     }
     write(fd_, nums, cnt);
     write(fd_, ") Backtrace:\n", strlen(") Backtrace:\n"));
-    BacktraceFd(fd_);
+    backtrace_dump_to_(fd_);
     write(fd_, "Backtrace End\n", strlen("Backtrace End\n"));
   }
 
@@ -73,26 +73,14 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
     }
   }
 
-  void *onSignalCtx = nullptr;
-  std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                     void *context)>
-      onSignal;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    onSignalCtx = onSignalCtx_;
-    onSignal = onSignal_;
-  }
+  void *onSignalCtx = onSignalCtx_;
+  auto onSignal = onSignal_;
 
   if (onSignal) {
     onSignal(onSignalCtx, fd_, signum, info, context);
   }
 
   ::raise(signum);
-  //    // SIGBUS, SIGFPE, SIGILL, or SIGSEGV
-  //    if (signum == SIGBUS || signum == SIGFPE || signum == SIGILL ||
-  //        signum == SIGSEGV) {
-  //      exit(1);
-  //    }
 }
 
 void SignalHandler::RegisterOnSignal(
@@ -116,6 +104,12 @@ void SignalHandler::SetSigactionHandlers(int signum,
 void SignalHandler::SetFd(int fd) {
   std::lock_guard<std::mutex> lock(mutex_);
   fd_ = fd;
+}
+
+void SignalHandler::SetBacktraceDumpTo(
+    std::function<void(int fd)> safe_dump_to) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  backtrace_dump_to_ = safe_dump_to;
 }
 
 void SignalHandler::SetFd(FILE *fd) { SetFd(fileno(fd)); }

@@ -16,6 +16,14 @@ import (
 
 func SignalAction(sigs ...os.Signal) {
 	for _, sig := range sigs {
-		C.CGOSignalAction(C.int(Signum(sig)))
+		C.CGOSignalHandlerSignalAction(C.int(Signum(sig)))
 	}
+}
+
+func SignalDumpTo(fd int){
+	C.CGOSignalHandlerSetFd(C.int(fd))
+}
+
+func BacktraceDump(enable bool){
+	C.CGOSignalHandlerSetBacktraceDump(C._Bool(enable))
 }
