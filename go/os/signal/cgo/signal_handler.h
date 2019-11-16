@@ -60,7 +60,7 @@ private:
                      void *context)>
       onSignal_;
   std::map<int,
-           std::pair<SIGNAL_SA_ACTION_CALLBACK, SIGNAL_SA_HANDLER_CALLBACK>>
+           std::pair<SIGNAL_SA_ACTION_CALLBACK, SIGNAL_SA_HANDLER_CALLBACK> >
       sigactionHandlers_;
 
 private:
