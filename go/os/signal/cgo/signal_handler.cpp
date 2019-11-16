@@ -2,9 +2,8 @@
 
 namespace searking {
 
+// https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
 void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
-  // https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
-  ::signal(signum, SIG_DFL);
   if (backtrace_dump_to_) {
     // https://stackoverflow.com/questions/16891019/how-to-avoid-using-printf-in-a-signal-handler
     write(fd_, "Sig(", strlen("Sig("));
@@ -79,8 +78,6 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   if (onSignal) {
     onSignal(onSignalCtx, fd_, signum, info, context);
   }
-
-  ::raise(signum);
 }
 
 void SignalHandler::RegisterOnSignal(
