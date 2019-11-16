@@ -2,9 +2,9 @@
 
 package signal
 
+
 /*
-#cgo !darwin pkg-config: ${SRCDIR}/cgo/pkgconfig/libsignal_cgo.linux.pc
-#cgo darwin pkg-config: ${SRCDIR}/cgo/pkgconfig/libsignal_cgo.darwin.pc
+#cgo pkg-config: ${SRCDIR}/cgo/pkgconfig/libsignal_cgo.pc
 #include <stdlib.h>  // Needed for C.free
 #include <stdio.h>
 #include "signal.cgo.h"
