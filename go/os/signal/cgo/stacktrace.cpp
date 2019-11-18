@@ -1,15 +1,24 @@
-#include "backtrace.h"
-#include <cxxabi.h>   // for __cxa_demangle
-#include <dlfcn.h>    // for dladdr
-#include <execinfo.h> // for backtrace
+/*
+ *  Copyright 2019 The searKing authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a MIT-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+#include "stacktrace.h"
+
+#include <cxxabi.h>    // for __cxa_demangle
+#include <dlfcn.h>     // for dladdr
+#include <execinfo.h>  // for backtrace
 
 #include <sstream>
 #include <string>
 namespace searking {
+namespace stacktrace {
 
-// This function produces a stack backtrace with demangled function & method
-// names.
-std::string Backtrace(int skip) {
+std::string Stacktrace(int skip) {
   void *callstack[128];
   const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
   char buf[1024];
@@ -39,16 +48,16 @@ std::string Backtrace(int skip) {
     trace_buf << buf;
   }
   free(symbols);
-  if (nFrames == nMaxFrames)
-    trace_buf << "[truncated]\n";
+  if (nFrames == nMaxFrames) trace_buf << "[truncated]\n";
   return trace_buf.str();
 }
 
-void BacktraceFd(int fd) {
+void SafeDumpToFd(int fd) {
   void *callstack[128];
   const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
   char buf[1024];
   int nFrames = backtrace(callstack, nMaxFrames);
   backtrace_symbols_fd(callstack, nFrames, fd);
 }
-} // namespace searking
+}  // namespace stacktrace
+}  // namespace searking

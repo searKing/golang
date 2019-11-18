@@ -7,21 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
-#define GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
-#include <stdbool.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-void PrintStr(char *s);
-
-int CGOSignalHandlerSignalAction(int signum);
-void CGOSignalHandlerSetFd(int fd);
-void CGOSignalHandlerSetBacktraceDump(bool enable);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
+#ifndef GO_OS_SIGNAL_CGO_WRITE_INT_H_
+#define GO_OS_SIGNAL_CGO_WRITE_INT_H_
+#include <unistd.h>
+namespace searking {
+ssize_t WriteInt(int fd, int n);
+}  // namespace searking
+#endif  // GO_OS_SIGNAL_CGO_WRITE_INT_H_
