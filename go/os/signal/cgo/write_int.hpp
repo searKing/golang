@@ -7,21 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef GO_OS_SIGNAL_CGO_STACKTRACE_H_
-#define GO_OS_SIGNAL_CGO_STACKTRACE_H_
-
-#include <string>
+#ifndef GO_OS_SIGNAL_CGO_WRITE_INT_HPP_
+#define GO_OS_SIGNAL_CGO_WRITE_INT_HPP_
+#include <unistd.h>
 namespace searking {
-namespace stacktrace {
-
-// This function produces a stack backtrace with demangled function & method
-// names.
-std::string Stacktrace(int skip = 1);
-
-/// SafeDumpToFd is low-level async-signal-safe
-/// functions for dumping call stacks.
-void SafeDumpToFd(int fd = 1);
-
-}  // namespace stacktrace
+ssize_t WriteInt(int fd, int n);
 }  // namespace searking
-#endif  // GO_OS_SIGNAL_CGO_STACKTRACE_H_
+#endif  // GO_OS_SIGNAL_CGO_WRITE_INT_HPP_

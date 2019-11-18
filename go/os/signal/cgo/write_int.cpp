@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "write_int.h"
+#include "write_int.hpp"
 
 namespace searking {
 

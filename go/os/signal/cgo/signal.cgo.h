@@ -14,11 +14,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void PrintStr(char *s);
 
 int CGOSignalHandlerSignalAction(int signum);
-void CGOSignalHandlerSetFd(int fd);
-void CGOSignalHandlerSetBacktraceDump(bool enable);
+void CGOSignalHandlerSetSignalDumpToFd(int fd);
+void CGOSignalHandlerSetStacktraceDumpToFile(char* name);
+void CGOSignalHandlerDumpPreviousHumanReadableStacktrace();
+char* CGOPreviousHumanReadableStacktrace();
 
 #ifdef __cplusplus
 }

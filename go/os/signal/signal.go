@@ -1,20 +1,55 @@
 package signal
 
 import "C"
-import "os"
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"syscall"
 
-// SignalAction act as signal.Notify, which invokes the Go signal handler.
-// https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
-func SignalAction(sigs ...os.Signal) {
-	signalAction(sigs...)
+	"github.com/google/uuid"
+)
+
+// enhance signal.Notify with stacktrace of cgo.
+// BOOST must be installed under system path if cgo is enabled.
+func init() {
+	var dumpfile string
+	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {
+		dumpfile = f.Name()
+	} else {
+		dumpfile = filepath.Join(os.TempDir(), uuid.New().String()+".stacktrace.dump")
+	}
+
+	DumpStacktraceTo(dumpfile)
+	defer os.Remove(dumpfile)
+
+	var sigsToDo []os.Signal
+	for n := 0; n < numSig; n++ {
+		sigsToDo = append(sigsToDo, syscall.Signal(n))
+	}
+	if len(sigsToDo) == 0 {
+		return
+	}
+	signalAction(sigsToDo...)
 }
 
-// SignalDumpTo redirect log to fd, stdout if not set.
-func SignalDumpTo(fd int) {
-	signalDumpTo(fd)
+// DumpSignalTo redirects log to fd, stdout if not set; muted if < 0.
+func DumpSignalTo(fd int) {
+	dumpSignalTo(fd)
 }
 
-// DumpBacktrace enables|disables log of bt when signal is triggered, disable if not set.
-func DumpBacktrace(enable bool) {
-	dumpBacktrace(enable)
+// DumpStacktraceTo set dump file path of stacktrace when signal is triggered
+// "*.stacktrace.dump" under a temp dir if not set.
+func DumpStacktraceTo(name string) {
+	dumpStacktraceTo(name)
+}
+
+// DumpPreviousStacktrace dumps the previous human readable stacktrace to fd, which is set by SetSignalDumpToFd.
+func DumpPreviousStacktrace() {
+	dumpPreviousStacktrace()
+}
+
+// PreviousStacktrace returns a human readable stacktrace
+func PreviousStacktrace() string {
+	return previousStacktrace()
 }

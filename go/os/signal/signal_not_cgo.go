@@ -6,10 +6,18 @@ package signal
 func signalAction(sigs ...os.Signal) {
 }
 
-// signalAction is fake for cgo
-func signalDumpTo(fd int) {
+// dumpSignalTo is fake for cgo
+func dumpSignalTo(fd int) {
 }
 
-// signalAction is fake for cgo
-func dumpBacktrace(enable bool) {
+// dumpStacktraceTo is fake for cgo
+func dumpStacktraceTo(name string) {
+}
+
+// dumpPreviousStacktrace is fake for cgo
+func dumpPreviousStacktrace() {
+}
+
+// previousStacktrace is fake for cgo
+func previousStacktrace() string {
 }
