@@ -11,7 +11,6 @@ import (
 )
 
 // enhance signal.Notify with stacktrace of cgo.
-// BOOST must be installed under system path if cgo is enabled.
 func init() {
 	var dumpfile string
 	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {
