@@ -1,14 +1,23 @@
-#ifndef SEARKING_GOLANG_GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_H_
-#define SEARKING_GOLANG_GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_H_
+/*
+ *  Copyright 2019 The searKing authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a MIT-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_H_
+#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_H_
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <mutex>
 #include <utility>
-#include <atomic>
 
 namespace searking {
 
@@ -23,11 +32,11 @@ typedef void (*SIGNAL_ON_SIGNAL_CALLBACK)(void *ctx, int fd, int signum,
 typedef void (*SIGNAL_ON_BACKTRACE_DUMP_CALLBACK)(int fd);
 
 class SignalHandler {
-protected:
+ protected:
   SignalHandler()
       : onSignalCtx_(nullptr), onSignal_(nullptr), fd_(fileno(stdout)) {}
 
-public:
+ public:
   // Thread safe GetInstance.
   static SignalHandler &GetInstance();
 
@@ -45,13 +54,11 @@ public:
   void SetSigactionHandlers(int signum, SIGNAL_SA_ACTION_CALLBACK action,
                             SIGNAL_SA_HANDLER_CALLBACK handler);
 
-
-
   static int SignalAction(int signum);
   static int SignalAction(int signum, SIGNAL_SA_ACTION_CALLBACK action,
                           SIGNAL_SA_HANDLER_CALLBACK handler);
 
-private:
+ private:
   std::mutex mutex_;
   int fd_;
   std::function<void(int fd)> backtrace_dump_to_;
@@ -63,9 +70,9 @@ private:
            std::pair<SIGNAL_SA_ACTION_CALLBACK, SIGNAL_SA_HANDLER_CALLBACK> >
       sigactionHandlers_;
 
-private:
+ private:
   SignalHandler(const SignalHandler &) = delete;
   void operator=(const SignalHandler &) = delete;
 };
-} // namespace searking
-#endif // SEARKING_GOLANG_GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_H_
+}  // namespace searking
+#endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_H_
