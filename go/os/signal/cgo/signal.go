@@ -3,6 +3,7 @@
 package cgo
 
 /*
+   #cgo CXXFLAGS: -I${SRCDIR}/include/
    #cgo darwin CXXFLAGS: -g -D_GNU_SOURCE
    #cgo !darwin CXXFLAGS:
    #include "signal.cgo.h"

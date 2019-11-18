@@ -10,7 +10,6 @@
 #include "signal.cgo.h"
 
 #include <algorithm>
-#include <boost/stacktrace.hpp>
 #include <iostream>
 
 #include "signal_handler.hpp"

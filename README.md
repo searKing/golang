@@ -5,7 +5,7 @@ Useful libs or tools for Golang
 
 # GoLibs
 * [generator](https://godoc.org/github.com/searKing/golang/go/go/generator) — Generator behaves like Generator in python or ES6, with yield and next statements.
-* [signal](https://godoc.org/github.com/searKing/golang/go/os/signal) — Signal enhances signal.Notify with the stacktrace of cgo. BOOST must be installed under system path if cgo is enabled.
+* [signal](https://godoc.org/github.com/searKing/golang/go/os/signal) — Signal enhances signal.Notify with the stacktrace of cgo.
 * [sql](https://godoc.org/github.com/searKing/golang/go/database/sql) — Enhance go std sql.
     - NullDuration - ```NullDuration represents an interface that may be null.
                         NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
