@@ -1,5 +1,17 @@
+/*
+ *  Copyright 2019 The searKing authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a MIT-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 #include "signal_handler.h"
-#include "string.h"
+
+#include <string.h>
+
+#include "write_int.h"
 
 namespace searking {
 
@@ -8,53 +20,7 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   if (backtrace_dump_to_) {
     // https://stackoverflow.com/questions/16891019/how-to-avoid-using-printf-in-a-signal-handler
     write(fd_, "Sig(", strlen("Sig("));
-    int _signum = signum;
-
-    char nums[10] = {0};
-    int idx = 0;
-    do {
-      switch (_signum % 10) {
-      case 0:
-        nums[idx] = '0';
-        break;
-      case 1:
-        nums[idx] = '1';
-        break;
-      case 2:
-        nums[idx] = '2';
-        break;
-      case 3:
-        nums[idx] = '3';
-        break;
-      case 4:
-        nums[idx] = '4';
-        break;
-      case 5:
-        nums[idx] = '5';
-        break;
-      case 6:
-        nums[idx] = '6';
-        break;
-      case 7:
-        nums[idx] = '7';
-        break;
-      case 8:
-        nums[idx] = '8';
-        break;
-      case 9:
-        nums[idx] = '9';
-        break;
-      }
-      idx++;
-      _signum /= 10;
-    } while (_signum && idx < sizeof(nums) / sizeof(nums[0]));
-    auto cnt = idx;
-    for (auto i = 0; i < cnt / 2; i++) {
-      nums[i] = nums[i] ^ nums[cnt - 1 - i];
-      nums[cnt - 1 - i] = nums[i] ^ nums[cnt - 1 - i];
-      nums[i] = nums[i] ^ nums[cnt - 1 - i];
-    }
-    write(fd_, nums, cnt);
+    WriteInt(fd_, signum);
     write(fd_, ") Backtrace:\n", strlen(") Backtrace:\n"));
     backtrace_dump_to_(fd_);
     write(fd_, "Backtrace End\n", strlen("Backtrace End\n"));
@@ -94,7 +60,6 @@ void SignalHandler::RegisterOnSignal(
 void SignalHandler::SetSigactionHandlers(int signum,
                                          SIGNAL_SA_ACTION_CALLBACK action,
                                          SIGNAL_SA_HANDLER_CALLBACK handler) {
-
   std::lock_guard<std::mutex> lock(mutex_);
   sigactionHandlers_[signum] = std::make_pair(action, handler);
 }
@@ -154,4 +119,4 @@ int SignalHandler::SignalAction(int signum, SIGNAL_SA_ACTION_CALLBACK action,
   return sigaction(signum, &sa, nullptr);
 }
 
-} // namespace searking
+}  // namespace searking

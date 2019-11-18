@@ -3,6 +3,7 @@
 package cgo
 
 /*
+   #cgo CXXFLAGS: -rdynamic
    #cgo LDFLAGS: -ldl
    #include "signal.cgo.h"
    #include <stdio.h>
