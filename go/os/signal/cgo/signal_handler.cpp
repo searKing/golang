@@ -7,27 +7,45 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "signal_handler.h"
+#include "signal_handler.hpp"
 
 #include <string.h>
 
-#include "write_int.h"
+#include <boost/stacktrace.hpp>
+#include <fstream>
+#include <memory>
+#include <sstream>
+
+#include "write_int.hpp"
 
 namespace searking {
 
 // https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
 void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
-  if (backtrace_dump_to_) {
-    // https://stackoverflow.com/questions/16891019/how-to-avoid-using-printf-in-a-signal-handler
-    write(fd_, "Sig(", strlen("Sig("));
-    WriteInt(fd_, signum);
-    write(fd_, ") Backtrace:\n", strlen(") Backtrace:\n"));
-    backtrace_dump_to_(fd_);
-    write(fd_, "Backtrace End\n", strlen("Backtrace End\n"));
+  if (signal_dump_to_fd_ >= 0) {
+    write(signal_dump_to_fd_, "Signal received(", strlen("Signal received("));
+    WriteInt(signal_dump_to_fd_, signum);
+    write(signal_dump_to_fd_, ").\n", strlen(").\n"));
+    // binary format,not human readable.mute this.
+    //    write(signal_dump_to_fd_, "stacktrace dumped in binary format:\n",
+    //          strlen("stacktrace dumped in binary format:\n"));
+    //    boost::stacktrace::safe_dump_to(signal_dump_to_fd_);
+    //    write(signal_dump_to_fd_, "\n", strlen("\n"));
   }
 
-  auto it = sigactionHandlers_.find(signum);
-  if (it != sigactionHandlers_.end()) {
+  if (!stacktrace_dump_to_file_.empty()) {
+    if (signal_dump_to_fd_ >= 0) {
+      write(signal_dump_to_fd_,
+            "Backtrace dumped to file: ", strlen("Backtrace dumped to file: "));
+      write(signal_dump_to_fd_, stacktrace_dump_to_file_.c_str(),
+            stacktrace_dump_to_file_.length());
+      write(signal_dump_to_fd_, ".\n", strlen(".\n"));
+    }
+    boost::stacktrace::safe_dump_to(stacktrace_dump_to_file_.c_str());
+  }
+
+  auto it = cgo_sigaction_handlers_.find(signum);
+  if (it != cgo_sigaction_handlers_.end()) {
     auto handlers = it->second;
     SIGNAL_SA_ACTION_CALLBACK sa_sigaction_action = handlers.first;
     SIGNAL_SA_HANDLER_CALLBACK sa_sigaction_handler = handlers.second;
@@ -39,11 +57,11 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
     }
   }
 
-  void *onSignalCtx = onSignalCtx_;
-  auto onSignal = onSignal_;
+  void *on_signal_ctx = on_signal_ctx_;
+  auto on_signal = on_signal_;
 
-  if (onSignal) {
-    onSignal(onSignalCtx, fd_, signum, info, context);
+  if (on_signal) {
+    on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
   }
 }
 
@@ -53,29 +71,35 @@ void SignalHandler::RegisterOnSignal(
         callback,
     void *ctx) {
   std::lock_guard<std::mutex> lock(mutex_);
-  onSignalCtx_ = ctx;
-  onSignal_ = callback;
+  on_signal_ctx_ = ctx;
+  on_signal_ = callback;
 }
 
 void SignalHandler::SetSigactionHandlers(int signum,
                                          SIGNAL_SA_ACTION_CALLBACK action,
                                          SIGNAL_SA_HANDLER_CALLBACK handler) {
   std::lock_guard<std::mutex> lock(mutex_);
-  sigactionHandlers_[signum] = std::make_pair(action, handler);
+  auto it = cgo_sigaction_handlers_.find(signum);
+
+  // register once, avoid go's signal actions are lost.
+  if (it == cgo_sigaction_handlers_.end()) {
+    cgo_sigaction_handlers_[signum] = std::make_pair(action, handler);
+  }
 }
 
-void SignalHandler::SetFd(int fd) {
+void SignalHandler::SetSignalDumpToFd(int fd) {
   std::lock_guard<std::mutex> lock(mutex_);
-  fd_ = fd;
+  signal_dump_to_fd_ = fd;
 }
 
-void SignalHandler::SetBacktraceDumpTo(
-    std::function<void(int fd)> safe_dump_to) {
+void SignalHandler::SetSignalDumpToFd(FILE *fd) {
+  SetSignalDumpToFd(fileno(fd));
+}
+
+void SignalHandler::SetStacktraceDumpToFile(const std::string &name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  backtrace_dump_to_ = safe_dump_to;
+  stacktrace_dump_to_file_ = name;
 }
-
-void SignalHandler::SetFd(FILE *fd) { SetFd(fileno(fd)); }
 
 SignalHandler &SignalHandler::GetInstance() {
   static SignalHandler instance;
@@ -119,4 +143,41 @@ int SignalHandler::SignalAction(int signum, SIGNAL_SA_ACTION_CALLBACK action,
   return sigaction(signum, &sa, nullptr);
 }
 
+ssize_t SignalHandler::DumpPreviousHumanReadableStacktrace() {
+  std::ostringstream msg;
+  msg << "Previous run crashed:" << std::endl;
+
+  msg << SignalHandler::PreviousHumanReadableStacktrace();
+  auto fd = GetInstance().signal_dump_to_fd_;
+  if (fd < 0) {
+    return 0;
+  }
+
+  auto m = msg.str();
+  return write(fd, m.c_str(), m.length());
+}
+
+std::string SignalHandler::PreviousHumanReadableStacktrace() {
+  auto name = GetInstance().stacktrace_dump_to_file_;
+  if (name.empty()) {
+    return "";
+  }
+  std::ifstream ifs(name);
+  if (!ifs.good()) {
+    return "";
+  }
+
+  std::shared_ptr<int> deferFileCLose(nullptr, [&ifs](int *) {
+    // cleaning up
+    ifs.close();
+  });
+
+  // there is a backtrace
+  boost::stacktrace::stacktrace st =
+      boost::stacktrace::stacktrace::from_dump(ifs);
+  std::ostringstream msg;
+
+  msg << st << std::endl;
+  return msg.str();
+}
 }  // namespace searking

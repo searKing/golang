@@ -17,12 +17,22 @@ func signalAction(sigs ...os.Signal) {
 	}
 }
 
-// signalDumpTo redirect log to fd, stdout if not set.
-func signalDumpTo(fd int) {
-	cgo.SetFd(fd)
+// dumpSignalTo redirects log to fd, stdout if not set.
+func dumpSignalTo(fd int) {
+	cgo.SetSignalDumpToFd(fd)
 }
 
-// dumpBacktrace enables|disables log of bt when signal is triggered, disable if not set.
-func dumpBacktrace(enable bool) {
-	cgo.SetBacktraceDump(enable)
+// dumpStacktraceTo set dump file path of stacktrace when signal is triggered, nop if not set.
+func dumpStacktraceTo(name string) {
+	cgo.SetBacktraceDumpToFile(name)
+}
+
+// dumpPreviousStacktrace dumps human readable stacktrace to fd, which is set by SetSignalDumpToFd.
+func dumpPreviousStacktrace() {
+	cgo.DumpPreviousStacktrace()
+}
+
+// previousStacktrace returns a human readable stacktrace
+func previousStacktrace() string {
+	return cgo.PreviousStacktrace()
 }
