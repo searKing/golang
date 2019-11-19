@@ -94,14 +94,15 @@ import (
 	"go/format"
 	"go/token"
 	"go/types"
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/imports"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/imports"
 )
 
 var (

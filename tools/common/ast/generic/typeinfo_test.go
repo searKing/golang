@@ -7,9 +7,10 @@
 package generic_test
 
 import (
+	"testing"
+
 	"github.com/searKing/golang/tools/common/ast"
 	"github.com/searKing/golang/tools/common/ast/generic"
-	"testing"
 )
 
 type NewTest struct {

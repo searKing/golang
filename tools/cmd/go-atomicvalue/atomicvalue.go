@@ -51,18 +51,19 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	strings_ "github.com/searKing/golang/tools/common/strings"
 	"go/ast"
 	"go/format"
 	"go/token"
 	"go/types"
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/imports"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	strings_ "github.com/searKing/golang/tools/common/strings"
+	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/imports"
 )
 
 var (
