@@ -10,9 +10,9 @@ package generic
 import (
 	"bytes"
 	"fmt"
-	"github.com/searKing/golang/tools/common/ast"
-
 	"strings"
+
+	"github.com/searKing/golang/tools/common/ast"
 )
 
 type TemplateType struct {
