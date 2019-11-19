@@ -34,17 +34,47 @@ STACK_ABS_DIR=$(pwd)
 # You also need Go and Git installed.
 # masking all out put info!
 
-log_date() {
+function log_date() {
   echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&1
 }
 
-err_date() {
+function err_date() {
   echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
 }
 
-function set_default_var_param() {
-  g_cfg_force_mode=""         # #覆盖前永不提示-f
+function usage(){
+	cat<<USAGEEOF
+NAME
+    ${THIS_BASH_FILE_BASE_NAME} - Perform auto import of non go files.
+SYNOPSIS
+    ${THIS_BASH_FILE_BASE_NAME} [cmd list] [pkg_root_dir]...
+DESCRIPTION
+	  ${THIS_BASH_FILE_BASE_NAME} --[go mod vendor is not copying all files to the vendor folder](https://github.com/golang/go/issues/27832)
+		-h
+			get help info
+		-p
+			import prefix of pkg
+		pkg_root_dirs
+      root dirs of pkg to be scanned.
+CHEAT
+    ./github.sh <pkg_root_dir>
+    ./github.sh -p <pkg_import_prefix> <pkg_root_dir>
+    ./github.sh -p <pkg_import_prefix> <pkg_root_dir1> <pkg_root_dir2>
+AUTHOR 作者
+    由 searKing Chan 完成。
 
+DATE   日期
+    2019-11-19
+REPORTING BUGS 报告缺陷
+    向 searKingChan@gmail.com 报告缺陷。
+    report bugs to https://github.com/searKing/golang/issues.
+
+REFERENCE	参见
+	https://github.com/searKing/golang
+USAGEEOF
+}
+
+function set_default_var_param() {
   g_pkg_root_dirs=()          # 扫描并生成包的根目录列表
   g_pkg_root_import_prefix="" # 包根目录的前缀，如github.com/searKing/golang
 }
@@ -55,12 +85,8 @@ pushd "${THIS_BASH_FILE_ABS_DIR}" 1>/dev/null 2>&1 || exit
 popd 1>/dev/null 2>&1 || exit
 
 set_default_var_param #设置默认变量参数
-while getopts "fp:h" opt; do
+while getopts "p:h" opt; do
   case $opt in
-  f)
-    #覆盖前永不提示
-    g_cfg_force_mode=1
-    ;;
   h)
     usage
     exit 1
@@ -86,7 +112,6 @@ HELPEOF
 fi
 g_pkg_root_dirs=("$@")
 
-readonly g_cfg_force_mode
 readonly g_pkg_root_dirs
 readonly g_pkg_root_import_prefix
 
