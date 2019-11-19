@@ -35,9 +35,7 @@ typedef void (*SIGNAL_ON_BACKTRACE_DUMP_CALLBACK)(int fd);
 class SignalHandler {
  protected:
   SignalHandler()
-      : on_signal_ctx_(nullptr),
-        on_signal_(nullptr),
-        signal_dump_to_fd_(fileno(stdout)) {}
+      : on_signal_ctx_(nullptr), on_signal_(nullptr), signal_dump_to_fd_(-1) {}
 
  public:
   // Thread safe GetInstance.
