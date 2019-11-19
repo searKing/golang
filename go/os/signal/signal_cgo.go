@@ -17,7 +17,7 @@ func signalAction(sigs ...os.Signal) {
 	}
 }
 
-// dumpSignalTo redirects log to fd, stdout if not set.
+// dumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
 func dumpSignalTo(fd int) {
 	cgo.SetSignalDumpToFd(fd)
 }
