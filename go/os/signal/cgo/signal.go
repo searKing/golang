@@ -11,7 +11,11 @@ package cgo
    #include <stdlib.h>  // Needed for C.free
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+
+	_ "github.com/searKing/golang/go/os/signal/cgo/include"
+)
 
 // signalAction act as signal.Notify, which invokes the Go signal handler.
 // https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG

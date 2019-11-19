@@ -151,4 +151,3 @@ END
 done
 
 printf "\r\033[Kcgo-include-gen done...\n"
-popd 1>/dev/null 2>&1 || exit
