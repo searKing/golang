@@ -19,7 +19,7 @@ func SignalAction(sig int) {
 	C.CGOSignalHandlerSignalAction(C.int(sig))
 }
 
-// SetSignalDumpToFd redirect log to fd, stdout if not set.
+// SetSignalDumpToFd redirect log to fd, -1 if not set; muted if < 0.
 func SetSignalDumpToFd(fd int) { C.CGOSignalHandlerSetSignalDumpToFd(C.int(fd)) }
 
 // SetBacktraceDumpToFile set dump file path of stacktrace when signal is triggered, nop if not set.

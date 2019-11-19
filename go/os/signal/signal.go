@@ -11,7 +11,10 @@ import (
 )
 
 // enhance signal.Notify with stacktrace of cgo.
+// redirects signal log to stdout
 func init() {
+	DumpSignalTo(syscall.Stdout)
+
 	var dumpfile string
 	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {
 		dumpfile = f.Name()
@@ -32,7 +35,7 @@ func init() {
 	signalAction(sigsToDo...)
 }
 
-// DumpSignalTo redirects log to fd, stdout if not set; muted if < 0.
+// DumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
 func DumpSignalTo(fd int) {
 	dumpSignalTo(fd)
 }
