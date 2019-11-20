@@ -9,11 +9,9 @@
  */
 #ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_HPP_
 #define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_HPP_
-#include <signal.h>
-#include <stdio.h>
-#include <unistd.h>
-
 #include <atomic>
+#include <csignal>
+#include <cstdio>
 #include <functional>
 #include <map>
 #include <mutex>
