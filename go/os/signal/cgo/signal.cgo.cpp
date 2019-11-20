@@ -10,7 +10,6 @@
 #include "signal.cgo.h"
 
 #include <algorithm>
-#include <iostream>
 
 #include "signal_handler.hpp"
 
@@ -19,21 +18,20 @@ int CGOSignalHandlerSignalAction(int signum) {
 }
 
 void CGOSignalHandlerSetSignalDumpToFd(int fd) {
-  searking::SignalHandler::GetInstance().SetSignalDumpToFd(fd);
+  searking::SignalHandler::SetSignalDumpToFd(fd);
 }
 
 void CGOSignalHandlerSetStacktraceDumpToFile(char* name) {
-  searking::SignalHandler::GetInstance().SetStacktraceDumpToFile(name);
+  searking::SignalHandler::SetStacktraceDumpToFile(name);
 }
 
-void CGOSignalHandlerDumpPreviousHumanReadableStacktrace() {
-  searking::SignalHandler::GetInstance().DumpPreviousHumanReadableStacktrace();
+void CGOSignalHandlerDumpPreviousStacktrace() {
+  searking::SignalHandler::DumpPreviousStacktrace();
 }
 
 // don't forget to free the string after finished using it
-char* CGOPreviousHumanReadableStacktrace() {
-  auto str =
-      searking::SignalHandler::GetInstance().PreviousHumanReadableStacktrace();
+char* CGOPreviousStacktrace() {
+  auto str = searking::SignalHandler::PreviousStacktrace();
 
   char* writable = static_cast<char*>(malloc((str.size() + 1) * sizeof(char)));
   std::copy(str.begin(), str.end(), writable);

@@ -18,8 +18,8 @@ extern "C" {
 int CGOSignalHandlerSignalAction(int signum);
 void CGOSignalHandlerSetSignalDumpToFd(int fd);
 void CGOSignalHandlerSetStacktraceDumpToFile(char* name);
-void CGOSignalHandlerDumpPreviousHumanReadableStacktrace();
-char* CGOPreviousHumanReadableStacktrace();
+void CGOSignalHandlerDumpPreviousStacktrace();
+char* CGOPreviousStacktrace();
 
 #ifdef __cplusplus
 }

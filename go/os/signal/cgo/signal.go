@@ -4,8 +4,9 @@ package cgo
 
 /*
 	#cgo CXXFLAGS: -I${SRCDIR}/include/
-	#cgo darwin CXXFLAGS: -g -D_GNU_SOURCE
-	#cgo !darwin CXXFLAGS: -g
+	#cgo windows CXXFLAGS: -g -DUSE_WINDOWS_SIGNAL_HANDLER
+	#cgo darwin CXXFLAGS: -g -D_GNU_SOURCE -DUSE_UNIX_SIGNAL_HANDLER
+	#cgo !windows,!darwin CXXFLAGS: -g -DUSE_UNIX_SIGNAL_HANDLER
 	#cgo linux LDFLAGS: -ldl
 
 	#include "signal.cgo.h"
@@ -37,12 +38,12 @@ func SetBacktraceDumpToFile(name string) {
 
 // DumpPreviousStacktrace dumps human readable stacktrace to fd, which is set by SetSignalDumpToFd.
 func DumpPreviousStacktrace() {
-	C.CGOSignalHandlerDumpPreviousHumanReadableStacktrace()
+	C.CGOSignalHandlerDumpPreviousStacktrace()
 }
 
 // PreviousStacktrace returns a human readable stacktrace
 func PreviousStacktrace() string {
-	stacktraceChars := C.CGOPreviousHumanReadableStacktrace()
+	stacktraceChars := C.CGOPreviousStacktrace()
 	defer C.free(unsafe.Pointer(stacktraceChars))
 	return C.GoString(stacktraceChars)
 }
