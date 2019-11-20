@@ -3,12 +3,14 @@
 package cgo
 
 /*
-   #cgo CXXFLAGS: -I${SRCDIR}/include/
-   #cgo darwin CXXFLAGS: -g -D_GNU_SOURCE
-   #cgo !darwin CXXFLAGS:
-   #include "signal.cgo.h"
-   #include <stdio.h>
-   #include <stdlib.h>  // Needed for C.free
+	#cgo CXXFLAGS: -I${SRCDIR}/include/
+	#cgo darwin CXXFLAGS: -g -D_GNU_SOURCE
+	#cgo !darwin CXXFLAGS: -g
+	#cgo linux LDFLAGS: -ldl
+
+	#include "signal.cgo.h"
+	#include <stdio.h>
+   	#include <stdlib.h>  // Needed for C.free
 */
 import "C"
 import (
