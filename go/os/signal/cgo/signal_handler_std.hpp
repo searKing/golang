@@ -25,6 +25,7 @@ namespace searking {
 
 typedef void (*SignalHandlerStdSignalHandler)(int signum);
 
+// Never used this Handler in cgo, for go needs
 class SignalHandlerStd : public BaseSignalHandler {
  protected:
   SignalHandlerStd() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
