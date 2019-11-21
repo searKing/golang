@@ -31,19 +31,26 @@ SignalHandlerStd &SignalHandlerStd::GetInstance() {
 void SignalHandlerStd::operator()(int signum) {
   WriteSignalStacktrace(signum);
 
-  auto it = go_registered_handlers_.find(signum);
-  if (it != go_registered_handlers_.end()) {
-    SignalHandlerStdSignalHandler handler = it->second;
-    if (handler) {
-      handler(signum);
-    }
-  }
-
   void *on_signal_ctx = on_signal_ctx_;
   auto on_signal = on_signal_;
 
   if (on_signal) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum);
+  }
+
+  auto it = go_registered_handlers_.find(signum);
+  if (it != go_registered_handlers_.end()) {
+    SignalHandlerStdSignalHandler handler = it->second;
+
+    if (handler == SIG_IGN) {
+      return;
+    }
+    if (handler == SIG_DFL) {
+      ::signal(signum, SIG_DFL);
+      ::raise(signum);
+      return;
+    }
+    handler(signum);
   }
 }
 
@@ -77,6 +84,7 @@ SignalHandlerStdSignalHandler SignalHandlerStd::Signal(
     int signum, SignalHandlerStdSignalHandler handler) {
   SignalHandlerStdSignalHandler prev_handler = ::signal(signum, SIG_DFL);
   SetGoRegisteredSignalHandlersIfEmpty(signum, prev_handler);
+
   return ::signal(signum, handler);
 }
 

@@ -29,24 +29,41 @@ SignalHandlerUnix &SignalHandlerUnix::GetInstance() {
 void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
   WriteSignalStacktrace(signum);
 
-  auto it = go_registered_handlers_.find(signum);
-  if (it != go_registered_handlers_.end()) {
-    auto handlers = it->second;
-    SignalHandlerSigActionHandler sa_sigaction_action = handlers.first;
-    SignalHandlerSignalHandler sa_sigaction_handler = handlers.second;
-    if (sa_sigaction_action) {
-      sa_sigaction_action(signum, info, context);
-    }
-    if (sa_sigaction_handler) {
-      sa_sigaction_handler(signum);
-    }
-  }
-
   void *on_signal_ctx = on_signal_ctx_;
   auto on_signal = on_signal_;
 
   if (on_signal) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
+  }
+
+  auto it = go_registered_handlers_.find(signum);
+  if (it != go_registered_handlers_.end()) {
+    auto handlers = it->second;
+    SignalHandlerSigActionHandler sigActionHandler = handlers.first;
+    SignalHandlerSignalHandler signalHandler = handlers.second;
+
+    // http://man7.org/linux/man-pages/man7/signal.7.html
+    if (sigActionHandler) {
+      sigActionHandler(signum, info, context);
+      return;
+    }
+    if (signalHandler == SIG_IGN) {
+      return;
+    }
+    if (signalHandler == SIG_DFL) {
+      struct sigaction preSa;
+      memset(&preSa, 0, sizeof(preSa));
+      sigaction(signum, nullptr, &preSa);
+
+      preSa.sa_sigaction = nullptr;
+      preSa.sa_handler = SIG_DFL;
+
+      sigaction(signum, &preSa, nullptr);
+      raise(signum);
+      return;
+    }
+
+    signalHandler(signum);
   }
 }
 
