@@ -13,8 +13,8 @@
 
 #include "signal_handler.hpp"
 
-int CGOSignalHandlerSignalAction(int signum) {
-  return searking::SignalHandler::SignalAction(signum);
+int CGOSignalHandlerSetSig(int signum) {
+  return searking::SignalHandler::SetSig(signum);
 }
 
 void CGOSignalHandlerSetSignalDumpToFd(int fd) {

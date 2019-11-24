@@ -32,7 +32,7 @@ func init() {
 	if len(sigsToDo) == 0 {
 		return
 	}
-	signalAction(sigsToDo...)
+	setSig(sigsToDo...)
 }
 
 // DumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
