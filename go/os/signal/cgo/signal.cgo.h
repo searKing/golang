@@ -9,17 +9,24 @@
  */
 #ifndef GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
 #define GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
+#include <signal.h>
 #include <stdbool.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// Callbacks Predefinations
+
+typedef void (*CGOSignalHandlerSigActionHandler)(void *ctx, int fd, int signum,
+                                                 siginfo_t *info,
+                                                 void *context);
 int CGOSignalHandlerSetSig(int signum);
 void CGOSignalHandlerSetSignalDumpToFd(int fd);
-void CGOSignalHandlerSetStacktraceDumpToFile(char* name);
+void CGOSignalHandlerSetStacktraceDumpToFile(char *name);
+void CGOSignalHandlerRegisterOnSignal(CGOSignalHandlerSigActionHandler callback,
+                                      void *ctx);
 void CGOSignalHandlerDumpPreviousStacktrace();
-char* CGOPreviousStacktrace();
+char *CGOPreviousStacktrace();
 
 #ifdef __cplusplus
 }
