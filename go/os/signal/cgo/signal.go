@@ -22,8 +22,8 @@ import (
 
 // signalAction act as signal.Notify, which invokes the Go signal handler.
 // https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
-func SignalAction(sig int) {
-	C.CGOSignalHandlerSignalAction(C.int(sig))
+func SetSig(sig int) {
+	C.CGOSignalHandlerSetSig(C.int(sig))
 }
 
 // SetSignalDumpToFd redirect log to fd, -1 if not set; muted if < 0.

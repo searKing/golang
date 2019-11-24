@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-int CGOSignalHandlerSignalAction(int signum);
+int CGOSignalHandlerSetSig(int signum);
 void CGOSignalHandlerSetSignalDumpToFd(int fd);
 void CGOSignalHandlerSetStacktraceDumpToFile(char* name);
 void CGOSignalHandlerDumpPreviousStacktrace();

@@ -13,7 +13,7 @@
 namespace searking {
 class SignalHandler {
  public:
-  static int SignalAction(int signum);
+  static int SetSig(int signum);
   static void SetSignalDumpToFd(int fd);
   static void SetStacktraceDumpToFile(char* name);
   static void DumpPreviousStacktrace();
