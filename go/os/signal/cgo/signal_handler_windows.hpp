@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
-#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
+#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP_
+#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP_
 
 #if defined(USE_UNIX_SIGNAL_HANDLER)
 
@@ -31,9 +31,9 @@ typedef void (*SignalHandlerSigActionHandler)(int signum, siginfo_t *info,
                                               void *context);
 typedef void (*SignalHandlerSignalHandler)(int signum);
 
-class SignalHandlerUnix : public BaseSignalHandler {
+class SignalHandlerWindows : public BaseSignalHandler {
  protected:
-  SignalHandlerUnix() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
+  SignalHandlerWindows() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
 
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
@@ -41,7 +41,7 @@ class SignalHandlerUnix : public BaseSignalHandler {
 
  public:
   // Thread safe GetInstance.
-  static SignalHandlerUnix &GetInstance();
+  static SignalHandlerWindows &GetInstance();
 
   void operator()(int signum, siginfo_t *info, void *context);
   void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
@@ -49,9 +49,9 @@ class SignalHandlerUnix : public BaseSignalHandler {
                             callback,
                         void *ctx);
 
-  static int SetSig(int signum);
-  static int SetSig(int signum, SignalHandlerSigActionHandler action,
-                    SignalHandlerSignalHandler handler);
+  static int SignalAction(int signum);
+  static int SignalAction(int signum, SignalHandlerSigActionHandler action,
+                          SignalHandlerSignalHandler handler);
 
  private:
   void *on_signal_ctx_;
@@ -63,9 +63,9 @@ class SignalHandlerUnix : public BaseSignalHandler {
       go_registered_handlers_;
 
  private:
-  SignalHandlerUnix(const SignalHandlerUnix &) = delete;
-  void operator=(const SignalHandlerUnix &) = delete;
+  SignalHandlerWindows(const SignalHandlerWindows &) = delete;
+  void operator=(const SignalHandlerWindows &) = delete;
 };
 }  // namespace searking
 #endif
-#endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
+#endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP_

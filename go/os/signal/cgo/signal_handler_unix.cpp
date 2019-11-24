@@ -87,19 +87,18 @@ void SignalHandlerUnix::SetGoRegisteredSignalHandlersIfEmpty(
   }
 }
 
-int SignalHandlerUnix::SignalAction(int signum) {
+int SignalHandlerUnix::SetSig(int signum) {
   SignalHandlerSigActionHandler sa_sigaction_action = nullptr;
   SignalHandlerSignalHandler sa_sigaction_handler = nullptr;
   sa_sigaction_action = [](int signum, siginfo_t *info, void *context) {
     GetInstance()(signum, info, context);
   };
 
-  return SignalAction(signum, sa_sigaction_action, sa_sigaction_handler);
+  return SetSig(signum, sa_sigaction_action, sa_sigaction_handler);
 }
 
-int SignalHandlerUnix::SignalAction(int signum,
-                                    SignalHandlerSigActionHandler action,
-                                    SignalHandlerSignalHandler handler) {
+int SignalHandlerUnix::SetSig(int signum, SignalHandlerSigActionHandler action,
+                              SignalHandlerSignalHandler handler) {
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
   sigaction(signum, nullptr, &sa);

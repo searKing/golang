@@ -18,10 +18,10 @@
 #endif
 namespace searking {
 
-int SignalHandler::SignalAction(int signum) {
+int SignalHandler::SetSig(int signum) {
 #if defined(USE_UNIX_SIGNAL_HANDLER)
   // Yes it is a UNIX because __unix__ is defined.
-  return SignalHandlerUnix::GetInstance().SignalAction(signum);
+  return SignalHandlerUnix::GetInstance().SetSig(signum);
 #elif defined(USE_WINDOWS_SIGNAL_HANDLER)
 #else
   SignalHandlerStd::GetInstance().Signal(signum);

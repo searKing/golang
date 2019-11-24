@@ -2,8 +2,8 @@
 
 package signal
 
-// signalAction is fake for cgo
-func signalAction(sigs ...os.Signal) {
+// setSig is fake for cgo
+func setSig(sigs ...os.Signal) {
 }
 
 // dumpSignalTo is fake for cgo

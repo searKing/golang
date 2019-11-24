@@ -9,11 +9,11 @@ import (
 	"github.com/searKing/golang/go/os/signal/cgo"
 )
 
-// signalAction act as signal.Notify, which invokes the Go signal handler.
+// SetSig act as signal.Notify, which invokes the Go signal handler.
 // https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
-func signalAction(sigs ...os.Signal) {
+func setSig(sigs ...os.Signal) {
 	for _, sig := range sigs {
-		cgo.SignalAction(Signum(sig))
+		cgo.SetSig(Signum(sig))
 	}
 }
 
