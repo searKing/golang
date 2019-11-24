@@ -41,7 +41,7 @@ void SignalHandler::SetSignalDumpToFd(int fd) {
 #endif
 }
 
-void SignalHandler::SetStacktraceDumpToFile(char* name) {
+void SignalHandler::SetStacktraceDumpToFile(char *name) {
 #if defined(USE_UNIX_SIGNAL_HANDLER)
   // Yes it is a UNIX because __unix__ is defined.
   SignalHandlerUnix::GetInstance().SetStacktraceDumpToFile(name);
@@ -52,6 +52,23 @@ void SignalHandler::SetStacktraceDumpToFile(char* name) {
 #endif
   return;
 }
+
+void SignalHandler::RegisterOnSignal(
+    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
+                       void *context)>
+        callback,
+    void *ctx) {
+#if defined(USE_UNIX_SIGNAL_HANDLER)
+  // Yes it is a UNIX because __unix__ is defined.
+  SignalHandlerUnix::GetInstance().RegisterOnSignal(callback, ctx);
+#elif defined(USE_WINDOWS_SIGNAL_HANDLER)
+#else
+  SignalHandlerStd::GetInstance().RegisterOnSignal(callback, ctx);
+  return;
+#endif
+  return;
+}
+
 void SignalHandler::DumpPreviousStacktrace() {
 #if defined(USE_UNIX_SIGNAL_HANDLER)
   // Yes it is a UNIX because __unix__ is defined.

@@ -14,6 +14,7 @@ import (
 // redirects signal log to stdout
 func init() {
 	DumpSignalTo(syscall.Stdout)
+	RegisterOnSignal(OnSignalHandlerFunc(func(signum os.Signal) {}))
 
 	var dumpfile string
 	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {
@@ -35,6 +36,16 @@ func init() {
 	setSig(sigsToDo...)
 }
 
+type OnSignalHandler interface {
+	OnSignal(signum os.Signal)
+}
+
+type OnSignalHandlerFunc func(signum os.Signal)
+
+func (f OnSignalHandlerFunc) OnSignal(signum os.Signal) {
+	f(signum)
+}
+
 // DumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
 func DumpSignalTo(fd int) {
 	dumpSignalTo(fd)
@@ -44,6 +55,10 @@ func DumpSignalTo(fd int) {
 // "*.stacktrace.dump" under a temp dir if not set.
 func DumpStacktraceTo(name string) {
 	dumpStacktraceTo(name)
+}
+
+func RegisterOnSignal(onSignal OnSignalHandler) {
+	registerOnSignal(onSignal)
 }
 
 // DumpPreviousStacktrace dumps the previous human readable stacktrace to fd, which is set by SetSignalDumpToFd.
