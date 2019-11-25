@@ -27,7 +27,7 @@ func dumpStacktraceTo(name string) {
 	cgo.SetBacktraceDumpToFile(name)
 }
 
-func registerOnSignal(onSignal OnSignalHandler){
+func registerOnSignal(onSignal OnSignalHandler) {
 	cgo.RegisterOnSignal(onSignal)
 }
 
@@ -39,4 +39,9 @@ func dumpPreviousStacktrace() {
 // previousStacktrace returns a human readable stacktrace
 func previousStacktrace() string {
 	return cgo.PreviousStacktrace()
+}
+
+// setSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
+func setSigInvokeChain(from, to, wait, sleepInSeconds int) {
+	cgo.SetSigInvokeChain(from, to, wait, sleepInSeconds)
 }

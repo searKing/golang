@@ -24,3 +24,7 @@ func dumpPreviousStacktrace() {
 // previousStacktrace is fake for cgo
 func previousStacktrace() string {
 }
+
+// setSigInvokeChain is fake for cgo
+func setSigInvokeChain(from, to, wait, sleepInSeconds int) {
+}

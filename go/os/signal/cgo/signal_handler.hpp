@@ -22,6 +22,9 @@ class SignalHandler {
 
   static void DumpPreviousStacktrace();
   static std::string PreviousStacktrace();
+
+  static void SetSigInvokeChain(const int from, const int to, const int wait,
+                                const int sleepInSeconds);
 };
 }  // namespace searking
 #endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_HPP_

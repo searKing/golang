@@ -28,17 +28,17 @@ import (
 // signalAction act as signal.Notify, which invokes the Go signal handler.
 // https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
 func SetSig(sig int) {
-	C.CGOSignalHandlerSetSig(C.int(sig))
+	C.CGO_SignalHandlerSetSig(C.int(sig))
 }
 
 // SetSignalDumpToFd redirect log to fd, -1 if not set; muted if < 0.
-func SetSignalDumpToFd(fd int) { C.CGOSignalHandlerSetSignalDumpToFd(C.int(fd)) }
+func SetSignalDumpToFd(fd int) { C.CGO_SignalHandlerSetSignalDumpToFd(C.int(fd)) }
 
 // SetBacktraceDumpToFile set dump file path of stacktrace when signal is triggered, nop if not set.
 func SetBacktraceDumpToFile(name string) {
 	cs := C.CString(name)
 	defer C.free(unsafe.Pointer(cs))
-	C.CGOSignalHandlerSetStacktraceDumpToFile(cs)
+	C.CGO_SignalHandlerSetStacktraceDumpToFile(cs)
 }
 
 type emptyContext struct {
@@ -51,19 +51,24 @@ func RegisterOnSignal(onSignal onSignalHandler) {
 
 	ctx := unsafe.Pointer(&emptyContext{})
 	globals.Store(uintptr(ctx), onSignal)
-	C.CGOSignalHandlerRegisterOnSignal(C.CGOSignalHandlerSigActionHandler(GetGlobalOnSignal()), ctx)
+	C.CGO_SignalHandlerRegisterOnSignal(C.CGO_SignalHandlerSigActionHandler(GetGlobalOnSignal()), ctx)
 }
 
 // DumpPreviousStacktrace dumps human readable stacktrace to fd, which is set by SetSignalDumpToFd.
 func DumpPreviousStacktrace() {
-	C.CGOSignalHandlerDumpPreviousStacktrace()
+	C.CGO_SignalHandlerDumpPreviousStacktrace()
 }
 
 // PreviousStacktrace returns a human readable stacktrace
 func PreviousStacktrace() string {
-	stacktraceChars := C.CGOPreviousStacktrace()
+	stacktraceChars := C.CGO_PreviousStacktrace()
 	defer C.free(unsafe.Pointer(stacktraceChars))
 	return C.GoString(stacktraceChars)
+}
+
+// PreviousStacktrace sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
+func SetSigInvokeChain(from, to, wait, sleepInSeconds int) {
+	C.CGO_SetSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
 }
 
 //

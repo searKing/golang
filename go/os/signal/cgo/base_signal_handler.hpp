@@ -10,7 +10,9 @@
 #ifndef GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_
 #define GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_
 #include <cstdio>
+#include <map>
 #include <string>
+#include <tuple>
 namespace searking {
 class BaseSignalHandler {
  protected:
@@ -28,9 +30,14 @@ class BaseSignalHandler {
   ssize_t DumpPreviousStacktrace();
   std::string PreviousStacktrace();
 
+  void SetSigInvokeChain(const int from, const int to, const int wait,
+                         const int sleepInSeconds);
+
  protected:
   int signal_dump_to_fd_;
   std::string stacktrace_dump_to_file_;
+  // <from, <from, to, wait, sleepInSeconds>>
+  std::map<int, std::tuple<int, int, int, int>> sig_invoke_chains_;
 };
 }  // namespace searking
 #endif  // GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_

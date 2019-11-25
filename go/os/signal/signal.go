@@ -4,6 +4,7 @@ import "C"
 import (
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"syscall"
 
@@ -26,15 +27,6 @@ func init() {
 
 	DumpStacktraceTo(dumpfile)
 	defer os.Remove(dumpfile)
-
-	var sigsToDo []os.Signal
-	for n := 0; n < numSig; n++ {
-		sigsToDo = append(sigsToDo, syscall.Signal(n))
-	}
-	if len(sigsToDo) == 0 {
-		return
-	}
-	setSig(sigsToDo...)
 }
 
 type OnSignalHandler interface {
@@ -45,6 +37,18 @@ type OnSignalHandlerFunc func(signum os.Signal)
 
 func (f OnSignalHandlerFunc) OnSignal(signum os.Signal) {
 	f(signum)
+}
+
+// Notify act as signal.Notify, which invokes the Go signal handler.
+// https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
+func Notify(c chan<- os.Signal, sigs ...os.Signal) {
+	if len(sigs) == 0 {
+		for n := 0; n < numSig; n++ {
+			sigs = append(sigs, syscall.Signal(n))
+		}
+	}
+	setSig(sigs...)
+	signal.Notify(c, sigs...)
 }
 
 // DumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
@@ -70,4 +74,11 @@ func DumpPreviousStacktrace() {
 // PreviousStacktrace returns a human readable stacktrace
 func PreviousStacktrace() string {
 	return previousStacktrace()
+}
+
+// SetSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
+func SetSigInvokeChain(to os.Signal, wait os.Signal, sleepInSeconds int, froms ...os.Signal) {
+	for _, from := range froms {
+		setSigInvokeChain(Signum(from), Signum(to), Signum(wait), sleepInSeconds)
+	}
 }

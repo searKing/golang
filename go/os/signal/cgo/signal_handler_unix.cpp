@@ -34,10 +34,30 @@ void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
   }
 
-  if (signum == SIGSEGV) {
-    InvokeGoSignalHandler(SIGUSR1, info, context);
+  auto it = sig_invoke_chains_.find(signum);
+  if (it != sig_invoke_chains_.end()) {
+    auto &sig_chain = it->second;
+    int from = std::get<0>(sig_chain);
+    // consist validatation
+    if (from == signum) {
+      int to = std::get<1>(sig_chain);
+      int wait = std::get<2>(sig_chain);
+      int sleepInSeconds = std::get<3>(sig_chain);
+      if (to >= 0) {
+        InvokeGoSignalHandler(to, info, context);
+      }
+      if (wait >= 0) {
+        sigset_t waitmask;
+        sigemptyset(&waitmask);
+        sigaddset(&waitmask, wait);
+        sigwait(&waitmask, nullptr);
+      }
+      if (sleepInSeconds > 0) {
+        sleep(sleepInSeconds);
+      }
+    }
   }
-  sleep(10);
+
   InvokeGoSignalHandler(signum, info, context);
 }
 
