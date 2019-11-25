@@ -47,10 +47,20 @@ void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
         InvokeGoSignalHandler(to, info, context);
       }
       if (wait >= 0) {
-        sigset_t waitmask;
-        sigemptyset(&waitmask);
-        sigaddset(&waitmask, wait);
-        sigwait(&waitmask, nullptr);
+        sigset_t ignoremask;
+        sigfillset(&ignoremask);
+        sigdelset(&ignoremask, wait);
+
+        // Block {from} and save current signal mask.
+        sigset_t new_set, old_set;
+        sigemptyset(&new_set);
+        sigaddset(&new_set, wait);
+        sigprocmask(SIG_BLOCK, &new_set, &old_set);
+        // Pause, allowing all signals except {wait}.
+        sigsuspend(&ignoremask);
+
+        // Reset signal mask which unblocks {wait}.
+        sigprocmask(SIG_SETMASK, &old_set, nullptr);
       }
       if (sleepInSeconds > 0) {
         sleep(sleepInSeconds);

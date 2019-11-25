@@ -47,8 +47,8 @@ func Notify(c chan<- os.Signal, sigs ...os.Signal) {
 			sigs = append(sigs, syscall.Signal(n))
 		}
 	}
-	setSig(sigs...)
 	signal.Notify(c, sigs...)
+	setSig(sigs...)
 }
 
 // DumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
