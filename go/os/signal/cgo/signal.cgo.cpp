@@ -27,14 +27,7 @@ void CGOSignalHandlerSetStacktraceDumpToFile(char* name) {
 
 void CGOSignalHandlerRegisterOnSignal(CGOSignalHandlerSigActionHandler callback,
                                       void* ctx) {
-  searking::SignalHandler::RegisterOnSignal(
-      [callback](void* ctx, int fd, int signum, siginfo_t* info,
-                 void* context) {
-        if (callback) {
-          callback(ctx, fd, signum, info, context);
-        }
-      },
-      ctx);
+  searking::SignalHandler::RegisterOnSignal(callback, ctx);
 }
 
 void CGOSignalHandlerDumpPreviousStacktrace() {

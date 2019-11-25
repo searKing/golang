@@ -16,13 +16,24 @@ func ExampleDumpSignalTo() {
 	// We must use a buffered channel or risk missing the signal
 	// if we're not ready to receive when the signal is sent.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT)
+	//signal.Notify(c, syscall.SIGINT, syscall.SIGSEGV)
+	signal.Notify(c)
 
 	// simulate to send a SIGINT to this example test
 	go func() {
-		_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGQUIT)
+		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGSEGV)
+		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGFPE)
+		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGSEGV)
+		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGSEGV)
+		//internal.Raise(syscall.SIGSEGV)
+
+		time.Sleep(time.Second)
+		var err error
+		fmt.Println(err.Error())
 	}()
-	for{
+	for {
 		// Block until a signal is received.
 		select {
 		case s, ok := <-c:
@@ -31,9 +42,12 @@ func ExampleDumpSignalTo() {
 			}
 			fmt.Printf("Got signal: %s\n", s)
 			_, _ = fmt.Fprintf(os.Stderr, "Previous run crashed:\n%s\n", signal_.PreviousStacktrace())
-			signal.Stop(c)
-			close(c)
-		case <-time.After(time.Second):
+			//signal.Stop(c)
+			//close(c)
+			//_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
+			//panic("abort")
+
+		case <-time.After(time.Minute):
 			_, _ = fmt.Fprintf(os.Stderr, "time overseed:\n")
 			return
 		}
