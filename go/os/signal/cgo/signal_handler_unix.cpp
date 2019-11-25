@@ -24,18 +24,25 @@ SignalHandlerUnix &SignalHandlerUnix::GetInstance() {
   static SignalHandlerUnix instance;
   return instance;
 }
-
 // https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
 void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
   WriteSignalStacktrace(signum);
 
   void *on_signal_ctx = on_signal_ctx_;
   auto on_signal = on_signal_;
-
   if (on_signal) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
   }
 
+  if (signum == SIGSEGV) {
+    InvokeGoSignalHandler(SIGUSR1, info, context);
+  }
+  sleep(10);
+  InvokeGoSignalHandler(signum, info, context);
+}
+
+void SignalHandlerUnix::InvokeGoSignalHandler(int signum, siginfo_t *info,
+                                              void *context) {
   auto it = go_registered_handlers_.find(signum);
   if (it != go_registered_handlers_.end()) {
     auto handlers = it->second;
@@ -67,11 +74,8 @@ void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
   }
 }
 
-void SignalHandlerUnix::RegisterOnSignal(
-    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                       void *context)>
-        callback,
-    void *ctx) {
+void SignalHandlerUnix::RegisterOnSignal(SignalHandlerOnSignal callback,
+                                         void *ctx) {
   on_signal_ctx_ = ctx;
   on_signal_ = callback;
 }
@@ -99,6 +103,14 @@ int SignalHandlerUnix::SetSig(int signum) {
 
 int SignalHandlerUnix::SetSig(int signum, SignalHandlerSigActionHandler action,
                               SignalHandlerSignalHandler handler) {
+  stack_t ss;
+  sigaltstack(NULL, &ss);
+  ss.ss_sp = malloc(SIGSTKSZ * 100);
+  ss.ss_size = SIGSTKSZ * 100;
+  ss.ss_flags = 0;
+  if (sigaltstack(&ss, NULL) == -1) {
+    return EXIT_FAILURE;
+  }
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
   sigaction(signum, nullptr, &sa);

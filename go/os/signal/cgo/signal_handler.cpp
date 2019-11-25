@@ -53,11 +53,11 @@ void SignalHandler::SetStacktraceDumpToFile(char *name) {
   return;
 }
 
-void SignalHandler::RegisterOnSignal(
-    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                       void *context)>
-        callback,
-    void *ctx) {
+void SignalHandler::RegisterOnSignal(void (*callback)(void *ctx, int fd,
+                                                      int signum,
+                                                      siginfo_t *info,
+                                                      void *context),
+                                     void *ctx) {
 #if defined(USE_UNIX_SIGNAL_HANDLER)
   // Yes it is a UNIX because __unix__ is defined.
   SignalHandlerUnix::GetInstance().RegisterOnSignal(callback, ctx);
