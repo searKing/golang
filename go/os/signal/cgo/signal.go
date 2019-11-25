@@ -18,6 +18,8 @@ package cgo
 */
 import "C"
 import (
+	"fmt"
+	"syscall"
 	"unsafe"
 
 	_ "github.com/searKing/golang/go/os/signal/cgo/include"
@@ -49,7 +51,6 @@ func RegisterOnSignal(onSignal onSignalHandler) {
 
 	ctx := unsafe.Pointer(&emptyContext{})
 	globals.Store(uintptr(ctx), onSignal)
-
 	C.CGOSignalHandlerRegisterOnSignal(C.CGOSignalHandlerSigActionHandler(GetGlobalOnSignal()), ctx)
 }
 
@@ -75,13 +76,13 @@ func GetGlobalOnSignal() unsafe.Pointer {
 
 //export GlobalOnSignal
 func GlobalOnSignal(ctx unsafe.Pointer, fd C.int, signum C.int, info *C.siginfo_t, context unsafe.Pointer) {
-	//fmt.Printf("GlobalOnSignal\n")
-	//
-	//global, ok := globals.Load(uintptr(ctx))
-	//if !ok {
-	//	fmt.Printf("Global is missing\n")
-	//	return
-	//}
-	//
-	//global.OnSignal(syscall.Signal(signum))
+	fmt.Printf("GlobalOnSignal\n")
+
+	global, ok := globals.Load(uintptr(ctx))
+	if !ok {
+		fmt.Printf("Global is missing\n")
+		return
+	}
+
+	global.OnSignal(syscall.Signal(signum))
 }

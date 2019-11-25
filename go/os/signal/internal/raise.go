@@ -12,20 +12,27 @@
 
 package internal
 /*
-	#cgo CXXFLAGS: -I${SRCDIR}/include/
-	#cgo windows CXXFLAGS: -g -DUSE_WINDOWS_SIGNAL_HANDLER
-	#cgo darwin CXXFLAGS: -g -D_GNU_SOURCE -DUSE_UNIX_SIGNAL_HANDLER
-	#cgo !windows,!darwin CXXFLAGS: -g -DUSE_UNIX_SIGNAL_HANDLER
-	#cgo linux LDFLAGS: -ldl
 
-	#include "raise.cgo.h"
+	#include <signal.h>
 	#include <stdio.h>
 	#include <stdbool.h>
    	#include <stdlib.h>  // Needed for C.free
+
+	int CallSignalRaise(int signum){
+		return raise(signum);
+	}
+
+	int CallRaise(int signum){
+		return CallSignalRaise(signum);
+	}
 */
 import "C"
+import (
+	"syscall"
 
-// MustSegmentFault must send a SIGSEGV from cgo
-func MustSegmentFault(){
-	C.MustSegmentFault()
+	"github.com/searKing/golang/go/os/signal"
+)
+
+func Raise(sig syscall.Signal) int{
+	return int(C.CallRaise(C.int(signal.Signum(sig))))
 }

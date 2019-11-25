@@ -9,10 +9,7 @@
  */
 #include "raise.cgo.h"
 
-void MustSegmentFault() {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wc++11-compat-deprecated-writable-strings"
-  char* c = "hello world";
-  c[1] = 'H';
-#pragma GCC diagnostic pop
-}
+#include <stdlib.h>
+
+#include <csignal>
+void Raise(int signum) { ::raise(signum); }

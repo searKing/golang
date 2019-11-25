@@ -13,10 +13,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// just for test
-void MustSegmentFault();
-
+void Raise(int signum);
 #ifdef __cplusplus
 }
 #endif

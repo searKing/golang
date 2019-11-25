@@ -16,11 +16,9 @@ class SignalHandler {
   static int SetSig(int signum);
   static void SetSignalDumpToFd(int fd);
   static void SetStacktraceDumpToFile(char *name);
-  static void RegisterOnSignal(
-      std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                         void *context)>
-          callback,
-      void *ctx);
+  static void RegisterOnSignal(void (*callback)(void *ctx, int fd, int signum,
+                                                siginfo_t *info, void *context),
+                               void *ctx);
 
   static void DumpPreviousStacktrace();
   static std::string PreviousStacktrace();

@@ -14,7 +14,8 @@ import (
 // redirects signal log to stdout
 func init() {
 	DumpSignalTo(syscall.Stdout)
-	RegisterOnSignal(OnSignalHandlerFunc(func(signum os.Signal) {}))
+	// FIXME https://github.com/golang/go/issues/35814
+	//RegisterOnSignal(OnSignalHandlerFunc(func(signum os.Signal) {}))
 
 	var dumpfile string
 	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {

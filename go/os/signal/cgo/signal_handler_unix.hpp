@@ -30,6 +30,8 @@ namespace searking {
 typedef void (*SignalHandlerSigActionHandler)(int signum, siginfo_t *info,
                                               void *context);
 typedef void (*SignalHandlerSignalHandler)(int signum);
+typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum,
+                                      siginfo_t *info, void *context);
 
 class SignalHandlerUnix : public BaseSignalHandler {
  protected:
@@ -38,16 +40,14 @@ class SignalHandlerUnix : public BaseSignalHandler {
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
       SignalHandlerSignalHandler handler);
+  void InvokeGoSignalHandler(int signum, siginfo_t *info, void *context);
 
  public:
   // Thread safe GetInstance.
   static SignalHandlerUnix &GetInstance();
 
   void operator()(int signum, siginfo_t *info, void *context);
-  void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
-                                           siginfo_t *info, void *context)>
-                            callback,
-                        void *ctx);
+  void RegisterOnSignal(SignalHandlerOnSignal callback, void *ctx);
 
   static int SetSig(int signum);
   static int SetSig(int signum, SignalHandlerSigActionHandler action,
@@ -55,9 +55,7 @@ class SignalHandlerUnix : public BaseSignalHandler {
 
  private:
   void *on_signal_ctx_;
-  std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                     void *context)>
-      on_signal_;
+  SignalHandlerOnSignal on_signal_;
   std::map<int, std::pair<SignalHandlerSigActionHandler,
                           SignalHandlerSignalHandler> >
       go_registered_handlers_;
