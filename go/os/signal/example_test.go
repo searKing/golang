@@ -3,7 +3,6 @@ package signal_test
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"syscall"
 	"time"
 
@@ -12,12 +11,14 @@ import (
 
 func ExampleDumpSignalTo() {
 	signal_.DumpSignalTo(syscall.Stderr)
+	signal_.SetSigInvokeChain(syscall.SIGUSR1, syscall.SIGUSR2, 0, syscall.SIGSEGV)
+
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal
 	// if we're not ready to receive when the signal is sent.
 	c := make(chan os.Signal, 1)
 	//signal.Notify(c, syscall.SIGINT, syscall.SIGSEGV)
-	signal.Notify(c)
+	signal_.Notify(c,syscall.SIGUSR1, syscall.SIGUSR2,syscall.SIGSEGV)
 
 	// simulate to send a SIGINT to this example test
 	go func() {
@@ -29,7 +30,7 @@ func ExampleDumpSignalTo() {
 		//_ = syscall.Kill(syscall.Getpid(), syscall.SIGSEGV)
 		//internal.Raise(syscall.SIGSEGV)
 
-		time.Sleep(time.Second)
+		//time.Sleep(time.Second)
 		var err error
 		fmt.Println(err.Error())
 	}()
@@ -40,12 +41,18 @@ func ExampleDumpSignalTo() {
 			if !ok {
 				return
 			}
-			fmt.Printf("Got signal: %s\n", s)
-			_, _ = fmt.Fprintf(os.Stderr, "Previous run crashed:\n%s\n", signal_.PreviousStacktrace())
 			//signal.Stop(c)
 			//close(c)
-			//_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
-			//panic("abort")
+			if s == syscall.SIGUSR1 {
+				_, _ = fmt.Fprintf(os.Stderr, "Previous run crashed:\n%s\n", signal_.PreviousStacktrace())
+				_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
+				_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
+				_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
+				_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
+				_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
+			} else {
+				fmt.Printf("Got signal: %s\n", s)
+			}
 
 		case <-time.After(time.Minute):
 			_, _ = fmt.Fprintf(os.Stderr, "time overseed:\n")

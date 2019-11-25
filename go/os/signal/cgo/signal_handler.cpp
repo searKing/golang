@@ -88,4 +88,18 @@ std::string SignalHandler::PreviousStacktrace() {
   return SignalHandlerStd::GetInstance().PreviousStacktrace();
 #endif
 }
+
+void SignalHandler::SetSigInvokeChain(const int from, const int to,
+                                      const int wait,
+                                      const int sleepInSeconds) {
+#if defined(USE_UNIX_SIGNAL_HANDLER)
+  // Yes it is a UNIX because __unix__ is defined.
+  return SignalHandlerUnix::GetInstance().SetSigInvokeChain(from, to, wait,
+                                                            sleepInSeconds);
+#elif defined(USE_WINDOWS_SIGNAL_HANDLER)
+#else
+  return SignalHandlerStd::GetInstance().SetSigInvokeChain(from, to, wait,
+                                                           sleepInSeconds);
+#endif
+}
 }  // namespace searking
