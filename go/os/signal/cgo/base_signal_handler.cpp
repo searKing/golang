@@ -94,7 +94,7 @@ std::string BaseSignalHandler::PreviousStacktrace() {
 void BaseSignalHandler::SetSigInvokeChain(const int from, const int to,
                                           const int wait,
                                           const int sleepInSeconds) {
-  sig_invoke_chains_[from] = {from, to, wait, sleepInSeconds};
+  sig_invoke_chains_[from] = std::make_tuple(from, to, wait, sleepInSeconds);
 }
 
 }  // namespace searking
