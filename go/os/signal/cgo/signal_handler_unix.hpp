@@ -10,8 +10,6 @@
 #ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
 #define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
 
-#if defined(USE_UNIX_SIGNAL_HANDLER)
-
 #include <unistd.h>
 // You can find out the version with _POSIX_VERSION.
 // POSIX compliant
@@ -19,6 +17,7 @@
 #include <csignal>
 #include <functional>
 #include <map>
+#include <memory>
 #include <utility>
 
 #include "base_signal_handler.hpp"
@@ -33,9 +32,9 @@ typedef void (*SignalHandlerSignalHandler)(int signum);
 typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum,
                                       siginfo_t *info, void *context);
 
-class SignalHandlerUnix : public BaseSignalHandler {
+class SignalHandler : public BaseSignalHandler<SignalHandler> {
  protected:
-  SignalHandlerUnix() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
+  SignalHandler() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
 
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
@@ -44,9 +43,11 @@ class SignalHandlerUnix : public BaseSignalHandler {
 
  public:
   // Thread safe GetInstance.
-  static SignalHandlerUnix &GetInstance();
+  static SignalHandler &GetInstance();
 
   void operator()(int signum, siginfo_t *info, void *context);
+  // never invoke a go function, see
+  //  https://github.com/golang/go/issues/35814 static void
   void RegisterOnSignal(SignalHandlerOnSignal callback, void *ctx);
 
   static int SetSig(int signum);
@@ -59,11 +60,6 @@ class SignalHandlerUnix : public BaseSignalHandler {
   std::map<int, std::pair<SignalHandlerSigActionHandler,
                           SignalHandlerSignalHandler> >
       go_registered_handlers_;
-
- private:
-  SignalHandlerUnix(const SignalHandlerUnix &) = delete;
-  void operator=(const SignalHandlerUnix &) = delete;
 };
 }  // namespace searking
 #endif
-#endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
