@@ -39,6 +39,8 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
       SignalHandlerSignalHandler handler);
+  void DoPipeChan(int signum, siginfo_t *info, void *context);
+  void DoSignalChan(int signum, siginfo_t *info, void *context);
   void InvokeGoSignalHandler(int signum, siginfo_t *info, void *context);
 
  public:

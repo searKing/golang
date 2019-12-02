@@ -33,43 +33,68 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
   }
 
-  auto it = sig_invoke_chains_.find(signum);
-  if (it != sig_invoke_chains_.end()) {
-    auto &sig_chain = it->second;
-    int from = std::get<0>(sig_chain);
-    // consist validatation
-    if (from == signum) {
-      int to = std::get<1>(sig_chain);
-      int wait = std::get<2>(sig_chain);
-      int sleepInSeconds = std::get<3>(sig_chain);
-      if (to >= 0) {
-        InvokeGoSignalHandler(to, info, context);
-      }
-      if (wait >= 0) {
-        sigset_t ignoremask;
-        sigfillset(&ignoremask);
-        sigdelset(&ignoremask, wait);
-
-        // Block {from} and save current signal mask.
-        sigset_t new_set, old_set;
-        sigemptyset(&new_set);
-        sigaddset(&new_set, wait);
-        sigprocmask(SIG_BLOCK, &new_set, &old_set);
-        // Pause, allowing all signals except {wait}.
-        sigsuspend(&ignoremask);
-
-        // Reset signal mask which unblocks {wait}.
-        sigprocmask(SIG_SETMASK, &old_set, nullptr);
-      }
-      if (sleepInSeconds > 0) {
-        sleep(sleepInSeconds);
-      }
-    }
-  }
+  DoPipeChan(signum, info, context);
+  DoSignalChan(signum, info, context);
 
   InvokeGoSignalHandler(signum, info, context);
 }
 
+void SignalHandler::DoPipeChan(int signum, siginfo_t *info, void *context) {
+  auto it = sig_invoke_pipe_chains_.find(signum);
+  if (it == sig_invoke_pipe_chains_.end()) {
+    return;
+  }
+  auto &sig_chain = it->second;
+  int from = std::get<0>(sig_chain);
+  // consist validatation
+  if (from != signum) {
+    return;
+  }
+
+  int pipeWriter = std::get<1>(sig_chain);
+  int pipeReader = std::get<2>(sig_chain);
+  WriteInt(pipeWriter, signum);
+  char dummy;
+  read(pipeReader, &dummy, sizeof(dummy));
+}
+
+void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
+  auto it = sig_invoke_signal_chains_.find(signum);
+  if (it == sig_invoke_signal_chains_.end()) {
+    return;
+  }
+  auto &sig_chain = it->second;
+  int from = std::get<0>(sig_chain);
+  // consist validatation
+  if (from != signum) {
+    return;
+  }
+  int to = std::get<1>(sig_chain);
+  int wait = std::get<2>(sig_chain);
+  int sleepInSeconds = std::get<3>(sig_chain);
+  if (to >= 0) {
+    InvokeGoSignalHandler(to, info, context);
+  }
+  if (wait >= 0) {
+    sigset_t ignoremask;
+    sigfillset(&ignoremask);
+    sigdelset(&ignoremask, wait);
+
+    // Block {from} and save current signal mask.
+    sigset_t new_set, old_set;
+    sigemptyset(&new_set);
+    sigaddset(&new_set, wait);
+    sigprocmask(SIG_BLOCK, &new_set, &old_set);
+    // Pause, allowing all signals except {wait}.
+    sigsuspend(&ignoremask);
+
+    // Reset signal mask which unblocks {wait}.
+    sigprocmask(SIG_SETMASK, &old_set, nullptr);
+  }
+  if (sleepInSeconds > 0) {
+    sleep(sleepInSeconds);
+  }
+}
 void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
                                           void *context) {
   auto it = go_registered_handlers_.find(signum);

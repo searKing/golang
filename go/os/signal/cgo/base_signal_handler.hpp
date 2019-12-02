@@ -100,14 +100,24 @@ class BaseSignalHandler : private boost::noncopyable,
 
   void SetSigInvokeChain(const int from, const int to, const int wait,
                          const int sleepInSeconds) {
-    sig_invoke_chains_[from] = std::make_tuple(from, to, wait, sleepInSeconds);
+    sig_invoke_signal_chains_[from] =
+        std::make_tuple(from, to, wait, sleepInSeconds);
+  }
+
+  void SetSigInvokeChain(const int from, const int pipeWriter,
+                         const int pipeReader) {
+    sig_invoke_pipe_chains_[from] =
+        std::make_tuple(from, pipeWriter, pipeReader);
   }
 
  protected:
   int signal_dump_to_fd_;
   std::string stacktrace_dump_to_file_;
   // <from, <from, to, wait, sleepInSeconds>>
-  std::map<int, std::tuple<int, int, int, int>> sig_invoke_chains_;
+  std::map<int, std::tuple<int, int, int, int>> sig_invoke_signal_chains_;
+
+  // <from, <from, pipeWriter, pipeReader>>
+  std::map<int, std::tuple<int, int, int>> sig_invoke_pipe_chains_;
 };
 }  // namespace searking
 #endif  // GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_
