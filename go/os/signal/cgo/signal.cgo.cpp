@@ -11,32 +11,32 @@
 
 #include <algorithm>
 
-#include "signal_handler.hpp"
+#include "signal_handler_unix.hpp"
 
 int CGO_SignalHandlerSetSig(int signum) {
   return searking::SignalHandler::SetSig(signum);
 }
 
 void CGO_SignalHandlerSetSignalDumpToFd(int fd) {
-  searking::SignalHandler::SetSignalDumpToFd(fd);
+  searking::SignalHandler::GetInstance().SetSignalDumpToFd(fd);
 }
 
 void CGO_SignalHandlerSetStacktraceDumpToFile(char* name) {
-  searking::SignalHandler::SetStacktraceDumpToFile(name);
+  searking::SignalHandler::GetInstance().SetStacktraceDumpToFile(name);
 }
 
 void CGO_SignalHandlerRegisterOnSignal(
     CGO_SignalHandlerSigActionHandler callback, void* ctx) {
-  searking::SignalHandler::RegisterOnSignal(callback, ctx);
+  searking::SignalHandler::GetInstance().RegisterOnSignal(callback, ctx);
 }
 
 void CGO_SignalHandlerDumpPreviousStacktrace() {
-  searking::SignalHandler::DumpPreviousStacktrace();
+  searking::SignalHandler::GetInstance().DumpPreviousStacktrace();
 }
 
 // don't forget to free the string after finished using it
 char* CGO_PreviousStacktrace() {
-  auto str = searking::SignalHandler::PreviousStacktrace();
+  auto str = searking::SignalHandler::GetInstance().PreviousStacktrace();
 
   char* writable = static_cast<char*>(malloc((str.size() + 1) * sizeof(char)));
   std::copy(str.begin(), str.end(), writable);
@@ -46,5 +46,6 @@ char* CGO_PreviousStacktrace() {
 
 void CGO_SetSigInvokeChain(const int from, const int to, const int wait,
                            const int sleepInSeconds) {
-  searking::SignalHandler::SetSigInvokeChain(from, to, wait, sleepInSeconds);
+  searking::SignalHandler::GetInstance().SetSigInvokeChain(from, to, wait,
+                                                           sleepInSeconds);
 }

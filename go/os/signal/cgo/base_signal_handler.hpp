@@ -9,29 +9,99 @@
  */
 #ifndef GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_
 #define GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_
+#include <boost/core/noncopyable.hpp>
+#include <boost/stacktrace.hpp>
 #include <cstdio>
+#include <cstring>
+#include <fstream>
 #include <map>
+#include <memory>
+#include <sstream>
 #include <string>
 #include <tuple>
+
+#include "write_int.hpp"
+
 namespace searking {
-class BaseSignalHandler {
+template <class T>
+class BaseSignalHandler : private boost::noncopyable,
+                          public std::enable_shared_from_this<T> {
  protected:
   BaseSignalHandler() : signal_dump_to_fd_(-1) {}
 
  public:
-  void SetSignalDumpToFd(int fd);
+  void SetSignalDumpToFd(int fd) { signal_dump_to_fd_ = fd; }
 
-  void SetSignalDumpToFd(FILE *fd);
+  void SetSignalDumpToFd(FILE *fd) { SetSignalDumpToFd(fileno(fd)); }
 
-  void SetStacktraceDumpToFile(const std::string &name);
+  void SetStacktraceDumpToFile(const std::string &name) {
+    stacktrace_dump_to_file_ = name;
+  }
 
-  void WriteSignalStacktrace(int signum);
+  void WriteSignalStacktrace(int signum) {
+    if (signal_dump_to_fd_ >= 0) {
+      write(signal_dump_to_fd_, "Signal received(", strlen("Signal received("));
+      WriteInt(signal_dump_to_fd_, signum);
+      write(signal_dump_to_fd_, ").\n", strlen(").\n"));
+      // binary format,not human readable.mute this.
+      //    write(signal_dump_to_fd_, "stacktrace dumped in binary format:\n",
+      //          strlen("stacktrace dumped in binary format:\n"));
+      //    boost::stacktrace::safe_dump_to(signal_dump_to_fd_);
+      //    write(signal_dump_to_fd_, "\n", strlen("\n"));
+    }
 
-  ssize_t DumpPreviousStacktrace();
-  std::string PreviousStacktrace();
+    if (!stacktrace_dump_to_file_.empty()) {
+      if (signal_dump_to_fd_ >= 0) {
+        write(signal_dump_to_fd_, "Stacktrace dumped to file: ",
+              strlen("Stacktrace dumped to file: "));
+        write(signal_dump_to_fd_, stacktrace_dump_to_file_.c_str(),
+              stacktrace_dump_to_file_.length());
+        write(signal_dump_to_fd_, ".\n", strlen(".\n"));
+      }
+      boost::stacktrace::safe_dump_to(stacktrace_dump_to_file_.c_str());
+    }
+  }
+
+  ssize_t DumpPreviousStacktrace() {
+    if (signal_dump_to_fd_ < 0) {
+      return 0;
+    }
+
+    std::ostringstream msg;
+    msg << "Previous run crashed:" << std::endl;
+    msg << PreviousStacktrace();
+
+    auto m = msg.str();
+    return write(signal_dump_to_fd_, m.c_str(), m.length());
+  }
+  std::string PreviousStacktrace() {
+    if (stacktrace_dump_to_file_.empty()) {
+      return "";
+    }
+
+    std::ifstream ifs(stacktrace_dump_to_file_);
+    if (!ifs.good()) {
+      return "";
+    }
+
+    std::shared_ptr<int> deferFileCLose(nullptr, [&ifs](int *) {
+      // cleaning up
+      ifs.close();
+    });
+
+    // there is a backtrace
+    boost::stacktrace::stacktrace st =
+        boost::stacktrace::stacktrace::from_dump(ifs);
+    std::ostringstream msg;
+
+    msg << st << std::endl;
+    return msg.str();
+  }
 
   void SetSigInvokeChain(const int from, const int to, const int wait,
-                         const int sleepInSeconds);
+                         const int sleepInSeconds) {
+    sig_invoke_chains_[from] = std::make_tuple(from, to, wait, sleepInSeconds);
+  }
 
  protected:
   int signal_dump_to_fd_;

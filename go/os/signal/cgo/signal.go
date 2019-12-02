@@ -13,13 +13,9 @@ package cgo
 	#include <stdio.h>
    	#include <stdlib.h>  // Needed for C.free
 
-	// Forward Declaration
-	extern void GlobalOnSignal(void *ctx, int fd, int signum, siginfo_t *info, void *context) ;
 */
 import "C"
 import (
-	"fmt"
-	"syscall"
 	"unsafe"
 
 	_ "github.com/searKing/golang/go/os/signal/cgo/include"
@@ -41,19 +37,6 @@ func SetBacktraceDumpToFile(name string) {
 	C.CGO_SignalHandlerSetStacktraceDumpToFile(cs)
 }
 
-type emptyContext struct {
-}
-
-func RegisterOnSignal(onSignal onSignalHandler) {
-	if onSignal == nil {
-		return
-	}
-
-	ctx := unsafe.Pointer(&emptyContext{})
-	globals.Store(uintptr(ctx), onSignal)
-	C.CGO_SignalHandlerRegisterOnSignal(C.CGO_SignalHandlerSigActionHandler(GetGlobalOnSignal()), ctx)
-}
-
 // DumpPreviousStacktrace dumps human readable stacktrace to fd, which is set by SetSignalDumpToFd.
 func DumpPreviousStacktrace() {
 	C.CGO_SignalHandlerDumpPreviousStacktrace()
@@ -69,25 +52,4 @@ func PreviousStacktrace() string {
 // PreviousStacktrace sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
 func SetSigInvokeChain(from, to, wait, sleepInSeconds int) {
 	C.CGO_SetSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
-}
-
-//
-// === cgo hooks for user-provided Go callbacks, and enums ===
-//
-
-func GetGlobalOnSignal() unsafe.Pointer {
-	return C.GlobalOnSignal
-}
-
-//export GlobalOnSignal
-func GlobalOnSignal(ctx unsafe.Pointer, fd C.int, signum C.int, info *C.siginfo_t, context unsafe.Pointer) {
-	fmt.Printf("GlobalOnSignal\n")
-
-	global, ok := globals.Load(uintptr(ctx))
-	if !ok {
-		fmt.Printf("Global is missing\n")
-		return
-	}
-
-	global.OnSignal(syscall.Signal(signum))
 }

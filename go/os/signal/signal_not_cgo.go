@@ -14,9 +14,6 @@ func dumpSignalTo(fd int) {
 func dumpStacktraceTo(name string) {
 }
 
-func registerOnSignal(onSignal OnSignalHandler) {
-}
-
 // dumpPreviousStacktrace is fake for cgo
 func dumpPreviousStacktrace() {
 }

@@ -27,10 +27,6 @@ func dumpStacktraceTo(name string) {
 	cgo.SetBacktraceDumpToFile(name)
 }
 
-func registerOnSignal(onSignal OnSignalHandler) {
-	cgo.RegisterOnSignal(onSignal)
-}
-
 // dumpPreviousStacktrace dumps human readable stacktrace to fd, which is set by SetSignalDumpToFd.
 func dumpPreviousStacktrace() {
 	cgo.DumpPreviousStacktrace()

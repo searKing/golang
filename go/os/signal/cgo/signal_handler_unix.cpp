@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "signal_handler_unix.hpp"
-#if defined(USE_UNIX_SIGNAL_HANDLER)
 
 #include <string.h>
 
@@ -20,12 +19,12 @@
 #include "base_signal_handler.hpp"
 
 namespace searking {
-SignalHandlerUnix &SignalHandlerUnix::GetInstance() {
-  static SignalHandlerUnix instance;
+SignalHandler &SignalHandler::GetInstance() {
+  static SignalHandler instance;
   return instance;
 }
 // https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
-void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
+void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   WriteSignalStacktrace(signum);
 
   void *on_signal_ctx = on_signal_ctx_;
@@ -71,8 +70,8 @@ void SignalHandlerUnix::operator()(int signum, siginfo_t *info, void *context) {
   InvokeGoSignalHandler(signum, info, context);
 }
 
-void SignalHandlerUnix::InvokeGoSignalHandler(int signum, siginfo_t *info,
-                                              void *context) {
+void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
+                                          void *context) {
   auto it = go_registered_handlers_.find(signum);
   if (it != go_registered_handlers_.end()) {
     auto handlers = it->second;
@@ -104,13 +103,13 @@ void SignalHandlerUnix::InvokeGoSignalHandler(int signum, siginfo_t *info,
   }
 }
 
-void SignalHandlerUnix::RegisterOnSignal(SignalHandlerOnSignal callback,
-                                         void *ctx) {
+void SignalHandler::RegisterOnSignal(SignalHandlerOnSignal callback,
+                                     void *ctx) {
   on_signal_ctx_ = ctx;
   on_signal_ = callback;
 }
 
-void SignalHandlerUnix::SetGoRegisteredSignalHandlersIfEmpty(
+void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
     int signum, SignalHandlerSigActionHandler action,
     SignalHandlerSignalHandler handler) {
   auto it = go_registered_handlers_.find(signum);
@@ -121,7 +120,9 @@ void SignalHandlerUnix::SetGoRegisteredSignalHandlersIfEmpty(
   }
 }
 
-int SignalHandlerUnix::SetSig(int signum) {
+// for CGO
+
+int SignalHandler::SetSig(int signum) {
   SignalHandlerSigActionHandler sa_sigaction_action = nullptr;
   SignalHandlerSignalHandler sa_sigaction_handler = nullptr;
   sa_sigaction_action = [](int signum, siginfo_t *info, void *context) {
@@ -131,8 +132,8 @@ int SignalHandlerUnix::SetSig(int signum) {
   return SetSig(signum, sa_sigaction_action, sa_sigaction_handler);
 }
 
-int SignalHandlerUnix::SetSig(int signum, SignalHandlerSigActionHandler action,
-                              SignalHandlerSignalHandler handler) {
+int SignalHandler::SetSig(int signum, SignalHandlerSigActionHandler action,
+                          SignalHandlerSignalHandler handler) {
   stack_t ss;
   sigaltstack(NULL, &ss);
   ss.ss_sp = malloc(SIGSTKSZ * 100);
@@ -167,5 +168,5 @@ int SignalHandlerUnix::SetSig(int signum, SignalHandlerSigActionHandler action,
   }
   return sigaction(signum, &sa, nullptr);
 }
+
 }  // namespace searking
-#endif
