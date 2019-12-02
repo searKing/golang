@@ -1,3 +1,4 @@
+// +build non-go
 /*
  *  Copyright 2019 The searKing authors. All Rights Reserved.
  *
@@ -7,7 +8,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#if defined(USE_STD_SIGNAL_HANDLER)
 
 #include "signal_handler_std.hpp"
 
@@ -89,4 +89,3 @@ SignalHandlerStdSignalHandler SignalHandlerStd::Signal(
 }
 
 }  // namespace searking
-#endif

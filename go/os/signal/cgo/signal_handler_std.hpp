@@ -1,3 +1,5 @@
+// +build non-go
+
 /*
  *  Copyright 2019 The searKing authors. All Rights Reserved.
  *
@@ -9,8 +11,6 @@
  */
 #ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_STD_HPP__
 #define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_STD_HPP__
-
-#if defined(USE_STD_SIGNAL_HANDLER)
 
 #include <csignal>
 #include <functional>
@@ -26,7 +26,7 @@ namespace searking {
 typedef void (*SignalHandlerStdSignalHandler)(int signum);
 
 // Never used this Handler in cgo, for go needs
-class SignalHandlerStd : public BaseSignalHandler {
+class SignalHandlerStd : public BaseSignalHandler<SignalHandlerStd> {
  protected:
   SignalHandlerStd() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
 
@@ -54,5 +54,4 @@ class SignalHandlerStd : public BaseSignalHandler {
   void operator=(const SignalHandlerStd &) = delete;
 };
 }  // namespace searking
-#endif
 #endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_STD_HPP__

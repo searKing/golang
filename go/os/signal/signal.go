@@ -62,10 +62,6 @@ func DumpStacktraceTo(name string) {
 	dumpStacktraceTo(name)
 }
 
-func RegisterOnSignal(onSignal OnSignalHandler) {
-	registerOnSignal(onSignal)
-}
-
 // DumpPreviousStacktrace dumps the previous human readable stacktrace to fd, which is set by SetSignalDumpToFd.
 func DumpPreviousStacktrace() {
 	dumpPreviousStacktrace()
