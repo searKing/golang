@@ -50,10 +50,10 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
   int to = std::get<1>(sig_chain);
   int wait = std::get<2>(sig_chain);
   int sleepInSeconds = std::get<3>(sig_chain);
-  if (to >= 0) {
+  if (to >= 0 && to != signum) {
     InvokeGoSignalHandler(to, info, context);
   }
-  if (wait >= 0) {
+  if (wait >= 0 && wait != signum) {
     sigset_t ignoremask;
     sigfillset(&ignoremask);
     sigdelset(&ignoremask, wait);

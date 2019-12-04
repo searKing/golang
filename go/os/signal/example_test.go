@@ -46,8 +46,12 @@ func ExampleNotify() {
 				if s == syscall.SIGUSR1 {
 					_, _ = fmt.Fprintf(os.Stderr, "Previous run crashed:\n%s\n", signal_.PreviousStacktrace())
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
-				} else {
+				} else if s != syscall.SIGUSR2 {
 					fmt.Printf("Got signal: %s\n", s)
+
+					// just in case of windows os system, which is based on signal() in C language
+					// you can comment below out on unix-like os system.
+					signal_.Notify(c, s)
 				}
 				if s == syscall.SIGINT {
 					return
