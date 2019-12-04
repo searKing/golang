@@ -39,7 +39,6 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
       SignalHandlerSignalHandler handler);
-  void DoPipeChan(int signum, siginfo_t *info, void *context);
   void DoSignalChan(int signum, siginfo_t *info, void *context);
   void InvokeGoSignalHandler(int signum, siginfo_t *info, void *context);
 
@@ -49,8 +48,11 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
 
   void operator()(int signum, siginfo_t *info, void *context);
   // never invoke a go function, see
-  //  https://github.com/golang/go/issues/35814 static void
-  void RegisterOnSignal(SignalHandlerOnSignal callback, void *ctx);
+  // https://github.com/golang/go/issues/35814
+  void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
+                                           siginfo_t *info, void *context)>
+                            callback,
+                        void *ctx);
 
   static int SetSig(int signum);
   static int SetSig(int signum, SignalHandlerSigActionHandler action,
@@ -58,7 +60,9 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
 
  private:
   void *on_signal_ctx_;
-  SignalHandlerOnSignal on_signal_;
+  std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
+                     void *context)>
+      on_signal_;
   std::map<int, std::pair<SignalHandlerSigActionHandler,
                           SignalHandlerSignalHandler> >
       go_registered_handlers_;
