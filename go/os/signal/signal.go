@@ -41,6 +41,9 @@ func (f OnSignalHandlerFunc) OnSignal(signum os.Signal) {
 
 // Notify act as signal.Notify, which invokes the Go signal handler.
 // https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
+// Notify must be called again when one sig is called on windows system
+// as windows is based on signal(), which will reset sig's handler to SIG_DFL before sig's handler is called
+// While unix-like os will remain sig's handler always.
 func Notify(c chan<- os.Signal, sigs ...os.Signal) {
 	if len(sigs) == 0 {
 		for n := 0; n < numSig; n++ {
