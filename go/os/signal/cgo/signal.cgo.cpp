@@ -10,9 +10,11 @@
 #include "signal.cgo.h"
 
 #include <algorithm>
-
+#ifdef USE_UNIX_SIGNAL_HANDLER
 #include "signal_handler_unix.hpp"
-
+#else
+#include "signal_handler_windows.hpp"
+#endif
 int CGO_SignalHandlerSetSig(int signum) {
   return searking::SignalHandler::SetSig(signum);
 }
@@ -23,11 +25,6 @@ void CGO_SignalHandlerSetSignalDumpToFd(int fd) {
 
 void CGO_SignalHandlerSetStacktraceDumpToFile(char* name) {
   searking::SignalHandler::GetInstance().SetStacktraceDumpToFile(name);
-}
-
-void CGO_SignalHandlerRegisterOnSignal(
-    CGO_SignalHandlerSigActionHandler callback, void* ctx) {
-  searking::SignalHandler::GetInstance().RegisterOnSignal(callback, ctx);
 }
 
 void CGO_SignalHandlerDumpPreviousStacktrace() {

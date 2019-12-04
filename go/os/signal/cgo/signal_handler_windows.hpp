@@ -1,3 +1,5 @@
+// +build non-go
+
 /*
  *  Copyright 2019 The searKing authors. All Rights Reserved.
  *
@@ -7,14 +9,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP_
-#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP_
-
-#if defined(USE_UNIX_SIGNAL_HANDLER)
-
-#include <unistd.h>
-// You can find out the version with _POSIX_VERSION.
-// POSIX compliant
+#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP__
+#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP__
 
 #include <csignal>
 #include <functional>
@@ -27,45 +23,36 @@ namespace searking {
 
 // Callbacks Predefinations
 
-typedef void (*SignalHandlerSigActionHandler)(int signum, siginfo_t *info,
-                                              void *context);
 typedef void (*SignalHandlerSignalHandler)(int signum);
-
-class SignalHandlerWindows : public BaseSignalHandler {
+typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum);
+// Never used this Handler in cgo, for go needs
+class SignalHandler : public BaseSignalHandler<SignalHandler> {
  protected:
-  SignalHandlerWindows() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
+  SignalHandler() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
 
-  void SetGoRegisteredSignalHandlersIfEmpty(
-      int signum, SignalHandlerSigActionHandler action,
-      SignalHandlerSignalHandler handler);
+  void SetGoRegisteredSignalHandlersIfEmpty(int signum,
+                                            SignalHandlerSignalHandler handler);
 
  public:
   // Thread safe GetInstance.
-  static SignalHandlerWindows &GetInstance();
+  static SignalHandler &GetInstance();
+  void operator()(int signum);
+  // never invoke a go function, see
+  // https://github.com/golang/go/issues/35814
+  void RegisterOnSignal(
+      std::function<void(void *ctx, int fd, int signum)> callback, void *ctx);
 
-  void operator()(int signum, siginfo_t *info, void *context);
-  void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
-                                           siginfo_t *info, void *context)>
-                            callback,
-                        void *ctx);
-
-  static int SignalAction(int signum);
-  static int SignalAction(int signum, SignalHandlerSigActionHandler action,
-                          SignalHandlerSignalHandler handler);
+  static int SetSig(int signum);
+  static int SetSig(int signum, SignalHandlerSignalHandler handler);
 
  private:
   void *on_signal_ctx_;
-  std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                     void *context)>
-      on_signal_;
-  std::map<int, std::pair<SignalHandlerSigActionHandler,
-                          SignalHandlerSignalHandler> >
-      go_registered_handlers_;
+  std::function<void(void *ctx, int fd, int signum)> on_signal_;
+  std::map<int, SignalHandlerSignalHandler> go_registered_handlers_;
 
  private:
-  SignalHandlerWindows(const SignalHandlerWindows &) = delete;
-  void operator=(const SignalHandlerWindows &) = delete;
+  SignalHandler(const SignalHandler &) = delete;
+  void operator=(const SignalHandler &) = delete;
 };
 }  // namespace searking
-#endif
-#endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP_
+#endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP__

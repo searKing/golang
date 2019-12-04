@@ -16,15 +16,9 @@ extern "C" {
 #endif
 
 // Callbacks Predefinations
-
-typedef void (*CGO_SignalHandlerSigActionHandler)(void *ctx, int fd, int signum,
-                                                  siginfo_t *info,
-                                                  void *context);
 int CGO_SignalHandlerSetSig(int signum);
 void CGO_SignalHandlerSetSignalDumpToFd(int fd);
 void CGO_SignalHandlerSetStacktraceDumpToFile(char *name);
-void CGO_SignalHandlerRegisterOnSignal(
-    CGO_SignalHandlerSigActionHandler callback, void *ctx);
 void CGO_SignalHandlerDumpPreviousStacktrace();
 char *CGO_PreviousStacktrace();
 void CGO_SetSigInvokeChain(const int from, const int to, const int wait,
