@@ -16,8 +16,6 @@
 #include <memory>
 #include <sstream>
 
-#include "base_signal_handler.hpp"
-
 namespace searking {
 SignalHandler &SignalHandler::GetInstance() {
   static SignalHandler instance;
@@ -33,29 +31,9 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
   }
 
-  DoPipeChan(signum, info, context);
   DoSignalChan(signum, info, context);
 
   InvokeGoSignalHandler(signum, info, context);
-}
-
-void SignalHandler::DoPipeChan(int signum, siginfo_t *info, void *context) {
-  auto it = sig_invoke_pipe_chains_.find(signum);
-  if (it == sig_invoke_pipe_chains_.end()) {
-    return;
-  }
-  auto &sig_chain = it->second;
-  int from = std::get<0>(sig_chain);
-  // consist validatation
-  if (from != signum) {
-    return;
-  }
-
-  int pipeWriter = std::get<1>(sig_chain);
-  int pipeReader = std::get<2>(sig_chain);
-  WriteInt(pipeWriter, signum);
-  char dummy;
-  read(pipeReader, &dummy, sizeof(dummy));
 }
 
 void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
@@ -128,8 +106,11 @@ void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
   }
 }
 
-void SignalHandler::RegisterOnSignal(SignalHandlerOnSignal callback,
-                                     void *ctx) {
+void SignalHandler::RegisterOnSignal(
+    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
+                       void *context)>
+        callback,
+    void *ctx) {
   on_signal_ctx_ = ctx;
   on_signal_ = callback;
 }
