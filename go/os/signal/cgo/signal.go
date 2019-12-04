@@ -4,7 +4,7 @@ package cgo
 
 /*
 	#cgo CXXFLAGS: -I${SRCDIR}/include/
-	#cgo windows CXXFLAGS: -g -DUSE_WINDOWS_SIGNAL_HANDLER
+	#cgo windows CXXFLAGS: -g
 	#cgo darwin CXXFLAGS: -g -D_GNU_SOURCE -DUSE_UNIX_SIGNAL_HANDLER
 	#cgo !windows,!darwin CXXFLAGS: -g -DUSE_UNIX_SIGNAL_HANDLER
 	#cgo linux LDFLAGS: -ldl
