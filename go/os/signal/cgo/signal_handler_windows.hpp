@@ -32,6 +32,8 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
 
   void SetGoRegisteredSignalHandlersIfEmpty(int signum,
                                             SignalHandlerSignalHandler handler);
+  void DoSignalChan(int signum);
+  void InvokeGoSignalHandler(int signum);
 
  public:
   // Thread safe GetInstance.
