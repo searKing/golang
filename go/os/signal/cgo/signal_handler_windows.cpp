@@ -20,24 +20,22 @@
 
 namespace searking {
 // sig nums must be in [0,255)
-static volatile sig_atomic_t[256] gotSignals = false;
+static volatile sig_atomic_t gotSignals[256];
 
 SignalHandler &SignalHandler::GetInstance() {
   static SignalHandler instance;
   return instance;
 }
 
-// https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
+// trigger once, and user must register this signum again
 void SignalHandler::operator()(int signum) {
   WriteSignalStacktrace(signum);
-
   void *on_signal_ctx = on_signal_ctx_;
   auto on_signal = on_signal_;
 
   if (on_signal) {
     on_signal(on_signal_ctx, signal_dump_to_fd_, signum);
   }
-
   DoSignalChan(signum);
 
   InvokeGoSignalHandler(signum);
@@ -58,16 +56,17 @@ void SignalHandler::DoSignalChan(int signum) {
   int to = std::get<1>(sig_chain);
   int wait = std::get<2>(sig_chain);
   int sleepInSeconds = std::get<3>(sig_chain);
-  if (to >= 0) {
+  if (to >= 0 && to != signum) {
     InvokeGoSignalHandler(to);
   }
-  if (wait >= 0) {
+  if (wait >= 0 && wait != signum) {
     gotSignals[wait] = false;
     for (;;) {
+      // sleep 1s at most, will awake when an unmasked signal is received
       sleep(1);
       bool got = gotSignals[wait];
-      got_sigint = false;
       if (got) {
+        gotSignals[wait] = false;
         break;
       }
     }
@@ -81,18 +80,8 @@ void SignalHandler::InvokeGoSignalHandler(int signum) {
   auto it = go_registered_handlers_.find(signum);
   if (it != go_registered_handlers_.end()) {
     SignalHandlerSignalHandler signalHandler = it->second;
-
-    // http://man7.org/linux/man-pages/man7/signal.7.html
-    if (signalHandler == SIG_IGN) {
-      return;
-    }
-    if (signalHandler == SIG_DFL) {
-      ::signal(signum, SIG_DFL);
-      ::raise(signum);
-      return;
-    }
-
-    signalHandler(signum);
+    ::signal(signum, signalHandler);
+    ::raise(signum);
   }
 }
 
@@ -112,21 +101,24 @@ void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
   }
 }
 
-int SignalHandler::Signal(int signum) {
+int SignalHandler::SetSig(int signum) {
   SignalHandlerSignalHandler handler = [](int signum) {
-    SignalHandlerSignalHandler prev_handler = ::signal(signum, SIG_DFL);
     GetInstance()(signum);
-    ::signal(signum, prev_handler);
   };
 
-  return Signal(signum, handler);
+  return SetSig(signum, handler);
 }
 
-int SignalHandler::Signal(int signum, SignalHandlerSignalHandler handler) {
+int SignalHandler::SetSig(int signum, SignalHandlerSignalHandler handler) {
   SignalHandlerSignalHandler prev_handler = ::signal(signum, SIG_DFL);
-  SetGoRegisteredSignalHandlersIfEmpty(signum, prev_handler);
 
-  return ::signal(signum, handler);
+  if (SIG_ERR == prev_handler) {
+    return -1;
+  }
+  GetInstance().SetGoRegisteredSignalHandlersIfEmpty(signum, prev_handler);
+
+  ::signal(signum, handler);
+  return 0;
 }
 
 }  // namespace searking
