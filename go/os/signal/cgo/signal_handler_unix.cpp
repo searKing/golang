@@ -55,22 +55,33 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
   if (to >= 0 && to != signum) {
     InvokeGoSignalHandler(to, info, context);
   }
-  if (wait >= 0 && wait != signum) {
-    sigset_t ignoremask;
-    sigfillset(&ignoremask);
-    sigdelset(&ignoremask, wait);
+  do {
+    if (wait >= 0 && wait != signum) {
+      sigset_t ignoremask;
+      sigfillset(&ignoremask);
+      sigdelset(&ignoremask, wait);
 
-    // Block {from} and save current signal mask.
-    sigset_t new_set, old_set;
-    sigemptyset(&new_set);
-    sigaddset(&new_set, wait);
-    sigprocmask(SIG_BLOCK, &new_set, &old_set);
-    // Pause, allowing all signals except {wait}.
-    sigsuspend(&ignoremask);
+      // Block {wait} and save current signal mask.
+      sigset_t new_set, old_set;
+      sigemptyset(&new_set);
+      sigaddset(&new_set, wait);
+      if (sigprocmask(SIG_BLOCK, &new_set, &old_set) < 0) {
+        write(signal_dump_to_fd_, "block Signal(", strlen("block Signal("));
+        WriteInt(signal_dump_to_fd_, wait);
+        write(signal_dump_to_fd_, ") for Signal(", strlen(") for Signal("));
+        WriteInt(signal_dump_to_fd_, signum);
+        write(signal_dump_to_fd_, ") failed.\n", strlen(") failed.\n"));
+        break;
+      }
+      // Pause, resume when any signal's signal handler is executed,
+      // except {wait}.
+      sigsuspend(&ignoremask);
 
-    // Reset signal mask which unblocks {wait}.
-    sigprocmask(SIG_SETMASK, &old_set, nullptr);
-  }
+      // Reset signal mask which unblocks {wait}.
+      sigprocmask(SIG_SETMASK, &old_set, nullptr);
+    }
+  } while (0);
+
   if (sleepInSeconds > 0) {
     sleep(sleepInSeconds);
   }
