@@ -8,10 +8,9 @@
 
 // +build cgo
 
-#ifndef GO_OS_SIGNAL_CGO_WRITE_INT_HPP_
-#define GO_OS_SIGNAL_CGO_WRITE_INT_HPP_
-#include <unistd.h>
-namespace searking {
-ssize_t WriteInt(int fd, int n);
-}  // namespace searking
-#endif  // GO_OS_SIGNAL_CGO_WRITE_INT_HPP_
+package cgo
+
+/*
+#cgo CXXFLAGS: -std=c++11
+*/
+import "C"
