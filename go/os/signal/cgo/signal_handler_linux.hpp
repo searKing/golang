@@ -7,10 +7,10 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 // +build cgo
-// +build aix darwin dragonfly freebsd netbsd openbsd solaris
+// +build linux
 
-#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
-#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_UNIX_HPP_
+#ifndef GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_LINUX_HPP_
+#define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_LINUX_HPP_
 
 #include <unistd.h>
 // You can find out the version with _POSIX_VERSION.

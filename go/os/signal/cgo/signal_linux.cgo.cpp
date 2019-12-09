@@ -7,12 +7,12 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 // +build cgo
-// +build aix darwin dragonfly freebsd netbsd openbsd solaris
+// +build linux
 
 #include <algorithm>
 
 #include "signal.cgo.h"
-#include "signal_handler_unix.hpp"
+#include "signal_handler_linux.hpp"
 
 int CGO_SignalHandlerSetSig(int signum) {
   return searking::SignalHandler::SetSig(signum);
