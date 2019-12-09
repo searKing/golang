@@ -62,13 +62,13 @@ void SignalHandler::DoSignalChan(int signum) {
   if (wait >= 0 && wait != signum) {
     gotSignals[wait] = false;
     for (;;) {
-      // sleep 1s at most, will awake when an unmasked signal is received
-      sleep(1);
       bool got = gotSignals[wait];
       if (got) {
         gotSignals[wait] = false;
         break;
       }
+      // sleep 1s at most, will awake when an unmasked signal is received
+      sleep(1);
     }
   }
   if (sleepInSeconds > 0) {

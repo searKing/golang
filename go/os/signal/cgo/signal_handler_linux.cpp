@@ -7,9 +7,9 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 // +build cgo
-// +build aix darwin dragonfly freebsd netbsd openbsd solaris
+// +build linux
 
-#include "signal_handler_unix.hpp"
+#include "signal_handler_linux.hpp"
 
 #include <string.h>
 
@@ -19,6 +19,9 @@
 #include <sstream>
 
 namespace searking {
+// sig nums must be in [0,255)
+static volatile sig_atomic_t gotSignals[256];
+
 SignalHandler &SignalHandler::GetInstance() {
   static SignalHandler instance;
   return instance;
@@ -39,6 +42,7 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
 }
 
 void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
+  gotSignals[signum] = true;
   auto it = sig_invoke_signal_chains_.find(signum);
   if (it == sig_invoke_signal_chains_.end()) {
     return;
@@ -53,37 +57,24 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
   int wait = std::get<2>(sig_chain);
   int sleepInSeconds = std::get<3>(sig_chain);
 
-  do {
-    sigset_t new_set, old_set;
-    if (wait >= 0 && wait != signum) {
-      // Block {wait} and save current signal mask.
-      sigemptyset(&new_set);
-      sigaddset(&new_set, wait);
-      if (sigprocmask(SIG_BLOCK, &new_set, &old_set) < 0) {
-        write(signal_dump_to_fd_, "block Signal(", strlen("block Signal("));
-        WriteInt(signal_dump_to_fd_, wait);
-        write(signal_dump_to_fd_, ") for Signal(", strlen(") for Signal("));
-        WriteInt(signal_dump_to_fd_, signum);
-        write(signal_dump_to_fd_, ") failed.\n", strlen(") failed.\n"));
+  if (to >= 0 && to != signum) {
+    InvokeGoSignalHandler(to, info, context);
+  }
+
+  // I don't know why suspend will block forever sometimes, so use an ugly
+  // implement as a loop, the same as in windows
+  if (wait >= 0 && wait != signum) {
+    gotSignals[wait] = false;
+    for (;;) {
+      bool got = gotSignals[wait];
+      if (got) {
+        gotSignals[wait] = false;
         break;
       }
+      // sleep 1s at most, will awake when an unmasked signal is received
+      sleep(1);
     }
-    if (to >= 0 && to != signum) {
-      InvokeGoSignalHandler(to, info, context);
-    }
-    if (wait >= 0 && wait != signum) {
-      sigset_t ignoremask;
-      sigfillset(&ignoremask);
-      sigdelset(&ignoremask, wait);
-
-      // Pause, resume when any signal's signal handler is executed,
-      // except {wait}.
-      sigsuspend(&ignoremask);
-
-      // Reset signal mask which unblocks {wait}.
-      sigprocmask(SIG_SETMASK, &old_set, nullptr);
-    }
-  } while (0);
+  }
 
   if (sleepInSeconds > 0) {
     sleep(sleepInSeconds);
