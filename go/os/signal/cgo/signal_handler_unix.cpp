@@ -52,17 +52,11 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
   int to = std::get<1>(sig_chain);
   int wait = std::get<2>(sig_chain);
   int sleepInSeconds = std::get<3>(sig_chain);
-  if (to >= 0 && to != signum) {
-    InvokeGoSignalHandler(to, info, context);
-  }
-  do {
-    if (wait >= 0 && wait != signum) {
-      sigset_t ignoremask;
-      sigfillset(&ignoremask);
-      sigdelset(&ignoremask, wait);
 
+  do {
+    sigset_t new_set, old_set;
+    if (wait >= 0 && wait != signum) {
       // Block {wait} and save current signal mask.
-      sigset_t new_set, old_set;
       sigemptyset(&new_set);
       sigaddset(&new_set, wait);
       if (sigprocmask(SIG_BLOCK, &new_set, &old_set) < 0) {
@@ -73,6 +67,15 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
         write(signal_dump_to_fd_, ") failed.\n", strlen(") failed.\n"));
         break;
       }
+    }
+    if (to >= 0 && to != signum) {
+      InvokeGoSignalHandler(to, info, context);
+    }
+    if (wait >= 0 && wait != signum) {
+      sigset_t ignoremask;
+      sigfillset(&ignoremask);
+      sigdelset(&ignoremask, wait);
+
       // Pause, resume when any signal's signal handler is executed,
       // except {wait}.
       sigsuspend(&ignoremask);
