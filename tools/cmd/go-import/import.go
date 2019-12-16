@@ -25,7 +25,7 @@
 // Otherwise, the arguments must name a single directory holding a Go package
 // or a set of Go source files that represent a single Go package.
 //
-// The -tags flag accepts a build tag string.
+// The -tag flag accepts a build tag string.
 //
 package main // import "github.com/searKing/golang/tools/cmd/go-import"
 
@@ -43,14 +43,14 @@ var (
 	gokeepName   = flag.String("gokeep", "gokeep", "file name without a suffix to be imported by goimport")
 	goimportName = flag.String("goimport", "goimport", "file name without a suffix to import gokeep")
 	output       = flag.String("output", ".", "output file dir of goimport.go")
-	buildTags    = flag.String("tags", "", "comma-separated list of build tags to apply")
+	buildTag     = flag.String("tag", "", "comma-separated list of build tags to apply")
 )
 
 // Usage is a replacement usage function for the flags package.
 func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-import:\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-import [flags] [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-import [flags] -tags T [directory]\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-import [flags] -tag T [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-import\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
@@ -87,14 +87,14 @@ func main() {
 	}
 
 	// Parse the package once.
-	g := NewGenerator(*importPrefix, *globImport, *buildTags)
+	g := NewGenerator(*importPrefix, *globImport, *buildTag)
 	var dirs []string
 	for _, arg := range args {
 		if isDirectory(arg) {
 			dirs = append(dirs, arg)
 		} else {
-			if len(*buildTags) != 0 {
-				log.Fatal("-tags option applies only to directories, not when files are specified")
+			if len(*buildTag) != 0 {
+				log.Fatal("-tag option applies only to directories, not when files are specified")
 			}
 			dirs = append(dirs, filepath.Dir(arg))
 		}

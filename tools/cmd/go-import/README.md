@@ -36,7 +36,7 @@ With no arguments, it processes the package in the current directory.
 Otherwise, the arguments must name a single directory holding a Go package
 or a set of Go source files that represent a single Go package.
 
- The -tags flag accepts a build tag string.
+ The -tag flag accepts a build tag string.
 
 ## Download/Install
 
