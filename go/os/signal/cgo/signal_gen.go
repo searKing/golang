@@ -8,5 +8,6 @@
 
 package cgo
 
-//go:generate make rebuild
-//go:generate bash ../../../../tools/scripts/cgo_include_gen.sh -p "github.com/searKing/golang/go/os/signal/cgo/include" "./include"
+// Deprecated, use go-import instead
+////go:generate bash ../../../../tools/scripts/cgo_include_gen.sh -p "github.com/searKing/golang/go/os/signal/cgo/include" "./include"
+//go:generate go-import ./include
