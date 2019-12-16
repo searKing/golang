@@ -13,5 +13,5 @@ type ImportTemplateInfo struct {
 	GoImportToolArgs []string
 	ModuleName       string
 	ImportPaths      []string
-	BuildTags        []string
+	BuildTag         string
 }

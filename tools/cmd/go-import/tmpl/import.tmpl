@@ -14,15 +14,15 @@ It determines how the formatting imports are rendered.
     {{ end }}
 {{ end }}
 
-{{ define "build_tag_list" }}
-    {{ if .BuildTags }}
-        //+build{{range .BuildTags}} {{.}}{{end}}
+{{ define "build_tag_section" }}
+    {{ if .BuildTag }}
+        //+build {{.BuildTag}}
     {{end}}
 {{ end }}
 
 {{ template "header_section" . }}
 
-{{ template "build_tag_list" . }}
+{{ template "build_tag_section" . }}
 
 {{ template "package_section".  }}
 

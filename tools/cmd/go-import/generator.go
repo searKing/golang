@@ -30,17 +30,17 @@ type Generator struct {
 	importPrefix string
 	lineComment  bool
 	globImport   string
-	buildTags    []string
+	buildTag     string
 }
 
-func NewGenerator(importPrefix string, globImport string, tags ...string) *Generator {
+func NewGenerator(importPrefix string, globImport string, tag string) *Generator {
 	return &Generator{
 		importPkgs:   map[string]*Package{},
 		files:        map[string]os.FileInfo{},
 		seenPkgs:     map[string]bool{},
 		importPrefix: importPrefix,
 		globImport:   globImport,
-		buildTags:    tags,
+		buildTag:     tag,
 	}
 }
 
@@ -91,7 +91,7 @@ func loadPackage(patterns []string, tags ...string) *packages.Package {
 // parsePackageToImport analyzes the single package constructed from the patterns and tags.
 // parsePackageToImport exits if there is an error.
 func (g *Generator) parsePackageToImport(dir string) {
-	pkg := loadPackage([]string{dir}, g.buildTags...)
+	pkg := loadPackage([]string{dir}, g.buildTag)
 	files, err := filepath.Glob(filepath.Join(dir, g.globImport))
 	if err != nil {
 		log.Fatalf("error: find glob %s under %s, got %v", g.globImport, dir, err)
@@ -102,7 +102,7 @@ func (g *Generator) parsePackageToImport(dir string) {
 }
 
 func (g *Generator) parsePackageToOutput() {
-	pkg := loadPackage([]string{*output}, g.buildTags...)
+	pkg := loadPackage([]string{*output}, g.buildTag)
 	importPath := parseImportPath(*output)
 
 	pkgInfo := &Package{
@@ -111,7 +111,7 @@ func (g *Generator) parsePackageToOutput() {
 		importPrefix: g.importPrefix,
 		lineComment:  g.lineComment,
 		globImport:   g.globImport,
-		buildTags:    g.buildTags,
+		buildTag:     g.buildTag,
 	}
 	g.outputPkg = pkgInfo
 }
@@ -131,7 +131,7 @@ func (g *Generator) addPackage(dir string, pkg *packages.Package) {
 		importPrefix: g.importPrefix,
 		lineComment:  g.lineComment,
 		globImport:   g.globImport,
-		buildTags:    g.buildTags,
+		buildTag:     g.buildTag,
 	}
 	g.importPkgs[dir] = pkgInfo
 }
@@ -147,7 +147,7 @@ func (g *Generator) generateGoKeep(toolName string, toolArgs ...string) {
 	tmplInfo := &ImportTemplateInfo{
 		GoImportToolName: toolName,
 		GoImportToolArgs: toolArgs,
-		BuildTags:        g.buildTags,
+		BuildTag:         g.buildTag,
 	}
 	for dir, pkg := range g.importPkgs {
 		g.buf.Reset()
@@ -170,7 +170,7 @@ func (g *Generator) generateGoImport(toolName string, toolArgs ...string) {
 	tmplInfo := &ImportTemplateInfo{
 		GoImportToolName: toolName,
 		GoImportToolArgs: toolArgs,
-		BuildTags:        g.buildTags,
+		BuildTag:         g.buildTag,
 	}
 	for _, pkg := range g.importPkgs {
 		tmplInfo.ImportPaths = append(tmplInfo.ImportPaths, pkg.importPath)
