@@ -238,7 +238,7 @@ func parseImportPath(dir string) string {
 	var err error
 	_, importPath, err := importFile(dir)
 	if err != nil {
-		panic(fmt.Errorf("parse package from %s", dir))
+		panic(fmt.Errorf("parse package from %s, got %w", dir, err))
 	}
 	return importPath
 }
