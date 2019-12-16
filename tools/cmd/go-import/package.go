@@ -21,7 +21,7 @@ type Package struct {
 	importPrefix string
 	lineComment  bool
 	globImport   string
-	buildTags    []string
+	buildTag     string
 }
 
 func (pkg Package) Package() string {
