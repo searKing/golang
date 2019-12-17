@@ -3,6 +3,6 @@ module github.com/searKing/golang/tools/cmd/go-nulljson
 go 1.12
 
 require (
-	github.com/searKing/golang/tools/common v0.0.0-20191217021719-0d4457c7b724
-	golang.org/x/tools v0.0.0-20191217011448-c39ce2148d8e
+	github.com/searKing/golang/tools/common v0.0.0-20191217061841-9da91da6df3e
+	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631
 )
