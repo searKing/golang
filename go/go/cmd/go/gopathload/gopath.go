@@ -96,7 +96,7 @@ func importFile(file string, buildContext *build.Context) (srcdir, importPath st
 		// "" is not a valid path for (*go/build).Import.
 		return "", "", fmt.Errorf("cannot load package in root of source directory %s", srcdir)
 	}
-	return srcdir, importPath, nil
+	return srcdir, filepath.ToSlash(importPath), nil
 }
 
 func segments(path string) []string {
