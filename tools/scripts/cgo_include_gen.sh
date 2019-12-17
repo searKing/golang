@@ -79,6 +79,9 @@ function set_default_var_param() {
   g_pkg_root_import_prefix="" # 包根目录的前缀，如github.com/searKing/golang
 }
 
+echo "This tool is deprecated, use go-import instead."
+echo "go-import can be downloaded from https://github.com/searKing/golang/tree/master/tools/cmd/go-import"
+
 # include
 pushd "${THIS_BASH_FILE_ABS_DIR}" 1>/dev/null 2>&1 || exit
 . "./lib/check_tools.sh"
