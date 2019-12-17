@@ -87,7 +87,7 @@ func importFile(file string) (srcdir, importPath string, err error) {
 	srcdir = modRoot
 	importPath = filepath.Join(modName, importPath)
 
-	return srcdir, importPath, nil
+	return srcdir, filepath.ToSlash(importPath), nil
 }
 
 // FindModuleName Extract module name from {modRoot}/go.mod
