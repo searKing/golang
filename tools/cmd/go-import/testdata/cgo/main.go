@@ -7,6 +7,7 @@ package main
 import "github.com/searKing/golang/tools/cmd/go-import/testdata/cgo/include/has_go"
 
 const Name = "string"
+
 func main() {
 	has_go.HasGo()
 }
