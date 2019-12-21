@@ -6,8 +6,6 @@ package cmux_test
 
 import (
 	"fmt"
-	"golang.org/x/net/http2/hpack"
-	"google.golang.org/grpc"
 	"io"
 	"log"
 	"net"
@@ -15,6 +13,9 @@ import (
 	"net/rpc"
 	"os"
 	"os/signal"
+
+	"golang.org/x/net/http2/hpack"
+	"google.golang.org/grpc"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"

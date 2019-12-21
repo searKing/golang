@@ -17,12 +17,13 @@ package cmux
 import (
 	"context"
 	"crypto/tls"
-	net_ "github.com/searKing/golang/go/net"
-	"github.com/searKing/golang/go/strings"
 	"log"
 	"net"
 	"sync"
 	"time"
+
+	net_ "github.com/searKing/golang/go/net"
+	"github.com/searKing/golang/go/strings"
 )
 
 // for readability of sniffTimeout

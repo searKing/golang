@@ -2,6 +2,7 @@ package cmux
 
 import (
 	"encoding/binary"
+
 	"github.com/searKing/golang/go/crypto/tls"
 )
 

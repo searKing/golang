@@ -1,8 +1,9 @@
 package cmux
 
 import (
-	"github.com/searKing/golang/go/net/cmux/internal/http"
 	"io"
+
+	"github.com/searKing/golang/go/net/cmux/internal/http"
 )
 
 // PRI * HTTP/2.0\r\n\r\n
