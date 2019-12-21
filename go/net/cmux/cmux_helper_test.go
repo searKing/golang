@@ -11,13 +11,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	net_ "github.com/searKing/golang/go/net"
-	"github.com/searKing/golang/go/net/cmux"
-	"github.com/searKing/golang/go/sync/atomic"
-	"github.com/searKing/golang/go/testing/leakcheck"
 	"go/build"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/hpack"
 	"io"
 	"io/ioutil"
 	"log"
@@ -30,6 +24,13 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	net_ "github.com/searKing/golang/go/net"
+	"github.com/searKing/golang/go/net/cmux"
+	"github.com/searKing/golang/go/sync/atomic"
+	"github.com/searKing/golang/go/testing/leakcheck"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/hpack"
 )
 
 const (

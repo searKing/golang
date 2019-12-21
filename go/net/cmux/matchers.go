@@ -5,8 +5,9 @@
 package cmux
 
 import (
-	"github.com/searKing/golang/go/container/trie_tree/ternary_search_tree"
 	"io"
+
+	"github.com/searKing/golang/go/container/trie_tree/ternary_search_tree"
 )
 
 // Any is a Matcher that matches any connection.

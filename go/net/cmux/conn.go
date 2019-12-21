@@ -7,11 +7,12 @@ package cmux
 import (
 	"context"
 	"errors"
-	"github.com/searKing/golang/go/sync/atomic"
 	"net"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/searKing/golang/go/sync/atomic"
 )
 
 var (
