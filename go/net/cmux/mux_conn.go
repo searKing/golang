@@ -5,9 +5,10 @@
 package cmux
 
 import (
-	io_ "github.com/searKing/golang/go/io"
 	"io"
 	"net"
+
+	io_ "github.com/searKing/golang/go/io"
 )
 
 // muxConn wraps a net.Conn and provides transparent sniffing of connection data.

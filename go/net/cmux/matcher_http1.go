@@ -1,11 +1,12 @@
 package cmux
 
 import (
-	http_util "github.com/searKing/golang/go/net/cmux/internal/http"
-	http_ "github.com/searKing/golang/go/net/http"
 	"io"
 	"net/http"
 	"strings"
+
+	http_util "github.com/searKing/golang/go/net/cmux/internal/http"
+	http_ "github.com/searKing/golang/go/net/http"
 )
 
 // HTTP1Fast only matches the methods in the HTTP request.
@@ -40,7 +41,7 @@ func HTTP1Header(match func(actual, expect http.Header) bool, expect http.Header
 // helper functions
 func HTTP1HeaderValue(match func(actual, expect string) bool, expect http.Header) MatcherFunc {
 	return HTTP1Header(func(actual, expect http.Header) bool {
-		for name, _ := range expect {
+		for name := range expect {
 			if match(actual.Get(name), expect.Get(name)) {
 				return false
 			}

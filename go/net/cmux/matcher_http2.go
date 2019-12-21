@@ -1,10 +1,11 @@
 package cmux
 
 import (
-	"golang.org/x/net/http2/hpack"
 	"io"
 	"io/ioutil"
 	"strings"
+
+	"golang.org/x/net/http2/hpack"
 
 	http2_ "github.com/searKing/golang/go/net/cmux/internal/http2"
 )
@@ -39,7 +40,7 @@ func HTTP2HeaderField(sendSetting bool,
 // helper functions
 func HTTP2HeaderFieldValue(sendSetting bool, match func(actual, expect string) bool, expects ...hpack.HeaderField) MatcherFunc {
 	return HTTP2HeaderField(sendSetting, func(actual, expect map[string]hpack.HeaderField) bool {
-		for name, _ := range expect {
+		for name := range expect {
 			if match(actual[name].Name, expect[name].Name) {
 				return false
 			}
