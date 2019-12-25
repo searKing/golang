@@ -1,50 +1,46 @@
 package lru
 
-import "container/list"
+import (
+	"container/list"
+	"errors"
+	"sync"
+)
 
 // LRU takes advantage of list's sequence and map's efficient locate
 type KeyLRU struct {
-	ll *list.List // list.Element.Value type is of interface{}
-	m  map[interface{}]*list.Element
-}
-
-func NewKeyLRU() *KeyLRU {
-	return &KeyLRU{}
-}
-
-// Init initializes or clears list l.
-func (lru *KeyLRU) Init() *KeyLRU {
-	lru.ll = &list.List{}
-	lru.m = make(map[interface{}]*list.Element)
-	return lru
+	ll   *list.List // list.Element.Value type is of interface{}
+	m    map[interface{}]*list.Element
+	once sync.Once
 }
 
 // lazyInit lazily initializes a zero List value.
 func (lru *KeyLRU) lazyInit() {
-	if lru.ll == nil {
-		lru.Init()
-	}
+	lru.once.Do(func() {
+		lru.ll = &list.List{}
+		lru.m = make(map[interface{}]*list.Element)
+	})
 }
 func (lru *KeyLRU) Keys() []interface{} {
-	keys := []interface{}{}
-	for key, _ := range lru.m {
+	var keys []interface{}
+	for key := range lru.m {
 		keys = append(keys, key)
 	}
 	return keys
 }
 
 // add adds Key to the head of the linked list.
-func (lru *KeyLRU) Add(key interface{}) {
+func (lru *KeyLRU) Add(key interface{}) error {
 	lru.lazyInit()
 	ele := lru.ll.PushFront(key)
 	if _, ok := lru.m[key]; ok {
-		panic("persistConn was already in LRU")
+		return errors.New("key was already in LRU")
 	}
 	lru.m[key] = ele
+	return nil
 }
-func (lru *KeyLRU) AddOrUpdate(key interface{}, value interface{}) {
+func (lru *KeyLRU) AddOrUpdate(key interface{}) error {
 	lru.Remove(key)
-	lru.Add(key)
+	return lru.Add(key)
 }
 
 func (lru *KeyLRU) RemoveOldest() interface{} {
