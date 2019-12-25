@@ -2,46 +2,39 @@ package lru
 
 import (
 	"container/list"
+	"sync"
+
 	"github.com/pkg/errors"
 )
 
 // LRU takes advantage of list's sequence and map's efficient locate
 type LRU struct {
-	ll *list.List // list.Element.Value type is of interface{}
-	m  map[interface{}]*list.Element
+	ll   *list.List // list.Element.Value type is of interface{}
+	m    map[interface{}]*list.Element
+	once sync.Once
 }
 type Pair struct {
 	Key   interface{}
 	Value interface{}
 }
 
-func NewLRU() *LRU {
-	return &LRU{}
-}
-
-// Init initializes or clears list l.
-func (lru *LRU) Init() *LRU {
-	lru.ll = &list.List{}
-	lru.m = make(map[interface{}]*list.Element)
-	return lru
-}
-
 // lazyInit lazily initializes a zero List value.
 func (lru *LRU) lazyInit() {
-	if lru.ll == nil {
-		lru.Init()
-	}
+	lru.once.Do(func() {
+		lru.ll = &list.List{}
+		lru.m = make(map[interface{}]*list.Element)
+	})
 }
 
 func (lru *LRU) Keys() []interface{} {
-	keys := []interface{}{}
-	for key, _ := range lru.m {
+	var keys []interface{}
+	for key := range lru.m {
 		keys = append(keys, key)
 	}
 	return keys
 }
 func (lru *LRU) Values() []interface{} {
-	values := []interface{}{}
+	var values []interface{}
 	for _, value := range lru.m {
 		values = append(values, value)
 	}
@@ -49,7 +42,7 @@ func (lru *LRU) Values() []interface{} {
 }
 
 func (lru *LRU) Pairs() []Pair {
-	pairs := []Pair{}
+	var pairs []Pair
 	for key, value := range lru.m {
 		pairs = append(pairs, Pair{
 			Key:   key,
@@ -70,15 +63,15 @@ func (lru *LRU) Add(key interface{}, value interface{}) error {
 		Value: value,
 	})
 	if _, ok := lru.m[key]; ok {
-		return errors.New("Key was already in LRU")
+		return errors.New("key was already in LRU")
 	}
 	lru.m[key] = ele
 	return nil
 }
 
-func (lru *LRU) AddOrUpdate(key interface{}, value interface{}) {
+func (lru *LRU) AddOrUpdate(key interface{}, value interface{}) error {
 	lru.Remove(key)
-	lru.Add(key, value)
+	return lru.Add(key, value)
 }
 
 func (lru *LRU) RemoveOldest() interface{} {
