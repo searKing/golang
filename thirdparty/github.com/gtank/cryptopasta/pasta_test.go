@@ -1,12 +1,17 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package cryptopasta_test
 
 import (
 	"bytes"
 	"crypto/rand"
-	"github.com/searKing/golang/thirdparty/github.com/gtank/cryptopasta"
 	"io"
 	"io/ioutil"
 	"testing"
+
+	"github.com/searKing/golang/thirdparty/github.com/gtank/cryptopasta"
 )
 
 func TestEncryptDecryptGCM(t *testing.T) {

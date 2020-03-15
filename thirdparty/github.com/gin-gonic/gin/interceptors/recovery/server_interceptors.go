@@ -1,13 +1,18 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package recovery
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/searKing/golang/go/error/builtin"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/searKing/golang/go/error/builtin"
 )
 
 func ServerInterceptor(f func(c *gin.Context, err interface{})) gin.HandlerFunc {

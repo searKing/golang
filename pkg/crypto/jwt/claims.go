@@ -1,9 +1,13 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package jwt
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // See: https://tools.ietf.org/html/rfc7519

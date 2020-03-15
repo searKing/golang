@@ -1,4 +1,4 @@
-// Copyright 2019 The searKing Author. All rights reserved.
+// Copyright 2020 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,8 +6,6 @@ package cmux_test
 
 import (
 	"context"
-	"github.com/searKing/golang/go/net/cmux"
-	"github.com/searKing/golang/go/testing/leakcheck"
 	"io"
 	"log"
 	"net"
@@ -15,6 +13,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/searKing/golang/go/net/cmux"
+	"github.com/searKing/golang/go/testing/leakcheck"
 
 	"golang.org/x/net/http2"
 )

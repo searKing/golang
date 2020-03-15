@@ -1,9 +1,14 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package tcp
 
 import (
 	"bufio"
-	"github.com/searKing/golang/go/util/object"
 	"sync"
+
+	"github.com/searKing/golang/go/util/object"
 )
 
 type TCPConn struct {

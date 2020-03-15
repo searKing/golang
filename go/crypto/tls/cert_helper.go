@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package tls
 
 import (
@@ -8,9 +12,10 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"github.com/pkg/errors"
 	"math/big"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // PublicKey returns the public key for a given key or nul.
