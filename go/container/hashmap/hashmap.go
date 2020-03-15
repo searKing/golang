@@ -35,14 +35,14 @@ func (m *HashMap) lazyInit() {
 }
 
 func (m *HashMap) Keys() []interface{} {
-	keys := []interface{}{}
+	var keys []interface{}
 	for key, _ := range m.m {
 		keys = append(keys, key)
 	}
 	return keys
 }
 func (m *HashMap) Values() []interface{} {
-	values := []interface{}{}
+	var values []interface{}
 	for _, value := range m.m {
 		values = append(values, value)
 	}
@@ -50,7 +50,7 @@ func (m *HashMap) Values() []interface{} {
 }
 
 func (m *HashMap) Pairs() []Pair {
-	pairs := []Pair{}
+	var pairs []Pair
 	for key, value := range m.m {
 		pairs = append(pairs, Pair{
 			Key:   key,
