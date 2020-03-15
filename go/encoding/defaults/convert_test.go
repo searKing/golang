@@ -1,11 +1,16 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package defaults_test
 
 import (
 	"fmt"
-	"github.com/searKing/golang/go/encoding/defaults"
-	"gopkg.in/yaml.v2"
 	"reflect"
 	"testing"
+
+	"github.com/searKing/golang/go/encoding/defaults"
+	"gopkg.in/yaml.v2"
 )
 
 type inputType struct {

@@ -1,8 +1,13 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/
 package auth
 
 import (
 	"encoding/base64"
+
 	"github.com/google/uuid"
 	"github.com/searKing/golang/go/crypto/rand"
 )

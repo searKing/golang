@@ -1,13 +1,18 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package websocket
 
 import (
 	"context"
 	"errors"
-	"github.com/gorilla/websocket"
-	"github.com/searKing/golang/go/x/dispatch"
 	"runtime"
 	"sync/atomic"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/searKing/golang/go/x/dispatch"
 )
 
 // maxInt64 is the effective "infinite" value for the Server and

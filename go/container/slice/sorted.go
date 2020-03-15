@@ -1,8 +1,13 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package slice
 
 import (
-	"github.com/searKing/golang/go/util/object"
 	"sort"
+
+	"github.com/searKing/golang/go/util/object"
 )
 
 // SortedFunc returns a slice consisting of the distinct elements (according to

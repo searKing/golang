@@ -1,14 +1,19 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package websocket
 
 import (
 	"context"
-	"github.com/gorilla/websocket"
-	"github.com/searKing/golang/go/sync/atomic"
-	"github.com/searKing/golang/go/util/object"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/searKing/golang/go/sync/atomic"
+	"github.com/searKing/golang/go/util/object"
 )
 
 type ServerHandler interface {

@@ -1,7 +1,12 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package terminal
 
 import (
 	"context"
+
 	"github.com/searKing/golang/go/error/exception"
 	"github.com/searKing/golang/go/util/class"
 	"github.com/searKing/golang/go/util/optional"

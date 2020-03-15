@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package jwt
 
 import (
@@ -8,10 +12,10 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"io/ioutil"
+
 	"github.com/searKing/golang/go/crypto/auth"
 	"github.com/searKing/golang/go/error/exception"
-	"io/ioutil"
 )
 
 type AuthKey struct {

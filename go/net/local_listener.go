@@ -1,9 +1,14 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package net
 
 import (
 	"fmt"
-	"github.com/searKing/golang/go/error/multi"
 	"net"
+
+	"github.com/searKing/golang/go/error/multi"
 )
 
 var Ipv4LoopbackHosts = []string{"localhost", "127.0.0.1"}

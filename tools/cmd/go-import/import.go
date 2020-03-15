@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // go-import Performs auto import of non go files.
 // Given the directory to be imported
 // go-import will create gokeep.go Go source files and a new self-contained goimport.go Go source file.

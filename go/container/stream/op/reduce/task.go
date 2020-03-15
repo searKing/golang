@@ -1,7 +1,12 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package reduce
 
 import (
 	"context"
+
 	"github.com/searKing/golang/go/container/stream/op/terminal"
 	"github.com/searKing/golang/go/util/function/binary"
 	"github.com/searKing/golang/go/util/spliterator"
