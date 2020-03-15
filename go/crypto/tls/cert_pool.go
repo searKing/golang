@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package tls
 
 import (
@@ -5,8 +9,9 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
+
+	"github.com/pkg/errors"
 )
 
 // LoadX509CertificatePool returns loads a TLS x509.CertPool or update a TLS x509.CertPool if nil.

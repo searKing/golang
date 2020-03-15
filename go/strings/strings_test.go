@@ -1,12 +1,17 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package strings_test
 
 import (
-	"github.com/searKing/golang/go/strings"
 	"reflect"
 	"testing"
 	"unicode"
 	"unicode/utf8"
 	"unsafe"
+
+	"github.com/searKing/golang/go/strings"
 )
 
 type SliceContainsTest struct {
@@ -54,7 +59,7 @@ func leadingTenRunes(lead, ch rune) string {
 			if lead < 0 {
 				continue
 			}
-			r[i ] = lead
+			r[i] = lead
 			continue
 		}
 		if ch < 0 {

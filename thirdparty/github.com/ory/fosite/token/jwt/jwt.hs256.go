@@ -1,13 +1,17 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package jwt
 
 import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	jwt_ "github.com/ory/fosite/token/jwt"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt_ "github.com/ory/fosite/token/jwt"
+
 	"github.com/pkg/errors"
 
 	"github.com/ory/fosite"

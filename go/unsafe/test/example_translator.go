@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package test
 
 /*
@@ -24,8 +28,9 @@ void showStringArray(char** list, int num){
 import "C"
 import (
 	"fmt"
-	unsafe2 "github.com/searKing/golang/go/unsafe"
 	"unsafe"
+
+	unsafe2 "github.com/searKing/golang/go/unsafe"
 )
 
 func ExampleGoStringArray() {

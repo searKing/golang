@@ -1,9 +1,14 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package multi_test
 
 import (
 	"fmt"
-	"github.com/searKing/golang/go/error/multi"
 	"testing"
+
+	"github.com/searKing/golang/go/error/multi"
 )
 
 func TestNew(t *testing.T) {

@@ -1,10 +1,15 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package any_test
 
 import (
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/searKing/golang/thirdparty/github.com/golang/protobuf/ptypes/any"
 	"strings"
 	"testing"
+
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/searKing/golang/thirdparty/github.com/golang/protobuf/ptypes/any"
 )
 
 type Human struct {

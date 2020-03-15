@@ -1,16 +1,21 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package http
 
 import (
 	"bufio"
 	"errors"
 	"fmt"
-	io2 "github.com/searKing/golang/go/io"
 	"io"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	io2 "github.com/searKing/golang/go/io"
 )
 
 // The algorithm uses at most sniffLen bytes to make its decision.

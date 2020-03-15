@@ -1,11 +1,16 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package spliterator
 
 import (
 	"context"
+	"sync"
+
 	"github.com/searKing/golang/go/util/function/consumer"
 	"github.com/searKing/golang/go/util/object"
 	"github.com/searKing/golang/go/util/optional"
-	"sync"
 )
 
 //go:generate go-syncmap -type "seenMap<interface{}, struct{}>"

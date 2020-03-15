@@ -1,14 +1,18 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logrus
 
 import (
 	"fmt"
-	"github.com/lestrrat/go-file-rotatelogs"
+	"path/filepath"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/rifflock/lfshook"
 	filepath_ "github.com/searKing/golang/go/path/filepath"
 	"github.com/sirupsen/logrus"
-	"path/filepath"
-	"time"
 )
 
 // WithRotation enhances logrus log to be written to local filesystem, with file rotation

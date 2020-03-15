@@ -1,4 +1,4 @@
-// Copyright 2019 The searKing Author. All rights reserved.
+// Copyright 2020 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,12 +9,13 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"fmt"
-	"github.com/searKing/golang/go/net/cmux"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+
+	"github.com/searKing/golang/go/net/cmux"
 )
 
 type anotherHTTPHandler struct{}

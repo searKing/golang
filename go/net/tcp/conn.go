@@ -1,14 +1,19 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package tcp
 
 import (
 	"context"
 	"errors"
-	"github.com/searKing/golang/go/x/dispatch"
 	"io"
 	"net"
 	"runtime"
 	"sync/atomic"
 	"time"
+
+	"github.com/searKing/golang/go/x/dispatch"
 )
 
 // maxInt64 is the effective "infinite" value for the Server and

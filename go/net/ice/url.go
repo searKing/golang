@@ -1,12 +1,17 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 //https://tools.ietf.org/html/rfc7064
 //https://tools.ietf.org/html/rfc7065
 package ice
 
 import (
 	"fmt"
-	"github.com/searKing/golang/go/net/url"
 	"net"
 	"strconv"
+
+	"github.com/searKing/golang/go/net/url"
 )
 
 // URL represents a STUN (rfc7064) or TURN (rfc7065) URL
