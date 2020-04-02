@@ -28,7 +28,8 @@ func MySelf() ([]byte, error) {
 
 func SumBytes(b []byte) []byte {
 	h := md5.New()
-	return h.Sum(b)
+	h.Write(b)
+	return h.Sum(nil)
 }
 
 func SumString(b string) string {
