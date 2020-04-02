@@ -4,29 +4,27 @@
 
 package hashring
 
-import "net"
-
-func WithNumberNodeRepetitions(n int) KetamaNodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *KetamaNodeLocator) {
+func WithNumberNodeRepetitions(n int) NodeLocatorOption {
+	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.numReps = n
 	})
 }
 
-func WithHashAlg(hashAlg HashAlgorithm) KetamaNodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *KetamaNodeLocator) {
+func WithHashAlg(hashAlg HashAlgorithm) NodeLocatorOption {
+	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.hashAlg = hashAlg
 	})
 }
 
-func WithFormatter(formatter *KetamaNodeKeyFormatter) KetamaNodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *KetamaNodeLocator) {
-		l.ketamaNodeKeyFormatter = formatter
+func WithFormatter(formatter *KetamaNodeKeyFormatter) NodeLocatorOption {
+	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
+		l.nodeKeyFormatter = formatter
 	})
 }
 
-func WithWeights(weights map[net.Addr]int) KetamaNodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *KetamaNodeLocator) {
+func WithWeights(weights map[Node]int) NodeLocatorOption {
+	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.weights = weights
-		l.isWeightedKetama = len(weights) > 0
+		l.isWeighted = len(weights) > 0
 	})
 }

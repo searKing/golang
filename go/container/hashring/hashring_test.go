@@ -28,26 +28,26 @@ func TestNew(t *testing.T) {
 func TestAdd(t *testing.T) {
 	numReps := 160
 	x := New(WithNumberNodeRepetitions(numReps))
-	x.AddKetamaNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("abcdefg"))
 
-	if len(x.ketamaNodes) != numReps {
-		t.Errorf("got %d, want %d", len(x.ketamaNodes), numReps)
+	if len(x.nodes) != numReps {
+		t.Errorf("got %d, want %d", len(x.nodes), numReps)
 	}
-	if len(x.sortedKetamaHashRing) != numReps {
-		t.Errorf("got %d, want %d", len(x.sortedKetamaHashRing), numReps)
+	if len(x.sortedHashes) != numReps {
+		t.Errorf("got %d, want %d", len(x.sortedHashes), numReps)
 	}
-	if sort.IsSorted(x.sortedKetamaHashRing) == false {
+	if sort.IsSorted(x.sortedHashes) == false {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
-	x.AddKetamaNodes(StringNode("qwer"))
+	x.AddNodes(StringNode("qwer"))
 
-	if len(x.ketamaNodes) != 2*numReps {
-		t.Errorf("got %d, want %d", len(x.ketamaNodes), 2*numReps)
+	if len(x.nodes) != 2*numReps {
+		t.Errorf("got %d, want %d", len(x.nodes), 2*numReps)
 	}
-	if len(x.sortedKetamaHashRing) != 2*numReps {
-		t.Errorf("got %d, want %d", len(x.ketamaNodes), 2*numReps)
+	if len(x.sortedHashes) != 2*numReps {
+		t.Errorf("got %d, want %d", len(x.nodes), 2*numReps)
 	}
-	if sort.IsSorted(x.sortedKetamaHashRing) == false {
+	if sort.IsSorted(x.sortedHashes) == false {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
 }
@@ -55,23 +55,23 @@ func TestAdd(t *testing.T) {
 func TestRemove(t *testing.T) {
 	numReps := 160
 	x := New(WithNumberNodeRepetitions(numReps))
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.RemoveKetamaNodes(StringNode("abcdefg"))
-	if len(x.ketamaNodes) != 0 {
-		t.Errorf("got %d, want %d", len(x.ketamaNodes), 0)
+	x.AddNodes(StringNode("abcdefg"))
+	x.RemoveNodes(StringNode("abcdefg"))
+	if len(x.nodes) != 0 {
+		t.Errorf("got %d, want %d", len(x.nodes), 0)
 	}
-	if len(x.sortedKetamaHashRing) != 0 {
-		t.Errorf("got %d, want %d", len(x.ketamaNodes), 0)
+	if len(x.sortedHashes) != 0 {
+		t.Errorf("got %d, want %d", len(x.nodes), 0)
 	}
 }
 
 func TestRemoveNonExisting(t *testing.T) {
 	numReps := 160
 	x := New(WithNumberNodeRepetitions(numReps))
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.RemoveKetamaNodes(StringNode("abcdefghijk"))
-	if len(x.ketamaNodes) != numReps {
-		t.Errorf("got %d, want %d", len(x.ketamaNodes), numReps)
+	x.AddNodes(StringNode("abcdefg"))
+	x.RemoveNodes(StringNode("abcdefghijk"))
+	if len(x.nodes) != numReps {
+		t.Errorf("got %d, want %d", len(x.nodes), numReps)
 	}
 }
 
@@ -87,14 +87,14 @@ func TestGetEmpty(t *testing.T) {
 func TestGetSingle(t *testing.T) {
 	numReps := 160
 	x := New(WithNumberNodeRepetitions(numReps))
-	x.AddKetamaNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("abcdefg"))
 	f := func(s string) bool {
 		y, has := x.Get(s)
 		if !has {
 			return false
 		}
 		t.Logf("s = %q, y = %q", s, y)
-		return y.GetSocketAddress().String() == "abcdefg"
+		return y.String() == "abcdefg"
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Logf("missing nodes")
@@ -114,15 +114,15 @@ var gmtests = []gtest{
 
 func TestGetMultiple(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	for i, v := range gmtests {
 		result, has := x.Get(v.in)
 		if !has {
 			t.Fatal()
 		}
-		if result.GetSocketAddress().String() != v.out {
+		if result.String() != v.out {
 			t.Errorf("%d. got %q, expected %q", i, result, v.out)
 		}
 	}
@@ -130,18 +130,18 @@ func TestGetMultiple(t *testing.T) {
 
 func TestGetMultipleQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
 		y, has := x.Get(s)
 		if !has {
 			return false
 		}
 		t.Logf("s = %q, y = %q", s, y)
-		return y.GetSocketAddress().String() == "abcdefg" ||
-			y.GetSocketAddress().String() == "hijklmn" ||
-			y.GetSocketAddress().String() == "opqrstu"
+		return y.String() == "abcdefg" ||
+			y.String() == "hijklmn" ||
+			y.String() == "opqrstu"
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Logf("missing nodes")
@@ -162,25 +162,25 @@ var rtestsAfter = []gtest{
 
 func TestGetMultipleRemove(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	for i, v := range rtestsBefore {
 		result, has := x.Get(v.in)
 		if !has {
 			t.Fatal()
 		}
-		if result.GetSocketAddress().String() != v.out {
+		if result.String() != v.out {
 			t.Errorf("%d. got %q, expected %q before rm", i, result, v.out)
 		}
 	}
-	x.RemoveKetamaNodes(StringNode("hijklmn"))
+	x.RemoveNodes(StringNode("hijklmn"))
 	for i, v := range rtestsAfter {
 		result, has := x.Get(v.in)
 		if !has {
 			t.Fatal()
 		}
-		if result.GetSocketAddress().String() != v.out {
+		if result.String() != v.out {
 			t.Errorf("%d. got %q, expected %q after rm", i, result, v.out)
 		}
 	}
@@ -188,10 +188,10 @@ func TestGetMultipleRemove(t *testing.T) {
 
 func TestGetMultipleRemoveQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
-	x.RemoveKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
+	x.RemoveNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
 		y, has := x.Get(s)
 		if !has {
@@ -199,7 +199,7 @@ func TestGetMultipleRemoveQuick(t *testing.T) {
 			return false
 		}
 		t.Logf("s = %q, y = %q", s, y)
-		return y.GetSocketAddress().String() == "abcdefg" || y.GetSocketAddress().String() == "hijklmn"
+		return y.String() == "abcdefg" || y.String() == "hijklmn"
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Logf("missing nodes")
@@ -208,9 +208,9 @@ func TestGetMultipleRemoveQuick(t *testing.T) {
 
 func TestGetTwo(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	a, b, has := x.GetTwo("99999999")
 	if !has {
 		t.Fatal("missing nodes")
@@ -218,19 +218,19 @@ func TestGetTwo(t *testing.T) {
 	if a == b {
 		t.Errorf("a shouldn't equal b")
 	}
-	if a.GetSocketAddress().String() != "opqrstu" {
+	if a.String() != "opqrstu" {
 		t.Errorf("wrong a: %q", a)
 	}
-	if b.GetSocketAddress().String() != "hijklmn" {
+	if b.String() != "hijklmn" {
 		t.Errorf("wrong b: %q", b)
 	}
 }
 
 func TestGetTwoQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
 		a, b, has := x.GetTwo(s)
 		if !has {
@@ -241,16 +241,16 @@ func TestGetTwoQuick(t *testing.T) {
 			t.Logf("a == b")
 			return false
 		}
-		if a.GetSocketAddress().String() != "abcdefg" &&
-			a.GetSocketAddress().String() != "hijklmn" &&
-			a.GetSocketAddress().String() != "opqrstu" {
+		if a.String() != "abcdefg" &&
+			a.String() != "hijklmn" &&
+			a.String() != "opqrstu" {
 			t.Logf("invalid a: %q", a)
 			return false
 		}
 
-		if b.GetSocketAddress().String() != "abcdefg" &&
-			b.GetSocketAddress().String() != "hijklmn" &&
-			b.GetSocketAddress().String() != "opqrstu" {
+		if b.String() != "abcdefg" &&
+			b.String() != "hijklmn" &&
+			b.String() != "opqrstu" {
 			t.Logf("invalid b: %q", b)
 			return false
 		}
@@ -263,8 +263,8 @@ func TestGetTwoQuick(t *testing.T) {
 
 func TestGetTwoOnlyTwoQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
 	f := func(s string) bool {
 		a, b, has := x.GetTwo(s)
 		if !has {
@@ -275,12 +275,12 @@ func TestGetTwoOnlyTwoQuick(t *testing.T) {
 			t.Logf("a == b")
 			return false
 		}
-		if a.GetSocketAddress().String() != "abcdefg" && a.GetSocketAddress().String() != "hijklmn" {
+		if a.String() != "abcdefg" && a.String() != "hijklmn" {
 			t.Logf("invalid a: %q", a)
 			return false
 		}
 
-		if b.GetSocketAddress().String() != "abcdefg" && b.GetSocketAddress().String() != "hijklmn" {
+		if b.String() != "abcdefg" && b.String() != "hijklmn" {
 			t.Logf("invalid b: %q", b)
 			return false
 		}
@@ -294,7 +294,7 @@ func TestGetTwoOnlyTwoQuick(t *testing.T) {
 func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	x := New()
 
-	x.AddKetamaNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("abcdefg"))
 	a, b, has := x.GetTwo("99999999")
 	if !has {
 		t.Logf("missing nodes")
@@ -302,7 +302,7 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	if a == b {
 		t.Errorf("a shouldn't equal b")
 	}
-	if a.GetSocketAddress().String() != "abcdefg" {
+	if a.String() != "abcdefg" {
 		t.Errorf("wrong a: %q", a)
 	}
 	if b != nil {
@@ -312,9 +312,9 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 
 func TestGetN(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	members, has := x.GetN("9999999", 3)
 	if !has {
 		t.Logf("missing nodes")
@@ -322,22 +322,22 @@ func TestGetN(t *testing.T) {
 	if len(members) != 3 {
 		t.Errorf("expected 3 allNodes instead of %d", len(members))
 	}
-	if members[0].GetSocketAddress().String() != "abcdefg" {
+	if members[0].String() != "abcdefg" {
 		t.Errorf("wrong allNodes[0]: %q", members[0])
 	}
-	if members[1].GetSocketAddress().String() != "opqrstu" {
+	if members[1].String() != "opqrstu" {
 		t.Errorf("wrong allNodes[1]: %q", members[1])
 	}
-	if members[2].GetSocketAddress().String() != "hijklmn" {
+	if members[2].String() != "hijklmn" {
 		t.Errorf("wrong allNodes[2]: %q", members[2])
 	}
 }
 
 func TestGetNLess(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	members, has := x.GetN("99999999", 2)
 	if !has {
 		t.Logf("missing nodes")
@@ -345,19 +345,19 @@ func TestGetNLess(t *testing.T) {
 	if len(members) != 2 {
 		t.Errorf("expected 2 allNodes instead of %d", len(members))
 	}
-	if members[0].GetSocketAddress().String() != "opqrstu" {
+	if members[0].String() != "opqrstu" {
 		t.Errorf("wrong allNodes[0]: %q", members[0])
 	}
-	if members[1].GetSocketAddress().String() != "hijklmn" {
+	if members[1].String() != "hijklmn" {
 		t.Errorf("wrong allNodes[1]: %q", members[1])
 	}
 }
 
 func TestGetNMore(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	members, has := x.GetN("9999999", 5)
 	if !has {
 		t.Logf("missing nodes")
@@ -365,22 +365,22 @@ func TestGetNMore(t *testing.T) {
 	if len(members) != 3 {
 		t.Errorf("expected 3 allNodes instead of %d", len(members))
 	}
-	if members[0].GetSocketAddress().String() != "abcdefg" {
+	if members[0].String() != "abcdefg" {
 		t.Errorf("wrong allNodes[0]: %q", members[0])
 	}
-	if members[1].GetSocketAddress().String() != "opqrstu" {
+	if members[1].String() != "opqrstu" {
 		t.Errorf("wrong allNodes[1]: %q", members[1])
 	}
-	if members[2].GetSocketAddress().String() != "hijklmn" {
+	if members[2].String() != "hijklmn" {
 		t.Errorf("wrong allNodes[2]: %q", members[2])
 	}
 }
 
 func TestGetNQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
 		members, has := x.GetN(s, 3)
 		if !has {
@@ -393,14 +393,14 @@ func TestGetNQuick(t *testing.T) {
 		}
 		set := make(map[string]bool, 4)
 		for _, member := range members {
-			if set[member.GetSocketAddress().String()] {
+			if set[member.String()] {
 				t.Logf("duplicate error")
 				return false
 			}
-			set[member.GetSocketAddress().String()] = true
-			if member.GetSocketAddress().String() != "abcdefg" &&
-				member.GetSocketAddress().String() != "hijklmn" &&
-				member.GetSocketAddress().String() != "opqrstu" {
+			set[member.String()] = true
+			if member.String() != "abcdefg" &&
+				member.String() != "hijklmn" &&
+				member.String() != "opqrstu" {
 				t.Logf("invalid member: %q", member)
 				return false
 			}
@@ -414,9 +414,9 @@ func TestGetNQuick(t *testing.T) {
 
 func TestGetNLessQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
 		members, has := x.GetN(s, 2)
 		if !has {
@@ -429,14 +429,14 @@ func TestGetNLessQuick(t *testing.T) {
 		}
 		set := make(map[string]bool, 4)
 		for _, member := range members {
-			if set[member.GetSocketAddress().String()] {
+			if set[member.String()] {
 				t.Logf("duplicate error")
 				return false
 			}
-			set[member.GetSocketAddress().String()] = true
-			if member.GetSocketAddress().String() != "abcdefg" &&
-				member.GetSocketAddress().String() != "hijklmn" &&
-				member.GetSocketAddress().String() != "opqrstu" {
+			set[member.String()] = true
+			if member.String() != "abcdefg" &&
+				member.String() != "hijklmn" &&
+				member.String() != "opqrstu" {
 				t.Logf("invalid member: %q", member)
 				return false
 			}
@@ -450,9 +450,9 @@ func TestGetNLessQuick(t *testing.T) {
 
 func TestGetNMoreQuick(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abcdefg"))
-	x.AddKetamaNodes(StringNode("hijklmn"))
-	x.AddKetamaNodes(StringNode("opqrstu"))
+	x.AddNodes(StringNode("abcdefg"))
+	x.AddNodes(StringNode("hijklmn"))
+	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
 		members, has := x.GetN(s, 5)
 		if !has {
@@ -465,12 +465,12 @@ func TestGetNMoreQuick(t *testing.T) {
 		}
 		set := make(map[string]bool, 4)
 		for _, member := range members {
-			if set[member.GetSocketAddress().String()] {
+			if set[member.String()] {
 				t.Logf("duplicate error")
 				return false
 			}
-			set[member.GetSocketAddress().String()] = true
-			if member.GetSocketAddress().String() != "abcdefg" && member.GetSocketAddress().String() != "hijklmn" && member.GetSocketAddress().String() != "opqrstu" {
+			set[member.String()] = true
+			if member.String() != "abcdefg" && member.String() != "hijklmn" && member.String() != "opqrstu" {
 				t.Logf("invalid member: %q", member)
 				return false
 			}
@@ -484,10 +484,10 @@ func TestGetNMoreQuick(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	x := New()
-	x.AddKetamaNodes(StringNode("abc"))
-	x.AddKetamaNodes(StringNode("def"))
-	x.AddKetamaNodes(StringNode("ghi"))
-	x.SetKetamaNodes(StringNode("jkl"), StringNode("mno"))
+	x.AddNodes(StringNode("abc"))
+	x.AddNodes(StringNode("def"))
+	x.AddNodes(StringNode("ghi"))
+	x.SetNodes(StringNode("jkl"), StringNode("mno"))
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
@@ -495,16 +495,16 @@ func TestSet(t *testing.T) {
 	if !has {
 		t.Fatal()
 	}
-	if a.GetSocketAddress().String() != "jkl" && a.GetSocketAddress().String() != "mno" {
+	if a.String() != "jkl" && a.String() != "mno" {
 		t.Errorf("expected jkl or mno, got %s", a)
 	}
-	if b.GetSocketAddress().String() != "jkl" && b.GetSocketAddress().String() != "mno" {
+	if b.String() != "jkl" && b.String() != "mno" {
 		t.Errorf("expected jkl or mno, got %s", b)
 	}
 	if a == b {
 		t.Errorf("expected a != b, they were both %s", a)
 	}
-	x.SetKetamaNodes(StringNode("jkl"), StringNode("mno"))
+	x.SetNodes(StringNode("jkl"), StringNode("mno"))
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
@@ -512,16 +512,16 @@ func TestSet(t *testing.T) {
 	if !has {
 		t.Fatal()
 	}
-	if a.GetSocketAddress().String() != "pqr" && a.GetSocketAddress().String() != "mno" {
+	if a.String() != "jkl" && a.String() != "mno" {
 		t.Errorf("expected jkl or mno, got %s", a)
 	}
-	if b.GetSocketAddress().String() != "pqr" && b.GetSocketAddress().String() != "mno" {
+	if b.String() != "jkl" && b.String() != "mno" {
 		t.Errorf("expected jkl or mno, got %s", b)
 	}
 	if a == b {
 		t.Errorf("expected a != b, they were both %s", a)
 	}
-	x.SetKetamaNodes(StringNode("pqr"), StringNode("mno"))
+	x.SetNodes(StringNode("pqr"), StringNode("mno"))
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
@@ -529,10 +529,10 @@ func TestSet(t *testing.T) {
 	if !has {
 		t.Fatal()
 	}
-	if a.GetSocketAddress().String() != "pqr" && a.GetSocketAddress().String() != "mno" {
+	if a.String() != "pqr" && a.String() != "mno" {
 		t.Errorf("expected jkl or mno, got %s", a)
 	}
-	if b.GetSocketAddress().String() != "pqr" && b.GetSocketAddress().String() != "mno" {
+	if b.String() != "pqr" && b.String() != "mno" {
 		t.Errorf("expected jkl or mno, got %s", b)
 	}
 	if a == b {
@@ -561,12 +561,12 @@ func mallocNum(f func()) uint64 {
 
 func BenchmarkAllocations(b *testing.B) {
 	x := New()
-	x.AddKetamaNodes(StringNode("stays"))
+	x.AddNodes(StringNode("stays"))
 	b.ResetTimer()
 	allocSize := allocBytes(func() {
 		for i := 0; i < b.N; i++ {
-			x.AddKetamaNodes(StringNode("Foo"))
-			x.RemoveKetamaNodes(StringNode("Foo"))
+			x.AddNodes(StringNode("Foo"))
+			x.RemoveNodes(StringNode("Foo"))
 		}
 	})
 	b.Logf("%d: Allocated %d bytes (%.2fx)", b.N, allocSize, float64(allocSize)/float64(b.N))
@@ -574,12 +574,12 @@ func BenchmarkAllocations(b *testing.B) {
 
 func BenchmarkMalloc(b *testing.B) {
 	x := New()
-	x.AddKetamaNodes(StringNode("stays"))
+	x.AddNodes(StringNode("stays"))
 	b.ResetTimer()
 	mallocs := mallocNum(func() {
 		for i := 0; i < b.N; i++ {
-			x.AddKetamaNodes(StringNode("Foo"))
-			x.RemoveKetamaNodes(StringNode("Foo"))
+			x.AddNodes(StringNode("Foo"))
+			x.RemoveNodes(StringNode("Foo"))
 		}
 	})
 	b.Logf("%d: Mallocd %d times (%.2fx)", b.N, mallocs, float64(mallocs)/float64(b.N))
@@ -587,29 +587,29 @@ func BenchmarkMalloc(b *testing.B) {
 
 func BenchmarkCycle(b *testing.B) {
 	x := New()
-	x.AddKetamaNodes(StringNode("nothing"))
+	x.AddNodes(StringNode("nothing"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.AddKetamaNodes(StringNode("foo" + strconv.Itoa(i)))
-		x.RemoveKetamaNodes(StringNode("foo" + strconv.Itoa(i)))
+		x.AddNodes(StringNode("foo" + strconv.Itoa(i)))
+		x.RemoveNodes(StringNode("foo" + strconv.Itoa(i)))
 	}
 }
 
 func BenchmarkCycleLarge(b *testing.B) {
 	x := New()
 	for i := 0; i < 10; i++ {
-		x.AddKetamaNodes(StringNode("start" + strconv.Itoa(i)))
+		x.AddNodes(StringNode("start" + strconv.Itoa(i)))
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.AddKetamaNodes(StringNode("foo" + strconv.Itoa(i)))
-		x.RemoveKetamaNodes(StringNode("foo" + strconv.Itoa(i)))
+		x.AddNodes(StringNode("foo" + strconv.Itoa(i)))
+		x.RemoveNodes(StringNode("foo" + strconv.Itoa(i)))
 	}
 }
 
 func BenchmarkGet(b *testing.B) {
 	x := New()
-	x.AddKetamaNodes(StringNode("nothing"))
+	x.AddNodes(StringNode("nothing"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		x.Get("nothing")
@@ -619,7 +619,7 @@ func BenchmarkGet(b *testing.B) {
 func BenchmarkGetLarge(b *testing.B) {
 	x := New()
 	for i := 0; i < 10; i++ {
-		x.AddKetamaNodes(StringNode("start" + strconv.Itoa(i)))
+		x.AddNodes(StringNode("start" + strconv.Itoa(i)))
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -629,7 +629,7 @@ func BenchmarkGetLarge(b *testing.B) {
 
 func BenchmarkGetN(b *testing.B) {
 	x := New()
-	x.AddKetamaNodes(StringNode("nothing"))
+	x.AddNodes(StringNode("nothing"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		x.GetN("nothing", 3)
@@ -639,7 +639,7 @@ func BenchmarkGetN(b *testing.B) {
 func BenchmarkGetNLarge(b *testing.B) {
 	x := New()
 	for i := 0; i < 10; i++ {
-		x.AddKetamaNodes(StringNode("start" + strconv.Itoa(i)))
+		x.AddNodes(StringNode("start" + strconv.Itoa(i)))
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -649,7 +649,7 @@ func BenchmarkGetNLarge(b *testing.B) {
 
 func BenchmarkGetTwo(b *testing.B) {
 	x := New()
-	x.AddKetamaNodes(StringNode("nothing"))
+	x.AddNodes(StringNode("nothing"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		x.GetTwo("nothing")
@@ -659,7 +659,7 @@ func BenchmarkGetTwo(b *testing.B) {
 func BenchmarkGetTwoLarge(b *testing.B) {
 	x := New()
 	for i := 0; i < 10; i++ {
-		x.AddKetamaNodes(StringNode("start" + strconv.Itoa(i)))
+		x.AddNodes(StringNode("start" + strconv.Itoa(i)))
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -670,12 +670,12 @@ func BenchmarkGetTwoLarge(b *testing.B) {
 // from @edsrzf on github:
 func TestAddCollision(t *testing.T) {
 	// These two strings produce several crc32 collisions after "|i" is
-	// appended added by KetamaNodeLocator.virtualNode.
+	// appended added by NodeLocator.virtualNode.
 	const s1 = "abear"
 	const s2 = "solidiform"
 	x := New()
-	x.AddKetamaNodes(StringNode(s1))
-	x.AddKetamaNodes(StringNode(s2))
+	x.AddNodes(StringNode(s1))
+	x.AddNodes(StringNode(s2))
 	elt1, has := x.Get("abear")
 	if !has {
 		t.Fatal("missing node")
@@ -683,8 +683,8 @@ func TestAddCollision(t *testing.T) {
 
 	y := New()
 	// add elements in opposite order
-	y.AddKetamaNodes(StringNode(s2))
-	y.AddKetamaNodes(StringNode(s1))
+	y.AddNodes(StringNode(s2))
+	y.AddNodes(StringNode(s1))
 	elt2, has := y.Get(s1)
 	if !has {
 		t.Fatal("missing node")
