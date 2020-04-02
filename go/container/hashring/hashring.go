@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package consistent provides a consistent hashing function.
+// Package hashring provides a consistent hashing function.
 //
 // KetamaNodeLocator hashing is often used to distribute requests to a changing set of servers.  For example,
 // say you have some cache servers cacheA, cacheB, and cacheC.  You want to decide which cache server
@@ -22,7 +22,6 @@ package hashring
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -52,9 +51,6 @@ func (n StringNode) String() string {
 func (n StringNode) GetSocketAddress() net.Addr {
 	return n
 }
-
-// ErrEmptyCircle is the error returned when trying to get an element when nothing has been added to hash.
-var ErrEmptyCircle = errors.New("empty ketamaNodes")
 
 // KetamaNodeLocator holds the information about the allNodes of the consistent hash ketamaNodes.
 //go:generate go-option -type "KetamaNodeLocator"
