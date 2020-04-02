@@ -13,9 +13,9 @@ import (
 
 func ExampleNew() {
 	c := hashring.New()
-	c.AddKetamaNodes(hashring.StringNode("NodeA"))
-	c.AddKetamaNodes(hashring.StringNode("NodeB"))
-	c.AddKetamaNodes(hashring.StringNode("NodeC"))
+	c.AddNodes(hashring.StringNode("NodeA"))
+	c.AddNodes(hashring.StringNode("NodeB"))
+	c.AddNodes(hashring.StringNode("NodeC"))
 	users := []string{"Alice", "Bob  ", "Eve  ", "Carol", "Dave "}
 	for _, u := range users {
 		server, has := c.Get(u)
@@ -34,9 +34,9 @@ func ExampleNew() {
 
 func ExampleAdd() {
 	c := hashring.New()
-	c.AddKetamaNodes(hashring.StringNode("NodeA"))
-	c.AddKetamaNodes(hashring.StringNode("NodeB"))
-	c.AddKetamaNodes(hashring.StringNode("NodeC"))
+	c.AddNodes(hashring.StringNode("NodeA"))
+	c.AddNodes(hashring.StringNode("NodeB"))
+	c.AddNodes(hashring.StringNode("NodeC"))
 	users := []string{"Alice", "Bob  ", "Eve  ", "Carol", "Dave "}
 	fmt.Println("initial state [A, B, C]")
 	for _, u := range users {
@@ -46,8 +46,8 @@ func ExampleAdd() {
 		}
 		fmt.Printf("%s => %s\n", u, server)
 	}
-	c.AddKetamaNodes(hashring.StringNode("NodeD"))
-	c.AddKetamaNodes(hashring.StringNode("NodeE"))
+	c.AddNodes(hashring.StringNode("NodeD"))
+	c.AddNodes(hashring.StringNode("NodeE"))
 	fmt.Println("\nwith NodeD, NodeE [A, B, C, D, E]")
 	for _, u := range users {
 		server, has := c.Get(u)
@@ -74,9 +74,9 @@ func ExampleAdd() {
 
 func ExampleRemove() {
 	c := hashring.New()
-	c.AddKetamaNodes(hashring.StringNode("NodeA"))
-	c.AddKetamaNodes(hashring.StringNode("NodeB"))
-	c.AddKetamaNodes(hashring.StringNode("NodeC"))
+	c.AddNodes(hashring.StringNode("NodeA"))
+	c.AddNodes(hashring.StringNode("NodeB"))
+	c.AddNodes(hashring.StringNode("NodeC"))
 	//users := []string{"Alice", "Bob", "Eve", "Carol", "Dave", "Isaac", "Justin", "Mallory", "Oscar", "Pat", "Victor", "Trent", "Walter"}
 	users := []string{"Alice", "Bob  ", "Eve  ", "Carol", "Dave "}
 	fmt.Println("initial state [A, B, C]")
@@ -87,7 +87,7 @@ func ExampleRemove() {
 		}
 		fmt.Printf("%s => %s\n", u, server)
 	}
-	c.RemoveKetamaNodes(hashring.StringNode("NodeA"))
+	c.RemoveNodes(hashring.StringNode("NodeA"))
 	fmt.Println("\nNodeA removed [B, C]")
 	for _, u := range users {
 		server, has := c.Get(u)

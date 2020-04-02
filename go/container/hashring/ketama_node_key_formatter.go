@@ -55,7 +55,7 @@ type KetamaNodeKeyFormatter struct {
 
 	// Carrried over from the DefaultKetamaNodeLocatorConfiguration:
 	// Internal lookup map to try to carry forward the optimisation that was
-	// previously in KetamaNodeLocator
+	// previously in NodeLocator
 	nodeKeys map[Node]string
 }
 
@@ -71,7 +71,7 @@ func NewKetamaNodeKeyFormatter(format Format) *KetamaNodeKeyFormatter {
 }
 
 // Returns a uniquely identifying key, suitable for hashing by the
-// KetamaNodeLocator algorithm.
+// NodeLocator algorithm.
 //
 // @param node The Node to use to form the unique identifier
 // @param repetition The repetition number for the particular node in question
@@ -91,11 +91,10 @@ func (f KetamaNodeKeyFormatter) getKeyForNode(node Node, repetition int) string 
 	if !has {
 		switch f.format {
 		case LibMemcached:
-			address := node.GetSocketAddress()
-			nodeKey = address.String()
+			nodeKey = node.String()
 			break
 		case SpyMemcached:
-			nodeKey = node.GetSocketAddress().String()
+			nodeKey = node.String()
 			if strings.Index(nodeKey, "/") == 0 {
 				nodeKey = strings.TrimLeft(nodeKey, "/")
 			}
