@@ -55,6 +55,6 @@ func (g *Generator) transformValueNames(values []Value, transformMethod string) 
 	}
 
 	for i := range values {
-		values[i].valueInfo.str = mapfunc(values[i].valueInfo.str)
+		values[i].nameInfo.trimmedName = mapfunc(values[i].nameInfo.trimmedName)
 	}
 }
