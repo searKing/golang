@@ -7,13 +7,12 @@ require (
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570 // indirect
-	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
-	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/lestrrat-go/file-rotatelogs v2.3.0+incompatible
+	github.com/lestrrat-go/strftime v1.0.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
-	github.com/searKing/golang/go v0.0.0-20190928074331-e018749e0b08
-	github.com/sirupsen/logrus v1.4.2
-	github.com/tebeka/strftime v0.1.3 // indirect
-	golang.org/x/sys v0.0.0-20190927073244-c990c680b611 // indirect
+	github.com/searKing/golang/go v0.0.0-20200404153042-4af07d14ede5
+	github.com/sirupsen/logrus v1.5.0
+	github.com/tebeka/strftime v0.1.4 // indirect
+	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
 )
