@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/pkg/errors"
 	"github.com/rifflock/lfshook"
 	filepath_ "github.com/searKing/golang/go/path/filepath"
@@ -20,7 +21,7 @@ import (
 // duration sets the time between rotation.
 // maxCount sets the number of files should be kept before it gets purged from the file system.
 // maxAge sets the max age of a log file before it gets purged from the file system.
-func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCount int, maxAge time.Duration) error {
+func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCount uint, maxAge time.Duration) error {
 	if log == nil {
 		return nil
 	}
