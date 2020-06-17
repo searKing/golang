@@ -17,7 +17,7 @@ func ToGolangMap(pb proto.Message) (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	m := jsonpb.Marshaler{EmitDefaults: true, Indent: "\t", OrigName: true}
+	m := jsonpb.Marshaler{EmitDefaults: false, Indent: "\t", OrigName: true}
 	pbStr, err := m.MarshalToString(pb)
 	if err != nil {
 		return nil, err

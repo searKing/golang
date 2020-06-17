@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/searKing/golang/third_party/github.com/golang/protobuf/proto"
+	struct_ "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
 )
 
 type Human struct {
