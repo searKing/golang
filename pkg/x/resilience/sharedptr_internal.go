@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	logrus2 "github.com/searKing/golang/thirdparty/github.com/sirupsen/logrus"
+	logrus2 "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus"
 )
 

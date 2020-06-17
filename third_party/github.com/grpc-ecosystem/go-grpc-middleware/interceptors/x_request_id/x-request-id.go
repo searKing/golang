@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	metadata_ "github.com/searKing/golang/thirdparty/google.golang.org/grpc/metadata"
+	metadata_ "github.com/searKing/golang/third_party/google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/metadata"
 )
 
