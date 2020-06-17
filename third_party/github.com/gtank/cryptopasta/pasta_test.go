@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/searKing/golang/thirdparty/github.com/gtank/cryptopasta"
+	"github.com/searKing/golang/third_party/github.com/gtank/cryptopasta"
 )
 
 func TestEncryptDecryptGCM(t *testing.T) {

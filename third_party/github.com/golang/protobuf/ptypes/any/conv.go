@@ -8,7 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	_struct "github.com/searKing/golang/thirdparty/github.com/golang/protobuf/ptypes/struct"
+	_struct "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
 )
 
 // ToProtoAny converts v, which must marshal into a JSON object,

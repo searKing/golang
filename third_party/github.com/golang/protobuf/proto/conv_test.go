@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/searKing/golang/thirdparty/github.com/golang/protobuf/proto"
+	"github.com/searKing/golang/third_party/github.com/golang/protobuf/proto"
 )
 
 type Human struct {
