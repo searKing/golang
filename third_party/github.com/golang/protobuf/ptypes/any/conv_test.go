@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/searKing/golang/thirdparty/github.com/golang/protobuf/ptypes/any"
+	"github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/any"
 )
 
 type Human struct {
