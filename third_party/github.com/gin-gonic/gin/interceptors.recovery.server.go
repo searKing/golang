@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package recovery
+package gin
 
 import (
 	"io"
@@ -14,11 +14,11 @@ import (
 	"github.com/searKing/golang/go/error/builtin"
 )
 
-func ServerInterceptor(f func(c *gin.Context, err interface{})) gin.HandlerFunc {
-	return ServerInterceptorWithWriter(gin.DefaultErrorWriter, f)
+func Recovery(f func(c *gin.Context, err interface{})) gin.HandlerFunc {
+	return RecoveryWithWriter(gin.DefaultErrorWriter, f)
 }
 
-func ServerInterceptorWithWriter(out io.Writer, f func(c *gin.Context, err interface{})) gin.HandlerFunc {
+func RecoveryWithWriter(out io.Writer, f func(c *gin.Context, err interface{})) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			builtin.Recover(out, func(err interface{}) interface{} {
