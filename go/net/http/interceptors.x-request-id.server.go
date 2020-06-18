@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package x_request_id
+package http
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// ServerInterceptor returns a new server interceptor with x-request-id in context and response's Header.
+// XRequestIdServerInterceptor returns a new server interceptor with x-request-id in context and response's Header.
 // keys is context's key
-func ServerInterceptor(next http.Handler, keys ...interface{}) http.Handler {
+func XRequestIdServerInterceptor(next http.Handler, keys ...interface{}) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(newContextForHandleServerRequestID(w, r, keys...))
 		next.ServeHTTP(w, r)
