@@ -5,8 +5,6 @@
 package x_request_id
 
 import (
-	"context"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/searKing/golang/go/net/http/interceptors/x_request_id"
@@ -14,101 +12,80 @@ import (
 
 // key is RequestID within Context if have
 func newContextForHandleRequestID(ctx *gin.Context, keys ...interface{}) {
-	requestIDs, ok := fromGinContext(ctx)
-	if !ok || len(requestIDs) == 0 {
-		appendInOutMetadata(ctx, newRequestID(ctx, keys...)...)
-		return
+	requestID := fromGinContext(ctx, keys)
+	if requestID == "" {
+		requestID = uuid.New().String()
 	}
-	appendInOutMetadata(ctx, requestIDs...)
-	return
+	setInOutMetadata(ctx, requestID)
 }
 
-// to chain multiple request ids by generating new request id for each request and concatenating it to original request ids.
-// key is RequestID within Context if have
-func newContextForHandleRequestIDChain(ctx *gin.Context, keys ...interface{}) {
-	requestIDs, ok := fromGinContext(ctx)
-	if !ok || len(requestIDs) == 0 {
-		appendInOutMetadata(ctx, newRequestIDChain(ctx, keys...)...)
-		return
-	}
-	requestIDs = append(requestIDs, uuid.New().String())
-	appendInOutMetadata(ctx, requestIDs...)
-	return
-}
-
-func appendInOutMetadata(ctx *gin.Context, requestIDs ...string) {
-	ctx.Set(x_request_id.DefaultXRequestIDKey, requestIDs)
+func setInOutMetadata(ctx *gin.Context, requestIDs ...string) {
 	for _, id := range requestIDs {
-		ctx.Writer.Header().Add(x_request_id.DefaultXRequestIDKey, id)
+		ctx.Request.Header.Set(x_request_id.DefaultXRequestIDKey, id)
+		ctx.Writer.Header().Set(x_request_id.DefaultXRequestIDKey, id)
 	}
-}
-
-func newRequestID(ctx context.Context, keys ...interface{}) []string {
-	for _, key := range keys {
-		val := ctx.Value(key)
-		switch val := val.(type) {
-		case string:
-			return []string{val}
-		case []string:
-			return val
-		}
-	}
-	return []string{uuid.New().String()}
-}
-
-func newRequestIDChain(ctx context.Context, keys ...interface{}) []string {
-	for _, key := range keys {
-		val := ctx.Value(key)
-		switch val := val.(type) {
-		case string:
-			return []string{val}
-		case []string:
-			return append(val, uuid.New().String())
-		}
-	}
-	return []string{uuid.New().String()}
+	ctx.Set(x_request_id.DefaultXRequestIDKey, requestIDs)
 }
 
 // parse request id from gin.Context
 // query | header | post form | context
-func fromGinContext(ctx *gin.Context) ([]string, bool) {
+func fromGinContext(ctx *gin.Context, keys ...interface{}) string {
 	key := x_request_id.DefaultXRequestIDKey
 	if requestID := ctx.GetHeader(key); requestID != "" {
-		return []string{requestID}, true
+		return requestID
 	}
 	if requestIDs, ok := ctx.GetQueryArray(key); ok {
-		return requestIDs, true
+		return requestIDs[0]
 	}
 	if requestIDs, ok := ctx.GetPostFormArray(key); ok {
-		return requestIDs, true
+		return requestIDs[0]
 	}
 
 	requestIDs, has := ctx.Get(key)
 	if !has {
-		return nil, false
+		return ""
 	}
 	switch requestIDs := requestIDs.(type) {
 	case string:
-		return []string{requestIDs}, true
+		if requestIDs != "" {
+			return requestIDs
+		}
 	case []string:
-		return requestIDs, true
-	default:
-		return nil, false
+		if len(requestIDs) > 0 {
+			return requestIDs[0]
+		}
 	}
+
+	for _, key := range keys {
+		val := ctx.Value(key)
+		switch val := val.(type) {
+		case string:
+			if val != "" {
+				return val
+			}
+		case []string:
+			if len(val) > 0 {
+				if val[0] != "" {
+					return val[0]
+				}
+			}
+		}
+	}
+	return ""
 }
 
-func RequestIDFromGinContext(ctx *gin.Context) []string {
+func RequestIDFromGinContext(ctx *gin.Context) string {
 	requestIDs, has := ctx.Get(x_request_id.DefaultXRequestIDKey)
 	if !has {
-		return nil
+		return ""
 	}
 	switch requestIDs := requestIDs.(type) {
 	case string:
-		return []string{requestIDs}
-	case []string:
 		return requestIDs
-	default:
-		return nil
+	case []string:
+		if len(requestIDs) > 0 {
+			return requestIDs[0]
+		}
 	}
-
+	return ""
 }

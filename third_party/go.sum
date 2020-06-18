@@ -480,6 +480,12 @@ github.com/santhosh-tekuri/jsonschema/v2 v2.1.0/go.mod h1:yzJzKUGV4RbWqWIBBP4wSO
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/searKing/golang/go v0.0.0-20200617155009-1dc1d80debcf h1:GnkxVVcbHdT2bp09UwZftnp8TIlJjClbB+NLEzj86VU=
 github.com/searKing/golang/go v0.0.0-20200617155009-1dc1d80debcf/go.mod h1:Agh+KMfC/yD7x2uuPwkLoeG0Zn6wvs0ZRtGl1OqAVS8=
+github.com/searKing/golang/go v0.0.0-20200617180352-c9097998b408 h1:QfWCxVSWSIMDjkxN0Gzvr/3EG9QQu979xa4TKSB6aKE=
+github.com/searKing/golang/go v0.0.0-20200617180352-c9097998b408/go.mod h1:Agh+KMfC/yD7x2uuPwkLoeG0Zn6wvs0ZRtGl1OqAVS8=
+github.com/searKing/golang/go v0.0.0-20200618182642-4c0fc8d0c487 h1:LIfTQHs3V1bmThSBhD7V2/M2IXQqCALGt+HopE4ZrEY=
+github.com/searKing/golang/go v0.0.0-20200618182642-4c0fc8d0c487/go.mod h1:Agh+KMfC/yD7x2uuPwkLoeG0Zn6wvs0ZRtGl1OqAVS8=
+github.com/searKing/golang/go v0.0.0-20200618185443-55248774b7c3 h1:hYo4MPi1GkjMWJNLX6r76auCodGJ30RVySner40o44U=
+github.com/searKing/golang/go v0.0.0-20200618185443-55248774b7c3/go.mod h1:Agh+KMfC/yD7x2uuPwkLoeG0Zn6wvs0ZRtGl1OqAVS8=
 github.com/segmentio/analytics-go v3.0.1+incompatible/go.mod h1:C7CYBtQWk4vRk2RyLu0qOcbHJ18E3F1HV2C/8JvKN48=
 github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c/go.mod h1:kJ9mm9YmoWSkk+oQ+5Cj8DEoRCX2JT6As4kEtIIOp1M=
 github.com/serenize/snaker v0.0.0-20171204205717-a683aaf2d516/go.mod h1:Yow6lPLSAXx2ifx470yD/nUe22Dv5vBvxK/UK9UUTVs=
