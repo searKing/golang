@@ -44,30 +44,33 @@ func fromHTTPContext(r *http.Request, keys ...interface{}) string {
 
 	switch requestIDs := r.Context().Value(key).(type) {
 	case string:
-		return requestIDs
+		if requestIDs != "" {
+			return requestIDs
+		}
 	case []string:
 		if len(requestIDs) > 0 {
 			return requestIDs[0]
 		}
 	}
 
-	requestIDs := fromContext(r.Context(), keys...)
-
-	if len(requestIDs) > 0 {
-		return requestIDs[0]
-	}
-	return ""
+	return fromContext(r.Context(), keys...)
 }
 
 // fromContext takes out first value from context by keys
-func fromContext(ctx context.Context, keys ...interface{}) []string {
+func fromContext(ctx context.Context, keys ...interface{}) string {
 	for _, key := range keys {
 		val := ctx.Value(key)
 		switch val := val.(type) {
 		case string:
-			return []string{val}
+			if val != "" {
+				return val
+			}
 		case []string:
-			return val
+			if len(val) > 0 {
+				if val[0] != "" {
+					return val[0]
+				}
+			}
 		}
 	}
 	return nil
