@@ -16,9 +16,10 @@ require (
 	github.com/ory/fosite v0.32.1
 	github.com/pkg/errors v0.9.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
-	github.com/searKing/golang/go v0.0.0-20200618185443-55248774b7c3
+	github.com/searKing/golang/go v0.0.0-20200618190939-509ffe7fbbc7
 	github.com/sirupsen/logrus v1.6.0
 	github.com/tebeka/strftime v0.1.4 // indirect
+	github.com/urfave/negroni v1.0.0
 	google.golang.org/genproto v0.0.0-20190911173649-1774047e7e51
 	google.golang.org/grpc v1.29.1
 )
