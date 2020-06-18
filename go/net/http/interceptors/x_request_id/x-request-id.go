@@ -7,28 +7,60 @@ package x_request_id
 import (
 	"context"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 // DefaultXRequestIDKey is metadata key name for request ID
 var DefaultXRequestIDKey = "X-Request-ID"
 
-func appendInOutMetadata(ctx context.Context, r interface{}, requestIDs ...string) context.Context {
-	switch rr := r.(type) {
-	case *http.Request:
-		for _, id := range requestIDs {
-			rr.Header.Add(DefaultXRequestIDKey, id)
-		}
-	case http.ResponseWriter:
-		for _, id := range requestIDs {
-			rr.Header().Add(DefaultXRequestIDKey, id)
-		}
+// setInOutMetadata injects requestIDs in req|resp's Header and context
+// 将request-id追加注入请求|响应头及context中
+func setInOutMetadata(ctx context.Context, w http.ResponseWriter, r *http.Request, requestID string) context.Context {
+	if r != nil {
+		r.Header.Set(DefaultXRequestIDKey, requestID)
 	}
-	return context.WithValue(ctx, DefaultXRequestIDKey, requestIDs)
+	if w != nil {
+		w.Header().Set(DefaultXRequestIDKey, requestID)
+	}
+	return context.WithValue(ctx, DefaultXRequestIDKey, requestID)
 }
 
-func newRequestID(ctx context.Context, keys ...interface{}) []string {
+// parse request id from gin.Context
+// query | header | post form | context
+// 从请求中提取request-id
+func fromHTTPContext(r *http.Request, keys ...interface{}) string {
+	key := DefaultXRequestIDKey
+	if requestID := r.Header.Get(key); requestID != "" {
+		return requestID
+	}
+	if requestID := r.URL.Query().Get(key); requestID != "" {
+		return requestID
+	}
+	if requestID := r.FormValue(key); requestID != "" {
+		return requestID
+	}
+	if requestID := r.PostFormValue(key); requestID != "" {
+		return requestID
+	}
+
+	switch requestIDs := r.Context().Value(key).(type) {
+	case string:
+		return requestIDs
+	case []string:
+		if len(requestIDs) > 0 {
+			return requestIDs[0]
+		}
+	}
+
+	requestIDs := fromContext(r.Context(), keys...)
+
+	if len(requestIDs) > 0 {
+		return requestIDs[0]
+	}
+	return ""
+}
+
+// fromContext takes out first value from context by keys
+func fromContext(ctx context.Context, keys ...interface{}) []string {
 	for _, key := range keys {
 		val := ctx.Value(key)
 		switch val := val.(type) {
@@ -38,56 +70,17 @@ func newRequestID(ctx context.Context, keys ...interface{}) []string {
 			return val
 		}
 	}
-	return []string{uuid.New().String()}
+	return nil
 }
 
-func newRequestIDChain(ctx context.Context, keys ...interface{}) []string {
-	for _, key := range keys {
-		val := ctx.Value(key)
-		switch val := val.(type) {
-		case string:
-			return []string{val}
-		case []string:
-			return append(val, uuid.New().String())
-		}
-	}
-	return []string{uuid.New().String()}
-}
-
-// parse request id from gin.Context
-// query | header | post form | context
-func fromHTTPContext(r *http.Request) ([]string, bool) {
-	key := DefaultXRequestIDKey
-	if requestID := r.Header.Get(key); requestID != "" {
-		return []string{requestID}, true
-	}
-	if requestID := r.URL.Query().Get(key); requestID != "" {
-		return []string{requestID}, true
-	}
-	if requestID := r.FormValue(key); requestID != "" {
-		return []string{requestID}, true
-	}
-	if requestID := r.PostFormValue(key); requestID != "" {
-		return []string{requestID}, true
-	}
-
-	switch requestIDs := r.Context().Value(key).(type) {
-	case string:
-		return []string{requestIDs}, true
-	case []string:
-		return requestIDs, true
-	default:
-		return nil, false
-	}
-}
-
-func RequestIDFromHTTPContext(ctx context.Context) []string {
+func RequestIDFromContext(ctx context.Context) string {
 	switch requestIDs := ctx.Value(DefaultXRequestIDKey).(type) {
 	case string:
-		return []string{requestIDs}
-	case []string:
 		return requestIDs
-	default:
-		return nil
+	case []string:
+		if len(requestIDs) > 0 {
+			return requestIDs[0]
+		}
 	}
+	return ""
 }
