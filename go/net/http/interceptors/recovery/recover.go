@@ -5,7 +5,7 @@
 package recovery
 
 import (
-	"log"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -13,8 +13,9 @@ import (
 	"github.com/searKing/golang/go/error/builtin"
 )
 
-func Recover(logger *log.Logger, req *http.Request, recoverHandler func(err interface{})) {
-	builtin.Recover(logger, recoverHandler, func() string {
+// Recover and dump HTTP request if broken pipe
+func Recover(writer io.Writer, req *http.Request, recoverHandler func(err interface{}) interface{}) interface{} {
+	return builtin.Recover(writer, recoverHandler, func() string {
 		httpRequest, _ := httputil.DumpRequest(req, false)
 		headers := strings.Split(string(httpRequest), "\r\n")
 		for idx, header := range headers {
