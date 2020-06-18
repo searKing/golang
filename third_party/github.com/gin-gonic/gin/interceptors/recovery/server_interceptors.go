@@ -6,7 +6,6 @@ package recovery
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -20,14 +19,9 @@ func ServerInterceptor(f func(c *gin.Context, err interface{})) gin.HandlerFunc 
 }
 
 func ServerInterceptorWithWriter(out io.Writer, f func(c *gin.Context, err interface{})) gin.HandlerFunc {
-	var logger *log.Logger
-	if out != nil {
-		logger = log.New(out, "\n\n\x1b[31m", log.LstdFlags)
-	}
-
 	return func(c *gin.Context) {
 		defer func() {
-			builtin.Recover(logger, func(err interface{}) {
+			builtin.Recover(out, func(err interface{}) interface{} {
 				var brokenPipe = builtin.ErrorIsBrokenPipe(err)
 				// If the connection is dead, we can't write a status to it.
 				if brokenPipe {
