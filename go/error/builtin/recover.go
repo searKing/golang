@@ -6,21 +6,23 @@ package builtin
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"net"
 	"os"
 	"strings"
 	"time"
 )
 
-func Recover(logger *log.Logger, recoverHandler func(err interface{}), brokenPipeMsg func() string) {
+// The Recover function allows a program to manage behavior of a
+// panicking goroutine.
+// affect as recoverHandler(recover())
+// brokenPipeMsg is called when panic for broken pipe
+func Recover(writer io.Writer, recoverHandler func(err interface{}) interface{}, brokenPipeMsg func() string) interface{} {
 	if err := recover(); err != nil {
 		// Check for a broken connection, as it is not really a
 		// condition that warrants a panic stack trace.
 		var brokenPipe = ErrorIsBrokenPipe(err)
-		if logger != nil {
-			reset := string([]byte{27, 91, 48, 109})
-
+		if writer != nil {
 			goErr := fmt.Errorf("panic %v", err)
 
 			var msg string
@@ -29,16 +31,18 @@ func Recover(logger *log.Logger, recoverHandler func(err interface{}), brokenPip
 			}
 
 			if brokenPipe {
-				logger.Printf("[Recovery] brokenPipe %+v\n%s%s", goErr, msg, reset)
+				_, _ = writer.Write([]byte(fmt.Sprintf("[Recovery] brokenPipe %+v\n%s", goErr, msg)))
 			} else {
-				logger.Printf("[Recovery] %s panic recovered:\n%+v%s",
-					timeFormat(time.Now()), goErr, reset)
+				_, _ = writer.Write([]byte(fmt.Sprintf("[Recovery] %s panic recovered:\n%+v",
+					timeFormat(time.Now()), goErr)))
 			}
 		}
 		if recoverHandler != nil {
-			recoverHandler(err)
+			return recoverHandler(err)
 		}
+		return err
 	}
+	return nil
 }
 func timeFormat(t time.Time) string {
 	var timeString = t.Format("2006/01/02 - 15:04:05")
