@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package recovery
+package http
 
 import (
 	"io"
 	"net/http"
 )
 
-// ServerInterceptor returns a new server interceptors with recovery from panic.
+// RecoveryServerInterceptor returns a new server interceptors with recovery from panic.
 // affect as recover{f()}; next()
-func ServerInterceptor(next http.Handler, out io.Writer, f func(w http.ResponseWriter, r *http.Request, err interface{})) http.Handler {
+func RecoveryServerInterceptor(next http.Handler, out io.Writer, f func(w http.ResponseWriter, r *http.Request, err interface{})) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			Recover(out, r, func(err interface{}) interface{} {
