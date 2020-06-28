@@ -5,12 +5,12 @@
 package binding
 
 import (
-	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/searKing/golang/third_party/github.com/golang/protobuf/jsonpb"
 )
 
 // json to proto.Message
@@ -31,8 +31,16 @@ func (b jsonpbBinding) Bind(req *http.Request, obj interface{}) error {
 }
 
 func (jsonpbBinding) BindBody(body []byte, obj interface{}) error {
-	if err := jsonpb.Unmarshal(bytes.NewReader(body), obj.(proto.Message)); err != nil {
-		return err
+
+	if msg, ok := obj.(proto.Message); ok {
+
+		if err := jsonpb.Unmarshal(body, msg); err != nil {
+			return err
+		}
+	} else {
+		if err := json.Unmarshal(body, obj); err != nil {
+			return err
+		}
 	}
 	// Here it's same to return validate(obj), but util now we can't add
 	// `binding:""` to the struct which automatically generate by gen-proto
