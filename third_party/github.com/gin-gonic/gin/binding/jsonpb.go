@@ -33,7 +33,6 @@ func (b jsonpbBinding) Bind(req *http.Request, obj interface{}) error {
 func (jsonpbBinding) BindBody(body []byte, obj interface{}) error {
 
 	if msg, ok := obj.(proto.Message); ok {
-
 		if err := jsonpb.Unmarshal(body, msg); err != nil {
 			return err
 		}
