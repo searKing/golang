@@ -73,7 +73,7 @@ func fromContext(ctx context.Context, keys ...interface{}) string {
 			}
 		}
 	}
-	return nil
+	return ""
 }
 
 func RequestIDFromContext(ctx context.Context) string {
