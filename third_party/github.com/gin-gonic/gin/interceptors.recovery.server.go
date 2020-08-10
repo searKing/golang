@@ -30,6 +30,7 @@ func RecoveryWithWriter(out io.Writer, f func(c *gin.Context, err interface{})) 
 				} else {
 					c.AbortWithStatus(http.StatusInternalServerError)
 				}
+				return nil
 			}, func() string {
 				httpRequest, _ := httputil.DumpRequest(c.Request, false)
 				headers := strings.Split(string(httpRequest), "\r\n")
