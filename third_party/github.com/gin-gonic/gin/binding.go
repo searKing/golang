@@ -6,6 +6,7 @@ package gin
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -15,6 +16,9 @@ import (
 // Default returns the appropriate Binding instance based on the HTTP method
 // and the content type.
 func DefaultBinding(ctx *gin.Context) binding.Binding {
+	if ctx.Request.Method == http.MethodGet {
+		return binding.Form
+	}
 	switch ctx.ContentType() {
 	case binding.MIMEJSON:
 		return binding_.JSONPB // support proto3 if enabled
