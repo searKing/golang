@@ -16,42 +16,64 @@ type ReadSniffer interface {
 }
 
 type sniffReader struct {
-	source io.Reader
-	buffer bytes.Buffer
+	source         io.Reader
+	buffer         *bytes.Buffer
+	historyBuffers []io.Reader
 
 	selectorF DynamicReaderFunc
 
 	sniffing bool
 }
 
+// Sniff starts or stops sniffing, restarts if stop and start called one by one
+// true to start sniffing all data unread actually
+// false to return a multi reader with all data sniff buffered and source
 func (sr *sniffReader) Sniff(sniffing bool) {
 	if sr.sniffing == sniffing {
 		return
 	}
 	sr.sniffing = sniffing
 	if sniffing {
+		sr.shrinkToHistory()
 		// We don't need the buffer anymore.
 		// Reset it to release the internal slice.
-		sr.buffer = bytes.Buffer{}
+		sr.buffer = &bytes.Buffer{}
+
+		readers := sr.historyBuffers
+		readers = append(readers, sr.source)
+		reader := io.TeeReader(io.MultiReader(readers...), sr.buffer)
 		sr.selectorF = func() io.Reader {
-			return io.TeeReader(sr.source, &sr.buffer)
+			return reader
 		}
 		return
 	}
 	sr.resetSelector()
 }
 
-func (sr *sniffReader) resetSelector() {
-	sr.selectorF = func() io.Reader {
+// shrinkToHistory shrink buffer to history buffers
+func (sr *sniffReader) shrinkToHistory() {
+	if sr.buffer != nil {
+
 		// clear if EOF meet
-		bufferReader := WatchReader(&sr.buffer, WatcherFunc(func(p []byte, n int, err error) (int, error) {
+		bufferReader := WatchReader(bytes.NewBuffer(sr.buffer.Bytes()), WatcherFunc(func(p []byte, n int, err error) (int, error) {
 			if err == io.EOF {
-				sr.buffer = bytes.Buffer{} // recycle memory
+				// historyBuffers is consumed head first, so can be cleared from head
+				sr.historyBuffers = sr.historyBuffers[1:] // recycle memory
 			}
 			return n, err
 		}))
+		sr.historyBuffers = append(sr.historyBuffers, bufferReader)
+		sr.buffer = nil
+	}
+}
 
-		return io.MultiReader(bufferReader, sr.source)
+// resetSelector stops sniff and return a MultiReader of history buffers and source
+func (sr *sniffReader) resetSelector() {
+	sr.shrinkToHistory()
+	readers := append(sr.historyBuffers, sr.source)
+	reader := io.MultiReader(readers...)
+	sr.selectorF = func() io.Reader {
+		return reader
 	}
 }
 

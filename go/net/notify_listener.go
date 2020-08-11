@@ -26,7 +26,7 @@ type NotifyListener struct {
 // NewNotifyListener creates a new Listener that will recv
 // conns on its channel.
 func NewNotifyListener() *NotifyListener {
-	c := make(chan net.Conn, 1)
+	c := make(chan net.Conn)
 
 	l := &NotifyListener{
 		C: c,
@@ -43,9 +43,6 @@ func (l *NotifyListener) Accept() (net.Conn, error) {
 	select {
 	case <-l.getDoneChan():
 		return nil, ErrListenerClosed
-	default:
-	}
-	select {
 	case c, ok := <-l.C:
 		if !ok {
 			// Already closed. Don't Accept again.
