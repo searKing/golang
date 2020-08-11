@@ -16,7 +16,7 @@ import (
 )
 
 func ExampleSniffReader() {
-	r := strings.NewReader("MSG: some io.Reader stream to be read\n")
+	r := strings.NewReader("MSG:some io.Reader stream to be read\n")
 	sniff := io_.SniffReader(r)
 
 	printSniff := func(r io.Reader, n int) {
@@ -40,8 +40,19 @@ func ExampleSniffReader() {
 
 	// start sniffing
 	sniff.Sniff(true)
-	// sniff "MSG:\n"
+	// sniff "MSG:"
 	printSniff(sniff, len("MSG:"))
+	fmt.Printf("\n")
+
+	// stop sniffing
+	sniff.Sniff(false)
+	printSniff(sniff, len("MSG:"))
+	fmt.Printf("\n")
+
+	// start sniffing again
+	sniff.Sniff(true)
+	// sniff "io.Reader"
+	printSniff(sniff, len("some"))
 	fmt.Printf("\n")
 
 	// stop sniffing
@@ -50,7 +61,9 @@ func ExampleSniffReader() {
 
 	// Output:
 	// MSG:
-	// MSG: some io.Reader stream to be read
+	// MSG:
+	// some
+	// some io.Reader stream to be read
 }
 
 func ExampleEOFReader() {

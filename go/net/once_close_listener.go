@@ -20,7 +20,9 @@ func (oc *onceCloseListener) Close() error {
 	return oc.closeErr
 }
 
-func (oc *onceCloseListener) close() { oc.closeErr = oc.Listener.Close() }
+func (oc *onceCloseListener) close() {
+	oc.closeErr = oc.Listener.Close()
+}
 
 // OnceCloseListener wraps a net.Listener, protecting it from
 // multiple Close calls.
