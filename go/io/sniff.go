@@ -53,16 +53,19 @@ func (sr *sniffReader) Sniff(sniffing bool) {
 // shrinkToHistory shrink buffer to history buffers
 func (sr *sniffReader) shrinkToHistory() {
 	if sr.buffer != nil {
-
-		// clear if EOF meet
-		bufferReader := WatchReader(bytes.NewBuffer(sr.buffer.Bytes()), WatcherFunc(func(p []byte, n int, err error) (int, error) {
-			if err == io.EOF {
-				// historyBuffers is consumed head first, so can be cleared from head
-				sr.historyBuffers = sr.historyBuffers[1:] // recycle memory
-			}
-			return n, err
-		}))
-		sr.historyBuffers = append(sr.historyBuffers, bufferReader)
+		if sr.buffer.Len() > 0 {
+			// clear if EOF meet
+			bufferReader := WatchReader(bytes.NewBuffer(sr.buffer.Bytes()), WatcherFunc(func(p []byte, n int, err error) (int, error) {
+				if err == io.EOF {
+					// historyBuffers is consumed head first, so can be cleared from head
+					sr.historyBuffers = sr.historyBuffers[1:] // recycle memory
+				}
+				return n, err
+			}))
+			var rs []io.Reader
+			rs = append(rs, bufferReader)
+			sr.historyBuffers = append(rs, sr.historyBuffers...)
+		}
 		sr.buffer = nil
 	}
 }

@@ -47,7 +47,7 @@ func HTTP1Header(match func(actual, expect http.Header) bool, expect http.Header
 
 // HTTP1HeaderValue returns true if all headers are expected, shorthand for HTTP1Header
 // strings.Match for all value in expects
-func HTTP1HeaderValue(match func(actual, expect string) bool, expect http.Header) MatcherFunc {
+func HTTP1HeaderValue(match func(actualVal, expectVal string) bool, expect http.Header) MatcherFunc {
 	return HTTP1Header(func(actual, expect http.Header) bool {
 		for name := range expect {
 			if match(actual.Get(name), expect.Get(name)) {
