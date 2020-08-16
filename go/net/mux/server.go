@@ -124,12 +124,12 @@ func (srv *Server) newConn(rwc net.Conn) *conn {
 // new service goroutine for each. The service goroutines read requests and
 // then call srv.HandlerConn to reply to them.
 func (srv *Server) Serve(l net.Listener) error {
+	l = net_.OnceCloseListener(l)
+	defer l.Close()
+
 	if srv.shuttingDown() {
 		return ErrServerClosed
 	}
-
-	l = net_.OnceCloseListener(l)
-	defer l.Close()
 
 	if !srv.trackListener(&l, true) {
 		return ErrServerClosed

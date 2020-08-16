@@ -14,17 +14,17 @@ import (
 )
 
 const (
-	// baseContentType is the base content-type for gRPC.  This is a valid
+	// baseGrpcContentType is the base content-type for gRPC.  This is a valid
 	// content-type on it's own, but can also include a content-subtype such as
 	// "proto" as a suffix after "+" or ";".  See
 	// https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests
 	// for more details.
-	baseContentType = "application/grpc"
+	baseGrpcContentType = "application/grpc"
 )
 
-// grpcHandlerFunc returns an http.Handler that delegates to grpcServer on incoming gRPC
+// GrpcOrDefaultHandler returns an http.Handler that delegates to grpcServer on incoming gRPC
 // connections or otherHandler otherwise. Copied from cockroachdb.
-func WrapGrpcHandlers(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+func GrpcOrDefaultHandler(grpcServer *grpc.Server, defaultHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This is a partial recreation of gRPC's internal checks https://github.com/grpc/grpc-go/blob/68098483a7afa91b353453641408e3968ad92738/internal/transport/handler_server.go#L51
 		contentType := r.Header.Get("Content-Type")
@@ -35,7 +35,7 @@ func WrapGrpcHandlers(grpcServer *grpc.Server, otherHandler http.Handler) http.H
 		if r.ProtoMajor == 2 && validGrpcContentType {
 			h = grpcServer
 		} else {
-			h = otherHandler
+			h = defaultHandler
 		}
 		if h == nil {
 			http.NotFound(w, r)
@@ -59,19 +59,19 @@ func WrapGrpcHandlers(grpcServer *grpc.Server, otherHandler http.Handler) http.H
 //
 // contentType is assumed to be lowercase already.
 func contentSubtype(contentType string) (string, bool) {
-	if contentType == baseContentType {
+	if contentType == baseGrpcContentType {
 		return "", true
 	}
-	if !strings.HasPrefix(contentType, baseContentType) {
+	if !strings.HasPrefix(contentType, baseGrpcContentType) {
 		return "", false
 	}
-	// guaranteed since != baseContentType and has baseContentType prefix
-	switch contentType[len(baseContentType)] {
+	// guaranteed since != baseGrpcContentType and has baseGrpcContentType prefix
+	switch contentType[len(baseGrpcContentType)] {
 	case '+', ';':
 		// this will return true for "application/grpc+" or "application/grpc;"
 		// which the previous validContentType function tested to be valid, so we
 		// just say that no content-subtype is specified in this case
-		return contentType[len(baseContentType)+1:], true
+		return contentType[len(baseGrpcContentType)+1:], true
 	default: // custom
 		return "", false
 	}
@@ -80,7 +80,7 @@ func contentSubtype(contentType string) (string, bool) {
 // contentSubtype is assumed to be lowercase
 func contentType(contentSubtype string) string {
 	if contentSubtype == "" {
-		return baseContentType
+		return baseGrpcContentType
 	}
-	return baseContentType + "+" + contentSubtype
+	return baseGrpcContentType + "+" + contentSubtype
 }
