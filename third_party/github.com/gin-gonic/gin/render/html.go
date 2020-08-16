@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package render
 
 import (
@@ -10,12 +14,12 @@ import (
 
 // TemplateHTML contains template reference and its name with given interface object.
 type TemplateHTML struct {
-	Name    string
 	Template *template.Template
 	Files    []string
 	Glob     string
 
 	FuncMap template.FuncMap
+	Name    string // Data's Name in tmpl
 	Data    interface{}
 
 	once   sync.Once

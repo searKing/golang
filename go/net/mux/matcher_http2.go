@@ -44,10 +44,10 @@ func HTTP2HeaderField(sendSetting bool,
 }
 
 // helper functions
-func HTTP2HeaderFieldValue(sendSetting bool, match func(actual, expect string) bool, expects ...hpack.HeaderField) MatcherFunc {
-	return HTTP2HeaderField(sendSetting, func(actual, expect map[string]hpack.HeaderField) bool {
-		for name := range expect {
-			if match(actual[name].Name, expect[name].Name) {
+func HTTP2HeaderFieldValue(sendSetting bool, match func(actualVal, expectVal string) bool, expects ...hpack.HeaderField) MatcherFunc {
+	return HTTP2HeaderField(sendSetting, func(actualHeaderByName, expectHeaderByName map[string]hpack.HeaderField) bool {
+		for name := range expectHeaderByName {
+			if match(actualHeaderByName[name].Value, expectHeaderByName[name].Value) {
 				return false
 			}
 		}
