@@ -5,6 +5,7 @@
 package grpc
 
 import (
+	"github.com/gin-gonic/gin/binding"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -12,6 +13,7 @@ import (
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -111,6 +113,16 @@ func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		WithGrpcServeMuxOption(runtime.WithMarshalerOption(mime, marshaler)).apply(gateway)
 	})
+}
+
+func WithDefaultMarsherOption() []GatewayOption {
+	return []GatewayOption{
+		WithMarshalerOption(runtime.MIMEWildcard, runtime_.NewHTTPBodyJsonMarshaler()),
+		WithMarshalerOption(binding.MIMEJSON, runtime_.NewHTTPBodyJsonMarshaler()),
+		WithMarshalerOption(binding.MIMEPROTOBUF, runtime_.NewHTTPBodyProtoMarshaler()),
+		WithMarshalerOption(binding.MIMEYAML, runtime_.NewHTTPBodyYamlMarshaler()),
+	}
+
 }
 
 func WithFastMode(fastMode bool) GatewayOption {
