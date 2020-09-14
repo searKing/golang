@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	http_ "github.com/searKing/golang/pkg/net/http"
@@ -27,6 +28,8 @@ type Gateway struct {
 
 	// runtime
 	grpcServer *grpc.Server
+
+	once sync.Once
 }
 
 func NewGateway(addr string, opts ...GatewayOption) *Gateway {
@@ -115,30 +118,32 @@ func ServeTLS(l net.Listener, handler http.Handler, certFile, keyFile string, op
 	return srv.ApplyOptions(opts...).ServeTLS(l, certFile, keyFile)
 }
 
-func (gateway *Gateway) init(opts ...GatewayOption) {
-	gateway.ApplyOptions(opts...)
+func (gateway *Gateway) lazy_init(opts ...GatewayOption) {
+	gateway.once.Do(func() {
+		gateway.ApplyOptions(opts...)
 
-	tlsConfig := gateway.TLSConfig
-	if tlsConfig != nil {
-		// for grpc server
-		gateway.opt.grpcServerOpts.opts = append(gateway.opt.grpcServerOpts.opts, grpc.Creds(credentials.NewTLS(tlsConfig)))
-		// for grpc client to server
-		gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	} else {
-		if len(gateway.opt.grpcClientDialOpts) == 0 {
-			// disables transport security
-			gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithInsecure())
+		tlsConfig := gateway.TLSConfig
+		if tlsConfig != nil {
+			// for grpc server
+			gateway.opt.grpcServerOpts.opts = append(gateway.opt.grpcServerOpts.opts, grpc.Creds(credentials.NewTLS(tlsConfig)))
+			// for grpc client to server
+			gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+		} else {
+			if len(gateway.opt.grpcClientDialOpts) == 0 {
+				// disables transport security
+				gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithInsecure())
+			}
 		}
-	}
-	gateway.grpcServer = grpc.NewServer(gateway.opt.ServerOptions()...)
-	gateway.httpMuxToGrpc = runtime.NewServeMux(gateway.opt.srvMuxOpts...)
-	gateway.Server.Handler = http_.GrpcOrDefaultHandler(gateway.grpcServer, &serverHandler{
-		gateway: gateway,
+		gateway.grpcServer = grpc.NewServer(gateway.opt.ServerOptions()...)
+		gateway.httpMuxToGrpc = runtime.NewServeMux(gateway.opt.srvMuxOpts...)
+		gateway.Server.Handler = http_.GrpcOrDefaultHandler(gateway.grpcServer, &serverHandler{
+			gateway: gateway,
+		})
 	})
 
 }
 func (gateway *Gateway) Serve(l net.Listener) error {
-	gateway.init()
+	gateway.lazy_init()
 	return gateway.Server.Serve(l)
 }
 
@@ -156,7 +161,7 @@ func (gateway *Gateway) Serve(l net.Listener) error {
 // ServeTLS always returns a non-nil error. After Shutdown or Close, the
 // returned error is ErrServerClosed.
 func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error {
-	gateway.init()
+	gateway.lazy_init()
 	return gateway.Server.ServeTLS(l, certFile, keyFile)
 }
 
@@ -169,7 +174,7 @@ func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error
 // ListenAndServe always returns a non-nil error. After Shutdown or Close,
 // the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServe() error {
-	gateway.init()
+	gateway.lazy_init()
 	return gateway.Server.ListenAndServe()
 }
 
@@ -189,27 +194,31 @@ func (gateway *Gateway) ListenAndServe() error {
 // ListenAndServeTLS always returns a non-nil error. After Shutdown or
 // Close, the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
-	gateway.init()
+	gateway.lazy_init()
 	return gateway.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
 // RegisterGRPCHandler registers grpc handler of the gateway
 func (gateway *Gateway) RegisterGRPCHandler(handler GRPCHandler) {
+	gateway.lazy_init()
 	handler.Register(gateway.grpcServer)
 }
 
 // RegisterHTTPHandler registers http handler of the gateway
 func (gateway *Gateway) RegisterHTTPHandler(ctx context.Context, handler HTTPHandler) error {
+	gateway.lazy_init()
 	//scheme://authority/endpoint
 	return handler.Register(ctx, gateway.httpMuxToGrpc, "passthrough:///"+gateway.Server.Addr, gateway.opt.grpcClientDialOpts)
 }
 
 // RegisterGRPCFunc registers grpc handler of the gateway
 func (gateway *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
+	gateway.lazy_init()
 	gateway.RegisterGRPCHandler(GRPCHandlerFunc(handler))
 }
 
 // RegisterHTTPFunc registers http handler of the gateway
 func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error) error {
+	gateway.lazy_init()
 	return gateway.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
 }
