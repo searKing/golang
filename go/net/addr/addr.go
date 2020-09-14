@@ -38,4 +38,5 @@ func parseAddr(url string) (addr string) {
 			addr += ":80"
 		}
 	}
+	return
 }
