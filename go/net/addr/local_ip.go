@@ -7,6 +7,7 @@ package addr
 import (
 	"errors"
 	"net"
+	"time"
 )
 
 // This code is borrowed from https://github.com/uber/tchannel-go/blob/dev/localip.go
@@ -78,6 +79,37 @@ func ListenIP() (net.IP, error) {
 		return nil, err
 	}
 	return listenIP(interfaces)
+}
+
+// DialIP returns the local IP to in Dial.
+func DialIP(network, address string, timeout time.Duration) (net.IP, error) {
+	conn, err := net.DialTimeout(network, address, timeout)
+	if err != nil {
+		return nil, err
+	}
+	a := conn.LocalAddr()
+	ipAddr, err := net.ResolveIPAddr(a.Network(), a.String())
+	defer conn.Close()
+	if err != nil {
+		return nil, err
+	}
+	return ipAddr.IP, nil
+}
+
+// ServeIP returns the IP to bind to in Listen. It tries to find an IP that can be used
+// by other machines to reach this machine.
+// Order is by DialIP and ListenIP
+func ServeIP(networks, addresses []string, timeout time.Duration) (net.IP, error) {
+	for _, network := range networks {
+		for _, address := range addresses {
+			ip, err := DialIP(network, address, timeout)
+			if err != nil {
+				continue
+			}
+			return ip, nil
+		}
+	}
+	return ListenIP()
 }
 
 func mustParseMAC(s string) net.HardwareAddr {
