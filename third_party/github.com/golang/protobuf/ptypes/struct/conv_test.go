@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package struct__test
+package structpb_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	_struct "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
+	structpb "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
 )
 
 type Human struct {
@@ -72,7 +72,7 @@ var (
 
 func TestToProtoStruct(t *testing.T) {
 	for m, test := range toProtoStructTests {
-		humanStructpb, err := _struct.ToProtoStruct(test.input)
+		humanStructpb, err := structpb.ToProtoStruct(test.input)
 		if err != nil {
 			t.Errorf("#%d: ToProtoStruct(%+v): got: _, %v exp: _, nil", m, test.input, err)
 		}
