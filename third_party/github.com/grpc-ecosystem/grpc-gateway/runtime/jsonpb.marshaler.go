@@ -78,7 +78,7 @@ type DecoderWrapper struct {
 // Decode wraps the embedded decoder's Decode method to support
 // protos using a jsonpb.Unmarshaler.
 func (d DecoderWrapper) Decode(v interface{}) error {
-	if _, ok := v.(proto.Message); !ok {
+	if _, ok := v.(proto.Message); ok {
 		return d.decoderProto.Decode(v)
 	}
 	return d.decoderJson.Decode(v)
