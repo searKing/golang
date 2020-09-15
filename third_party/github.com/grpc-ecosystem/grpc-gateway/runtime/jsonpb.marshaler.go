@@ -21,7 +21,7 @@ type JSONPb struct {
 
 func (j *JSONPb) Marshal(v interface{}) ([]byte, error) {
 	// proto -> json
-	if _, ok := v.(proto.Message); !ok {
+	if _, ok := v.(proto.Message); ok {
 		return j.JSONPb.Marshal(v)
 	}
 
@@ -54,7 +54,7 @@ func (j *JSONPb) NewEncoder(w io.Writer) runtime.Encoder {
 // interface{} -> json
 func (j *JSONPb) marshalTo(w io.Writer, v interface{}) error {
 	marshal := func() ([]byte, error) {
-		if _, ok := v.(proto.Message); !ok {
+		if _, ok := v.(proto.Message); ok {
 			return j.JSONPb.Marshal(v)
 		}
 
