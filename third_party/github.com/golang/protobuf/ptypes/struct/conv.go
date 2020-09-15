@@ -41,7 +41,7 @@ func ToProtoStruct(v interface{}) (*structpb.Struct, error) {
 		// protobuf. Some day we may have a more direct way to get there, but right
 		// now the only way is to marshal the Go struct to JSON, unmarshal into a
 		// map, and then build the Struct proto from the map.
-		m := jsonpb.Marshaler{EmitDefaults: true, Indent: " ", OrigName: true}
+		m := jsonpb.Marshaler{EmitDefaults: true}
 		dataStr, err := m.MarshalToString(v.(proto.Message))
 		if err != nil {
 			return nil, fmt.Errorf("jsonpb.Marshal: %v", err)
