@@ -16,6 +16,72 @@ import (
 // DefaultXRequestIDKey is metadata key name for request ID
 var DefaultXRequestIDKey = "X-Request-ID"
 
+// ExtractOrCreateRequestId extracts or create request_id from context by mdIncomingKey and key
+func ExtractOrCreateRequestId(ctx context.Context, key interface{}) []string {
+	requestIDs := ExtractRequestId(ctx, key)
+	if len(requestIDs) == 0 {
+		return []string{newRequestID(ctx, key)}
+	}
+	return requestIDs
+}
+
+// ExtractRequestId extracts request_id from context by mdIncomingKey and key
+func ExtractRequestId(ctx context.Context, key interface{}) []string {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		return md.Get(DefaultXRequestIDKey)
+	}
+
+	requestIDs := md.Get(DefaultXRequestIDKey)
+	if len(requestIDs) == 0 {
+		return []string{newRequestID(ctx, key)}
+	}
+	return requestIDs
+}
+
+// InjectOrCreateRequestId injects or create request_id to context by mdIncomingKey and key
+func InjectOrCreateRequestId(ctx context.Context, key interface{}, requestId string) context.Context {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		if requestId == "" {
+			requestId = newRequestID(ctx, key)
+		}
+		return appendInOutMetadata(ctx, metadata.New(map[string]string{DefaultXRequestIDKey: requestId}))
+	}
+	requestIDs := md.Get(DefaultXRequestIDKey)
+	if len(requestIDs) == 0 {
+		if requestId == "" {
+			requestId = newRequestID(ctx, key)
+		}
+		return appendInOutMetadata(ctx, metadata.New(map[string]string{DefaultXRequestIDKey: requestId}))
+	}
+	if requestId != "" {
+		requestIDs[len(requestIDs)-1] = requestId
+		md.Set(DefaultXRequestIDKey, requestIDs...)
+	}
+
+	return ctx
+}
+
+// InjectRequestId injects request_id to context by mdIncomingKey
+func InjectRequestId(ctx context.Context, requestId string) context.Context {
+	if requestId == "" {
+		return ctx
+	}
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return appendInOutMetadata(ctx, metadata.New(map[string]string{DefaultXRequestIDKey: requestId}))
+	}
+	requestIDs := md.Get(DefaultXRequestIDKey)
+	if len(requestIDs) == 0 {
+		return appendInOutMetadata(ctx, metadata.New(map[string]string{DefaultXRequestIDKey: requestId}))
+	}
+
+	requestIDs[len(requestIDs)-1] = requestId
+	md.Set(DefaultXRequestIDKey, requestIDs...)
+	return ctx
+}
+
 // key is RequestID within Context if have
 func newContextForHandleRequestID(ctx context.Context, key interface{}) context.Context {
 	md, ok := metadata.FromIncomingContext(ctx)
