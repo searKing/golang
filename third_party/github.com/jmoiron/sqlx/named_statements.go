@@ -38,70 +38,79 @@ func (s SimpleStatements) NamedSelectStatement() string {
 //	statement := SimpleStatements{
 //		TableName: foo,
 //		Columns: []string{"foo", "bar"}
-//		Conditions: []string{"thud", "grunt"}
 //	}
 //	query := statement.NamedInsertStatement(false)
 //
-//	// INSERT INTO foo (foo, bar, thud, grunt) VALUES (:foo, :bar, :thud, :grunt)
+//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
 //
 //	query := statement.NamedInsertStatement(true)
 //
-//	// INSERT INTO foo (foo, bar, thud, grunt) VALUES (:foo, :bar, :thud, :grunt) ON DUPLICATE KEY UPDATE thud=:thud, grunt=:grunt
+//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar) ON DUPLICATE KEY UPDATE foo=:foo, bar=:bar
 //
 //	statement := SimpleStatements{
 //		TableName: foo,
 //	}
-//	query	:= statement.NamedSelectStatement(false)
+//	query := statement.NamedSelectStatement(false)
 //
 //	// INSERT INTO foo DEFAULT VALUES
 //
-//	query	:= statement.NamedSelectStatement(true)
+//	query := statement.NamedSelectStatement(true)
 //
 //	// INSERT INTO foo DEFAULT VALUES
 func (s SimpleStatements) NamedInsertStatement(update bool) string {
-	if update {
-		if len(s.Columns)+len(s.Conditions) == 0 {
-			return fmt.Sprintf(`INSERET INTO %s %s`,
-				s.TableName,
-				NamedInsertArgumentsCombined())
-		}
+	if len(s.Columns) > 0 && update {
 		return fmt.Sprintf(`INSERET INTO %s %s ON DUPLICATE KEY UPDATE %s`,
 			s.TableName,
 			NamedInsertArgumentsCombined(s.Columns...),
-			NamedUpdateArguments(s.Conditions...))
+			NamedUpdateArguments(s.Columns...))
 	}
-	var cols []string
-	cols = append(cols, s.Columns...)
-	cols = append(cols, s.Conditions...)
 	return fmt.Sprintf(`INSERET INTO %s %s`,
 		s.TableName,
-		NamedInsertArgumentsCombined(cols...))
+		NamedInsertArgumentsCombined(s.Columns...))
 }
 
 // NamedUpdateStatement returns a simple sql statement for SQL UPDATE statements based on columns.
 //
-//	query := SimpleStatements{
+//	statement := SimpleStatements{
 //		TableName: foo,
 //		Columns: []string{"foo", "bar"}
 //		Conditions: []string{"thud", "grunt"}
-//	}.NamedUpdateStatement()
+//	}
+//	query := statement.NamedUpdateStatement(false)
 //
 //	// UPDATE foo SET foo=:foo, bar=:bar WHERE thud=:thud AND grunt=:grunt
 //
-//	query := SimpleStatements{
+//	query := statement.NamedUpdateStatement(true)
+//
+//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar) ON DUPLICATE KEY UPDATE foo=:foo, bar=:bar
+//
+//	statement := SimpleStatements{
 //		TableName: foo,
 //		Columns: []string{"foo"}
-//	}.NamedUpdateStatement()
+//	}
+//	query := statement.NamedUpdateStatement(false)
 //
 //	// UPDATE foo SET foo=:foo WHERE TRUE
 //
-//	query := SimpleStatements{
+//	query := statement.NamedUpdateStatement(true)
+//
+//	// INSERT INTO foo (foo) VALUES (:foo) ON DUPLICATE KEY UPDATE foo=:foo
+//
+//	statement := SimpleStatements{
 //		TableName: foo,
-//	}.NamedUpdateStatement()
+//	}
+//	query := statement.NamedUpdateStatement(false)
 //
 //  // Malformed SQL
 //	// UPDATE foo SET WHERE TRUE
-func (s SimpleStatements) NamedUpdateStatement() string {
+//
+//	query := statement.NamedUpdateStatement(true)
+//
+//	// INSERT INTO foo DEFAULT VALUES
+func (s SimpleStatements) NamedUpdateStatement(insert bool) string {
+	if insert {
+		return s.NamedInsertStatement(true)
+	}
 	return fmt.Sprintf(`UPDATE %s SET %s WHERE %s`,
 		s.TableName,
 		NamedUpdateArguments(s.Columns...),
