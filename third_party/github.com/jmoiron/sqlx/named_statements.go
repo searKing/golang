@@ -8,7 +8,7 @@ import (
 type SimpleStatements struct {
 	TableName  string
 	Columns    []string
-	Conditions []string
+	Conditions []string // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 }
 
 // NamedSelectStatement returns a simple sql statement for SQL SELECT statements based on columns.
