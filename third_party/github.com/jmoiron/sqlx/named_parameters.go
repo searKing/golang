@@ -25,10 +25,19 @@ func NamedSelectArguments(cols ...string) (arguments string) {
 // NamedInsertArgumentsCombined returns columns and arguments together
 // for SQL INSERT statements based on columns.
 //
-//	columns, arguments := NamedInsertArgumentsCombined("foo", "bar")
-//	query := fmt.Sprintf("INSERT INTO foo %s", columns, arguments)
+//	query := fmt.Sprintf("INSERT INTO foo %s", NamedInsertArgumentsCombined("foo", "bar"))
 //	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
+//
+//	query := fmt.Sprintf("INSERT INTO foo %s", NamedInsertArgumentsCombined())
+//	// INSERT INTO foo (foo, bar) DEFAULT VALUES
 func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
+	//if len(cols) == 0 {
+	//	// https://docs.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql?view=sql-server-ver15#d-inserting-data-into-a-table-with-columns-that-have-default-values
+	//	return `DEFAULT VALUES`
+	//}
+	if len(cols) == 0 {
+		return `VALUES(DEFAULT)`
+	}
 	return fmt.Sprintf(`(%s) VALUES (%s)`, joinColumns(cols), joinNamedValues(cols))
 }
 
@@ -37,6 +46,7 @@ func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
 //	columns, arguments := NamedInsertArguments("foo", "bar")
 //	query := fmt.Sprintf("INSERT INTO foo (%s) VALUES (%s)", columns, arguments)
 //	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
+// Deprecated: Use NamedInsertArgumentsCombined instead.
 func NamedInsertArguments(cols ...string) (columns string, arguments string) {
 	return joinColumns(cols), joinNamedValues(cols)
 }
@@ -72,7 +82,8 @@ func joinColumns(cols []string) string {
 // joinNamedValues concatenates the elements of values to :value1, :value2, ...
 func joinNamedValues(cols []string) string {
 	if len(cols) == 0 {
-		return ""
+		// https://dev.mysql.com/doc/refman/5.7/en/data-type-defaults.html
+		return "DEFAULT"
 	}
 	return ":" + strings.Join(cols, ", :")
 }
