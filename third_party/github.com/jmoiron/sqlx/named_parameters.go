@@ -1,6 +1,7 @@
 package sqlx
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -19,6 +20,16 @@ func NamedSelectArguments(cols ...string) (arguments string) {
 		return "*"
 	}
 	return joinColumns(cols)
+}
+
+// NamedInsertArgumentsCombined returns columns and arguments together
+// for SQL INSERT statements based on columns.
+//
+//	columns, arguments := NamedInsertArgumentsCombined("foo", "bar")
+//	query := fmt.Sprintf("INSERT INTO foo %s", columns, arguments)
+//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
+func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
+	return fmt.Sprintf(`(%s) VALUES (%s)`, joinColumns(cols), joinNamedValues(cols))
 }
 
 // NamedInsertArguments returns columns and arguments for SQL INSERT statements based on columns.
