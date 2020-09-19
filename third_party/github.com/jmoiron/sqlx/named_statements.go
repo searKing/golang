@@ -59,12 +59,12 @@ func (s SimpleStatements) NamedSelectStatement() string {
 //	// INSERT INTO foo DEFAULT VALUES
 func (s SimpleStatements) NamedInsertStatement(update bool) string {
 	if len(s.Columns) > 0 && update {
-		return fmt.Sprintf(`INSERET INTO %s %s ON DUPLICATE KEY UPDATE %s`,
+		return fmt.Sprintf(`INSERT INTO %s %s ON DUPLICATE KEY UPDATE %s`,
 			s.TableName,
 			NamedInsertArgumentsCombined(s.Columns...),
 			NamedUpdateArguments(s.Columns...))
 	}
-	return fmt.Sprintf(`INSERET INTO %s %s`,
+	return fmt.Sprintf(`INSERT INTO %s %s`,
 		s.TableName,
 		NamedInsertArgumentsCombined(s.Columns...))
 }
