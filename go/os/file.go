@@ -44,10 +44,19 @@ func TouchAll(path string) error {
 }
 
 // CreateAll creates or truncates the named file or dir. If the file already exists,
-// it is touched to now. If the file does not exist, it is created with mode 0666 (before umask).
+// it is truncated. If the file does not exist, it is created with mode 0666 (before umask).
 // If the dir does not exist, it is created with mode 0666 (before umask).
 func CreateAll(path string) error {
 	return createAll(path, false, true)
+}
+
+// CreateAllIfNotExist creates the named file or dir. If the file does not exist, it is created
+// with mode 0666 (before umask).
+// If the dir does not exist, it is created with mode 0666 (before umask).
+// If path is already a directory, CreateAllIfNotExist does nothing
+// and returns nil.
+func CreateAllIfNotExist(path string) error {
+	return createAll(path, false, false)
 }
 
 func createAll(path string, touch bool, truncate bool) error {
