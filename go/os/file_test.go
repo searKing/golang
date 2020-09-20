@@ -34,3 +34,11 @@ func TestTouchAll(t *testing.T) {
 	}
 	defer os.Remove(tmp)
 }
+
+func TestCreateAllIfNotExist(t *testing.T) {
+	tmp := tmpFile(t)
+	if err := os_.CreateAllIfNotExist(tmp); err != nil {
+		t.Fatalf("temp file TouchAll failed: %v", err)
+	}
+	defer os.Remove(tmp)
+}
