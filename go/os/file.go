@@ -7,6 +7,7 @@ package os
 import (
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func GetAbsBinDir() (dir string, err error) {
@@ -24,18 +25,65 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func MakdirAllIfNeeded(path string, perm os.FileMode) (created bool, err error) {
-	dir, _ := filepath.Split(path)
-	has, err := PathExists(dir)
+// Chtimes changes the access and modification times of the named
+// file with Now, similar to the Unix utime() or utimes() functions.
+//
+// The underlying filesystem may truncate or round the values to a
+// less precise time unit.
+// If there is an error, it will be of type *PathError.
+func ChtimesNow(name string) error {
+	now := time.Now()
+	return os.Chtimes(name, now, now)
+}
+
+// TouchAll creates the named file or dir. If the file already exists,
+// it is touched to now. If the file does not exist, it is created with mode 0666 (before umask).
+// If the dir does not exist, it is created with mode 0666 (before umask).
+func TouchAll(path string) error {
+	return createAll(path, true, false)
+}
+
+// CreateAll creates or truncates the named file or dir. If the file already exists,
+// it is touched to now. If the file does not exist, it is created with mode 0666 (before umask).
+// If the dir does not exist, it is created with mode 0666 (before umask).
+func CreateAll(path string) error {
+	return createAll(path, false, true)
+}
+
+func createAll(path string, touch bool, truncate bool) error {
+	var perm os.FileMode = 0666
+
+	dir, file := filepath.Split(path)
+	// file or dir exists
+	if fi, err := os.Stat(path); err == nil {
+		if touch {
+			return ChtimesNow(path)
+		}
+		if fi.IsDir() || !truncate {
+			return nil
+		}
+		// truncates file
+		f, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+		return f.Close()
+	}
+
+	// mkdir -p dir
+	if err := os.MkdirAll(dir, perm); err != nil {
+		return err
+	}
+
+	// create file if needed
+	if file == "" {
+		return nil
+	}
+
+	f, err := os.Create(path)
 	if err != nil {
-		return false, err
+		return err
 	}
-	if has {
-		return false, nil
-	}
-	err = os.MkdirAll(dir, perm)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+	_ = f.Close()
+	return os.Chmod(path, perm)
 }
