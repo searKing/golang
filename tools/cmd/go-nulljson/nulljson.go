@@ -52,6 +52,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	strings_ "github.com/searKing/golang/tools/common/strings"
 	"golang.org/x/tools/go/packages"
@@ -63,6 +64,7 @@ var (
 	output      = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
 	trimprefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
 	linecomment = flag.Bool("linecomment", false, "use line comment text as printed text when present")
+	nullable    = flag.Bool("nullable", true, "generate nullable sql field, similar to sql.NullString")
 	buildTags   = flag.String("tags", "", "comma-separated list of build tags to apply")
 )
 
@@ -186,6 +188,14 @@ type Generator struct {
 // Printf format & write to the buf in this generator
 func (g *Generator) Printf(format string, args ...interface{}) {
 	_, _ = fmt.Fprintf(&g.buf, format, args...)
+}
+
+func (g *Generator) Render(text string, arg SqlRender) {
+	tmpl, err := template.New("go-nulljson").Parse(text)
+	if err != nil {
+		panic(err)
+	}
+	_ = tmpl.Execute(&g.buf, &arg)
 }
 
 // File holds a single parsed file and associated data.
@@ -360,74 +370,30 @@ func (g *Generator) buildOneRun(value Value) {
 	g.Printf("func _() {\n")
 	g.Printf("\t// An \"cannot convert %s literal (type %s) to type atomic.Value\" compiler error signifies that the base type have changed.\n", value.eleName, value.eleName)
 	g.Printf("\t// Re-run the go-nulljson command to generate them again.\n")
-	g.Printf("\t	_ = (sql.Scanner)(&%s{})\n", value.eleName)
-	g.Printf("\t	_ = (driver.Valuer)(&%s{})\n", value.eleName)
+	g.Printf("\t	var val %s\n", value.eleName)
+	g.Printf("\t	_ = (sql.Scanner)(&val)\n")
+	g.Printf("\t	_ = (driver.Valuer)(&val)\n")
 	g.Printf("}\n")
 
 	//The generated code is simple enough to write as a Printf format.
-	g.Printf(stringOneRun, value.eleName,
-		value.ValueFullType(),
-		strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
+	sqlRender := SqlRender{
+		SqlJsonType: value.eleName,
+		ValueType:   value.ValueFullType(),
+		NilValue: strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
-		}))
+		}),
+	}
+	var text string
+
+	if *nullable {
+		text = tmplNullJson
+	} else {
+		text = tmplJson
+	}
+	g.Render(text, sqlRender)
 }
 
 // Arguments to format are:
 //	[1]: import path
 const stringImport = `import "%s"
-`
-
-// Arguments to format are:
-//	[1]: NullJson type name
-//	[2]: value type name
-//	[3]: nil value of map type
-const stringOneRun = `
-
-// %[1]s represents an interface that may be null.
-// %[1]s implements the Scanner interface so
-// it can be used as a scan destination, similar to sql.NullString.
-type %[1]s struct {
-	Data %[2]s
-
-	Valid bool // Valid is true if Data is not NULL
-}
-
-// Scan implements the sql.Scanner interface.
-func (nj *%[1]s) Scan(src interface{}) error {
-	if src == nil {
-		nj.Data, nj.Valid = %[3]s, false
-		return nil
-	}
-	nj.Valid = true
-
-	var err error
-	switch src := src.(type) {
-	case string:
-		err = json.Unmarshal([]byte(src), &nj.Data)
-	case []byte:
-		err = json.Unmarshal(src, &nj.Data)
-	case time.Time:
-		srcBytes, _ := json.Marshal(src)
-		err = json.Unmarshal(srcBytes, &nj.Data)
-	case nil:
-		nj.Data = %[3]s
-		err = nil
-	default:
-		srcBytes, _ := json.Marshal(src)
-		err = json.Unmarshal(srcBytes, &nj.Data)
-	}
-	if err == nil {
-		return nil
-	}
-
-	return fmt.Errorf("unsupported Scan, storing driver.Value type %%T into type %%T : %%w", src, nj.Data, err)
-}
-
-// Value implements the driver.Valuer interface.
-func (nj %[1]s) Value() (driver.Value, error) {
-	if !nj.Valid {
-		return nil, nil
-	}
-	return json.Marshal(nj.Data)
-}
 `
