@@ -2,7 +2,6 @@ package sqlx
 
 import (
 	"fmt"
-	"strings"
 )
 
 // NamedSelectArguments returns columns and arguments for SQL SELECT statements based on columns.
@@ -19,7 +18,7 @@ func NamedSelectArguments(cols ...string) (arguments string) {
 	if len(cols) == 0 {
 		return "*"
 	}
-	return joinColumns(cols)
+	return JoinColumns(cols...)
 }
 
 // NamedInsertArgumentsCombined returns columns and arguments together
@@ -38,7 +37,7 @@ func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
 	if len(cols) == 0 {
 		return `VALUES(DEFAULT)`
 	}
-	return fmt.Sprintf(`(%s) VALUES (%s)`, joinColumns(cols), joinNamedValues(cols))
+	return fmt.Sprintf(`(%s) VALUES (%s)`, JoinColumns(cols...), JoinNamedValues(cols...))
 }
 
 // NamedInsertArguments returns columns and arguments for SQL INSERT statements based on columns.
@@ -48,7 +47,7 @@ func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
 //	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
 // Deprecated: Use NamedInsertArgumentsCombined instead.
 func NamedInsertArguments(cols ...string) (columns string, arguments string) {
-	return joinColumns(cols), joinNamedValues(cols)
+	return JoinColumns(cols...), JoinNamedValues(cols...)
 }
 
 // NamedUpdateArguments returns columns and arguments for SQL UPDATE statements based on columns.
@@ -57,7 +56,7 @@ func NamedInsertArguments(cols ...string) (columns string, arguments string) {
 //	query := fmt.Sprintf("UPDATE foo SET %s", statement)
 //	// UPDATE foo SET foo=:foo, bar=:bar
 func NamedUpdateArguments(cols ...string) (arguments string) {
-	return joinNamedColumnsAndValues(cols)
+	return JoinNamedColumnsValues(cols...)
 }
 
 // NamedWhereArguments returns conditions for SQL WHERE statements based on columns.
@@ -67,67 +66,9 @@ func NamedUpdateArguments(cols ...string) (arguments string) {
 //
 //	query := fmt.Sprintf("SELECT * FROM foo WHERE %s", NamedWhereArguments())
 //	// SELECT * FROM foo WHERE TRUE
-func NamedWhereArguments(cols ...string) (arguments string) {
+func NamedWhereArguments(operator SqlOperator, cols ...string) (arguments string) {
 	if len(cols) == 0 {
 		return "TRUE"
 	}
-	return joinNamedCondition(cols)
-}
-
-// joinColumns concatenates the elements of cols to column1, column2, ...
-func joinColumns(cols []string) string {
-	return strings.Join(cols, ",")
-}
-
-// joinNamedValues concatenates the elements of values to :value1, :value2, ...
-func joinNamedValues(cols []string) string {
-	if len(cols) == 0 {
-		// https://dev.mysql.com/doc/refman/5.7/en/data-type-defaults.html
-		return "DEFAULT"
-	}
-	return ":" + strings.Join(cols, ", :")
-}
-
-// JoinNamedColumns concatenates the elements of cols to column1, column2, ...
-// Deprecated: Use NamedInsertArguments instead.
-func JoinNamedColumns(cols []string) string {
-	return joinColumns(cols)
-}
-
-// joinNamedColumnsAndValues concatenates the elements of values to value1=:value1, value2=:value2 ...
-func joinNamedColumnsAndValues(cols []string) string {
-	if len(cols) == 0 {
-		return ""
-	}
-
-	for i, col := range cols {
-		cols[i] = col + "=:" + col
-	}
-	return strings.Join(cols, ", ")
-}
-
-// joinNamedCondition concatenates the elements of values to value1=:value1 AND value2=:value2 ...
-func joinNamedCondition(cols []string) string {
-	for i, col := range cols {
-		cols[i] = col + "=:" + col
-	}
-	return strings.Join(cols, " AND ")
-}
-
-// JoinNamedValues concatenates the elements of values to :value1, :value2, ...
-// Deprecated: Use NamedInsertArguments instead.
-func JoinNamedValues(cols []string) string {
-	return joinNamedValues(cols)
-}
-
-// JoinNamedColumnsAndValues concatenates the elements of values to value1=:value1, value2=:value2 ...
-// Deprecated: Use NamedUpdateArguments instead.
-func JoinNamedColumnsAndValues(cols []string) string {
-	return joinNamedColumnsAndValues(cols)
-}
-
-// JoinNamedCondition concatenates the elements of values to value1=:value1 AND value2=:value2 ...
-// Deprecated: Use NamedWhereArguments instead.
-func JoinNamedCondition(cols []string) string {
-	return joinNamedCondition(cols)
+	return JoinNamedCondition(operator, cols...)
 }
