@@ -8,7 +8,8 @@ import (
 type SimpleStatements struct {
 	TableName  string
 	Columns    []string
-	Conditions []string // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Conditions []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Operator   SqlOperator // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 }
 
 // NamedSelectStatement returns a simple sql statement for SQL SELECT statements based on columns.
@@ -30,7 +31,7 @@ func (s SimpleStatements) NamedSelectStatement() string {
 	return fmt.Sprintf(`SELECT %s FROM %s WHERE %s`,
 		NamedSelectArguments(s.Columns...),
 		s.TableName,
-		NamedWhereArguments(s.Conditions...))
+		NamedWhereArguments(s.Operator, s.Conditions...))
 }
 
 // NamedInsertStatement returns a simple sql statement for SQL INSERT statements based on columns.
@@ -73,8 +74,9 @@ func (s SimpleStatements) NamedInsertStatement(update bool) string {
 //
 //	statement := SimpleStatements{
 //		TableName: foo,
-//		Columns: []string{"foo", "bar"}
-//		Conditions: []string{"thud", "grunt"}
+//		Columns: []string{"foo", "bar"},
+//		Conditions: []string{"thud", "grunt"},
+//		Operator: SqlOperatorAnd,
 //	}
 //	query := statement.NamedUpdateStatement(false)
 //
@@ -86,7 +88,7 @@ func (s SimpleStatements) NamedInsertStatement(update bool) string {
 //
 //	statement := SimpleStatements{
 //		TableName: foo,
-//		Columns: []string{"foo"}
+//		Columns: []string{"foo"},
 //	}
 //	query := statement.NamedUpdateStatement(false)
 //
@@ -114,7 +116,7 @@ func (s SimpleStatements) NamedUpdateStatement(insert bool) string {
 	return fmt.Sprintf(`UPDATE %s SET %s WHERE %s`,
 		s.TableName,
 		NamedUpdateArguments(s.Columns...),
-		NamedWhereArguments(s.Conditions...))
+		NamedWhereArguments(s.Operator, s.Conditions...))
 }
 
 // NamedDeleteStatement returns a simple sql statement for SQL DELETE statements based on columns.
@@ -135,5 +137,5 @@ func (s SimpleStatements) NamedUpdateStatement(insert bool) string {
 func (s SimpleStatements) NamedDeleteStatement() string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE %s`,
 		s.TableName,
-		NamedWhereArguments(s.Conditions...))
+		NamedWhereArguments(s.Operator, s.Conditions...))
 }
