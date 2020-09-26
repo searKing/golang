@@ -5,6 +5,8 @@
 package grpc
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin/binding"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -13,6 +15,7 @@ import (
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -33,6 +36,8 @@ type gatewayOption struct {
 
 	// fastMode is true to set runtime.OtherErrorHandler only once
 	fastMode bool
+
+	interceptors http_.HandlerInterceptorChain
 }
 
 func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
@@ -137,3 +142,13 @@ func WithFastMode(fastMode bool) GatewayOption {
 //		runtime.ForwardResponseMessage = nil
 //	})
 //}
+
+func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.interceptors.ApplyOptions(opts...)
+	})
+}
+
+func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
+	return WithHttpHandlerInterceptor(http_.WithHandlerInterceptor(rewriter, nil, nil))
+}
