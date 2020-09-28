@@ -383,6 +383,7 @@ func (g *Generator) buildOneRun(value Value) {
 			return g.declareNameVar(value)
 		}),
 	}
+	sqlRender.ResetCanAlias()
 	var text string
 
 	if *nullable {
