@@ -31,7 +31,7 @@ const (
 // query := NamedColumns("foo", "bar")
 // // []string{"foo", "bar"}
 func NamedColumns(cols ...string) []string {
-	var params []string
+	var params = make([]string, len(cols))
 	copy(params, cols)
 	return params
 }
