@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 // Arguments to format are:
@@ -9,14 +13,20 @@ const tmplJson = `
 // {{.SqlJsonType}} represents an interface that may be null.
 // {{.SqlJsonType}} implements the Scanner interface so
 // it can be used as a scan destination, similar to sql.NullString.
-{{if ne .SqlJsonType .ValueType}}
+{{- if .CanAlias}}
 type {{.SqlJsonType}} = {{.ValueType}}
-{{end}}
+{{- else}}
+type {{.SqlJsonType}} {{.ValueType}}
+{{- end}}
 
 // Scan implements the sql.Scanner interface.
 func (nj *{{.SqlJsonType}}) Scan(src interface{}) error {
 	if src == nil {
+{{- if .CanAlias}}
 		*nj = {{.NilValue}}
+{{- else}}
+		*nj = {{.SqlJsonType}}({{.NilValue}})
+{{- end}}
 		return nil
 	}
 
@@ -30,7 +40,11 @@ func (nj *{{.SqlJsonType}}) Scan(src interface{}) error {
 		srcBytes, _ := json.Marshal(src)
 		err = json.Unmarshal(srcBytes, nj)
 	case nil:
+{{- if .CanAlias}}
 		*nj = {{.NilValue}}
+{{- else}}
+		*nj = {{.SqlJsonType}}({{.NilValue}})
+{{- end}}
 		err = nil
 	default:
 		srcBytes, _ := json.Marshal(src)
