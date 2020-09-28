@@ -61,14 +61,14 @@ func NamedUpdateArguments(cols ...string) (arguments string) {
 
 // NamedWhereArguments returns conditions for SQL WHERE statements based on columns.
 //
-//	query := fmt.Sprintf("SELECT * FROM foo WHERE %s", NamedWhereArguments("foo", "bar"))
+//	query := fmt.Sprintf("SELECT * FROM foo WHERE %s", NamedWhereArguments(SqlCompareEqual, SqlOperatorAnd, "foo", "bar"))
 //	// SELECT * FROM foo WHERE foo=:foo AND bar=:bar
 //
-//	query := fmt.Sprintf("SELECT * FROM foo WHERE %s", NamedWhereArguments())
+//	query := fmt.Sprintf("SELECT * FROM foo WHERE %s", NamedWhereArguments(SqlCompareEqual, SqlOperatorAnd))
 //	// SELECT * FROM foo WHERE TRUE
-func NamedWhereArguments(operator SqlOperator, cols ...string) (arguments string) {
+func NamedWhereArguments(cmp SqlCompare, operator SqlOperator, cols ...string) (arguments string) {
 	if len(cols) == 0 {
 		return "TRUE"
 	}
-	return JoinNamedCondition(operator, cols...)
+	return JoinNamedCondition(cmp, operator, cols...)
 }

@@ -14,6 +14,19 @@ const (
 	SqlOperatorNot SqlOperator = 2
 )
 
+//go:generate go-enum -type SqlCompare -trimprefix=SqlCompare --linecomment
+type SqlCompare int
+
+const (
+	SqlCompareEqual             SqlCompare = iota //=
+	SqlCompareNotEqual          SqlCompare = iota //<>
+	SqlCompareGreaterThan       SqlCompare = iota //>
+	SqlCompareLessThan          SqlCompare = iota //<
+	SqlCompareGreatAndEqualThan SqlCompare = iota //>=
+	SqlCompareLessAndEqualThan  SqlCompare = iota //<=
+	SqlCompareLIKE              SqlCompare = iota //LIKE
+)
+
 // NamedColumns returns the []string{value1, value2 ...}
 // query := NamedColumns("foo", "bar")
 // // []string{"foo", "bar"}
@@ -37,10 +50,10 @@ func NamedValues(cols ...string) []string {
 // NamedColumnsValues returns the []string{value1=:value1, value2=:value2 ...}
 // query := NamedColumnsValues("foo", "bar")
 // // []string{"foo=:foo", bar=:bar"}
-func NamedColumnsValues(cols ...string) []string {
+func NamedColumnsValues(cmp SqlCompare, cols ...string) []string {
 	var params = make([]string, len(cols))
 	for i, col := range cols {
-		params[i] = col + "=:" + col
+		params[i] = fmt.Sprintf("%[1]s %[2]s :%[1]s", col, cmp)
 	}
 	return params
 }
@@ -69,14 +82,14 @@ func JoinNamedValues(cols ...string) string {
 // JoinNamedColumnsAndValues concatenates the elements of values to value1=:value1, value2=:value2 ...
 // Deprecated: Use NamedUpdateArguments instead.
 func JoinNamedColumnsValues(cols ...string) string {
-	return strings.Join(NamedColumnsValues(cols...), ",")
+	return strings.Join(NamedColumnsValues(SqlCompareEqual, cols...), ",")
 }
 
 // JoinNamedCondition concatenates the elements of values to value1=:value1 AND value2=:value2 ...
-// query := JoinNamedCondition(SqlOperatorAnd,"foo", "bar")
+// query := JoinNamedCondition(SqlCompareEqual,SqlOperatorAnd,"foo", "bar")
 // // "foo=:foo AND bar=:bar"
-func JoinNamedCondition(operator SqlOperator, cols ...string) string {
-	return strings.Join(NamedColumnsValues(cols...), fmt.Sprintf(" %s ", operator.String()))
+func JoinNamedCondition(cmp SqlCompare, operator SqlOperator, cols ...string) string {
+	return strings.Join(NamedColumnsValues(cmp, cols...), fmt.Sprintf(" %s ", operator.String()))
 }
 
 // JoinNamedColumns concatenates the elements of cols to column1, column2, ...
