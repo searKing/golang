@@ -22,7 +22,7 @@ var (
 	newTests = []NewTest{
 		// No need for a test for the empty case; that's picked off before splitIntoRuns.
 		// Single value.
-		{"NumMap<int, *[][]*[]time.Time, *interface{}>", []generic.TypeInfo{{
+		{"NumMap<int, *[][]*[]time.Time, *interface{}, map[[]map[string]int8][]map[int][]string>", []generic.TypeInfo{{
 			Name:   "NumMap",
 			Import: "",
 			TemplateTypes: []generic.TemplateType{{
@@ -36,6 +36,9 @@ var (
 			}, {
 				Type:      "interface{}",
 				IsPointer: true,
+			}, {
+				Type:      "map[[]map[string]int8][]map[int][]string",
+				IsPointer: false,
 			}}}}},
 		{"NumMap<a.b, *a.b/c.d>", []generic.TypeInfo{{
 			Name:   "NumMap",

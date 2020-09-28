@@ -118,6 +118,7 @@ func walk(tokens []ast.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 					IsPointer: isPointer,
 				}
 
+				// prefix
 				var prefix bytes.Buffer
 				for {
 					if token.Type == ast.TokenTypeParen && token.Value == "*" {
@@ -154,13 +155,26 @@ func walk(tokens []ast.Token, current int, tokenInfos []TypeInfo) []TypeInfo {
 				templateNode.TypePrefix = prefix.String()
 
 				if token.Type == ast.TokenTypeName {
-					import_, type_ := splitImport(token.Value)
+					// map[[]string]int
+					var typ bytes.Buffer
+					if token.Value == "map" {
+						next, mapType := consumeMap(tokens, current)
+						current = next
+						typ.WriteString(mapType)
+						if current >= len(tokens) {
+							panic(fmt.Sprintf("missing token: %s after %s", "]", token.Value))
+						}
+						token = tokens[current]
+					} else {
+						current++
+						typ.WriteString(token.Value)
+						if current >= len(tokens) {
+							panic(fmt.Sprintf("missing token: %s after %s", ">", token.Value))
+						}
+					}
+					import_, type_ := splitImport(typ.String())
 					templateNode.Import = import_
 					templateNode.Type = type_
-					current++
-					if current >= len(tokens) {
-						panic(fmt.Sprintf("missing token: %s after %s", ">", token.Value))
-					}
 					token = tokens[current]
 				}
 				node.TemplateTypes = append(node.TemplateTypes, templateNode)
