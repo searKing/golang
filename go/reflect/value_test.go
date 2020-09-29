@@ -19,28 +19,48 @@ type inputValue struct {
 
 func TestValueIsZeroValue(t *testing.T) {
 	ins := []inputValue{
+		//{
+		//	a:      reflect.ValueOf(nil),
+		//	expect: true,
+		//},
+		//{
+		//	a:      reflect.ValueOf(true),
+		//	expect: false,
+		//},
+		//{
+		//	a:      reflect.ValueOf(0),
+		//	expect: true,
+		//},
+		//{
+		//	a:      reflect.ValueOf(""),
+		//	expect: true,
+		//},
+		//{
+		//	a:      reflect.ValueOf(time.Now()),
+		//	expect: false,
+		//},
+		//{
+		//	a:      reflect.ValueOf(time.Time{}),
+		//	expect: true,
+		//},
 		{
-			a:      reflect.ValueOf(nil),
+			a:      reflect.ValueOf([]byte{}),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(true),
-			expect: false,
-		},
-		{
-			a:      reflect.ValueOf(0),
+			a:      reflect.ValueOf(map[int]string{}),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(""),
+			a:      reflect.ValueOf(interface{}([]byte{})),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(time.Now()),
-			expect: false,
+			a:      reflect.ValueOf(interface{}(map[int]string{})),
+			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(time.Time{}),
+			a:      reflect.ValueOf(struct{}{}),
 			expect: true,
 		},
 	}
