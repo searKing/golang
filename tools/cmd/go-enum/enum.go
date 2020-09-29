@@ -106,34 +106,56 @@ import (
 )
 
 var (
-	typeInfos = flag.String("type", "", "comma-separated list of type names; must be set")
-	useString = flag.Bool("string", true, "if true, the fmt.Stringer interface will be implemented. Default: true, you can use stringer instead.")
-	useBinary = flag.Bool("binary", true, "if true, the encoding.BinaryMarshaler and encoding.BinaryUnmarshaler interface will be implemented. Default: true")
-	useText   = flag.Bool("text", true, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: true")
-	useJson   = flag.Bool("json", true, "if true, the encoding/json.Marshaler and encoding/json.Unmarshaler interface will be implemented. Default: true")
-	useSql    = flag.Bool("sql", true, "if true, the database/sql.Scanner and database/sql/driver.Valuer interface will be implemented. Default: true")
-	useYaml   = flag.Bool("yaml", true, "if true, the gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler interface will be implemented. Default: true")
+	typeInfos string
+	useAll    bool
+	useString bool
+	useBinary bool
+	useText   bool
+	useJson   bool
+	useSql    bool
+	useYaml   bool
 
-	useContains = flag.Bool("contains", true, "if true, the XXXSliceContains|XXXSliceContainsAny methods will be generated(XXX will be replaced by typename), such as strings.Contains|ContainsAny. Default: true")
-
-	transformMethod = flag.String("transform", "nop", "enum item name transformation method [nop, upper, lower, snake, upper_camel, lower_camel, kebab, dotted]. Default: nop")
-
-	output      = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
-	trimprefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
-	linecomment = flag.Bool("linecomment", false, "use line comment text as printed text when present")
-	buildTags   = flag.String("tags", "", "comma-separated list of build tags to apply")
+	useContains     bool
+	transformMethod string
+	output          string
+	trimprefix      string
+	linecomment     bool
+	buildTags       string
 )
 
-// Usage is a replacement usage function for the flags package.
-func Usage() {
-	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-enum:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T files... # Must be a single package\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T,S [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-enum\n")
-	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
-	flag.PrintDefaults()
+func ParseCommandLine(def bool) *flag.FlagSet {
+	var commandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	commandLine.StringVar(&typeInfos, "type", "", "comma-separated list of type names; must be set")
+	commandLine.BoolVar(&useAll, "all", def, "if true, all interfaces will be implemented default. Default: true.")
+	commandLine.BoolVar(&useString, "string", def, "if true, the fmt.Stringer interface will be implemented. Default: true, you can use stringer instead.")
+	commandLine.BoolVar(&useBinary, "binary", def, "if true, the encoding.BinaryMarshaler and encoding.BinaryUnmarshaler interface will be implemented. Default: true")
+	commandLine.BoolVar(&useText, "text", def, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: true")
+	commandLine.BoolVar(&useJson, "json", def, "if true, the encoding/json.Marshaler and encoding/json.Unmarshaler interface will be implemented. Default: true")
+	commandLine.BoolVar(&useSql, "sql", def, "if true, the database/sql.Scanner and database/sql/driver.Valuer interface will be implemented. Default: true")
+	commandLine.BoolVar(&useYaml, "yaml", def, "if true, the gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler interface will be implemented. Default: true")
+
+	commandLine.BoolVar(&useContains, "contains", def, "if true, the XXXSliceContains|XXXSliceContainsAny methods will be generated(XXX will be replaced by typename), such as strings.Contains|ContainsAny. Default: true")
+
+	commandLine.StringVar(&transformMethod, "transform", "nop", "enum item name transformation method [nop, upper, lower, snake, upper_camel, lower_camel, kebab, dotted]. Default: nop")
+
+	commandLine.StringVar(&output, "output", "", "output file name; default srcdir/<type>_string.go")
+	commandLine.StringVar(&trimprefix, "trimprefix", "", "trim the `prefix` from the generated constant names")
+	commandLine.BoolVar(&linecomment, "linecomment", false, "use line comment text as printed text when present")
+	commandLine.StringVar(&buildTags, "tags", "", "comma-separated list of build tags to apply")
+	// Usage is a replacement usage function for the flags package.
+	commandLine.Usage = func() {
+		_, _ = fmt.Fprintf(os.Stderr, "Usage of go-enum:\n")
+		_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T [directory]\n")
+		_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T files... # Must be a single package\n")
+		_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T,S [directory]\n")
+		_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
+		_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-enum\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
+		commandLine.PrintDefaults()
+	}
+
+	commandLine.Parse(os.Args[1:])
+	return commandLine
 }
 
 const (
@@ -143,23 +165,25 @@ const (
 func main() {
 	log.SetFlags(0)
 	log.SetPrefix("go-enum: ")
-	flag.Usage = Usage
-	flag.Parse()
-	if len(*typeInfos) == 0 {
+	ParseCommandLine(true)
+	if len(typeInfos) == 0 {
 		flag.Usage()
 		os.Exit(2)
 	}
+	if !useAll {
+		ParseCommandLine(false)
+	}
 
 	// type <key, value> type <key, value>
-	types := newTypeInfo(*typeInfos)
+	types := newTypeInfo(typeInfos)
 	if len(types) == 0 {
 		flag.Usage()
 		os.Exit(3)
 	}
 
 	var tags []string
-	if len(*buildTags) > 0 {
-		tags = strings.Split(*buildTags, ",")
+	if len(buildTags) > 0 {
+		tags = strings.Split(buildTags, ",")
 	}
 
 	// We accept either one directory or a list of files. Which do we have?
@@ -172,8 +196,8 @@ func main() {
 	// Parse the package once.
 	var dir string
 	g := Generator{
-		trimPrefix:  *trimprefix,
-		lineComment: *linecomment,
+		trimPrefix:  trimprefix,
+		lineComment: linecomment,
 	}
 	// TODO(suzmue): accept other patterns for packages (directories, list of files, import paths, etc).
 	if len(args) == 1 && isDirectory(args[0]) {
@@ -204,7 +228,7 @@ func main() {
 	target := g.goimport(src)
 
 	// Write to file.
-	outputName := *output
+	outputName := output
 	if outputName == "" {
 		baseName := fmt.Sprintf("%s_enum.go", types[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
@@ -351,33 +375,33 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	if len(values) == 0 {
 		log.Fatalf("no values defined for type %+v", typeInfo)
 	}
-	g.transformValueNames(values, *transformMethod)
+	g.transformValueNames(values, transformMethod)
 	// Generate code that will fail if the constants change value.
 	for _, im := range checkImportPackages {
 		g.Printf(stringImport, im)
 	}
 
-	if *useBinary {
+	if useBinary {
 		for _, im := range binaryImportPackages {
 			g.Printf(stringImport, im)
 		}
 	}
-	if *useJson {
+	if useJson {
 		for _, im := range jsonImportPackages {
 			g.Printf(stringImport, im)
 		}
 	}
-	if *useText {
+	if useText {
 		for _, im := range textImportPackages {
 			g.Printf(stringImport, im)
 		}
 	}
-	if *useYaml {
+	if useYaml {
 		for _, im := range yamlImportPackages {
 			g.Printf(stringImport, im)
 		}
 	}
-	if *useSql {
+	if useSql {
 		for _, im := range sqlImportPackages {
 			g.Printf(stringImport, im)
 		}
@@ -388,7 +412,7 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	runs := splitIntoRuns(values)
 	threshold := 10
 
-	if *useString {
+	if useString {
 		// The decision of which pattern to use depends on the number of
 		// runs in the numbers. If there's only one, it's easy. For more than
 		// one, there's a tradeoff between complexity and size of the data
@@ -411,28 +435,28 @@ func (g *Generator) generate(typeInfo typeInfo) {
 		}
 	}
 
-	if *useBinary {
+	if useBinary {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(binaryTemplate, typeInfo.Name)
 	}
-	if *useJson {
+	if useJson {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(jsonTemplate, typeInfo.Name)
 	}
-	if *useText {
+	if useText {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(textTemplate, typeInfo.Name)
 	}
-	if *useYaml {
+	if useYaml {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(yamlTemplate, typeInfo.Name)
 	}
-	if *useSql {
+	if useSql {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(sqpTemplate, typeInfo.Name)
 	}
 
-	if *useContains {
+	if useContains {
 		g.Printf(containsTemplate, typeInfo.Name)
 	}
 }
