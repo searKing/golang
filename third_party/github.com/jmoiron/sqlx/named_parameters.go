@@ -1,8 +1,8 @@
-package sqlx
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-import (
-	"fmt"
-)
+package sqlx
 
 // NamedSelectArguments returns columns and arguments for SQL SELECT statements based on columns.
 //
@@ -15,10 +15,7 @@ import (
 //	query := fmt.Sprintf("SELECT %s FROM foo", NamedSelectArguments())
 //	// SELECT * FROM foo
 func NamedSelectArguments(cols ...string) (arguments string) {
-	if len(cols) == 0 {
-		return "*"
-	}
-	return JoinColumns(cols...)
+	return NamedTableSelectArguments("", cols...)
 }
 
 // NamedInsertArgumentsCombined returns columns and arguments together
@@ -30,14 +27,7 @@ func NamedSelectArguments(cols ...string) (arguments string) {
 //	query := fmt.Sprintf("INSERT INTO foo %s", NamedInsertArgumentsCombined())
 //	// INSERT INTO foo (foo, bar) DEFAULT VALUES
 func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
-	//if len(cols) == 0 {
-	//	// https://docs.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql?view=sql-server-ver15#d-inserting-data-into-a-table-with-columns-that-have-default-values
-	//	return `DEFAULT VALUES`
-	//}
-	if len(cols) == 0 {
-		return `VALUES(DEFAULT)`
-	}
-	return fmt.Sprintf(`(%s) VALUES (%s)`, JoinColumns(cols...), JoinNamedValues(cols...))
+	return NamedTableInsertArgumentsCombined("", cols...)
 }
 
 // NamedInsertArguments returns columns and arguments for SQL INSERT statements based on columns.
@@ -47,7 +37,7 @@ func NamedInsertArgumentsCombined(cols ...string) (arguments string) {
 //	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
 // Deprecated: Use NamedInsertArgumentsCombined instead.
 func NamedInsertArguments(cols ...string) (columns string, arguments string) {
-	return JoinColumns(cols...), JoinNamedValues(cols...)
+	return NamedTableInsertArguments("", cols...)
 }
 
 // NamedUpdateArguments returns columns and arguments for SQL UPDATE statements based on columns.
@@ -56,7 +46,7 @@ func NamedInsertArguments(cols ...string) (columns string, arguments string) {
 //	query := fmt.Sprintf("UPDATE foo SET %s", statement)
 //	// UPDATE foo SET foo=:foo, bar=:bar
 func NamedUpdateArguments(cols ...string) (arguments string) {
-	return JoinNamedColumnsValues(cols...)
+	return NamedTableUpdateArguments("", cols...)
 }
 
 // NamedWhereArguments returns conditions for SQL WHERE statements based on columns.
@@ -67,8 +57,5 @@ func NamedUpdateArguments(cols ...string) (arguments string) {
 //	query := fmt.Sprintf("SELECT * FROM foo WHERE %s", NamedWhereArguments(SqlCompareEqual, SqlOperatorAnd))
 //	// SELECT * FROM foo WHERE TRUE
 func NamedWhereArguments(cmp SqlCompare, operator SqlOperator, cols ...string) (arguments string) {
-	if len(cols) == 0 {
-		return "TRUE"
-	}
-	return JoinNamedCondition(cmp, operator, cols...)
+	return NamedTableWhereArguments(cmp, operator, "", cols...)
 }
