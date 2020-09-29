@@ -11,6 +11,7 @@ import "strings"
 //	NilValue: nil value of map type
 type SqlRender struct {
 	SqlJsonType string // NullJson type name
+	valueImport string // import path of the atomic.Value's value.
 	ValueType   string // value type name
 	NilValue    string // nil value of map type
 
@@ -18,16 +19,16 @@ type SqlRender struct {
 }
 
 func (r *SqlRender) ResetCanAlias() {
-	if r.SqlJsonType != r.ValueType {
+	if strings.HasPrefix(strings.TrimSpace(r.ValueType), "map") ||
+		strings.HasPrefix(strings.TrimSpace(r.ValueType), "[") {
+		r.CanAlias = false
+		return
+	}
+	if r.valueImport != "" {
 		r.CanAlias = false
 		return
 	}
 
-	if strings.HasPrefix(strings.TrimSpace(r.SqlJsonType), "map") ||
-		strings.HasPrefix(strings.TrimSpace(r.SqlJsonType), "[") {
-		r.CanAlias = false
-		return
-	}
 	r.CanAlias = true
 	return
 }

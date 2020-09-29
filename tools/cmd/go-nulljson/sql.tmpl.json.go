@@ -13,10 +13,12 @@ const tmplJson = `
 // {{.SqlJsonType}} represents an interface that may be null.
 // {{.SqlJsonType}} implements the Scanner interface so
 // it can be used as a scan destination, similar to sql.NullString.
+{{- if ne .SqlJsonType .ValueType}}
 {{- if .CanAlias}}
 type {{.SqlJsonType}} = {{.ValueType}}
 {{- else}}
 type {{.SqlJsonType}} {{.ValueType}}
+{{- end}}
 {{- end}}
 
 // Scan implements the sql.Scanner interface.
