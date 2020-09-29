@@ -18,13 +18,13 @@ const (
 type SqlCompare int
 
 const (
-	SqlCompareEqual             SqlCompare = iota //=
-	SqlCompareNotEqual          SqlCompare = iota //<>
-	SqlCompareGreaterThan       SqlCompare = iota //>
-	SqlCompareLessThan          SqlCompare = iota //<
-	SqlCompareGreatAndEqualThan SqlCompare = iota //>=
-	SqlCompareLessAndEqualThan  SqlCompare = iota //<=
-	SqlCompareLIKE              SqlCompare = iota //LIKE
+	SqlCompareEqual            SqlCompare = iota //=
+	SqlCompareNotEqual         SqlCompare = iota //<>
+	SqlCompareGreaterThan      SqlCompare = iota //>
+	SqlCompareLessThan         SqlCompare = iota //<
+	SqlCompareGreatEqual       SqlCompare = iota //>=
+	SqlCompareLessAndEqualThan SqlCompare = iota //<=
+	SqlCompareLike             SqlCompare = iota //LIKE
 )
 
 // NamedColumns returns the []string{value1, value2 ...}
