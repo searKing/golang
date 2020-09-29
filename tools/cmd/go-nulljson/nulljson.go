@@ -382,6 +382,7 @@ func (g *Generator) buildOneRun(value Value) {
 		NilValue: strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
 			return g.declareNameVar(value)
 		}),
+		valueImport: value.valueImport,
 	}
 	sqlRender.ResetCanAlias()
 	var text string
