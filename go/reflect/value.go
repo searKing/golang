@@ -33,16 +33,25 @@ func IsEmptyValue(v reflect.Value) bool {
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
+// cmd/compile/internal/gc/dump.go
 func IsZeroValue(v reflect.Value) bool {
 	if !v.IsValid() {
 		return true
 	}
 
 	switch v.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
-		if v.IsNil() {
-			return true
-		}
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.String:
+		return v.String() == ""
+	case reflect.Interface, reflect.Ptr, reflect.Slice:
+		return v.IsNil()
+	case reflect.Chan, reflect.Func, reflect.Map:
+		return v.IsNil()
 	default:
 	}
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
