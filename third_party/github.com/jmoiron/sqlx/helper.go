@@ -27,6 +27,21 @@ const (
 	SqlCompareLike             SqlCompare = iota //LIKE
 )
 
+// NamedTableColumns returns the []string{table.value1, table.value2 ...}
+// query := NamedColumns("table", "foo", "bar")
+// // []string{"table.foo", "table.bar"}
+func NamedTableColumns(table string, cols ...string) []string {
+	var params = make([]string, len(cols))
+	copy(params, cols)
+	if table == "" {
+		return params
+	}
+	for _, param := range params {
+		param = fmt.Sprintf("%s.%s", table, param)
+	}
+	return params
+}
+
 // NamedColumns returns the []string{value1, value2 ...}
 // query := NamedColumns("foo", "bar")
 // // []string{"foo", "bar"}
@@ -65,6 +80,13 @@ func JoinColumns(cols ...string) string {
 	return strings.Join(NamedColumns(cols...), ",")
 }
 
+// JoinTableColumns concatenates the elements of cols to column1, column2, ...
+// query := JoinTableColumns("table", "foo", "bar")
+// // "table.foo, table.bar"
+func JoinTableColumns(table string, cols ...string) string {
+	return strings.Join(NamedTableColumns(table, cols...), ",")
+}
+
 // JoinNamedValues concatenates the elements of values to :value1, :value2, ...
 // query := JoinNamedValues("foo", "bar")
 // // ":foo,:bar"
@@ -94,6 +116,11 @@ func JoinNamedCondition(cmp SqlCompare, operator SqlOperator, cols ...string) st
 
 // JoinNamedColumns concatenates the elements of cols to column1, column2, ...
 // Deprecated: Use NamedInsertArguments instead.
-func JoinNamedColumns(cols []string) string {
+func JoinNamedColumns(cols ...string) string {
 	return JoinColumns(cols...)
+}
+
+// JoinNamedTableColumns concatenates the elements of cols in table to column1, column2, ...
+func JoinNamedTableColumns(table string, cols ...string) string {
+	return JoinTableColumns(table, cols...)
 }
