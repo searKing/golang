@@ -19,9 +19,9 @@ func _() {
 	_ = x[SqlCompareNotEqual-1]
 	_ = x[SqlCompareGreaterThan-2]
 	_ = x[SqlCompareLessThan-3]
-	_ = x[SqlCompareGreatAndEqualThan-4]
+	_ = x[SqlCompareGreatEqual-4]
 	_ = x[SqlCompareLessAndEqualThan-5]
-	_ = x[SqlCompareLIKE-6]
+	_ = x[SqlCompareLike-6]
 }
 
 const _SqlCompare_name = "=<>><>=<=LIKE"
