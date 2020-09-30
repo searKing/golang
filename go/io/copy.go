@@ -4,7 +4,6 @@
 
 package io
 
-import "C"
 import (
 	"errors"
 	"io"
