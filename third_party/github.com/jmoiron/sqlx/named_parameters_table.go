@@ -19,7 +19,7 @@ import (
 //	query := fmt.Sprintf("SELECT %s FROM table", NamedTableSelectArguments())
 //	// SELECT * FROM table
 func NamedTableSelectArguments(table string, cols ...string) (arguments string) {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 
 	if len(cols) == 0 {
 		return "*"
@@ -36,7 +36,7 @@ func NamedTableSelectArguments(table string, cols ...string) (arguments string) 
 //	query := fmt.Sprintf("INSERT INTO table %s", NamedTableInsertArgumentsCombined("table"))
 //	// INSERT INTO table (foo, bar) DEFAULT VALUES
 func NamedTableInsertArgumentsCombined(table string, cols ...string) (arguments string) {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 
 	//if len(cols) == 0 {
 	//	// https://docs.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql?view=sql-server-ver15#d-inserting-data-into-a-table-with-columns-that-have-default-values
@@ -75,7 +75,7 @@ func NamedTableUpdateArguments(table string, cols ...string) (arguments string) 
 //	query := fmt.Sprintf("SELECT * FROM table WHERE %s", NamedTableWhereArguments(SqlCompareEqual, SqlOperatorAnd, "table"))
 //	// SELECT * FROM table WHERE TRUE
 func NamedTableWhereArguments(cmp SqlCompare, operator SqlOperator, table string, cols ...string) (arguments string) {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 
 	if len(cols) == 0 {
 		return "TRUE"
