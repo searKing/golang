@@ -37,7 +37,7 @@ func NamedColumns(cols ...string) []string {
 // query := NamedValues("foo", "bar")
 // // []string{":foo", ":bar"}
 func NamedValues(cols ...string) []string {
-	return NamedTableValues(cols...)
+	return NamedTableValues("", cols...)
 }
 
 // NamedColumnsValues returns the []string{value1=:value1, value2=:value2 ...}
@@ -61,7 +61,7 @@ func JoinColumns(cols ...string) string {
 // // "DEFAULT"
 // Deprecated: Use NamedInsertArguments instead.
 func JoinNamedValues(cols ...string) string {
-	return JoinNamedTableValues(cols...)
+	return JoinNamedTableValues("", cols...)
 }
 
 // JoinNamedColumnsAndValues concatenates the elements of values to value1=:value1, value2=:value2 ...

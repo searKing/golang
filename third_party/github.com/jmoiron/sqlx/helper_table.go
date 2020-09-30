@@ -30,21 +30,26 @@ func NamedTableColumns(table string, cols ...string) []string {
 }
 
 // NamedTableValues returns the []string{:value1, :value2 ...}
-// query := NamedTableValues("foo", "bar")
-// // []string{":foo", ":bar"}
-func NamedTableValues(cols ...string) []string {
+// query := NamedTableValues("table", "foo", "bar")
+// // []string{":table.foo", ":table.bar"}
+func NamedTableValues(table string, cols ...string) []string {
 	cols = ShrinkEmptyColumns(cols...)
 
 	var namedCols []string
 	for _, col := range cols {
 		namedCols = append(namedCols, ":"+col)
+		if table == "" {
+			namedCols = append(namedCols, fmt.Sprintf(":%[1]s", col))
+		} else {
+			namedCols = append(namedCols, fmt.Sprintf(":%[1]s.%[2]s", table, col))
+		}
 	}
 	return namedCols
 }
 
 // NamedColumnsValues returns the []string{table.value1=:value1, table.value2=:value2 ...}
 // query := NamedColumnsValues("table", "foo", "bar")
-// // []string{"table.foo=:foo", "table.bar=:bar"}
+// // []string{"table.foo=:table.foo", "table.bar=:table.bar"}
 func NamedTableColumnsValues(cmp SqlCompare, table string, cols ...string) []string {
 	cols = ShrinkEmptyColumns(cols...)
 
@@ -53,29 +58,29 @@ func NamedTableColumnsValues(cmp SqlCompare, table string, cols ...string) []str
 		if table == "" {
 			namedCols = append(namedCols, fmt.Sprintf("%[1]s %[2]s :%[1]s", col, cmp))
 		} else {
-			namedCols = append(namedCols, fmt.Sprintf("%[1]s.%[2]s %[3]s :%[2]s", table, col, cmp))
+			namedCols = append(namedCols, fmt.Sprintf("%[1]s.%[2]s %[3]s :%[1]s.%[2]s", table, col, cmp))
 		}
 	}
 	return namedCols
 }
 
 // JoinNamedTableValues concatenates the elements of values to :value1, :value2, ...
-// query := JoinNamedTableValues("foo", "bar")
-// // ":foo,:bar"
-// query := JoinNamedTableValues()
+// query := JoinNamedTableValues("table", "foo", "bar")
+// // ":table.foo,:table.bar"
+// query := JoinNamedTableValues("table")
 // // "DEFAULT"
-func JoinNamedTableValues(cols ...string) string {
+func JoinNamedTableValues(table string, cols ...string) string {
 	cols = ShrinkEmptyColumns(cols...)
-	if len(cols) == 0 {
-		// https://dev.mysql.com/doc/refman/5.7/en/data-type-defaults.html
-		return "DEFAULT"
-	}
-	return strings.Join(NamedTableValues(cols...), ",")
+	//if len(cols) == 0 {
+	//	// https://dev.mysql.com/doc/refman/5.7/en/data-type-defaults.html
+	//	return "DEFAULT"
+	//}
+	return strings.Join(NamedTableValues(table, cols...), ",")
 }
 
 // JoinNamedTableColumnsValues concatenates the elements of values to table.value1=:value1, table.value2=:value2 ...
 // query := JoinNamedTableColumnsValues("table", "foo", "bar")
-// // "table.foo=:foo, table.bar=:bar"
+// // "table.foo=:table.foo, table.bar=:table.bar"
 func JoinNamedTableColumnsValues(table string, cols ...string) string {
 	//cols = ShrinkEmptyColumns(cols...)
 	return strings.Join(NamedTableColumnsValues(SqlCompareEqual, table, cols...), ",")
@@ -83,7 +88,7 @@ func JoinNamedTableColumnsValues(table string, cols ...string) string {
 
 // JoinNamedTableCondition concatenates the elements of values to table.value1=:value1 AND table.value2=:value2 ...
 // query := JoinNamedTableCondition(SqlCompareEqual, SqlOperatorAnd, "table", "foo", "bar")
-// // "table.foo=:foo AND table.bar=:bar"
+// // "table.foo=:table.foo AND table.bar=:table.bar"
 func JoinNamedTableCondition(cmp SqlCompare, operator SqlOperator, table string, cols ...string) string {
 	//cols = ShrinkEmptyColumns(cols...)
 	return strings.Join(NamedTableColumnsValues(cmp, table, cols...), fmt.Sprintf(" %s ", operator.String()))
