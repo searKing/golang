@@ -59,6 +59,14 @@ func JoinTableColumns(table string, cols ...string) string {
 	return strings.Join(TableColumns(table, cols...), ",")
 }
 
+// JoinTableColumnsWithAs concatenates the elements of cols to column1, column2, ...
+// query := JoinTableColumnsWithAs("table", "foo", "bar")
+// // "table.foo AS table.foo, table.bar AS table.bar"
+func JoinTableColumnsWithAs(table string, cols ...string) string {
+	//cols = ShrinkEmptyColumns(cols...)
+	return strings.Join(ExpandAsColumns(TableColumns(table, cols...)...), ",")
+}
+
 // JoinTableValues concatenates the elements of values to :value1, :value2, ...
 // query := JoinTableValues("foo", "bar")
 // // "?,?"
