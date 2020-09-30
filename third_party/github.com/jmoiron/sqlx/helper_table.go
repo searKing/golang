@@ -21,6 +21,19 @@ func ShrinkEmptyColumns(cols ...string) []string {
 	return params
 }
 
+// ExpandAsColumns expand columns with alias AS
+// query := ExpandAsColumns("foo", "bar")
+// // []string{"foo AS foo", "bar AS bar"}
+func ExpandAsColumns(cols ...string) []string {
+	cols = ShrinkEmptyColumns(cols...)
+
+	var params []string
+	for _, col := range cols {
+		params = append(params, fmt.Sprintf("%[1]s AS %[1]s", col))
+	}
+	return params
+}
+
 // NamedTableColumns returns the []string{table.value1, table.value2 ...}
 // query := NamedColumns("table", "foo", "bar")
 // // []string{"table.foo", "table.bar"}
