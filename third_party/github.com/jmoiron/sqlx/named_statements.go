@@ -2,6 +2,7 @@ package sqlx
 
 import (
 	"fmt"
+	"strings"
 )
 
 // SimpleStatements is a simple render for simple SQL
@@ -11,6 +12,8 @@ type SimpleStatements struct {
 	Conditions []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 	Compare    SqlCompare  // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 	Operator   SqlOperator // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Limit      int         // take effect only in SELECT
+	Offset     int         // take effect only in SELECT
 }
 
 // NamedSelectStatement returns a simple sql statement for SQL SELECT statements based on columns.
@@ -28,11 +31,16 @@ type SimpleStatements struct {
 //	}.NamedSelectStatement()
 //
 //	// SELECT * FROM foo WHERE TRUE
-func (s SimpleStatements) NamedSelectStatement() string {
-	return fmt.Sprintf(`SELECT %s FROM %s WHERE %s`,
+func (s SimpleStatements) NamedSelectStatement(appends ...string) string {
+	query := fmt.Sprintf(`SELECT %s FROM %s WHERE %s`,
 		NamedSelectArguments(s.Columns...),
 		s.TableName,
 		NamedWhereArguments(s.Compare, s.Operator, s.Conditions...))
+
+	if s.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", s.Limit, s.Offset)
+	}
+	return query + strings.Join(appends, "")
 }
 
 // NamedInsertStatement returns a simple sql statement for SQL INSERT statements based on columns.
