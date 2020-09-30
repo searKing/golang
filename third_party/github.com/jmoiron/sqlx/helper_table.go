@@ -26,15 +26,7 @@ func shrinkColumns(cols ...string) []string {
 // // []string{"table.foo", "table.bar"}
 func NamedTableColumns(table string, cols ...string) []string {
 	cols = shrinkColumns(cols...)
-	var namedCols []string
-	for _, col := range cols {
-		if table == "" {
-			namedCols = append(namedCols, col)
-		} else {
-			namedCols = append(namedCols, fmt.Sprintf("%s.%s", table, col))
-		}
-	}
-	return namedCols
+	return TableColumns(table, cols...)
 }
 
 // NamedTableValues returns the []string{:value1, :value2 ...}
@@ -65,14 +57,6 @@ func NamedTableColumnsValues(cmp SqlCompare, table string, cols ...string) []str
 		}
 	}
 	return namedCols
-}
-
-// JoinTableColumns concatenates the elements of cols to column1, column2, ...
-// query := JoinTableColumns("table", "foo", "bar")
-// // "table.foo, table.bar"
-func JoinTableColumns(table string, cols ...string) string {
-	//cols = shrinkColumns(cols...)
-	return strings.Join(NamedTableColumns(table, cols...), ",")
 }
 
 // JoinNamedTableValues concatenates the elements of values to :value1, :value2, ...
