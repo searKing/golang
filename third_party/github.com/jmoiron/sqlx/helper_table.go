@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// shrinkColumns trim empty columns
-func shrinkColumns(cols ...string) []string {
+// ShrinkEmptyColumns trim empty columns
+func ShrinkEmptyColumns(cols ...string) []string {
 	var params []string
 	for _, col := range cols {
 		if col == "" {
@@ -25,7 +25,7 @@ func shrinkColumns(cols ...string) []string {
 // query := NamedColumns("table", "foo", "bar")
 // // []string{"table.foo", "table.bar"}
 func NamedTableColumns(table string, cols ...string) []string {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 	return TableColumns(table, cols...)
 }
 
@@ -33,7 +33,7 @@ func NamedTableColumns(table string, cols ...string) []string {
 // query := NamedTableValues("foo", "bar")
 // // []string{":foo", ":bar"}
 func NamedTableValues(cols ...string) []string {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 
 	var namedCols []string
 	for _, col := range cols {
@@ -46,7 +46,7 @@ func NamedTableValues(cols ...string) []string {
 // query := NamedColumnsValues("table", "foo", "bar")
 // // []string{"table.foo=:foo", "table.bar=:bar"}
 func NamedTableColumnsValues(cmp SqlCompare, table string, cols ...string) []string {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 
 	var namedCols []string
 	for _, col := range cols {
@@ -65,7 +65,7 @@ func NamedTableColumnsValues(cmp SqlCompare, table string, cols ...string) []str
 // query := JoinNamedTableValues()
 // // "DEFAULT"
 func JoinNamedTableValues(cols ...string) string {
-	cols = shrinkColumns(cols...)
+	cols = ShrinkEmptyColumns(cols...)
 	if len(cols) == 0 {
 		// https://dev.mysql.com/doc/refman/5.7/en/data-type-defaults.html
 		return "DEFAULT"
@@ -77,7 +77,7 @@ func JoinNamedTableValues(cols ...string) string {
 // query := JoinNamedTableColumnsValues("table", "foo", "bar")
 // // "table.foo=:foo, table.bar=:bar"
 func JoinNamedTableColumnsValues(table string, cols ...string) string {
-	//cols = shrinkColumns(cols...)
+	//cols = ShrinkEmptyColumns(cols...)
 	return strings.Join(NamedTableColumnsValues(SqlCompareEqual, table, cols...), ",")
 }
 
@@ -85,7 +85,7 @@ func JoinNamedTableColumnsValues(table string, cols ...string) string {
 // query := JoinNamedTableCondition(SqlCompareEqual, SqlOperatorAnd, "table", "foo", "bar")
 // // "table.foo=:foo AND table.bar=:bar"
 func JoinNamedTableCondition(cmp SqlCompare, operator SqlOperator, table string, cols ...string) string {
-	//cols = shrinkColumns(cols...)
+	//cols = ShrinkEmptyColumns(cols...)
 	return strings.Join(NamedTableColumnsValues(cmp, table, cols...), fmt.Sprintf(" %s ", operator.String()))
 }
 
@@ -93,6 +93,6 @@ func JoinNamedTableCondition(cmp SqlCompare, operator SqlOperator, table string,
 // query := JoinNamedTableColumns("table", "foo", "bar")
 // // "table.foo, table.bar"
 func JoinNamedTableColumns(table string, cols ...string) string {
-	//cols = shrinkColumns(cols...)
+	//cols = ShrinkEmptyColumns(cols...)
 	return JoinTableColumns(table, cols...)
 }

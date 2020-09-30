@@ -17,10 +17,10 @@ func _() {
 	var x [1]struct{}
 	_ = x[SqlCompareEqual-0]
 	_ = x[SqlCompareNotEqual-1]
-	_ = x[SqlCompareGreaterThan-2]
+	_ = x[SqlCompareGreater-2]
 	_ = x[SqlCompareLessThan-3]
 	_ = x[SqlCompareGreatEqual-4]
-	_ = x[SqlCompareLessAndEqualThan-5]
+	_ = x[SqlCompareLessEqual-5]
 	_ = x[SqlCompareLike-6]
 }
 
