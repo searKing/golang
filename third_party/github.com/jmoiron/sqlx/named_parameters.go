@@ -18,6 +18,20 @@ func NamedSelectArguments(cols ...string) (arguments string) {
 	return NamedTableSelectArguments("", cols...)
 }
 
+// NamedSelectArgumentsWithAs returns columns and arguments for SQL SELECT statements based on columns with alias.
+//
+//	query := fmt.Sprintf("SELECT %s FROM foo", NamedSelectArgumentsWithAs("foo", "bar"))
+//	// SELECT foo AS foo, bar AS bar FROM foo
+//
+//	query := fmt.Sprintf("SELECT %s FROM foo", NamedSelectArgumentsWithAs("foo"))
+//	// SELECT foo AS foo FROM foo
+//
+//	query := fmt.Sprintf("SELECT %s FROM foo", NamedSelectArgumentsWithAs())
+//	// SELECT * FROM foo
+func NamedSelectArgumentsWithAs(cols ...string) (arguments string) {
+	return NamedTableSelectArgumentsWithAs("", cols...)
+}
+
 // NamedInsertArgumentsCombined returns columns and arguments together
 // for SQL INSERT statements based on columns.
 //
