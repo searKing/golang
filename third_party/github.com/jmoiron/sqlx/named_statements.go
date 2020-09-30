@@ -40,7 +40,7 @@ func (s SimpleStatements) NamedSelectStatement(appends ...string) string {
 	if s.Limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d OFFSET %d", s.Limit, s.Offset)
 	}
-	return query + strings.Join(appends, "")
+	return query + " " + strings.Join(appends, "")
 }
 
 // NamedInsertStatement returns a simple sql statement for SQL INSERT statements based on columns.
@@ -67,16 +67,16 @@ func (s SimpleStatements) NamedSelectStatement(appends ...string) string {
 //	query := statement.NamedSelectStatement(true)
 //
 //	// INSERT INTO foo DEFAULT VALUES
-func (s SimpleStatements) NamedInsertStatement(update bool) string {
+func (s SimpleStatements) NamedInsertStatement(update bool, appends ...string) string {
 	if len(s.Columns) > 0 && update {
 		return fmt.Sprintf(`INSERT INTO %s %s ON DUPLICATE KEY UPDATE %s`,
 			s.TableName,
 			NamedInsertArgumentsCombined(s.Columns...),
-			NamedUpdateArguments(s.Columns...))
+			NamedUpdateArguments(s.Columns...)) + " " + strings.Join(appends, "")
 	}
 	return fmt.Sprintf(`INSERT INTO %s %s`,
 		s.TableName,
-		NamedInsertArgumentsCombined(s.Columns...))
+		NamedInsertArgumentsCombined(s.Columns...)) + " " + strings.Join(appends, "")
 }
 
 // NamedUpdateStatement returns a simple sql statement for SQL UPDATE statements based on columns.
@@ -118,14 +118,14 @@ func (s SimpleStatements) NamedInsertStatement(update bool) string {
 //	query := statement.NamedUpdateStatement(true)
 //
 //	// INSERT INTO foo DEFAULT VALUES
-func (s SimpleStatements) NamedUpdateStatement(insert bool) string {
+func (s SimpleStatements) NamedUpdateStatement(insert bool, appends ...string) string {
 	if insert {
 		return s.NamedInsertStatement(true)
 	}
 	return fmt.Sprintf(`UPDATE %s SET %s WHERE %s`,
 		s.TableName,
 		NamedUpdateArguments(s.Columns...),
-		NamedWhereArguments(s.Compare, s.Operator, s.Conditions...))
+		NamedWhereArguments(s.Compare, s.Operator, s.Conditions...)) + " " + strings.Join(appends, "")
 }
 
 // NamedDeleteStatement returns a simple sql statement for SQL DELETE statements based on columns.
@@ -143,8 +143,8 @@ func (s SimpleStatements) NamedUpdateStatement(insert bool) string {
 //	}.NamedUpdateStatement()
 //
 //	// DELETE FROM foo WHERE TRUE
-func (s SimpleStatements) NamedDeleteStatement() string {
+func (s SimpleStatements) NamedDeleteStatement(appends ...string) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE %s`,
 		s.TableName,
-		NamedWhereArguments(s.Compare, s.Operator, s.Conditions...))
+		NamedWhereArguments(s.Compare, s.Operator, s.Conditions...)) + " " + strings.Join(appends, "")
 }
