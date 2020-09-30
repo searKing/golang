@@ -54,6 +54,13 @@ func JoinColumns(cols ...string) string {
 	return JoinTableColumns("", cols...)
 }
 
+// JoinColumnsWithAs concatenates the elements of cols to column1, column2, ...
+// query := JoinColumnsWithAs("foo", "bar")
+// // "foo AS foo,bar AS bar"
+func JoinColumnsWithAs(cols ...string) string {
+	return JoinTableColumnsWithAs("", cols...)
+}
+
 // JoinNamedValues concatenates the elements of values to :value1, :value2, ...
 // query := JoinNamedValues("foo", "bar")
 // // ":foo,:bar"

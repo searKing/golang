@@ -11,10 +11,10 @@ import (
 // NamedTableSelectArguments returns columns and arguments for SQL SELECT statements based on columns.
 //
 //	query := fmt.Sprintf("SELECT %s FROM foo", NamedTableSelectArguments("table", "foo", "bar"))
-//	// SELECT table.foo, table.bar FROM table
+//	// SELECT table.foo AS table.foo, table.bar AS table.bar FROM table
 //
 //	query := fmt.Sprintf("SELECT %s FROM table", NamedTableSelectArguments("table", "foo"))
-//	// SELECT table.foo FROM table
+//	// SELECT table.foo AS table.foo FROM table
 //
 //	query := fmt.Sprintf("SELECT %s FROM table", NamedTableSelectArguments("table"))
 //	// SELECT * FROM table
@@ -24,26 +24,7 @@ func NamedTableSelectArguments(table string, cols ...string) (arguments string) 
 	if len(cols) == 0 {
 		return "*"
 	}
-	return JoinTableColumns(table, cols...)
-}
-
-// NamedTableSelectArgumentsWithAs returns columns and arguments for SQL SELECT statements based on columns with alias.
-//
-//	query := fmt.Sprintf("SELECT %s FROM foo", NamedTableSelectArgumentsWithAs("table", "foo", "bar"))
-//	// SELECT table.foo AS table.foo, table.bar AS table.bar FROM table
-//
-//	query := fmt.Sprintf("SELECT %s FROM table", NamedTableSelectArgumentsWithAs("table", "foo"))
-//	// SELECT table.foo AS table.foo FROM table
-//
-//	query := fmt.Sprintf("SELECT %s FROM table", NamedTableSelectArgumentsWithAs("table"))
-//	// SELECT * FROM table
-func NamedTableSelectArgumentsWithAs(table string, cols ...string) (arguments string) {
-	cols = ExpandAsColumns(cols...)
-
-	if len(cols) == 0 {
-		return "*"
-	}
-	return JoinTableColumns(table, cols...)
+	return JoinTableColumnsWithAs(table, cols...)
 }
 
 // NamedTableInsertArgumentsCombined returns columns and arguments together

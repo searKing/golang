@@ -29,7 +29,7 @@ func NamedSelectArguments(cols ...string) (arguments string) {
 //	query := fmt.Sprintf("SELECT %s FROM foo", NamedSelectArgumentsWithAs())
 //	// SELECT * FROM foo
 func NamedSelectArgumentsWithAs(cols ...string) (arguments string) {
-	return NamedTableSelectArgumentsWithAs("", cols...)
+	return NamedTableSelectArguments("", cols...)
 }
 
 // NamedInsertArgumentsCombined returns columns and arguments together

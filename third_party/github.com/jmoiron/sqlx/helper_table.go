@@ -29,7 +29,7 @@ func ExpandAsColumns(cols ...string) []string {
 
 	var params []string
 	for _, col := range cols {
-		params = append(params, fmt.Sprintf("%[1]s AS %[1]s", col))
+		params = append(params, fmt.Sprintf("%[1]s AS %[2]s", col, strings.ReplaceAll(col, ".", "_")))
 	}
 	return params
 }
@@ -113,4 +113,9 @@ func JoinNamedTableCondition(cmp SqlCompare, operator SqlOperator, table string,
 func JoinNamedTableColumns(table string, cols ...string) string {
 	//cols = ShrinkEmptyColumns(cols...)
 	return JoinTableColumns(table, cols...)
+}
+
+func JoinNamedTableColumnsWithAs(table string, cols ...string) string {
+	//cols = ShrinkEmptyColumns(cols...)
+	return JoinTableColumnsWithAs(table, cols...)
 }
