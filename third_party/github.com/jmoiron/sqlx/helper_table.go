@@ -50,7 +50,6 @@ func NamedTableValues(table string, cols ...string) []string {
 
 	var namedCols []string
 	for _, col := range cols {
-		namedCols = append(namedCols, ":"+col)
 		if table == "" {
 			namedCols = append(namedCols, fmt.Sprintf(":%[1]s", col))
 		} else {
