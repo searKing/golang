@@ -21,7 +21,7 @@ func tmpFile(t *testing.T) string {
 
 func TestCreateAll(t *testing.T) {
 	tmp := tmpFile(t)
-	if err := os_.CreateAll(tmp); err != nil {
+	if err := os_.CreateAll(tmp, 0666); err != nil {
 		t.Fatalf("temp file CreateAll failed: %v", err)
 	}
 	defer os.Remove(tmp)
@@ -29,7 +29,7 @@ func TestCreateAll(t *testing.T) {
 
 func TestTouchAll(t *testing.T) {
 	tmp := tmpFile(t)
-	if err := os_.TouchAll(tmp); err != nil {
+	if err := os_.TouchAll(tmp, 0666); err != nil {
 		t.Fatalf("temp file TouchAll failed: %v", err)
 	}
 	defer os.Remove(tmp)
@@ -37,7 +37,7 @@ func TestTouchAll(t *testing.T) {
 
 func TestCreateAllIfNotExist(t *testing.T) {
 	tmp := tmpFile(t)
-	if err := os_.CreateAllIfNotExist(tmp); err != nil {
+	if err := os_.CreateAllIfNotExist(tmp, 0666); err != nil {
 		t.Fatalf("temp file TouchAll failed: %v", err)
 	}
 	defer os.Remove(tmp)
