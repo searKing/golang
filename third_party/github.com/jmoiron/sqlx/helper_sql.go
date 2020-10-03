@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+// Pagination returns the "LIMIT %d, OFFSET %d"
+// query := Pagination(0, 0)
+// // "LIMIT 0, OFFSET 0"
+func Pagination(limit, offset int) string {
+	if limit < 0 || offset < 0 {
+		return ""
+	}
+	return fmt.Sprintf("LIMIT %d OFFSET %d", limit, offset)
+}
+
 // TableColumns returns the []string{table.value1, table.value2 ...}
 // query := Columns("table", "foo", "bar")
 // // []string{"table.foo", "table.bar"}
