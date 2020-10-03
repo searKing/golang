@@ -7,13 +7,14 @@ import (
 
 // SimpleStatements is a simple render for simple SQL
 type SimpleStatements struct {
-	TableName  string
-	Columns    []string
-	Conditions []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
-	Compare    SqlCompare  // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
-	Operator   SqlOperator // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
-	Limit      int         // take effect only in SELECT
-	Offset     int         // take effect only in SELECT
+	TableName      string
+	Columns        []string
+	Conditions     []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Compare        SqlCompare  // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Operator       SqlOperator // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Limit          int         // take effect only in SELECT
+	Offset         int         // take effect only in SELECT
+	GroupByColumns []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 }
 
 // NamedSelectStatement returns a simple sql statement for SQL SELECT statements based on columns.
@@ -39,6 +40,9 @@ func (s SimpleStatements) NamedSelectStatement(appends ...string) string {
 
 	if s.Limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d OFFSET %d", s.Limit, s.Offset)
+	}
+	if len(s.GroupByColumns) > 0 {
+		query += fmt.Sprintf(" GROUP BY %s", JoinTableColumns(s.TableName, s.GroupByColumns...))
 	}
 	return query + " " + strings.Join(appends, "")
 }
