@@ -5,6 +5,7 @@
 package io_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -167,4 +168,62 @@ func ExampleDynamicReadSeeker() {
 	// some io.Reader stream to be read
 	// stream to be read
 	// stream to be read
+}
+
+func ExampleCount() {
+	cnt, tailMatch, err := io_.Count(bytes.NewReader([]byte("abcdef")), "b")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+	cnt, tailMatch, err = io_.Count(bytes.NewReader([]byte("abcdef")), "f")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+	cnt, tailMatch, err = io_.Count(bytes.NewReader([]byte("abcdef")), "cd")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+	cnt, tailMatch, err = io_.Count(bytes.NewReader([]byte("abcdef")), "cb")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+
+	// Output:
+	// cnt: 1, tailMatch: false
+	// cnt: 1, tailMatch: true
+	// cnt: 1, tailMatch: false
+	// cnt: 0, tailMatch: false
+}
+
+func ExampleCountSize() {
+	cnt, tailMatch, err := io_.CountSize(bytes.NewReader([]byte("abcdef")), "b", 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+	cnt, tailMatch, err = io_.CountSize(bytes.NewReader([]byte("abcdef")), "f", 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+	cnt, tailMatch, err = io_.CountSize(bytes.NewReader([]byte("abcdef")), "cd", 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+	cnt, tailMatch, err = io_.CountSize(bytes.NewReader([]byte("abcdef")), "cb", 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("cnt: %d, tailMatch: %t\n", cnt, tailMatch)
+
+	// Output:
+	// cnt: 1, tailMatch: false
+	// cnt: 1, tailMatch: true
+	// cnt: 1, tailMatch: false
+	// cnt: 0, tailMatch: false
 }

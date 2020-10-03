@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func copy(srcPath, dstPath string, f os.FileInfo, copyMode Mode) error {
+func copyPath(srcPath, dstPath string, f os.FileInfo, copyMode Mode) error {
 	stat, ok := f.Sys().(*syscall.Stat_t)
 	if !ok {
 		return fmt.Errorf("unable to get raw syscall.Stat_t data for %s", srcPath)
