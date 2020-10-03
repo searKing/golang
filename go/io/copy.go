@@ -87,6 +87,6 @@ func CopyDir(srcDir, dstDir string, copyMode Mode) error {
 		}
 
 		dstPath := filepath.Join(dstDir, relPath)
-		return copy(srcPath, dstPath, f, copyMode)
+		return copyPath(srcPath, dstPath, f, copyMode)
 	})
 }

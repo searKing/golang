@@ -17,7 +17,7 @@ func copyFileRange(rfd int, roff *int64, wfd int, woff *int64, len int, flags in
 	return 0, ErrNotImplemented
 }
 
-func copy(srcPath, dstPath string, f os.FileInfo, copyMode Mode) error {
+func copyPath(srcPath, dstPath string, f os.FileInfo, copyMode Mode) error {
 	isHardlink := false
 
 	switch mode := f.Mode(); {
