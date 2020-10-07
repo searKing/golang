@@ -44,11 +44,12 @@ func (o TagOptions) Contains(optionName string) bool {
 	return false
 }
 
-func IsValidTagName(tagName string) bool {
-	if tagName == "" {
+// IsValidTagKey checks if key of struct tag, like `json:"name,omitempty"`, is valid
+func IsValidTagKey(tagKey string) bool {
+	if tagKey == "" {
 		return false
 	}
-	for _, c := range tagName {
+	for _, c := range tagKey {
 		switch {
 		case strings.ContainsRune("!#$%&()*+-./:<=>?@[]^_{|}~ ", c):
 			// Backslash and quote chars are reserved, but
