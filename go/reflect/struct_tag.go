@@ -181,10 +181,7 @@ func (t StructTag) Set(subTag SubStructTag) error {
 // AddOptions adds the given option for the given key.
 // It appends to any existing options associated with key.
 func (t StructTag) AddOptions(key string, options ...string) {
-	val, has := t[key]
-	if !has {
-		return
-	}
+	val, _ := t[key]
 	val.AddOptions(options...)
 	t[key] = val
 }
