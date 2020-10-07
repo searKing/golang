@@ -227,3 +227,17 @@ func ExampleCountSize() {
 	// cnt: 1, tailMatch: false
 	// cnt: 0, tailMatch: false
 }
+
+func ExampleCountLines() {
+	cnt, err := io_.CountLines(bytes.NewReader([]byte("abc\ndef")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if cnt != 2 {
+		log.Fatalf("got %d, want 2", cnt)
+	}
+	fmt.Printf("cnt: %d\n", cnt)
+
+	// Output:
+	// cnt: 2
+}
