@@ -1,10 +1,15 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/searKing/golang/go/reflect"
 )
@@ -13,6 +18,13 @@ const (
 	TagSqlx = "db"
 	TagJson = "json"
 )
+
+func isPublicName(name string) bool {
+	for _, c := range name {
+		return unicode.IsUpper(c)
+	}
+	return false
+}
 
 // genDecl processes one declaration clause.
 func (f *File) genDecl(node ast.Node) bool {
@@ -38,6 +50,7 @@ func (f *File) genDecl(node ast.Node) bool {
 		}
 
 		if typ != f.typeInfo.Name {
+			// This is not the type we're looking for.
 			continue
 		}
 
@@ -45,69 +58,83 @@ func (f *File) genDecl(node ast.Node) bool {
 			continue
 		}
 
-		for _, field := range sExpr.Fields.List {
+		v := Value{
+			originalName: typ,
+			str:          typ,
 
+			valueImport:     f.typeInfo.valueImport,
+			valueType:       f.typeInfo.valueType,
+			valueIsPointer:  f.typeInfo.valueIsPointer,
+			valueTypePrefix: f.typeInfo.valueTypePrefix,
+		}
+		if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
+			v.name = strings.TrimSpace(c.Text())
+		} else {
+			v.name = strings.TrimPrefix(typ, f.trimPrefix)
+		}
+
+		v.eleName = v.name
+
+		if strings.TrimSpace(v.valueType) == "" {
+			v.valueType = "interface{}"
+		}
+		f.values = append(f.values, v)
+		for _, field := range sExpr.Fields.List {
 			fieldName := ""
 			if len(field.Names) != 0 {
 				for _, field := range field.Names {
-					if !c.skipUnexportedFields || isPublicName(field.Name) {
+					if !*skipPrivateFields || isPublicName(field.Name) {
 						fieldName = field.Name
 						break
 					}
 				}
+			} else if field.Names == nil { // anonymous field
+				ident, ok := field.Type.(*ast.Ident)
+				if !ok {
+					continue
+				}
+
+				if !*skipPrivateFields {
+					fieldName = ident.Name
+				}
 			}
 
-
-
+			// nothing to process, continue with next line
+			if fieldName == "" {
+				continue
+			}
+			if field.Tag == nil {
+				field.Tag = &ast.BasicLit{}
+			}
 
 			if field.Tag != nil {
-
-				tags, err := reflect.ParseStructTag(field.Tag.Value)
+				var tag string
+				if field.Tag.Value != "" {
+					var err error
+					tag, err = strconv.Unquote(field.Tag.Value)
+					if err != nil {
+						panic(err)
+					}
+				}
+				tags, err := reflect.ParseStructTag(tag)
 				if err != nil {
 					panic(err)
 				}
-				tag, has := tags.Get(TagSqlx)
-				if !has {
-					tags.AddOptions(TagSqlx, field.Names)
-
+				{
+					_, has := tags.Get(TagSqlx)
+					if !has {
+						tags.AddOptions(TagSqlx, fieldName)
+					}
 				}
-			}
-			field.Tag
-
-			i := field.Type.(*ast.Ident)
-			fieldType := i.Name
-			for _, name := range field.Names {
-				fmt.Printf("\tField: name=%s type=%s\n", name.Name, fieldType)
+				{
+					_, has := tags.Get(TagJson)
+					if !has {
+						tags.AddOptions(TagJson, fieldName)
+					}
+				}
+				field.Tag.Value = tags.String()
 			}
 		}
-
-		if sExpr.X.(*ast.Ident).Name == "atomic" && sExpr.Sel.Name == "Value" {
-			if typ != f.typeInfo.Name {
-				// This is not the type we're looking for.
-				continue
-			}
-			v := Value{
-				originalName: typ,
-				str:          typ,
-
-				valueImport:     f.typeInfo.valueImport,
-				valueType:       f.typeInfo.valueType,
-				valueIsPointer:  f.typeInfo.valueIsPointer,
-				valueTypePrefix: f.typeInfo.valueTypePrefix,
-			}
-			if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
-				v.name = strings.TrimSpace(c.Text())
-			} else {
-				v.name = strings.TrimPrefix(v.originalName, f.trimPrefix)
-			}
-			v.eleName = v.name
-
-			if strings.TrimSpace(v.valueType) == "" {
-				v.valueType = "interface{}"
-			}
-			f.values = append(f.values, v)
-		}
-
 	}
 	return false
 }

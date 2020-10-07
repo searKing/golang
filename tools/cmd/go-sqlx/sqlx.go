@@ -46,7 +46,9 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"go/token"
 	"go/types"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -63,6 +65,7 @@ var (
 	typeInfos         = flag.String("type", "", "comma-separated list of type names; must be set")
 	output            = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
 	skipPrivateFields = flag.Bool("skip-unexported", false, "skip unexported fields")
+	flagModified      = flag.Bool("modified", false, "read an archive of modified files from standard input")
 	trimprefix        = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
 	linecomment       = flag.Bool("linecomment", false, "use line comment text as printed text when present")
 	buildTags         = flag.String("tags", "", "comma-separated list of build tags to apply")
@@ -183,6 +186,8 @@ type Generator struct {
 
 	trimPrefix  string
 	lineComment bool
+
+	modified io.Reader // read an archive of modified files from standard input
 }
 
 // Printf format & write to the buf in this generator
@@ -228,6 +233,10 @@ type Package struct {
 
 	// Ast files to which this package contains.
 	files []*File
+
+	// Fset provides position information for Types, TypesInfo, and Syntax.
+	// It is set only when Types is set.
+	fset *token.FileSet
 }
 
 // parsePackage analyzes the single package constructed from the patterns and tags.
@@ -240,6 +249,7 @@ func (g *Generator) parsePackage(patterns []string, tags []string) {
 		Tests:      false,
 		BuildFlags: []string{fmt.Sprintf("-tags=%s", strings.Join(tags, " "))},
 	}
+
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
 		log.Fatal(err)
@@ -252,10 +262,12 @@ func (g *Generator) parsePackage(patterns []string, tags []string) {
 
 // addPackage adds a type checked Package and its syntax files to the generator.
 func (g *Generator) addPackage(pkg *packages.Package) {
+
 	g.pkg = &Package{
 		name:  pkg.Name,
 		defs:  pkg.TypesInfo.Defs,
 		files: make([]*File, len(pkg.Syntax)),
+		fset:  pkg.Fset,
 	}
 
 	for i, file := range pkg.Syntax {
@@ -280,6 +292,12 @@ func (g *Generator) generate(typeInfo typeInfo) {
 			ast.Inspect(file.file, file.genDecl)
 			values = append(values, file.values...)
 		}
+		var buf bytes.Buffer
+		err := format.Node(&buf, g.pkg.fset, file.file)
+		if err != nil {
+			panic(err)
+		}
+
 	}
 
 	//if typeInfo.Name != "" {
@@ -330,6 +348,10 @@ func (g *Generator) goimport(src []byte) []byte {
 
 // Value represents a declared constant.
 type Value struct {
+	originalName string // The name of the constant.
+	name         string // The name with trimmed prefix.
+	str          string // The string representation given by the "go/constant" package.
+
 	eleImport string // import path of the atomic.Value type.
 	eleName   string // Name of the atomic.Value type.
 
@@ -337,7 +359,6 @@ type Value struct {
 	valueType       string // The type of the value in atomic.Value.
 	valueIsPointer  bool   // whether the value's type is ptr
 	valueTypePrefix string // The type's prefix, such as []*[]
-	fields          []
 }
 
 type Field struct {
