@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package reflect
 
 import (
@@ -30,12 +34,26 @@ var (
 // characters and Go string literal syntax.
 type StructTag map[string]SubStructTag
 
+// ParseAstStructTag parses a single struct field tag of AST and returns the set of subTags.
+// This code is based on the validateStructTag code in package
+// tag `json:"name,omitempty"`, field.Tag.Value returned by AST
+func ParseAstStructTag(tag string) (StructTag, error) {
+	if tag != "" {
+		var err error
+		tag, err = strconv.Unquote(tag)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ParseStructTag(tag)
+}
+
 // ParseStructTag parses a single struct field tag and returns the set of subTags.
 // This code is based on the validateStructTag code in package
+// tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
 func ParseStructTag(tag string) (StructTag, error) {
 	// This code is based on the validateStructTag code in package
 	// cmd/vendor/golang.org/x/tools/go/analysis/passes/structtag/structtag.go.
-
 	var tags = map[string]SubStructTag{}
 
 	// Code borrowed from cmd/vendor/golang.org/x/tools/go/analysis/passes/structtag/structtag.go
@@ -223,6 +241,7 @@ func (t StructTag) Keys() []string {
 }
 
 // String reassembles the subTags into a valid literal tag field representation
+// tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
 func (t *StructTag) String() string {
 	tags := t.Tags()
 	if len(tags) == 0 {
@@ -237,6 +256,16 @@ func (t *StructTag) String() string {
 		}
 	}
 	return buf.String()
+}
+
+// String reassembles the subTags into a valid literal tag field representation
+// tag `json:"name,omitempty"`, field.Tag.Value returned by AST
+func (t *StructTag) AstString() string {
+	tag := t.String()
+	if tag == "" {
+		return tag
+	}
+	return "`" + tag + "`"
 }
 
 var checkTagDups = []string{"json", "xml"}
