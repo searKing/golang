@@ -196,10 +196,19 @@ func (t StructTag) Set(subTag SubStructTag) error {
 	return nil
 }
 
+// AddNameAndOptions sets the given name for the given key.
+func (t StructTag) SetName(key string, name string) {
+	val, _ := t[key]
+	val.Key = key
+	val.Name = name
+	t[key] = val
+}
+
 // AddOptions adds the given option for the given key.
 // It appends to any existing options associated with key.
 func (t StructTag) AddOptions(key string, options ...string) {
 	val, _ := t[key]
+	val.Key = key
 	val.AddOptions(options...)
 	t[key] = val
 }
@@ -242,14 +251,14 @@ func (t StructTag) Keys() []string {
 
 // String reassembles the subTags into a valid literal tag field representation
 // tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
-func (t *StructTag) String() string {
+func (t StructTag) String() string {
 	tags := t.Tags()
 	if len(tags) == 0 {
 		return ""
 	}
 
 	var buf bytes.Buffer
-	for i, tag := range t.Tags() {
+	for i, tag := range tags {
 		buf.WriteString(tag.String())
 		if i != len(tags)-1 {
 			buf.WriteString(" ")
@@ -260,7 +269,7 @@ func (t *StructTag) String() string {
 
 // String reassembles the subTags into a valid literal tag field representation
 // tag `json:"name,omitempty"`, field.Tag.Value returned by AST
-func (t *StructTag) AstString() string {
+func (t StructTag) AstString() string {
 	tag := t.String()
 	if tag == "" {
 		return tag
