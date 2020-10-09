@@ -21,9 +21,9 @@ var ShortCallerPrettyfier = func(f *runtime.Frame) (function string, file string
 // callerPrettyfier is defined in logrus.TextFormatter and logrus.JSONFormatter.
 // callerPrettyfier affects only if formatter is logrus.TextFormatter and logrus.JSONFormatter.
 // if callerPrettyfier not set, ShortCallerPrettyfier is set
-func WithReporterCaller(log *logrus.Logger, callerPrettyfier func(*runtime.Frame) (function string, file string)) error {
+func WithReporterCaller(log *logrus.Logger, callerPrettyfier func(*runtime.Frame) (function string, file string)) {
 	if log == nil {
-		return nil
+		return
 	}
 
 	log.SetReportCaller(true)
@@ -41,5 +41,5 @@ func WithReporterCaller(log *logrus.Logger, callerPrettyfier func(*runtime.Frame
 			f.CallerPrettyfier = callerPrettyfier
 		}
 	}
-	return nil
+	return
 }
