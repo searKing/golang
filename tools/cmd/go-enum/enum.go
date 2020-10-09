@@ -138,7 +138,7 @@ func ParseCommandLine(def bool) *flag.FlagSet {
 
 	commandLine.StringVar(&transformMethod, "transform", "nop", "enum item name transformation method [nop, upper, lower, snake, upper_camel, lower_camel, kebab, dotted]. Default: nop")
 
-	commandLine.StringVar(&output, "output", "", "output file name; default srcdir/<type>_string.go")
+	commandLine.StringVar(&output, "output", "", "output file name; default srcdir/<type>_enum.go")
 	commandLine.StringVar(&trimprefix, "trimprefix", "", "trim the `prefix` from the generated constant names")
 	commandLine.BoolVar(&linecomment, "linecomment", false, "use line comment text as printed text when present")
 	commandLine.StringVar(&buildTags, "tags", "", "comma-separated list of build tags to apply")

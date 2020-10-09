@@ -2,41 +2,33 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// go-sqlx Generates Go code using a package as a generic template that implements database/sql.Scanner and database/sql/driver.Valuer.
-// Given the name of a NullJson type T , and the name of a type Value
-// go-sqlx will create a new self-contained Go source file implementing
-//	func (m *T) Scan(src interface{}) error
-//	func (m *T) Value() (driver.Value, error)
-// The file is created in the same package and directory as the package that defines T, Key.
+// go-sqlx Generates Go code using a package as a generic template that implements sqlx.
+// Given the StructName of a Struct type T
+// go-sqlx will create a new self-contained Go source file and rewrite T's "db" tag of struct field
+// The file is created in the same package and directory as the package that defines T.
 // It has helpful defaults designed for use with go generate.
 //
 // For example, given this snippet,
 //
 // running this command
 //
-//	go-sqlx -type=Pill<time.Time>
+//	go-sqlx -type=Pill
 //
-// in the same directory will create the file pill_nulljson.go, in package painkiller,
-// containing a definition of
-//
-//	func (m *Pill) Scan(src interface{}) error
-//	func (m *Pill) Value() (driver.Value, error)
+// in the same directory will create the file pill_sqlx.go, in package painkiller,
+// containing a definition of helper for sqlx
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate go-sqlx -type=Pill<int>
-//	//go:generate go-sqlx -type=Pill<*string>
-//	//go:generate go-sqlx -type=Pill<time.Time>
-//	//go:generate go-sqlx -type=Pill<*encoding/json.Token>
+//	//go:generate go-sqlx -type=Pill
 //
 // With no arguments, it processes the package in the current directory.
-// Otherwise, the arguments must name a single directory holding a Go package
+// Otherwise, the arguments must trimmedStructName a single directory holding a Go package
 // or a set of Go source files that represent a single Go package.
 //
 // The -type flag accepts a comma-separated list of types so a single run can
-// generate methods for multiple types. The default output file is t_string.go,
-// where t is the lower-cased name of the first type listed. It can be overridden
-// with the -output flag.
+// generate methods for multiple types. The default flagOutput file is t_string.go,
+// where t is the lower-cased trimmedStructName of the first type listed. It can be overridden
+// with the -flagOutput flag.
 //
 package main // import "github.com/searKing/golang/tools/cmd/go-sqlx"
 
@@ -56,29 +48,26 @@ import (
 	"strings"
 	"text/template"
 
-	strings_ "github.com/searKing/golang/tools/common/strings"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
 var (
-	typeInfos         = flag.String("type", "", "comma-separated list of type names; must be set")
-	output            = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
-	skipPrivateFields = flag.Bool("skip-unexported", false, "skip unexported fields")
-	flagModified      = flag.Bool("modified", false, "read an archive of modified files from standard input")
-	trimprefix        = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
-	linecomment       = flag.Bool("linecomment", false, "use line comment text as printed text when present")
-	buildTags         = flag.String("tags", "", "comma-separated list of build tags to apply")
+	flagTypeInfos           = flag.String("type", "", "comma-separated list of type names; must be set")
+	flagOutput              = flag.String("flagOutput", "", "flagOutput file trimmedStructName; default srcdir/<type>_sqlx.go")
+	flagSkipPrivateFields   = flag.Bool("skip-unexported", false, "skip unexported Fields")
+	flagSkipAnonymousFields = flag.Bool("skip-anonymous", false, "skip anonymous Fields")
+	flagTrimprefix          = flag.String("trimprefix", "", "trim the `prefix` from the generated struct type names")
+	flagLinecomment         = flag.Bool("linecomment", false, "use line comment text followed the generated struct type name by as printed text when present")
+	flagBuildTags           = flag.String("tags", "", "comma-separated list of build tags to apply")
 )
 
 // Usage is a replacement usage function for the flags package.
 func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-sqlx:\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T<V> [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T<V> files... # Must be a single package\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T files... # Must be a single package\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T,S [directory]\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T<V>,S<V> [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-sqlx\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
@@ -94,21 +83,21 @@ func main() {
 	log.SetPrefix("go-sqlx: ")
 	flag.Usage = Usage
 	flag.Parse()
-	if len(*typeInfos) == 0 {
+	if len(*flagTypeInfos) == 0 {
 		flag.Usage()
 		os.Exit(2)
 	}
 
 	// type <key, value> type <key, value>
-	types := newTypeInfo(*typeInfos)
+	types := newTypeInfo(*flagTypeInfos)
 	if len(types) == 0 {
 		flag.Usage()
 		os.Exit(3)
 	}
 
 	var tags []string
-	if len(*buildTags) > 0 {
-		tags = strings.Split(*buildTags, ",")
+	if len(*flagBuildTags) > 0 {
+		tags = strings.Split(*flagBuildTags, ",")
 	}
 
 	// We accept either one directory or a list of files. Which do we have?
@@ -121,8 +110,8 @@ func main() {
 	// Parse the package once.
 	var dir string
 	g := Generator{
-		trimPrefix:  *trimprefix,
-		lineComment: *linecomment,
+		trimPrefix:  *flagTrimprefix,
+		lineComment: *flagLinecomment,
 	}
 	// TODO(suzmue): accept other patterns for packages (directories, list of files, import paths, etc).
 	if len(args) == 1 && isDirectory(args[0]) {
@@ -141,31 +130,26 @@ func main() {
 	g.Printf("\n")
 	g.Printf("package %s", g.pkg.name)
 	g.Printf("\n")
-	g.Printf(stringImport, "database/sql")
-	g.Printf(stringImport, "database/sql/driver")
-	g.Printf(stringImport, "encoding/json")
-	g.Printf(stringImport, "fmt")
-	g.Printf(stringImport, "time")
 
 	// Run generate for each type.
 	for _, typeInfo := range types {
 		g.generate(typeInfo)
 	}
 
-	// Format the output.
+	// Format the flagOutput.
 	src := g.format()
 
 	target := g.goimport(src)
 
 	// Write to file.
-	outputName := *output
+	outputName := *flagOutput
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_nulljson.go", types[0].Name)
+		baseName := fmt.Sprintf("%s_sqlx.go", types[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, target, 0644)
 	if err != nil {
-		log.Fatalf("writing output: %s", err)
+		log.Fatalf("writing flagOutput: %s", err)
 	}
 }
 
@@ -179,9 +163,9 @@ func isDirectory(name string) bool {
 }
 
 // Generator holds the state of the analysis. Primarily used to buffer
-// the output for format.Source.
+// the flagOutput for format.Source.
 type Generator struct {
-	buf bytes.Buffer // Accumulated output.
+	buf bytes.Buffer // Accumulated flagOutput.
 	pkg *Package     // Package we are scanning.
 
 	trimPrefix  string
@@ -200,16 +184,25 @@ func (g *Generator) Render(text string, arg SqlxRender) {
 	if err != nil {
 		panic(err)
 	}
-	_ = tmpl.Execute(&g.buf, &arg)
+
+	err = tmpl.Funcs(template.FuncMap{"trim": strings.TrimSpace}).Execute(&g.buf, &arg)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // File holds a single parsed file and associated data.
 type File struct {
 	pkg  *Package  // Package to which this file belongs.
 	file *ast.File // Parsed AST.
-	// These fields are reset for each type being generated.
+	// Fset provides position information for Types, TypesInfo, and Syntax.
+	// It is set only when Types is set.
+	fset        *token.FileSet
+	fileChanged bool
+
+	// These Fields are reset for each type being generated.
 	typeInfo typeInfo
-	values   []Value // Accumulator for constant values of that type.
+	structs  []Struct // Accumulator for constant structs of that type.
 
 	trimPrefix  string
 	lineComment bool
@@ -283,38 +276,34 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 // generate produces the String method for the named type.
 func (g *Generator) generate(typeInfo typeInfo) {
 	// <key, value>
-	values := make([]Value, 0, 100)
+	structs := make([]Struct, 0, 100)
 	for _, file := range g.pkg.files {
 		// Set the state for this run of the walker.
 		file.typeInfo = typeInfo
-		file.values = nil
+		file.fset = g.pkg.fset
+		file.structs = nil
 		if file.file != nil {
 			ast.Inspect(file.file, file.genDecl)
-			values = append(values, file.values...)
+			structs = append(structs, file.structs...)
 		}
-		var buf bytes.Buffer
-		err := format.Node(&buf, g.pkg.fset, file.file)
-		if err != nil {
-			panic(err)
-		}
+		if file.fileChanged {
+			var buf bytes.Buffer
+			err := format.Node(&buf, g.pkg.fset, file.file)
+			if err != nil {
+				panic(err)
+			}
 
+			err = ioutil.WriteFile(g.pkg.fset.File(file.file.Pos()).Name(), buf.Bytes(), 0)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
 
-	//if typeInfo.Name != "" {
-	//	values = append(values, Value{
-	//		eleImport:       typeInfo.Import,
-	//		eleName:         typeInfo.Name,
-	//		valueImport:     typeInfo.valueImport,
-	//		valueType:       typeInfo.valueType,
-	//		valueIsPointer:  typeInfo.valueIsPointer,
-	//		valueTypePrefix: typeInfo.valueTypePrefix,
-	//	})
-	//}
-
-	if len(values) == 0 {
-		log.Fatalf("no values defined for type %+v", typeInfo)
+	if len(structs) == 0 {
+		log.Fatalf("no structs defined for type %+v", typeInfo)
 	}
-	g.buildOneRun(values[0])
+	g.buildOneRun(structs[0])
 }
 
 // format returns the gofmt-ed contents of the Generator's buffer.
@@ -322,7 +311,7 @@ func (g *Generator) format() []byte {
 	src, err := format.Source(g.buf.Bytes())
 	if err != nil {
 		// Should never happen, but can arise when developing this code.
-		// The user can compile the output to see the error.
+		// The user can compile the flagOutput to see the error.
 		log.Printf("warning: internal error: invalid Go generated: %s", err)
 		log.Printf("warning: compile the package to analyze the error")
 		return g.buf.Bytes()
@@ -346,83 +335,48 @@ func (g *Generator) goimport(src []byte) []byte {
 	return res
 }
 
-// Value represents a declared constant.
-type Value struct {
-	originalName string // The name of the constant.
-	name         string // The name with trimmed prefix.
-	str          string // The string representation given by the "go/constant" package.
-
-	eleImport string // import path of the atomic.Value type.
-	eleName   string // Name of the atomic.Value type.
-
-	valueImport     string // import path of the atomic.Value's value.
-	valueType       string // The type of the value in atomic.Value.
-	valueIsPointer  bool   // whether the value's type is ptr
-	valueTypePrefix string // The type's prefix, such as []*[]
+// Struct represents a declared constant.
+type Struct struct {
+	StructType string // The StructType of the struct.
+	TableName  string // The TableName with trimmed prefix.
+	Fields     []StructField
 }
 
-type Field struct {
-	name    string
-	dbTag   string
-	jsonTag string
-}
-
-func (val *Value) ValueFullType() string {
-	return strings_.LoadElse(val.valueIsPointer, "*", "") + val.valueTypePrefix + val.valueType
+type StructField struct {
+	FieldType string // The FieldType of the struct field.
+	DbName    string
 }
 
 // Helpers
 
 // declareNameVar declares the concatenated names
-// strings representing the runs of values
-func (g *Generator) declareNameVar(run Value) string {
-	nilValName, nilValDecl := g.createValAndNameDecl(run)
-	g.Printf("var %s\n", nilValDecl)
+// strings representing the runs of structs
+func (g *Generator) declareNameVar(run Struct) string {
+	nilValName, _ := g.createValAndNameDecl(run)
 	return nilValName
 }
 
 // createValAndNameDecl returns the pair of declarations for the run. The caller will add "var".
-func (g *Generator) createValAndNameDecl(val Value) (string, string) {
+func (g *Generator) createValAndNameDecl(val Struct) (string, string) {
 	goRep := strings.NewReplacer(".", "_", "{", "_", "}", "_")
 
 	nilValName := fmt.Sprintf("_nil_%s_%s_value",
-		val.eleName,
-		goRep.Replace(val.valueType))
-	nilValDecl := fmt.Sprintf("%s = func() (val %s) { return }()", nilValName, val.ValueFullType())
+		val.StructType,
+		goRep.Replace(val.TableName))
+	nilValDecl := fmt.Sprintf("%s = func() (val %s) { return }()", nilValName, val.StructType)
 
 	return nilValName, nilValDecl
 }
 
-// buildOneRun generates the variables and String method for a single run of contiguous values.
-func (g *Generator) buildOneRun(value Value) {
-	//values := run
-	g.Printf("\n")
-	if strings.TrimSpace(value.eleImport) != "" {
-		g.Printf(stringImport, value.eleImport)
-	}
-	if strings.TrimSpace(value.valueImport) != "" {
-		g.Printf(stringImport, value.valueImport)
-	}
-
-	// Generate code that will fail if the constants change value.
-	g.Printf("func _() {\n")
-	g.Printf("\t// An \"cannot convert %s literal (type %s) to type atomic.Value\" compiler error signifies that the base type have changed.\n", value.eleName, value.eleName)
-	g.Printf("\t// Re-run the go-sqlx command to generate them again.\n")
-	g.Printf("\t	var val %s\n", value.eleName)
-	g.Printf("\t	_ = (sql.Scanner)(&val)\n")
-	g.Printf("\t	_ = (driver.Valuer)(&val)\n")
-	g.Printf("}\n")
-
+// buildOneRun generates the variables and String method for a single run of contiguous structs.
+func (g *Generator) buildOneRun(value Struct) {
 	//The generated code is simple enough to write as a Printf format.
 	sqlRender := SqlxRender{
-		SqlxJsonType: value.eleName,
-		ValueType:    value.ValueFullType(),
-		NilValue: strings_.LoadElseGet(value.valueIsPointer, "nil", func() string {
-			return g.declareNameVar(value)
-		}),
-		valueImport: value.valueImport,
+		StructType: value.StructType,
+		TableName:  value.TableName,
+		Fields:     value.Fields,
+		NilValue:   g.declareNameVar(value),
 	}
-	sqlRender.ResetCanAlias()
 	g.Render(tmplJson, sqlRender)
 }
 

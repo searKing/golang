@@ -5,18 +5,18 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
-	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/searKing/golang/go/reflect"
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 const (
 	TagSqlx = "db"
-	TagJson = "json"
 )
 
 func isPublicName(name string) bool {
@@ -34,11 +34,11 @@ func (f *File) genDecl(node ast.Node) bool {
 		// We only care about const|var declarations.
 		return true
 	}
-	// The name of the type of the constants or variables we are declaring.
+	// The trimmedStructName of the type of the constants or variables we are declaring.
 	// Can change if this is a multi-element declaration.
 	typ := ""
 	// Loop over the elements of the declaration. Each element is a ValueSpec:
-	// a list of names possibly followed by a type, possibly followed by values.
+	// a list of names possibly followed by a type, possibly followed by structs.
 	// If the type and value are both missing, we carry down the type (and value,
 	// but the "go/types" package takes care of that).
 	for _, spec := range decl.Specs {
@@ -55,46 +55,34 @@ func (f *File) genDecl(node ast.Node) bool {
 		}
 
 		if sExpr.Fields.NumFields() <= 0 {
-			continue
+			panic(fmt.Errorf("%s has no Fields", typ))
 		}
 
-		v := Value{
-			originalName: typ,
-			str:          typ,
-
-			valueImport:     f.typeInfo.valueImport,
-			valueType:       f.typeInfo.valueType,
-			valueIsPointer:  f.typeInfo.valueIsPointer,
-			valueTypePrefix: f.typeInfo.valueTypePrefix,
+		v := Struct{
+			StructType: typ,
 		}
 		if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
-			v.name = strings.TrimSpace(c.Text())
+			v.TableName = strings.TrimSpace(c.Text())
 		} else {
-			v.name = strings.TrimPrefix(typ, f.trimPrefix)
+			v.TableName = strings_.SnakeCase(strings.TrimPrefix(typ, f.trimPrefix))
 		}
 
-		v.eleName = v.name
-
-		if strings.TrimSpace(v.valueType) == "" {
-			v.valueType = "interface{}"
-		}
-		f.values = append(f.values, v)
 		for _, field := range sExpr.Fields.List {
 			fieldName := ""
-			if len(field.Names) != 0 {
+			if len(field.Names) != 0 { // pick first exported Name
 				for _, field := range field.Names {
-					if !*skipPrivateFields || isPublicName(field.Name) {
+					if !*flagSkipPrivateFields || isPublicName(field.Name) {
 						fieldName = field.Name
 						break
 					}
 				}
-			} else if field.Names == nil { // anonymous field
+			} else { // anonymous field
 				ident, ok := field.Type.(*ast.Ident)
 				if !ok {
 					continue
 				}
 
-				if !*skipPrivateFields {
+				if !*flagSkipAnonymousFields {
 					fieldName = ident.Name
 				}
 			}
@@ -107,34 +95,41 @@ func (f *File) genDecl(node ast.Node) bool {
 				field.Tag = &ast.BasicLit{}
 			}
 
-			if field.Tag != nil {
-				var tag string
-				if field.Tag.Value != "" {
-					var err error
-					tag, err = strconv.Unquote(field.Tag.Value)
-					if err != nil {
-						panic(err)
-					}
-				}
-				tags, err := reflect.ParseStructTag(tag)
-				if err != nil {
-					panic(err)
-				}
+			tags, err := reflect.ParseAstStructTag(field.Tag.Value)
+			if err != nil {
+				panic(err)
+			}
+			{
+				tagName := strings_.SnakeCase(fieldName)
+				var tagChanged bool
 				{
 					_, has := tags.Get(TagSqlx)
 					if !has {
-						tags.AddOptions(TagSqlx, fieldName)
+						tagChanged = true
+						tags.SetName(TagSqlx, tagName)
+						tags.AddOptions(TagSqlx, "omitempty")
 					}
 				}
-				{
-					_, has := tags.Get(TagJson)
-					if !has {
-						tags.AddOptions(TagJson, fieldName)
-					}
+
+				if tagChanged {
+					f.fileChanged = true
+					field.Tag.Value = tags.AstString()
 				}
-				field.Tag.Value = tags.String()
 			}
+			tagSqlx, _ := tags.Get(TagSqlx)
+			if tagSqlx.Name == "-" {
+				// ignore this field
+				continue
+			}
+			v.Fields = append(v.Fields, StructField{
+				FieldType: fieldName,
+				DbName:    tagSqlx.Name,
+			})
 		}
+		if len(v.Fields) == 0 {
+			panic(fmt.Errorf("%s has no Fields with tag %q", typ, TagSqlx))
+		}
+		f.structs = append(f.structs, v)
 	}
 	return false
 }
