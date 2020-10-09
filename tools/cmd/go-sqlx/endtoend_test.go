@@ -25,13 +25,13 @@ import (
 // binary panics if the String method for X is not correct, including for error cases.
 
 func TestEndToEnd(t *testing.T) {
-	dir, gonulljson := buildNullJson(t)
+	dir, gosqlx := buildsqlx(t)
 	defer os.RemoveAll(dir)
 	// Read the testdata directory.
-	walkDir(dir, gonulljson, "testdata", t)
+	walkDir(dir, gosqlx, "testdata", t)
 }
 
-func walkDir(dir, gonulljson, dirname string, t *testing.T) {
+func walkDir(dir, gosqlx, dirname string, t *testing.T) {
 	// Generate, compile, and run the test programs.
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -41,10 +41,13 @@ func walkDir(dir, gonulljson, dirname string, t *testing.T) {
 	for _, file := range files {
 		name := file.Name()
 		if file.IsDir() {
-			walkDir(dir, gonulljson, filepath.Join(dirname, name), t)
+			walkDir(dir, gosqlx, filepath.Join(dirname, name), t)
 			continue
 		}
 		if file.Mode().IsRegular() {
+			if strings.HasSuffix(name, ".sql") {
+				continue
+			}
 			if !strings.HasSuffix(name, ".go") {
 				t.Errorf("%s is not a Go file", name)
 				continue
@@ -59,29 +62,29 @@ func walkDir(dir, gonulljson, dirname string, t *testing.T) {
 			}
 			// Names are known to be ASCII and long enough.
 			typeName := castFileNameToTypeName(name[:len(name)-len(".go")])
-			gonulljsonCompileAndRun(t, dir, gonulljson, typeName, filepath.Join(dirname, name))
+			gosqlxCompileAndRun(t, dir, gosqlx, typeName, filepath.Join(dirname, name))
 		}
 	}
 }
 
-// buildNullJson creates a temporary directory and installs go-nulljson there.
-func buildNullJson(t *testing.T) (dir string, gonulljson string) {
+// buildsqlx creates a temporary directory and installs go-sqlx there.
+func buildsqlx(t *testing.T) (dir string, gosqlx string) {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "go-nulljson")
+	dir, err := ioutil.TempDir("", "go-sqlx")
 	if err != nil {
 		t.Fatal(err)
 	}
-	gonulljson = filepath.Join(dir, "go-nulljson.exe")
-	err = run("go", "build", "-o", gonulljson)
+	gosqlx = filepath.Join(dir, "go-sqlx.exe")
+	err = run("go", "build", "-o", gosqlx)
 	if err != nil {
-		t.Fatalf("building go-nulljson: %s", err)
+		t.Fatalf("building go-sqlx: %s", err)
 	}
-	return dir, gonulljson
+	return dir, gosqlx
 }
 
-// gonulljsonCompileAndRun runs stringer for the named file and compiles and
+// gosqlxCompileAndRun runs stringer for the named file and compiles and
 // runs the target binary in directory dir. That binary will panic if the String method is incorrect.
-func gonulljsonCompileAndRun(t *testing.T, dir, gonulljson, typeName, fileName string) {
+func gosqlxCompileAndRun(t *testing.T, dir, gosqlx, typeName, fileName string) {
 	t.Helper()
 	t.Logf("run: %s %s\n", fileName, typeName)
 	source := filepath.Join(dir, fileName)
@@ -95,14 +98,14 @@ func gonulljsonCompileAndRun(t *testing.T, dir, gonulljson, typeName, fileName s
 		t.Fatalf("copying file to temporary directory: %s", err)
 	}
 
-	nulljsonSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_nulljson.go"))
-	// Run gonulljson in temporary directory.
-	err = run(gonulljson, "-type", typeName, "-flagOutput", nulljsonSource, source)
+	sqlxSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_sqlx.go"))
+	// Run gosqlx in temporary directory.
+	err = run(gosqlx, "-type", typeName, "-flagOutput", sqlxSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Run the binary in the temporary directory.
-	err = run("go", "run", nulljsonSource, source)
+	err = run("go", "run", sqlxSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}
