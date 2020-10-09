@@ -14,7 +14,7 @@ import (
 )
 
 type typeInfo struct {
-	// These fields are reset for each type being generated.
+	// These Fields are reset for each type being generated.
 	Name            string // Name of the NullJson type.
 	Import          string // import path of the NullJson type.
 	valueType       string // The type of the Data in NullJson.

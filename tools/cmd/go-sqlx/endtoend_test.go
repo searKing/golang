@@ -97,7 +97,7 @@ func gonulljsonCompileAndRun(t *testing.T, dir, gonulljson, typeName, fileName s
 
 	nulljsonSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_nulljson.go"))
 	// Run gonulljson in temporary directory.
-	err = run(gonulljson, "-type", typeName, "-output", nulljsonSource, source)
+	err = run(gonulljson, "-type", typeName, "-flagOutput", nulljsonSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}

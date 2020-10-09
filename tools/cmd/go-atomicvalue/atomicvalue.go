@@ -68,7 +68,7 @@ import (
 
 var (
 	typeInfos   = flag.String("type", "", "comma-separated list of type names; must be set")
-	output      = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
+	output      = flag.String("output", "", "output file name; default srcdir/<type>_atomicvalue.go")
 	trimprefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
 	linecomment = flag.Bool("linecomment", false, "use line comment text as printed text when present")
 	buildTags   = flag.String("tags", "", "comma-separated list of build tags to apply")

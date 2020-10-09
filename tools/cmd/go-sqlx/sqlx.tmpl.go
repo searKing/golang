@@ -4,31 +4,13 @@
 
 package main
 
-import "strings"
-
-//	SqlxJsonType: NullJson type name
-//	ValueType: value type name
+//	StructType: NullJson type trimmedStructName
+//	TableName: value type trimmedStructName
 //	NilValue: nil value of map type
 type SqlxRender struct {
-	SqlxJsonType string // NullJson type name
-	valueImport  string // import path of the atomic.Value's value.
-	ValueType    string // value type name
-	NilValue     string // nil value of map type
+	StructType string        // NullJson type trimmedStructName
+	TableName  string        // value type trimmedStructName
+	Fields     []StructField // struct Fields
 
-	CanAlias bool // use type {{.SqlxJsonType}} = {{.ValueType}} instead of type {{.SqlxJsonType}} {{.ValueType}}
-}
-
-func (r *SqlxRender) ResetCanAlias() {
-	if strings.HasPrefix(strings.TrimSpace(r.ValueType), "map") ||
-		strings.HasPrefix(strings.TrimSpace(r.ValueType), "[") {
-		r.CanAlias = false
-		return
-	}
-	if r.valueImport != "" {
-		r.CanAlias = false
-		return
-	}
-
-	r.CanAlias = true
-	return
+	NilValue string // nil value of map type
 }
