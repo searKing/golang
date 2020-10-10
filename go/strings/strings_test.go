@@ -162,7 +162,7 @@ func TestMapLeading(t *testing.T) {
 		}
 		return r
 	}
-	s := string(utf8.RuneSelf) + string(utf8.MaxRune)
+	s := string(rune(utf8.RuneSelf)) + string(utf8.MaxRune)
 	r := string(utf8.MaxRune) + string(utf8.MaxRune) // reverse of s
 	m = strings.MapLeading(encode, s)
 	if m != r {
