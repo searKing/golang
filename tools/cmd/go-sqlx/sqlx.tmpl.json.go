@@ -136,7 +136,7 @@ func (c *{{.StructType}}Columns) self() *{{.StructType}}Columns {
 
 // DAO
 
-func (_ {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, arg {{.StructType}}, update bool) error {
+func (arg {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, update bool) error {
 	query := sqlx_.SimpleStatements{
 		TableName: arg.TableName(),
 		Columns:   arg.ColumnEditor().AppendAll().Columns(),
@@ -149,7 +149,7 @@ func (_ {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, ar
 	return nil
 }
 
-func (d {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.DB, conds []string, arg {{.StructType}}) error {
+func (arg {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.DB, conds []string) error {
 	query := sqlx_.SimpleStatements{
 		TableName:  arg.TableName(),
 		Conditions: conds, // WHERE 条件
@@ -163,7 +163,7 @@ func (d {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.DB,
 	return nil
 }
 
-func (d {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.DB, cols []string, conds []string, arg {{.StructType}}, insert bool) error {
+func (arg {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.DB, cols []string, conds []string, insert bool) error {
 	query := sqlx_.SimpleStatements{
 		TableName:  arg.TableName(),
 		Columns:    cols,  // 要查询或修改的列名
@@ -178,9 +178,7 @@ func (d {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.DB,
 	return nil
 }
 
-func (d {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB,
-	cols []string, conds []string, arg {{.StructType}}) ({{.StructType}}, error) {
-
+func (arg {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB, cols []string, conds []string) ({{.StructType}}, error) {
 	query := sqlx_.SimpleStatements{
 		TableName:  {{.StructType}}{}.TableName(),
 		Columns:    cols,
@@ -206,7 +204,7 @@ func (d {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB,
 	return dest, nil
 }
 
-func (d {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sqlx.DB, query string, arg interface{}) ([]{{.StructType}}, error) {
+func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sqlx.DB, query string) ([]{{.StructType}}, error) {
 	// Check that invalid preparations fail
 	ns, err := db.PrepareNamedContext(ctx, query)
 	if err != nil {
@@ -223,7 +221,7 @@ func (d {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sql
 	return dest, nil
 }
 
-func (d {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, cols []string, conds []string, likeConds []string, arg {{.StructType}}) ([]{{.StructType}}, error) {
+func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, cols []string, conds []string, likeConds []string) ([]{{.StructType}}, error) {
 	query := sqlx_.SimpleStatements{
 		TableName:  {{.StructType}}{}.TableName(),
 		Columns:    cols,
@@ -236,7 +234,7 @@ func (d {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, c
 		query += sqlx_.NamedWhereArguments(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd, likeConds...)
 	}
 
-	dest, err := d.Get{{.StructType}}sByQuery(ctx, db, query, arg)
+	dest, err := arg.Get{{.StructType}}sByQuery(ctx, db, query)
 
 	if err != nil {
 		return nil, fmt.Errorf("%w, sql %q", err, query)
