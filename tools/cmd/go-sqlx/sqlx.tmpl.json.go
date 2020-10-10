@@ -18,6 +18,10 @@ import (
 
 	reflect_ "github.com/searKing/golang/go/reflect"
 	"github.com/searKing/golang/go/strings"
+{{- with .WithDao }}
+	"github.com/jmoiron/sqlx"
+	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
+{{- end }}
 )
 
 // {{.StructType}} represents an orm of table {{.TableName}}.
@@ -128,4 +132,119 @@ func (c *{{.StructType}}Columns) self() *{{.StructType}}Columns {
 	return c
 }
 
+{{- with .WithDao }}
+
+// DAO
+
+func (_ {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, arg {{.StructType}}, update bool) error {
+	query := sqlx_.SimpleStatements{
+		TableName: arg.TableName(),
+		Columns:   arg.ColumnEditor().AppendAll().Columns(),
+	}.NamedInsertStatement(update)
+
+	_, err := db.NamedExecContext(ctx, query, arg)
+	if err != nil {
+		return fmt.Errorf("%w, sql %q", err, query)
+	}
+	return nil
+}
+
+func (d {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.DB, conds []string, arg {{.StructType}}) error {
+	query := sqlx_.SimpleStatements{
+		TableName:  arg.TableName(),
+		Conditions: conds, // WHERE 条件
+	}.NamedDeleteStatement()
+
+	_, err := db.NamedExecContext(ctx, query, arg)
+	if err != nil {
+		return fmt.Errorf("%w, sql %q", err, query)
+	}
+
+	return nil
+}
+
+func (d {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.DB, cols []string, conds []string, arg {{.StructType}}, insert bool) error {
+	query := sqlx_.SimpleStatements{
+		TableName:  arg.TableName(),
+		Columns:    cols,  // 要查询或修改的列名
+		Conditions: conds, // WHERE 条件
+	}.NamedUpdateStatement(insert)
+
+	_, err := db.NamedExecContext(ctx, query, arg)
+	if err != nil {
+		return fmt.Errorf("%w, sql %q", err, query)
+	}
+
+	return nil
+}
+
+func (d {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB,
+	cols []string, conds []string, arg {{.StructType}}, recurse bool) ({{.StructType}}, error) {
+
+	query := sqlx_.SimpleStatements{
+		TableName:  {{.StructType}}{}.TableName(),
+		Columns:    cols,
+		Conditions: conds,
+	}.NamedSelectStatement()
+
+	// Check that invalid preparations fail
+	ns, err := db.PrepareNamedContext(ctx, query)
+	if err != nil {
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+	}
+
+	defer ns.Close()
+
+	var dest {{.StructType}}
+	err = ns.GetContext(ctx, &dest, arg)
+	if err != nil {
+		if errors.Cause(err) == sql.ErrNoRows {
+			return dest, nil
+		}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+	}
+	if !recurse {
+		return dest, nil
+	}
+	return dest, nil
+}
+
+func (d {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sqlx.DB, query string, arg interface{}) ([]{{.StructType}}, error) {
+	// Check that invalid preparations fail
+	ns, err := db.PrepareNamedContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+	}
+
+	defer ns.Close()
+
+	var dest []{{.StructType}}
+	err = ns.SelectContext(ctx, &dest, arg)
+	if err != nil {
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+	}
+	return dest, nil
+}
+
+func (d {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, cols []string, conds []string, likeConds []string, arg {{.StructType}}) ([]{{.StructType}}, error) {
+	query := sqlx_.SimpleStatements{
+		TableName:  {{.StructType}}{}.TableName(),
+		Columns:    cols,
+		Conditions: conds,
+		Compare:    sqlx_.SqlCompareEqual,
+		Operator:   sqlx_.SqlOperatorAnd,
+	}.NamedSelectStatement()
+	if len(likeConds) > 0 {
+		query += " AND "
+		query += sqlx_.NamedWhereArguments(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd, likeConds...)
+	}
+
+	dest, err := d.Get{{.StructType}}sByQuery(ctx, db, query, arg)
+
+	if err != nil {
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+	}
+	return dest, nil
+}
+{{- end}}
 `

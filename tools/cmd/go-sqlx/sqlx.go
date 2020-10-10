@@ -20,6 +20,8 @@
 // Typically this process would be run using go generate, like this:
 //
 //	//go:generate go-sqlx -type=Pill
+//	//go:generate go-sqlx -type=Pill --linecomment
+//	//go:generate go-sqlx -type=Pill --linecomment --with-dao
 //
 // With no arguments, it processes the package in the current directory.
 // Otherwise, the arguments must trimmedStructName a single directory holding a Go package
@@ -59,6 +61,7 @@ var (
 	flagSkipAnonymousFields = flag.Bool("skip-anonymous", false, "skip anonymous Fields")
 	flagTrimprefix          = flag.String("trimprefix", "", "trim the `prefix` from the generated struct type names")
 	flagLinecomment         = flag.Bool("linecomment", false, "use line comment text followed the generated struct type name by as printed text when present")
+	flagWithDao             = flag.Bool("with-dao", false, "generate with dao")
 	flagBuildTags           = flag.String("tags", "", "comma-separated list of build tags to apply")
 )
 
