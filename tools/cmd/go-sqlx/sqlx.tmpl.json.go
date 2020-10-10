@@ -39,7 +39,7 @@ func (m {{.StructType}}) MarshalMap(valueByCol map[string]interface{}) map[strin
 		valueByCol = map[string]interface{}{}
 	}
 {{- range .Fields}}	
-	valueByCol[m.MapColumn({{$.StructType}}Field{{.FieldType}})] = m.{{.FieldType}}
+	valueByCol[m.MapColumn({{$.StructType}}Field{{.FieldName}})] = m.{{.FieldName}}
 {{- end}}
 	return valueByCol
 }
@@ -50,12 +50,12 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 	for col, val := range valueByCol {
 		switch col {
 {{- range .Fields}}	
-		case m.MapColumn({{$.StructType}}Field{{.FieldType}}):
+		case m.MapColumn({{$.StructType}}Field{{.FieldName}}):
 			data, err := json.Marshal(val)
 			if err != nil {
 				return fmt.Errorf("marshal col %q, got %w", col, err)
 			}
-			err = json.Unmarshal(data, &m.{{.FieldType}})
+			err = json.Unmarshal(data, &m.{{.FieldName}})
 			if err != nil {
 				return fmt.Errorf("unmarshal col %q, got %w", col, err)
 			}
@@ -69,14 +69,25 @@ type {{.StructType}}Field int
 
 const (
 {{- range .Fields }}
-	{{$.StructType}}Field{{.FieldType}}    {{$.StructType}}Field = iota
+	{{$.StructType}}Field{{.FieldName}}    {{$.StructType}}Field = iota
 {{- end }}
 )
 
-func (f {{.StructType}}Field) String() string {
+func (f {{.StructType}}Field) FieldName() string {
 	switch f {
 {{- range .Fields}}
-	case {{$.StructType}}Field{{.FieldType}}:
+	case {{$.StructType}}Field{{.FieldName}}:
+		return "{{.FieldName}}"
+{{- end}}
+	}
+	return "{{.StructType}}Field(" + strconv.FormatInt(int64(f), 10) + ")"
+}
+
+
+func (f {{.StructType}}Field) ColumnName() string {
+	switch f {
+{{- range .Fields}}
+	case {{$.StructType}}Field{{.FieldName}}:
 		return "{{.DbName}}"
 {{- end}}
 	}
@@ -89,7 +100,7 @@ func (a {{.StructType}}) ColumnEditor() *{{.StructType}}Columns {
 	}
 }
 func (a {{.StructType}}) Column(col {{.StructType}}Field) string {
-	return col.String()
+	return col.ColumnName()
 }
 
 func (a {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
@@ -112,10 +123,12 @@ func (c {{.StructType}}Columns) Columns(cols ...string) []string {
 }
 
 func (c *{{.StructType}}Columns) AppendColumn(col {{.StructType}}Field, forceAppend bool) *{{.StructType}}Columns {
-	var zero = reflect_.IsZeroValue(reflect.ValueOf(c.arg).FieldByName(col.String()))
-
-	if forceAppend || !zero {
-		c.cols = append(c.cols, col.String())
+	if forceAppend {
+		c.cols = append(c.cols, col.ColumnName())
+	}
+	var zero = reflect_.IsZeroValue(reflect.ValueOf(c.arg).FieldByName(col.FieldName()))
+	if !zero {
+		c.cols = append(c.cols, col.ColumnName())
 	}
 	return c
 }
@@ -123,7 +136,7 @@ func (c *{{.StructType}}Columns) AppendColumn(col {{.StructType}}Field, forceApp
 func (c *{{.StructType}}Columns) AppendAll() *{{.StructType}}Columns {
 	return c.
 {{- range .Fields}}
-		AppendColumn({{$.StructType}}Field{{.FieldType}}, false).
+		AppendColumn({{$.StructType}}Field{{.FieldName}}, false).
 {{- end}}
 		self()
 }

@@ -346,7 +346,7 @@ type Struct struct {
 }
 
 type StructField struct {
-	FieldType string // The FieldType of the struct field.
+	FieldName string // The FieldName of the struct field.
 	DbName    string
 }
 

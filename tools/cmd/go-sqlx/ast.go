@@ -122,7 +122,7 @@ func (f *File) genDecl(node ast.Node) bool {
 				continue
 			}
 			v.Fields = append(v.Fields, StructField{
-				FieldType: fieldName,
+				FieldName: fieldName,
 				DbName:    tagSqlx.Name,
 			})
 		}
