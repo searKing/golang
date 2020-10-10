@@ -39,7 +39,7 @@ func (m {{.StructType}}) MarshalMap(valueByCol map[string]interface{}) map[strin
 		valueByCol = map[string]interface{}{}
 	}
 {{- range .Fields}}	
-	valueByCol[m.MapColumn({{$.StructType}}Field{{.FieldName}})] = m.{{.FieldName}}
+	valueByCol[m.TableColumn({{$.StructType}}Field{{.FieldName}})] = m.{{.FieldName}}
 {{- end}}
 	return valueByCol
 }
