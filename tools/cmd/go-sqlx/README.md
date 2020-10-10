@@ -54,6 +54,7 @@ Typically this process would be run using go generate, like this:
 ```
 //go:generate go-sqlx -type "Pill"
 //go:generate go-sqlx -type "Pill" --linecomment
+//go:generate go-sqlx -type "Pill" --linecomment --with-dao
 ```
 
 If multiple constants have the same value, the lexically first matching name will
