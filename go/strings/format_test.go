@@ -148,7 +148,7 @@ var (
 	snakeCamelCaseTests = []CamelCaseTest{
 		{
 			"name_2",
-			[]rune{'_'},
+			nil,
 			"name_2",
 		},
 		{

@@ -90,8 +90,12 @@ func LowerCamelCase(s string, seps ...rune) string {
 
 // SnakeCase returns the SnakeCased name.
 // In short, _my_field_name_2 becomes x_my_field_name_2.
+// seps will append '_' if len(seps) == 0
 // "the_quick_brown_fox_jumps_over_the_lazy_dog"
 func SnakeCase(s string, seps ...rune) string {
+	if len(seps) == 0 {
+		seps = append(seps, '_')
+	}
 	return TransformCase(s, JoinGenerator("_", withDefault(leadingString, strings.ToLower)), seps...)
 }
 
