@@ -11,13 +11,18 @@ package main
 const tmplJson = `
 
 import (
+{{- if .WithDao }}
+	"context"
+{{- end }}
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
+{{- if .WithDao }}
+	"strings"
+{{- end }}
 
 	reflect_ "github.com/searKing/golang/go/reflect"
-	"github.com/searKing/golang/go/strings"
 {{- if .WithDao }}
 	"github.com/jmoiron/sqlx"
 	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
@@ -133,10 +138,10 @@ func (c *{{.StructType}}Columns) AppendColumn(col {{.StructType}}Field, forceApp
 	return c
 }
 
-func (c *{{.StructType}}Columns) AppendAll() *{{.StructType}}Columns {
+func (c *{{.StructType}}Columns) AppendAll(forceAppend bool) *{{.StructType}}Columns {
 	return c.
 {{- range .Fields}}
-		AppendColumn({{$.StructType}}Field{{.FieldName}}, false).
+		AppendColumn({{$.StructType}}Field{{.FieldName}}, forceAppend).
 {{- end}}
 		self()
 }
@@ -152,7 +157,7 @@ func (c *{{.StructType}}Columns) self() *{{.StructType}}Columns {
 func (arg {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, update bool) error {
 	query := sqlx_.SimpleStatements{
 		TableName: arg.TableName(),
-		Columns:   arg.ColumnEditor().AppendAll().Columns(),
+		Columns:   arg.ColumnEditor().AppendAll(false).Columns(),
 	}.NamedInsertStatement(update)
 
 	_, err := db.NamedExecContext(ctx, query, arg)
@@ -193,7 +198,7 @@ func (arg {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.D
 
 func (arg {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB, cols []string, conds []string) ({{.StructType}}, error) {
 	query := sqlx_.SimpleStatements{
-		TableName:  {{.StructType}}{}.TableName(),
+		TableName:  arg.TableName(),
 		Columns:    cols,
 		Conditions: conds,
 	}.NamedSelectStatement()
@@ -234,11 +239,12 @@ func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *s
 	return dest, nil
 }
 
-func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, cols []string, conds []string, likeConds []string) ([]{{.StructType}}, error) {
+func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, cols []string, conds []string, likeConds []string, orderByCols []string) ([]{{.StructType}}, error) {
 	query := sqlx_.SimpleStatements{
-		TableName:  {{.StructType}}{}.TableName(),
+		TableName:  arg.TableName(),
 		Columns:    cols,
 		Conditions: conds,
+		OrderByColumns: orderByCols,
 		Compare:    sqlx_.SqlCompareEqual,
 		Operator:   sqlx_.SqlOperatorAnd,
 	}.NamedSelectStatement()
@@ -253,6 +259,121 @@ func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB,
 		return nil, fmt.Errorf("%w, sql %q", err, query)
 	}
 	return dest, nil
+}
+
+
+func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *sqlx.DB, limit, offset int) ([]{{.StructType}}, error) {
+	query := fmt.Sprintf("SELECT %s FROM %s"+
+		//" JOIN %s ON %s"+
+		" %s"+ // WHERE
+		" %s"+ // GROUP BY
+		" %s"+ // ORDER BY
+		" %s", // LIMIT
+		func() string { // SELECT
+			cols := sqlx_.ShrinkEmptyColumns(
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), arg.ColumnEditor().
+{{- range .Fields}}
+					AppendColumn({{$.StructType}}Field{{.FieldName}}, true).
+{{- end}}
+					Columns()...))
+
+			if len(cols) == 0 {
+				return "*"
+			}
+			return strings.Join(cols, " , ")
+		}(),                        // WHERE
+		arg.TableName(), // FROM
+		// <other table's name'>,      // JOIN
+		func() string { // WHERE
+			cols := sqlx_.ShrinkEmptyColumns(
+				// =
+				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareEqual, sqlx_.SqlOperatorAnd,
+					arg.TableName(),
+					arg.ColumnEditor().
+{{- range .Fields}}
+						AppendColumn({{$.StructType}}Field{{.FieldName}}, true).
+{{- end}}
+						Columns()...),
+				// <>
+				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareNotEqual, sqlx_.SqlOperatorAnd,
+					arg.TableName(),
+					arg.ColumnEditor().
+						// cols
+						Columns()...),
+				// LIKE
+				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd,
+					arg.TableName(),
+					arg.ColumnEditor().
+						// cols
+						Columns()...),
+			)
+
+			if len(cols) == 0 {
+				return ""
+			}
+
+			return "WHERE " + strings.Join(cols, " "+sqlx_.SqlOperatorAnd.String()+" ")
+		}(), // WHERE
+		func() string { // GROUP BY
+			cols := sqlx_.ShrinkEmptyColumns(
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), arg.ColumnEditor().
+					// cols
+					Columns()...))
+
+			if len(cols) == 0 {
+				return ""
+			}
+			return "GROUP BY " + strings.Join(cols, " , ")
+		}(),  
+		func() string { // ORDER BY
+			cols := sqlx_.ShrinkEmptyColumns(
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), arg.ColumnEditor().
+					// cols
+					Columns()...))
+
+			if len(cols) == 0 {
+				return ""
+			}
+			return "ORDER BY " + strings.Join(cols, " , ")
+		}(),  
+		// LIMIT
+		sqlx_.Pagination(limit, offset))
+
+
+	// Check that invalid preparations fail
+	ns, err := db.PrepareNamedContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+	}
+
+	defer ns.Close()
+
+	rows, err := ns.QueryxContext(ctx, arg.MarshalMap(nil))
+	if err != nil {
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+	}
+
+	var resps []{{.StructType}}
+	for rows.Next() {
+		row := make(map[string]interface{})
+		err := rows.MapScan(row)
+		if err != nil {
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+		}
+		for k, v := range row {
+			if b, ok := v.([]byte); ok {
+				row[k] = string(b)
+			}
+		}
+
+		resp := {{.StructType}}{}
+		err = resp.UnmarshalMap(row)
+		if err != nil {
+			return nil, fmt.Errorf("%w, sql %q", err, query)
+		}
+		resps = append(resps, resp)
+	}
+	return resps, nil
 }
 {{- end}}
 `
