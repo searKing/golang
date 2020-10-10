@@ -89,7 +89,7 @@ func (a {{.StructType}}) ColumnEditor() *{{.StructType}}Columns {
 	}
 }
 func (a {{.StructType}}) Column(col {{.StructType}}Field) string {
-	return strings.SnakeCase(col.String())
+	return col.String()
 }
 
 func (a {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
