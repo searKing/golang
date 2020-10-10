@@ -48,6 +48,9 @@ func walkDir(dir, gosqlx, dirname string, t *testing.T) {
 			if strings.HasSuffix(name, ".sql") {
 				continue
 			}
+			if strings.HasSuffix(name, "_sqlx.go") {
+				continue
+			}
 			if !strings.HasSuffix(name, ".go") {
 				t.Errorf("%s is not a Go file", name)
 				continue
