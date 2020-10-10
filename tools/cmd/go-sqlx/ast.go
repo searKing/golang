@@ -107,7 +107,7 @@ func (f *File) genDecl(node ast.Node) bool {
 					if !has {
 						tagChanged = true
 						tags.SetName(TagSqlx, tagName)
-						tags.AddOptions(TagSqlx, "omitempty")
+						//tags.AddOptions(TagSqlx, "omitempty")
 					}
 				}
 
