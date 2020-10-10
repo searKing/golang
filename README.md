@@ -34,3 +34,5 @@ Useful libs or tools for Golang
 * [go-nulljson](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-nulljson) — Generates Go code using a package as a generic template that implements sql.Scanner and sql.Valuer.
 * [go-enum](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-enum) — Generates Go code using a package as a generic template, which implements interface fmt.Stringer | binary | json | text | sql | yaml for enums.
 * [go-import](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-import) — Performs auto import of non go files.
+* [go-sqlx](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-sqlx) — Generates Go code using a package as a generic template that implements sqlx.
+                                                                               
