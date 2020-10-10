@@ -115,7 +115,7 @@ func (c *{{.StructType}}Columns) AppendColumn(col {{.StructType}}Field, forceApp
 	var zero = reflect_.IsZeroValue(reflect.ValueOf(c.arg).FieldByName(col.String()))
 
 	if forceAppend || !zero {
-		c.cols = append(c.cols, strings.SnakeCase(col.String()))
+		c.cols = append(c.cols, col.String())
 	}
 	return c
 }
