@@ -378,6 +378,7 @@ func (g *Generator) buildOneRun(value Struct) {
 		StructType: value.StructType,
 		TableName:  value.TableName,
 		Fields:     value.Fields,
+		WithDao:    *flagWithDao,
 		NilValue:   g.declareNameVar(value),
 	}
 	g.Render(tmplJson, sqlRender)

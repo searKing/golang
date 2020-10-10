@@ -18,7 +18,7 @@ import (
 
 	reflect_ "github.com/searKing/golang/go/reflect"
 	"github.com/searKing/golang/go/strings"
-{{- with .WithDao }}
+{{- if .WithDao }}
 	"github.com/jmoiron/sqlx"
 	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
 {{- end }}
@@ -132,7 +132,7 @@ func (c *{{.StructType}}Columns) self() *{{.StructType}}Columns {
 	return c
 }
 
-{{- with .WithDao }}
+{{- if .WithDao }}
 
 // DAO
 
@@ -179,7 +179,7 @@ func (d {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.DB,
 }
 
 func (d {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB,
-	cols []string, conds []string, arg {{.StructType}}, recurse bool) ({{.StructType}}, error) {
+	cols []string, conds []string, arg {{.StructType}}) ({{.StructType}}, error) {
 
 	query := sqlx_.SimpleStatements{
 		TableName:  {{.StructType}}{}.TableName(),
@@ -198,13 +198,10 @@ func (d {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB,
 	var dest {{.StructType}}
 	err = ns.GetContext(ctx, &dest, arg)
 	if err != nil {
-		if errors.Cause(err) == sql.ErrNoRows {
-			return dest, nil
-		}
+		//if errors.Cause(err) == sql.ErrNoRows {
+		//	return dest, nil
+		//}
 		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
-	}
-	if !recurse {
-		return dest, nil
 	}
 	return dest, nil
 }
