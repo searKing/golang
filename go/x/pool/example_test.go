@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package pool_test
 
 import (
@@ -12,7 +16,9 @@ func ExampleWalk() {
 	// chan WalkInfo
 	walkChan := make(chan interface{}, 0)
 
-	p := pool.Walk{}
+	p := pool.Walk{
+		Burst: 1,
+	}
 	defer p.Wait()
 
 	p.Walk(context.Background(), walkChan, func(name interface{}) error {
@@ -20,16 +26,14 @@ func ExampleWalk() {
 		return nil
 	})
 
-	walkChan <- "1"
-	walkChan <- "2"
-	walkChan <- "3"
-	walkChan <- "4"
-	walkChan <- "5"
+	for i := 0; i < 5; i++ {
+		walkChan <- fmt.Sprintf("%d", i)
+	}
 	close(walkChan)
-	// Output Like:
+	// Output:
+	// 0
 	// 1
 	// 2
 	// 3
 	// 4
-	// 5
 }
