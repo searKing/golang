@@ -24,6 +24,7 @@ require (
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/sys v0.0.0-20200808120158-1030fc2bf1d9
+	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/genproto v0.0.0-20200808173500-a06252235341
 	google.golang.org/grpc v1.31.0
 	gopkg.in/yaml.v2 v2.3.0

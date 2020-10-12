@@ -1,11 +1,19 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package pool
 
 import (
 	"context"
 	"sync"
+
+	"github.com/searKing/golang/go/time/rate"
 )
 
 type Walk struct {
+	Burst int
+
 	wg sync.WaitGroup
 
 	walkError     error
@@ -26,8 +34,14 @@ func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn Wal
 	go func() {
 		defer p.wg.Done()
 		ctx, cancel := context.WithCancel(ctx)
-
+		limiter := rate.NewBurstLimiter(p.Burst)
 		for {
+			// Wait blocks until lim permits 1 events to happen.
+			if err := limiter.Wait(ctx); err != nil {
+				p.TrySetError(err)
+				return
+			}
+
 			select {
 			case task, ok := <-taskChan:
 				if !ok {
@@ -35,6 +49,7 @@ func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn Wal
 				}
 				p.wg.Add(1)
 				go func() {
+					defer limiter.PutToken()
 					defer p.wg.Done()
 					if err := procFn(task); err != nil {
 						p.TrySetError(err)
