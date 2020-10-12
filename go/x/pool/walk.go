@@ -20,6 +20,7 @@ type Walk struct {
 // is returned, processing stops.
 type WalkFunc func(task interface{}) error
 
+// Walk will consume all tasks parallel and block until ctx.Done() or taskChan is closed.
 func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn WalkFunc) {
 	p.wg.Add(1)
 	go func() {
