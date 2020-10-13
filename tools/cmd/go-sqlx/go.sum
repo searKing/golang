@@ -437,8 +437,8 @@ github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR
 github.com/santhosh-tekuri/jsonschema v1.2.4/go.mod h1:TEAUOeZSmIxTTuHatJzrvARHiuO9LYd+cIxzgEHCQI4=
 github.com/santhosh-tekuri/jsonschema/v2 v2.1.0/go.mod h1:yzJzKUGV4RbWqWIBBP4wSOBqavX5saE02yirLS0OTyg=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
-github.com/searKing/golang v0.0.58 h1:ZvYQSj2hBpLtqxVlZMxibybDEVFHdLoNWtYUgEl1uF4=
-github.com/searKing/golang v0.0.58/go.mod h1:KxNmkQv0Wz9aAQpfFw0XYZzQeL5+TXHWXt1zOIF/jY8=
+github.com/searKing/golang v0.0.62 h1:rjtKxc1kR8RtjR/AD/VQedo0oKNXVPD0QtR7OGrl1bA=
+github.com/searKing/golang v0.0.62/go.mod h1:tJCeMcUU9R5S+3PaOCePSsGGES9i4FfpihLxoWLCrjM=
 github.com/segmentio/analytics-go v3.0.1+incompatible/go.mod h1:C7CYBtQWk4vRk2RyLu0qOcbHJ18E3F1HV2C/8JvKN48=
 github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c/go.mod h1:kJ9mm9YmoWSkk+oQ+5Cj8DEoRCX2JT6As4kEtIIOp1M=
 github.com/serenize/snaker v0.0.0-20171204205717-a683aaf2d516/go.mod h1:Yow6lPLSAXx2ifx470yD/nUe22Dv5vBvxK/UK9UUTVs=

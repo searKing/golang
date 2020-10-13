@@ -12,6 +12,7 @@ type SqlxRender struct {
 	TableName  string        // value type trimmedStructName
 	Fields     []StructField // struct Fields
 
-	WithDao  bool   // generate with dao
-	NilValue string // nil value of map type
+	WithDao       bool   // generate with dao
+	WithQueryInfo bool   // generate error with sql query executed
+	NilValue      string // nil value of map type
 }

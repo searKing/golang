@@ -162,7 +162,11 @@ func (arg {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, 
 
 	_, err := db.NamedExecContext(ctx, query, arg)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
 	}
 	return nil
 }
@@ -175,7 +179,11 @@ func (arg {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.D
 
 	_, err := db.NamedExecContext(ctx, query, arg)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
 	}
 
 	return nil
@@ -190,7 +198,11 @@ func (arg {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.D
 
 	_, err := db.NamedExecContext(ctx, query, arg)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
 	}
 
 	return nil
@@ -206,7 +218,11 @@ func (arg {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB, 
 	// Check that invalid preparations fail
 	ns, err := db.PrepareNamedContext(ctx, query)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
 	}
 
 	defer ns.Close()
@@ -217,7 +233,11 @@ func (arg {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB, 
 		//if errors.Cause(err) == sql.ErrNoRows {
 		//	return dest, nil
 		//}
+{{- if .WithQueryInfo }}
 		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
 	}
 	return dest, nil
 }
@@ -226,7 +246,11 @@ func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *s
 	// Check that invalid preparations fail
 	ns, err := db.PrepareNamedContext(ctx, query)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
 	}
 
 	defer ns.Close()
@@ -234,7 +258,11 @@ func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *s
 	var dest []{{.StructType}}
 	err = ns.SelectContext(ctx, &dest, arg)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return  nil, err
+{{- end}}
 	}
 	return dest, nil
 }
@@ -258,7 +286,11 @@ func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB,
 	dest, err := arg.Get{{.StructType}}sByQuery(ctx, db, query)
 
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
 	}
 	return dest, nil
 }
@@ -345,14 +377,22 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 	// Check that invalid preparations fail
 	ns, err := db.PrepareNamedContext(ctx, query)
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
 	}
 
 	defer ns.Close()
 
 	rows, err := ns.QueryxContext(ctx, arg.MarshalMap(nil))
 	if err != nil {
+{{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
 	}
 
 	var resps []{{.StructType}}
@@ -360,7 +400,11 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 		row := make(map[string]interface{})
 		err := rows.MapScan(row)
 		if err != nil {
-		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- if .WithQueryInfo }}
+			return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+			return nil, err
+{{- end}}
 		}
 		for k, v := range row {
 			if b, ok := v.([]byte); ok {
@@ -371,7 +415,11 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 		resp := {{.StructType}}{}
 		err = resp.UnmarshalMap(row)
 		if err != nil {
+{{- if .WithQueryInfo }}
 			return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+			return nil, err
+{{- end}}
 		}
 		resps = append(resps, resp)
 	}
