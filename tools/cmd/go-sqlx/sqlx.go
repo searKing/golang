@@ -62,6 +62,7 @@ var (
 	flagTrimprefix          = flag.String("trimprefix", "", "trim the `prefix` from the generated struct type names")
 	flagLinecomment         = flag.Bool("linecomment", false, "use line comment text followed the generated struct type name by as printed text when present")
 	flagWithDao             = flag.Bool("with-dao", false, "generate with dao")
+	flagWithQueryInfo       = flag.Bool("with-query-info", false, "generate error with sql query executed")
 	flagBuildTags           = flag.String("tags", "", "comma-separated list of build tags to apply")
 )
 
@@ -375,11 +376,12 @@ func (g *Generator) createValAndNameDecl(val Struct) (string, string) {
 func (g *Generator) buildOneRun(value Struct) {
 	//The generated code is simple enough to write as a Printf format.
 	sqlRender := SqlxRender{
-		StructType: value.StructType,
-		TableName:  value.TableName,
-		Fields:     value.Fields,
-		WithDao:    *flagWithDao,
-		NilValue:   g.declareNameVar(value),
+		StructType:    value.StructType,
+		TableName:     value.TableName,
+		Fields:        value.Fields,
+		WithDao:       *flagWithDao,
+		WithQueryInfo: *flagWithQueryInfo,
+		NilValue:      g.declareNameVar(value),
 	}
 	g.Render(tmplJson, sqlRender)
 }
