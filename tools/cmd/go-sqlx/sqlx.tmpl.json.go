@@ -244,13 +244,15 @@ func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB,
 		TableName:  arg.TableName(),
 		Columns:    cols,
 		Conditions: conds,
-		OrderByColumns: orderByCols,
 		Compare:    sqlx_.SqlCompareEqual,
 		Operator:   sqlx_.SqlOperatorAnd,
 	}.NamedSelectStatement()
 	if len(likeConds) > 0 {
 		query += " AND "
 		query += sqlx_.NamedWhereArguments(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd, likeConds...)
+	}
+	if len(orderByCols) > 0 {
+		query += fmt.Sprintf(" ORDER BY %s", sqlx_.JoinTableColumns(arg.TableName(), orderByCols...))
 	}
 
 	dest, err := arg.Get{{.StructType}}sByQuery(ctx, db, query)
