@@ -12,7 +12,7 @@ import (
 )
 
 type Walk struct {
-	Burst int
+	Burst int // Burst will be set to 1 if less than 1
 
 	wg sync.WaitGroup
 
@@ -30,6 +30,9 @@ type WalkFunc func(task interface{}) error
 
 // Walk will consume all tasks parallel and block until ctx.Done() or taskChan is closed.
 func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn WalkFunc) {
+	if p.Burst <= 0 {
+		p.Burst = 1
+	}
 	p.wg.Add(1)
 	go func() {
 		defer p.wg.Done()
