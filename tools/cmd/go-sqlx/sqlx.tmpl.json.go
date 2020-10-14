@@ -70,11 +70,11 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 	return nil
 }
 // 列名
-type {{.StructType}}Field int
+type {{.StructType}}Field string
 
 const (
 {{- range .Fields }}
-	{{$.StructType}}Field{{.FieldName}}    {{$.StructType}}Field = iota
+	{{$.StructType}}Field{{.FieldName}}    {{$.StructType}}Field = "{{.DbName}}"
 {{- end }}
 )
 
@@ -85,7 +85,7 @@ func (f {{.StructType}}Field) FieldName() string {
 		return "{{.FieldName}}"
 {{- end}}
 	}
-	return "{{.StructType}}Field(" + strconv.FormatInt(int64(f), 10) + ")"
+	return "{{.StructType}}Field(" + string(f) + ")"
 }
 
 
@@ -96,7 +96,7 @@ func (f {{.StructType}}Field) ColumnName() string {
 		return "{{.DbName}}"
 {{- end}}
 	}
-	return "{{.StructType}}Field(" + strconv.FormatInt(int64(f), 10) + ")"
+	return "{{.StructType}}Field(" + string(f) + ")"
 }
 
 func (a {{.StructType}}) ColumnEditor() *{{.StructType}}Columns {
