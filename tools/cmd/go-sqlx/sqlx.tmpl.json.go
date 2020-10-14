@@ -130,6 +130,7 @@ func (c {{.StructType}}Columns) Columns(cols ...string) []string {
 func (c *{{.StructType}}Columns) AppendColumn(col {{.StructType}}Field, forceAppend bool) *{{.StructType}}Columns {
 	if forceAppend {
 		c.cols = append(c.cols, col.ColumnName())
+		return c
 	}
 	var zero = reflect_.IsZeroValue(reflect.ValueOf(c.arg).FieldByName(col.FieldName()))
 	if !zero {
