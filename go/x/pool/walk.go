@@ -29,12 +29,21 @@ type Walk struct {
 type WalkFunc func(task interface{}) error
 
 // Walk will consume all tasks parallel and block until ctx.Done() or taskChan is closed.
-func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn WalkFunc) {
+// Walk returns a channel that's closed when work done on behalf of this
+// walk should be canceled. Done may return nil if this walk can
+// never be canceled. Successive calls to Done return the same value.
+// The close of the Done channel may happen asynchronously,
+// after the cancel function returns.
+func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn WalkFunc) (doneC <-chan struct{}) {
+	done := make(chan struct{})
 	if p.Burst <= 0 {
 		p.Burst = 1
 	}
 	p.wg.Add(1)
+	context.Background().Done()
+
 	go func() {
+		defer close(done)
 		defer p.wg.Done()
 		ctx, cancel := context.WithCancel(ctx)
 		limiter := rate.NewBurstLimiter(p.Burst)
@@ -66,6 +75,7 @@ func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn Wal
 			}
 		}
 	}()
+	return done
 }
 
 // Wait blocks until the WaitGroup counter is zero.
