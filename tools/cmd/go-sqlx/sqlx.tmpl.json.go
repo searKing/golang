@@ -9,7 +9,6 @@ package main
 //	TableName: value type trimmedStructName
 //	NilValue: nil value of map type
 const tmplJson = `
-
 import (
 {{- if .WithDao }}
 	"context"
@@ -23,9 +22,10 @@ import (
 {{- end }}
 
 	reflect_ "github.com/searKing/golang/go/reflect"
+	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
+
 {{- if .WithDao }}
 	"github.com/jmoiron/sqlx"
-	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
 {{- end }}
 )
 
@@ -113,7 +113,8 @@ func (a {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
 }
 
 func (a {{.StructType}}) MapColumn(col {{.StructType}}Field) string {
-	return fmt.Sprintf("%s_%s", a.TableName(), a.Column(col))
+	return sqlx_.CompliantName(a.TableColumn(col))
+	//return fmt.Sprintf("%s_%s", a.TableName(), a.Column(col))
 }
 
 // columns
