@@ -48,6 +48,8 @@ func CompileQuery(sql string, opts ...CompileQueryOption) (query string, err err
 
 // CompliantName returns a compliant id name
 // that can be used for a bind or as var.
+// replace special runes with '_'
+// a.b -> a_b
 func CompliantName(in string) string {
 	return sqlparser.NewColIdent(in).CompliantName()
 }
