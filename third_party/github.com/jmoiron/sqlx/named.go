@@ -17,6 +17,9 @@ type compileQuery struct {
 	// TO
 	// `select t.a as t_a, b as b`,
 	AliasWithSelect bool
+
+	// trim node by column name
+	TrimByColumn map[string]interface{}
 }
 
 // CompileQuery compiles a unbound query (using the '?' bind var) into an NamedQuery.
@@ -36,7 +39,7 @@ func CompileQuery(sql string, opts ...CompileQueryOption) (query string, err err
 	if err != nil {
 		return "", err
 	}
-	err = NamedUnbindVars(stmts, opt.AliasWithSelect)
+	err = NamedUnbindVars(stmts, opt.AliasWithSelect, opt.TrimByColumn)
 	if err != nil {
 		return "", err
 	}
@@ -56,9 +59,17 @@ func CompliantName(in string) string {
 
 // NamedUnbindVars rewrites unbind vars to named vars referenced in the statement.
 // Ideally, this should be done only once.
-func NamedUnbindVars(stmt sqlparser.Statement, withAlias bool) error {
+func NamedUnbindVars(stmt sqlparser.Statement, withAlias bool, trimByColumn map[string]interface{}) error {
 	return sqlparser.Walk(func(node sqlparser.SQLNode) (kontinue bool, err error) {
 		switch node := node.(type) {
+		case *sqlparser.Where:
+			TrimWhere(node, trimByColumn)
+			break
+		case *sqlparser.Update:
+			if err := TrimUpdate(node, trimByColumn); err != nil {
+				return false, err
+			}
+			break
 		case *sqlparser.AliasedExpr:
 			if !withAlias {
 				break
@@ -104,7 +115,7 @@ func NamedUnbindVars(stmt sqlparser.Statement, withAlias bool) error {
 						continue
 					}
 					if i > len(node.Columns) {
-						return false, errors.New("mismatched cloumns and values")
+						return false, errors.New("mismatched columns and values")
 
 					}
 					val.Val = []byte(":" + node.Columns[i].String())
@@ -124,6 +135,9 @@ func NamedUnbindVars(stmt sqlparser.Statement, withAlias bool) error {
 
 				val.Val = []byte(":" + buf.String())
 			}
+			if err := TrimInsert(node, trimByColumn); err != nil {
+				return false, err
+			}
 
 		case *sqlparser.ColName, sqlparser.TableName:
 			// Common node types that never contain SQLVals or ListArgs but create a lot of object
@@ -132,4 +146,198 @@ func NamedUnbindVars(stmt sqlparser.Statement, withAlias bool) error {
 		}
 		return true, nil
 	}, stmt)
+}
+
+func TrimWhere(where *sqlparser.Where, trim map[string]interface{}) {
+	if len(trim) == 0 {
+		return
+	}
+	where.Expr = TrimExpr(where.Expr, trim)
+}
+
+func TrimInsert(insert *sqlparser.Insert, trim map[string]interface{}) error {
+	if len(trim) == 0 {
+		return nil
+	}
+	colTuples := insert.Columns
+	valTupleRows, ok := insert.Rows.(sqlparser.Values)
+	if !ok {
+		return nil
+	}
+	if len(valTupleRows) > 1 {
+		return nil
+	}
+	valTuples := valTupleRows[0]
+	if len(colTuples) != len(valTuples) {
+		return errors.New("mismatched columns and values")
+	}
+	var filteredCols sqlparser.Columns
+	var filteredVals sqlparser.ValTuple
+
+	for i := 0; i < len(colTuples); i++ {
+		col := colTuples[i]
+		val := valTuples[i]
+
+		v, ok := val.(*sqlparser.SQLVal)
+		if !ok {
+			filteredCols = append(filteredCols, col)
+			filteredVals = append(filteredVals, v)
+			continue
+		}
+		if v.Type != sqlparser.ValArg {
+			filteredCols = append(filteredCols, col)
+			filteredVals = append(filteredVals, v)
+			continue
+		}
+		if _, has := trim[col.String()]; !has {
+			filteredCols = append(filteredCols, col)
+			filteredVals = append(filteredVals, v)
+			continue
+		}
+	}
+	insert.Columns = filteredCols
+	valTupleRows = nil
+	insert.Rows = append(valTupleRows, filteredVals)
+
+	var filteredUpdates []*sqlparser.UpdateExpr
+	for _, updateExpr := range insert.OnDup {
+		val, ok := updateExpr.Expr.(*sqlparser.SQLVal)
+		if !ok {
+			filteredUpdates = append(filteredUpdates, &sqlparser.UpdateExpr{
+				Name: updateExpr.Name,
+				Expr: updateExpr.Expr,
+			})
+			continue
+		}
+		if val.Type != sqlparser.ValArg {
+			filteredUpdates = append(filteredUpdates, &sqlparser.UpdateExpr{
+				Name: updateExpr.Name,
+				Expr: updateExpr.Expr,
+			})
+			continue
+		}
+		buf := sqlparser.NewTrackedBuffer(nil)
+		updateExpr.Name.Format(buf)
+		if _, has := trim[buf.String()]; !has {
+			filteredUpdates = append(filteredUpdates, &sqlparser.UpdateExpr{
+				Name: updateExpr.Name,
+				Expr: updateExpr.Expr,
+			})
+			continue
+		}
+	}
+	insert.OnDup = filteredUpdates
+	return nil
+}
+
+func TrimUpdate(update *sqlparser.Update, trim map[string]interface{}) error {
+	if len(trim) == 0 {
+		return nil
+	}
+
+	var filteredUpdates []*sqlparser.UpdateExpr
+	for _, updateExpr := range update.Exprs {
+		val, ok := updateExpr.Expr.(*sqlparser.SQLVal)
+		if !ok {
+			filteredUpdates = append(filteredUpdates, &sqlparser.UpdateExpr{
+				Name: updateExpr.Name,
+				Expr: updateExpr.Expr,
+			})
+			continue
+		}
+		if val.Type != sqlparser.ValArg {
+			filteredUpdates = append(filteredUpdates, &sqlparser.UpdateExpr{
+				Name: updateExpr.Name,
+				Expr: updateExpr.Expr,
+			})
+			continue
+		}
+		buf := sqlparser.NewTrackedBuffer(nil)
+		updateExpr.Name.Format(buf)
+		if _, has := trim[buf.String()]; !has {
+			filteredUpdates = append(filteredUpdates, &sqlparser.UpdateExpr{
+				Name: updateExpr.Name,
+				Expr: updateExpr.Expr,
+			})
+			continue
+		}
+	}
+	update.Exprs = filteredUpdates
+	return nil
+}
+
+func TrimExpr(expr sqlparser.Expr, trimByColumn map[string]interface{}) sqlparser.Expr {
+	if len(trimByColumn) == 0 {
+		return expr
+	}
+	switch expr := expr.(type) {
+	case *sqlparser.ComparisonExpr:
+		buf := sqlparser.NewTrackedBuffer(nil)
+		expr.Left.Format(buf)
+		if _, has := trimByColumn[buf.String()]; !has {
+			return expr
+		}
+		val, ok := expr.Right.(*sqlparser.SQLVal)
+		if !ok {
+			return expr
+		}
+		if val.Type != sqlparser.ValArg {
+			return expr
+		}
+		// trimByColumn this node
+		return nil
+	case *sqlparser.AndExpr:
+		rightExpr := TrimExpr(expr.Right, trimByColumn)
+		leftExpr := TrimExpr(expr.Left, trimByColumn)
+		if leftExpr == nil && rightExpr == nil {
+			return nil
+		}
+		if leftExpr == nil {
+			return rightExpr
+		}
+		if rightExpr == nil {
+			return leftExpr
+		}
+		expr.Left = leftExpr
+		expr.Right = rightExpr
+		return expr
+	case *sqlparser.OrExpr:
+		rightExpr := TrimExpr(expr.Right, trimByColumn)
+		leftExpr := TrimExpr(expr.Left, trimByColumn)
+		if leftExpr == nil && rightExpr == nil {
+			return nil
+		}
+		if leftExpr == nil {
+			return rightExpr
+		}
+		if rightExpr == nil {
+			return leftExpr
+		}
+		expr.Left = leftExpr
+		expr.Right = rightExpr
+		return expr
+	case *sqlparser.XorExpr:
+		rightExpr := TrimExpr(expr.Right, trimByColumn)
+		leftExpr := TrimExpr(expr.Left, trimByColumn)
+		if leftExpr == nil && rightExpr == nil {
+			return nil
+		}
+		if leftExpr == nil {
+			return rightExpr
+		}
+		if rightExpr == nil {
+			return leftExpr
+		}
+		expr.Left = leftExpr
+		expr.Right = rightExpr
+		return expr
+	case *sqlparser.NotExpr:
+		expr.Expr = TrimExpr(expr.Expr, trimByColumn)
+		if expr.Expr == nil {
+			return nil
+		}
+		return expr
+	default:
+		return expr
+	}
 }
