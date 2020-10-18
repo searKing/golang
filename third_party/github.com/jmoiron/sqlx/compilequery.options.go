@@ -13,3 +13,13 @@ func WithCompileQueryOptionAliasWithSelect(aliasWithSelect bool) CompileQueryOpt
 		opt.AliasWithSelect = aliasWithSelect
 	})
 }
+
+// WithCompileQueryOptionTrimByColumn trim node by column name
+// `SELECT t.a, b FROM t WHERE first_name= :hehe AND middle_name=? OR last_name=?`
+// TO
+// `select t.a as t_a, b as b from t where first_name = :first_name or last_name = :last_name`,
+func WithCompileQueryOptionTrimByColumn(trimByColumn map[string]interface{}) CompileQueryOption {
+	return CompileQueryOptionFunc(func(opt *compileQuery) {
+		opt.TrimByColumn = trimByColumn
+	})
+}

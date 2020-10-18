@@ -15,12 +15,16 @@ func TestCompileQuery(t *testing.T) {
 		Q, R string
 	}{
 		{
-			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?)`,
-			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d)`,
+			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?), (?, ?, ?, ?) ON DUPLICATE KEY UPDATE a=?, b=?`,
+			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d), (:a, :b, :c, :d) on duplicate key update a = :a, b = :b`,
 		},
 		{
-			Q: `SELECT t.a, b FROM t WHERE first_name= :hehe AND last_name=?`,
-			R: `select t.a as t_a, b as b from t where first_name = :first_name and last_name = :last_name`,
+			Q: `UPDATE foo SET foo=?, bar=? WHERE thud=? AND grunt=?`,
+			R: `update foo set foo = :foo, bar = :bar where thud = :thud and grunt = :grunt`,
+		},
+		{
+			Q: `SELECT t.a, b FROM t WHERE first_name= :hehe AND middle_name=? OR last_name=?`,
+			R: `select t.a as t_a, b as b from t where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
 		},
 		{
 			Q: `SELECT ":foo" FROM a WHERE first_name=1 AND last_name='NAME'`,
@@ -34,6 +38,146 @@ func TestCompileQuery(t *testing.T) {
 
 	for i, test := range table {
 		qr, err := sqlx_.CompileQuery(test.Q)
+		if err != nil {
+			t.Errorf("%d. got err %s, want err nil", i, err)
+		}
+		if qr != test.R {
+			t.Errorf("%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}
+
+func TestWithCompileQueryOptionAliasWithSelect(t *testing.T) {
+	table := []struct {
+		Q, R string
+		A    bool
+	}{
+		{
+			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?), (?, ?, :c, :d)`,
+			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d), (:a, :b, :c, :d)`,
+			A: false,
+		},
+		{
+			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?)`,
+			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d)`,
+			A: true,
+		},
+		{
+			Q: `UPDATE foo SET foo=?, bar=? WHERE thud=? AND grunt=?`,
+			R: `update foo set foo = :foo, bar = :bar where thud = :thud and grunt = :grunt`,
+			A: false,
+		},
+		{
+			Q: `UPDATE foo SET foo=?, bar=? WHERE thud=? AND grunt=?`,
+			R: `update foo set foo = :foo, bar = :bar where thud = :thud and grunt = :grunt`,
+			A: true,
+		},
+		{
+			Q: `SELECT t.a, b FROM t WHERE first_name= :hehe AND middle_name=? OR last_name=?`,
+			R: `select t.a, b from t where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
+			A: false,
+		},
+		{
+			Q: `SELECT t.a, b FROM t WHERE first_name= :hehe AND middle_name=? OR last_name=?`,
+			R: `select t.a as t_a, b as b from t where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
+			A: true,
+		},
+		{
+			Q: `SELECT ":foo" FROM a WHERE first_name=1 AND last_name='NAME'`,
+			R: `select ':foo' from a where first_name = 1 and last_name = 'NAME'`,
+			A: false,
+		},
+		{
+			Q: `SELECT ":foo" FROM a WHERE first_name=1 AND last_name='NAME'`,
+			R: `select ':foo' as __foo_ from a where first_name = 1 and last_name = 'NAME'`,
+			A: true,
+		},
+		{
+			Q: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name=? AND last_name=?`,
+			R: `select 'a:b:c' or first_name, '::ABC:_:' from person where first_name = :first_name and last_name = :last_name`,
+			A: false,
+		},
+		{
+			Q: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name=? AND last_name=?`,
+			R: `select 'a:b:c' or first_name as _a_b_c__or_first_name, '::ABC:_:' as ___ABC____ from person where first_name = :first_name and last_name = :last_name`,
+			A: true,
+		},
+	}
+
+	for i, test := range table {
+		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionAliasWithSelect(test.A))
+		if err != nil {
+			t.Errorf("%d. got err %s, want err nil", i, err)
+		}
+		if qr != test.R {
+			t.Errorf("%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}
+func TestWithCompileQueryOptionTrimByColumn(t *testing.T) {
+	table := []struct {
+		Q, R string
+		T    map[string]interface{}
+	}{
+		{ // 0
+			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?), (?, ?, ?, ?)`,
+			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d), (:a, :b, :c, :d)`,
+			T: nil,
+		},
+		{ // 1
+			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?)`,
+			R: `insert into foo(a, b, d) values (:a, :b, :d)`,
+			T: map[string]interface{}{"c": nil},
+		},
+		{ // 2
+			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?), (?, ?, ?, ?)`,
+			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d), (:a, :b, :c, :d)`,
+			T: map[string]interface{}{"c": nil},
+		},
+		{ // 3
+			Q: `UPDATE foo SET foo = ?, bar = ? WHERE thud = ? AND grunt = ?`,
+			R: `update foo set foo = :foo, bar = :bar where thud = :thud and grunt = :grunt`,
+			T: nil,
+		},
+		{ // 4
+			Q: `UPDATE foo SET foo = ?, bar =? WHERE thud = ? AND grunt = ?`,
+			R: `update foo set bar = :bar where grunt = :grunt`,
+			T: map[string]interface{}{"foo": nil, "thud": nil},
+		},
+		{ // 5
+			Q: `SELECT t.a, b FROM t WHERE first_name =:hehe AND middle_name = ? OR last_name = ?`,
+			R: `select t.a as t_a, b as b from t where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
+			T: nil,
+		},
+		{ // 6
+			Q: `SELECT t.a, b FROM t WHERE first_name =:hehe AND middle_name = ? OR last_name = ?`,
+			R: `select t.a as t_a, b as b from t where first_name = :first_name or last_name = :last_name`,
+			T: map[string]interface{}{"middle_name": nil},
+		},
+		{ // 7
+			Q: `SELECT ":foo" FROM a WHERE first_name = 1 AND last_name = 'NAME'`,
+			R: `select ':foo' as __foo_ from a where first_name = 1 and last_name = 'NAME'`,
+			T: nil,
+		},
+		{ // 8
+			Q: `SELECT ":foo" FROM a WHERE first_name = 1 AND last_name = 'NAME'`,
+			R: `select ':foo' as __foo_ from a where first_name = 1 and last_name = 'NAME'`,
+			T: map[string]interface{}{"last_name": nil},
+		},
+		{ // 9
+			Q: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name =:first_name and middle_name = :middle_name or last_name =:last_name`,
+			R: `select 'a:b:c' or first_name as _a_b_c__or_first_name, '::ABC:_:' as ___ABC____ from person where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
+			T: nil,
+		},
+		{ // 10
+			Q: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name =:first_name and middle_name =:middle_name or last_name =:last_name`,
+			R: `select 'a:b:c' or first_name as _a_b_c__or_first_name, '::ABC:_:' as ___ABC____ from person where first_name = :first_name and middle_name = :middle_name`,
+			T: map[string]interface{}{"last_name": nil},
+		},
+	}
+
+	for i, test := range table {
+		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionTrimByColumn(test.T))
 		if err != nil {
 			t.Errorf("%d. got err %s, want err nil", i, err)
 		}
