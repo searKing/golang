@@ -15,6 +15,7 @@ func WithCompileQueryOptionAliasWithSelect(aliasWithSelect bool) CompileQueryOpt
 }
 
 // WithCompileQueryOptionTrimByColumn trim node by column name
+// take effect in WHERE|INSERT|UPDATE, ignore if multi rows
 // `SELECT t.a, b FROM t WHERE first_name= :hehe AND middle_name=? OR last_name=?`
 // TO
 // `select t.a as t_a, b as b from t where first_name = :first_name or last_name = :last_name`,

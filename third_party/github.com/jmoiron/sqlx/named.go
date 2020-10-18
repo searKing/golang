@@ -19,6 +19,7 @@ type compileQuery struct {
 	AliasWithSelect bool
 
 	// trim node by column name
+	// take effect in WHERE|INSERT|UPDATE, ignore if multi rows
 	TrimByColumn map[string]interface{}
 }
 
