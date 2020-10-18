@@ -114,10 +114,10 @@ func TestWithCompileQueryOptionAliasWithSelect(t *testing.T) {
 		}
 	}
 }
-func TestWithCompileQueryOptionTrimByColumn(t *testing.T) {
+func TestWithCompileQueryOptionArgument(t *testing.T) {
 	table := []struct {
 		Q, R string
-		T    map[string]interface{}
+		T    interface{}
 	}{
 		{ // 0
 			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?), (?, ?, ?, ?)`,
@@ -127,12 +127,12 @@ func TestWithCompileQueryOptionTrimByColumn(t *testing.T) {
 		{ // 1
 			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?)`,
 			R: `insert into foo(a, b, d) values (:a, :b, :d)`,
-			T: map[string]interface{}{"c": nil},
+			T: []string{"a", "b", "d"},
 		},
 		{ // 2
 			Q: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?), (?, ?, ?, ?)`,
 			R: `insert into foo(a, b, c, d) values (:a, :b, :c, :d), (:a, :b, :c, :d)`,
-			T: map[string]interface{}{"c": nil},
+			T: []string{"c"},
 		},
 		{ // 3
 			Q: `UPDATE foo SET foo = ?, bar = ? WHERE thud = ? AND grunt = ?`,
@@ -142,42 +142,62 @@ func TestWithCompileQueryOptionTrimByColumn(t *testing.T) {
 		{ // 4
 			Q: `UPDATE foo SET foo = ?, bar =? WHERE thud = ? AND grunt = ?`,
 			R: `update foo set bar = :bar where grunt = :grunt`,
-			T: map[string]interface{}{"foo": nil, "thud": nil},
+			T: []string{"bar", "grunt"},
 		},
 		{ // 5
+			Q: `UPDATE foo SET foo = ?, bar =? WHERE thud = ? AND grunt = ?`,
+			R: `update foo set bar = :bar where grunt = :grunt`,
+			T: map[string]bool{"foo": false, "bar": true, "thud": false, "grunt": true},
+		},
+		{ // 6
+			Q: `UPDATE foo SET foo = ?, bar =? WHERE thud = ? AND grunt = ?`,
+			R: `update foo set bar = :bar where grunt = :grunt`,
+			T: struct {
+				Foo   bool `db:"foo"`
+				Bar   bool `db:"bar"`
+				Thud  bool `db:"thud"`
+				Grunt bool `db:"grunt"`
+			}{
+				Foo:   false,
+				Bar:   true,
+				Thud:  false,
+				Grunt: true,
+			},
+		},
+		{ // 7
 			Q: `SELECT t.a, b FROM t WHERE first_name =:hehe AND middle_name = ? OR last_name = ?`,
 			R: `select t.a as t_a, b as b from t where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
 			T: nil,
 		},
-		{ // 6
+		{ // 8
 			Q: `SELECT t.a, b FROM t WHERE first_name =:hehe AND middle_name = ? OR last_name = ?`,
 			R: `select t.a as t_a, b as b from t where first_name = :first_name or last_name = :last_name`,
-			T: map[string]interface{}{"middle_name": nil},
+			T: []string{"first_name", "last_name"},
 		},
-		{ // 7
+		{ // 9
 			Q: `SELECT ":foo" FROM a WHERE first_name = 1 AND last_name = 'NAME'`,
 			R: `select ':foo' as __foo_ from a where first_name = 1 and last_name = 'NAME'`,
 			T: nil,
 		},
-		{ // 8
+		{ // 10
 			Q: `SELECT ":foo" FROM a WHERE first_name = 1 AND last_name = 'NAME'`,
 			R: `select ':foo' as __foo_ from a where first_name = 1 and last_name = 'NAME'`,
-			T: map[string]interface{}{"last_name": nil},
+			T: []string{"first_name", "last_name"},
 		},
-		{ // 9
+		{ // 11
 			Q: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name =:first_name and middle_name = :middle_name or last_name =:last_name`,
 			R: `select 'a:b:c' or first_name as _a_b_c__or_first_name, '::ABC:_:' as ___ABC____ from person where first_name = :first_name and middle_name = :middle_name or last_name = :last_name`,
 			T: nil,
 		},
-		{ // 10
+		{ // 12
 			Q: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name =:first_name and middle_name =:middle_name or last_name =:last_name`,
-			R: `select 'a:b:c' or first_name as _a_b_c__or_first_name, '::ABC:_:' as ___ABC____ from person where first_name = :first_name and middle_name = :middle_name`,
-			T: map[string]interface{}{"last_name": nil},
+			R: `select 'a:b:c' or first_name as _a_b_c__or_first_name, '::ABC:_:' as ___ABC____ from person where first_name = :first_name or last_name = :last_name`,
+			T: []string{"first_name", "last_name"},
 		},
 	}
 
 	for i, test := range table {
-		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionTrimByColumn(test.T))
+		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionArgument(test.T))
 		if err != nil {
 			t.Errorf("%d. got err %s, want err nil", i, err)
 		}
