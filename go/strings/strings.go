@@ -22,6 +22,55 @@ func JoinRepeat(s string, sep string, n int) string {
 	return b.String()
 }
 
+// SliceEqualFold reports whether s and t, interpreted as UTF-8 strings,
+// are equal under Unicode case-folding, which is a more general
+// form of case-sensitivity.
+func SliceEqual(s, t []string) bool {
+	if len(s) != len(t) {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] != t[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// SliceEqualFold reports whether s and t, interpreted as UTF-8 strings,
+// are equal under Unicode case-folding, which is a more general
+// form of case-insensitivity.
+func SliceEqualFold(s, t []string) bool {
+	if len(s) != len(t) {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if !strings.EqualFold(s[i], t[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// SliceTrimEmpty trim empty columns
+func SliceTrimEmpty(ss ...string) []string {
+	return SliceTrimFunc(ss, func(s string) bool {
+		return s == ""
+	})
+}
+
+// SliceTrimFunc returns a slice of the string ss satisfying f(c) removed.
+func SliceTrimFunc(ss []string, f func(s string) bool) []string {
+	var trimmed []string
+	for _, s := range ss {
+		if f(s) {
+			continue
+		}
+		trimmed = append(trimmed, s)
+	}
+	return trimmed
+}
+
 // SliceContains  reports whether s is within ss.
 func SliceContains(ss []string, s string) bool {
 	for _, v := range ss {
