@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package sqlx
+package sql
 
 import (
 	"errors"
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	SqlxTag = "db"
+	TagDb = "db"
 )
 
 //go:generate go-option -type "compileQuery"
@@ -410,7 +410,7 @@ func exist(arg interface{}, col string) bool {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		// unwrap any payloads
-		if payload := field.Tag.Get(SqlxTag); payload != "" {
+		if payload := field.Tag.Get(TagDb); payload != "" {
 			if payload == col {
 				var zero = reflect_.IsZeroValue(val.FieldByName(field.Name))
 				return !zero
