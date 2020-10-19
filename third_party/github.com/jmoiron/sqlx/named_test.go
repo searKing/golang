@@ -39,10 +39,10 @@ func TestCompileQuery(t *testing.T) {
 	for i, test := range table {
 		qr, err := sqlx_.CompileQuery(test.Q)
 		if err != nil {
-			t.Errorf("%d. got err %s, want err nil", i, err)
+			t.Errorf("#%d. got err %s, want err nil", i, err)
 		}
 		if qr != test.R {
-			t.Errorf("%d. got %q, want %q", i, qr, test.R)
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
 		}
 	}
 }
@@ -107,10 +107,10 @@ func TestWithCompileQueryOptionAliasWithSelect(t *testing.T) {
 	for i, test := range table {
 		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionAliasWithSelect(test.A))
 		if err != nil {
-			t.Errorf("%d. got err %s, want err nil", i, err)
+			t.Errorf("#%d. got err %s, want err nil", i, err)
 		}
 		if qr != test.R {
-			t.Errorf("%d. got %q, want %q", i, qr, test.R)
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
 		}
 	}
 }
@@ -199,10 +199,10 @@ func TestWithCompileQueryOptionArgument(t *testing.T) {
 	for i, test := range table {
 		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionArgument(test.T))
 		if err != nil {
-			t.Errorf("%d. got err %s, want err nil", i, err)
+			t.Errorf("#%d. got err %s, want err nil", i, err)
 		}
 		if qr != test.R {
-			t.Errorf("%d. got %q, want %q", i, qr, test.R)
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
 		}
 	}
 }
@@ -236,7 +236,7 @@ func TestCompliantName(t *testing.T) {
 	for i, test := range table {
 		qr := sqlx_.CompliantName(test.Q)
 		if qr != test.R {
-			t.Errorf("%d. got %q, want %q", i, qr, test.R)
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
 		}
 	}
 }
