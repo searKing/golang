@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package sqlx_test
+package sql_test
 
 import (
 	"testing"
 
-	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
+	"github.com/searKing/golang/go/database/sql"
 )
 
 func TestCompileQuery(t *testing.T) {
@@ -37,7 +37,7 @@ func TestCompileQuery(t *testing.T) {
 	}
 
 	for i, test := range table {
-		qr, err := sqlx_.CompileQuery(test.Q)
+		qr, err := sql.CompileQuery(test.Q)
 		if err != nil {
 			t.Errorf("#%d. got err %s, want err nil", i, err)
 		}
@@ -105,7 +105,7 @@ func TestWithCompileQueryOptionAliasWithSelect(t *testing.T) {
 	}
 
 	for i, test := range table {
-		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionAliasWithSelect(test.A))
+		qr, err := sql.CompileQuery(test.Q, sql.WithCompileQueryOptionAliasWithSelect(test.A))
 		if err != nil {
 			t.Errorf("#%d. got err %s, want err nil", i, err)
 		}
@@ -197,7 +197,7 @@ func TestWithCompileQueryOptionArgument(t *testing.T) {
 	}
 
 	for i, test := range table {
-		qr, err := sqlx_.CompileQuery(test.Q, sqlx_.WithCompileQueryOptionArgument(test.T))
+		qr, err := sql.CompileQuery(test.Q, sql.WithCompileQueryOptionArgument(test.T))
 		if err != nil {
 			t.Errorf("#%d. got err %s, want err nil", i, err)
 		}
@@ -234,7 +234,7 @@ func TestCompliantName(t *testing.T) {
 	}
 
 	for i, test := range table {
-		qr := sqlx_.CompliantName(test.Q)
+		qr := sql.CompliantName(test.Q)
 		if qr != test.R {
 			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
 		}
