@@ -4,7 +4,23 @@
 
 package strings
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
+
+// JoinRepeat behaves like strings.Join([]string{s,...,s}, sep)
+func JoinRepeat(s string, sep string, n int) string {
+	var b strings.Builder
+	for i := 0; i < n-1; i++ {
+		b.WriteString(s)
+		b.WriteString(sep)
+	}
+	if n > 0 {
+		b.WriteString(s)
+	}
+	return b.String()
+}
 
 // SliceContains  reports whether s is within ss.
 func SliceContains(ss []string, s string) bool {

@@ -186,3 +186,44 @@ func TestMapLeading(t *testing.T) {
 		t.Errorf("trimSpaces: expected %q got %q", expect, m)
 	}
 }
+
+func TestJoinRepeat(t *testing.T) {
+	table := []struct {
+		Q   string
+		sep string
+		n   int
+		R   string
+	}{
+		{
+			Q:   "a",
+			sep: ",",
+			n:   -1,
+			R:   "",
+		},
+		{
+			Q:   "a",
+			sep: ",",
+			n:   0,
+			R:   "",
+		},
+		{
+			Q:   "a",
+			sep: ",",
+			n:   1,
+			R:   "a",
+		},
+		{
+			Q:   "a",
+			sep: ",",
+			n:   10,
+			R:   "a,a,a,a,a,a,a,a,a,a",
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.JoinRepeat(test.Q, test.sep, test.n)
+		if qr != test.R {
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}
