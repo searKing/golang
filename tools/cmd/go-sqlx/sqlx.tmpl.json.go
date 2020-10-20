@@ -113,7 +113,7 @@ func (a {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
 }
 
 func (a {{.StructType}}) MapColumn(col {{.StructType}}Field) string {
-	return sqlx_.CompliantName(a.TableColumn(col))
+	return sql_.CompliantName(a.TableColumn(col))
 	//return fmt.Sprintf("%s_%s", a.TableName(), a.Column(col))
 }
 
