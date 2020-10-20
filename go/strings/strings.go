@@ -7,7 +7,81 @@ package strings
 import (
 	"strings"
 	"unicode"
+
+	unicode_ "github.com/searKing/golang/go/unicode"
 )
+
+// ContainsRuneAnyFunc reports whether any of the Unicode code point r satisfying f(r) is within s.
+func ContainsRuneAnyFunc(s string, f func(rune) bool) bool {
+	if f == nil {
+		return false
+	}
+	for _, r := range s {
+		if f(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsRuneOnlyFunc reports whether all of the Unicode code point r satisfying f(r) is within s.
+func ContainsRuneOnlyFunc(s string, f func(rune) bool) bool {
+	if f == nil {
+		return true
+	}
+	for _, r := range s {
+		if !f(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// ContainsAnyRangeTable reports whether the string contains any rune in any of the specified table of ranges.
+func ContainsAnyRangeTable(s string, rangeTabs ...*unicode.RangeTable) bool {
+	if len(rangeTabs) == 0 {
+		return ContainsRuneAnyFunc(s, nil)
+	}
+	return ContainsRuneAnyFunc(s, func(r rune) bool {
+		for _, t := range rangeTabs {
+			if t == nil {
+				continue
+			}
+			if unicode.Is(t, r) {
+				return true
+			}
+		}
+		return false
+	})
+}
+
+// ContainsOnlyRangeTable reports whether the string contains only rune in all of the specified table of ranges.
+func ContainsOnlyRangeTable(s string, rangeTabs ...*unicode.RangeTable) bool {
+	if len(rangeTabs) == 0 {
+		return ContainsRuneOnlyFunc(s, nil)
+	}
+	return ContainsRuneOnlyFunc(s, func(r rune) bool {
+		for _, t := range rangeTabs {
+			if t == nil {
+				continue
+			}
+			if !unicode.Is(t, r) {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+// ContainsAsciiVisual reports whether the string contains any rune in visual ascii code, that is [0x21, 0x7E].
+func ContainsAsciiVisual(s string) bool {
+	return ContainsAnyRangeTable(s, unicode_.AsciiVisual)
+}
+
+// ContainsAsciiVisual reports whether the string contains only rune in visual ascii code, that is [0x21, 0x7E].
+func ContainsOnlyAsciiVisual(s string) bool {
+	return ContainsOnlyRangeTable(s, unicode_.AsciiVisual)
+}
 
 // JoinRepeat behaves like strings.Join([]string{s,...,s}, sep)
 func JoinRepeat(s string, sep string, n int) string {

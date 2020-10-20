@@ -46,3 +46,13 @@ func SpecialCaseBuilder(toUpper, toLower, toTitle func(r rune) rune, points ...r
 	}
 	return cases
 }
+
+var _AsciiVisual = &unicode.RangeTable{
+	R16: []unicode.Range16{
+		{0x0021, 0x007E, 1},
+	},
+	LatinOffset: 1,
+}
+var (
+	AsciiVisual = _AsciiVisual // AsciiVisual is the set of Unicode characters with visual character of ascii.
+)

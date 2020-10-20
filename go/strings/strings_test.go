@@ -187,6 +187,88 @@ func TestMapLeading(t *testing.T) {
 	}
 }
 
+func TestContainsAsciiVisual(t *testing.T) {
+	table := []struct {
+		Q string
+		R bool
+	}{
+		{
+			Q: string(rune(0x00)),
+			R: false,
+		},
+		{
+			Q: " ",
+			R: false,
+		},
+		{
+			Q: "!",
+			R: true,
+		},
+		{
+			Q: `"`,
+			R: true,
+		},
+		{
+			Q: "0",
+			R: true,
+		},
+		{
+			Q: ":",
+			R: true,
+		},
+		{
+			Q: "A",
+			R: true,
+		},
+		{
+			Q: "{",
+			R: true,
+		},
+		{
+			Q: "~",
+			R: true,
+		},
+		{
+			Q: string(rune(0xFF)),
+			R: false,
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.ContainsAsciiVisual(test.Q)
+		if qr != test.R {
+			t.Errorf("#%d. got %t, want %t", i, qr, test.R)
+		}
+	}
+}
+
+func TestContainsOnlyAsciiVisual(t *testing.T) {
+	table := []struct {
+		Q string
+		R bool
+	}{
+		//{
+		//	Q: "123qwe<>?+_{",
+		//	R: true,
+		//},
+		{
+			Q: string(rune(0x00)) + "a",
+			R: false,
+		},
+		{
+			Q: string(rune(0xFF)) + "a",
+			R: false,
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.ContainsOnlyAsciiVisual(test.Q)
+		if qr != test.R {
+			t.Errorf("#%d. got %t, want %t", i, qr, test.R)
+		}
+	}
+}
+
 func TestJoinRepeat(t *testing.T) {
 	table := []struct {
 		Q   string
