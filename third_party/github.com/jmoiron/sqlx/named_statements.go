@@ -3,6 +3,8 @@ package sqlx
 import (
 	"fmt"
 	"strings"
+
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 type InsertOption int
@@ -28,7 +30,7 @@ const (
 type SimpleStatements struct {
 	TableName      string
 	Columns        []string
-	Conditions     []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
+	Conditions     []string    // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE, or UPDATE in INSERT
 	Compare        SqlCompare  // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 	Operator       SqlOperator // take effect only in WHERE clause, that exists in SELECT, UPDATE, DELETE
 	Limit          int         // take effect only in SELECT
@@ -77,15 +79,16 @@ func (s SimpleStatements) NamedSelectStatement(appends ...string) string {
 //
 //	statement := SimpleStatements{
 //		TableName: foo,
-//		Columns: []string{"foo", "bar"}
+//		Columns: []string{"foo", "bar"},
+//		Conditions: []string{"qux"},
 //	}
 //	query := statement.NamedInsertStatement(false)
 //
-//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar)
+//	// INSERT INTO foo (foo, bar, qux) VALUES (:foo, :bar, :qux)
 //
 //	query := statement.NamedInsertStatement(true)
 //
-//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar) ON DUPLICATE KEY UPDATE foo=:foo, bar=:bar
+//	// INSERT INTO foo (foo, bar, qux) VALUES (:foo, :bar, :qux) ON DUPLICATE KEY UPDATE foo=:foo, bar=:bar
 //
 //	statement := SimpleStatements{
 //		TableName: foo,
@@ -110,7 +113,7 @@ func (s SimpleStatements) NamedInsertStatement(update bool, appends ...string) s
 	case InsertOptionUpdate:
 		return fmt.Sprintf(`INSERT INTO %s %s ON DUPLICATE KEY UPDATE %s`,
 			s.TableName,
-			NamedInsertArgumentsCombined(s.Columns...),
+			NamedInsertArgumentsCombined(strings_.SliceCombine(s.Columns, s.Conditions)...),
 			NamedUpdateArguments(s.Columns...)) + " " + strings.Join(appends, "")
 	case InsertOptionIgnore:
 		return fmt.Sprintf(`INSERT IGNORE INTO %s %s`,
