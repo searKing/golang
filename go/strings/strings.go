@@ -22,6 +22,22 @@ func JoinRepeat(s string, sep string, n int) string {
 	return b.String()
 }
 
+// SliceCombine combine elements to a new slice.
+func SliceCombine(ss ...[]string) []string {
+	var total int
+	for _, s := range ss {
+		total += len(s)
+	}
+	if total == 0 {
+		return nil
+	}
+	var tt = make([]string, 0, total)
+	for _, s := range ss {
+		tt = append(tt, s...)
+	}
+	return tt
+}
+
 // SliceEqualFold reports whether s and t, interpreted as UTF-8 strings,
 // are equal under Unicode case-folding, which is a more general
 // form of case-sensitivity.
