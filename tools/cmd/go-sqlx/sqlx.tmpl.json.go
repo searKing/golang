@@ -173,6 +173,23 @@ func (arg {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, 
 	return nil
 }
 
+func (arg {{.StructType}}) Add{{.StructType}}WithTx(ctx context.Context, tx *sqlx.Tx, update bool) error {
+	query := sqlx_.SimpleStatements{
+		TableName: arg.TableName(),
+		Columns:   arg.ColumnEditor().AppendAll(false).Columns(),
+	}.NamedInsertStatement(update)
+
+	_, err := tx.NamedExecContext(ctx, query, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
+	}
+	return nil
+}
+
 func (arg {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.DB, conds []string) error {
 	query := sqlx_.SimpleStatements{
 		TableName:  arg.TableName(),
@@ -187,7 +204,23 @@ func (arg {{.StructType}}) Delete{{.StructType}}(ctx context.Context, db *sqlx.D
 		return err
 {{- end}}
 	}
+	return nil
+}
 
+func (arg {{.StructType}}) Delete{{.StructType}}WithTx(ctx context.Context, tx *sqlx.Tx, conds []string) error {
+	query := sqlx_.SimpleStatements{
+		TableName:  arg.TableName(),
+		Conditions: conds, // WHERE 条件
+	}.NamedDeleteStatement()
+
+	_, err := tx.NamedExecContext(ctx, query, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
+	}
 	return nil
 }
 
@@ -199,6 +232,25 @@ func (arg {{.StructType}}) Update{{.StructType}}(ctx context.Context, db *sqlx.D
 	}.NamedUpdateStatement(insert)
 
 	_, err := db.NamedExecContext(ctx, query, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
+	}
+
+	return nil
+}
+
+func (arg {{.StructType}}) Update{{.StructType}}WithTx(ctx context.Context, tx *sqlx.Tx, cols []string, conds []string, insert bool) error {
+	query := sqlx_.SimpleStatements{
+		TableName:  arg.TableName(),
+		Columns:    cols,  // 要查询或修改的列名
+		Conditions: conds, // WHERE 条件
+	}.NamedUpdateStatement(insert)
+
+	_, err := tx.NamedExecContext(ctx, query, arg)
 	if err != nil {
 {{- if .WithQueryInfo }}
 		return fmt.Errorf("%w, sql %q", err, query)
