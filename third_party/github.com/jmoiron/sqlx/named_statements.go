@@ -102,7 +102,7 @@ func (s SimpleStatements) NamedSelectStatement(appends ...string) string {
 //	// INSERT INTO foo DEFAULT VALUES
 func (s SimpleStatements) NamedInsertStatement(update bool, appends ...string) string {
 	insertOption := s.InsertOption
-	if len(s.Columns) > 0 && update {
+	if len(s.Columns)+len(s.Conditions) > 0 && update {
 		insertOption = InsertOptionUpdate
 	}
 	switch insertOption {
