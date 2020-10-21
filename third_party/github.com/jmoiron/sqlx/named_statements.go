@@ -105,30 +105,31 @@ func (s SimpleStatements) NamedInsertStatement(update bool, appends ...string) s
 	if len(s.Columns)+len(s.Conditions) > 0 && update {
 		insertOption = InsertOptionUpdate
 	}
+	cols := strings_.SliceUnique(strings_.SliceCombine(s.Columns, s.Conditions))
 	switch insertOption {
 	case InsertOptionReplace:
 		return fmt.Sprintf(`REPLACE INTO %s %s`,
 			s.TableName,
-			NamedInsertArgumentsCombined(strings_.SliceCombine(s.Columns, s.Conditions)...)) + " " + strings.Join(appends, "")
+			NamedInsertArgumentsCombined(cols...)) + " " + strings.Join(appends, "")
 	case InsertOptionUpdate:
 		return fmt.Sprintf(`INSERT INTO %s %s ON DUPLICATE KEY UPDATE %s`,
 			s.TableName,
-			NamedInsertArgumentsCombined(strings_.SliceCombine(s.Columns, s.Conditions)...),
+			NamedInsertArgumentsCombined(cols...),
 			NamedUpdateArguments(s.Columns...)) + " " + strings.Join(appends, "")
 	case InsertOptionIgnore:
 		return fmt.Sprintf(`INSERT IGNORE INTO %s %s`,
 			s.TableName,
-			NamedInsertArgumentsCombined(strings_.SliceCombine(s.Columns, s.Conditions)...)) + " " + strings.Join(appends, "")
+			NamedInsertArgumentsCombined(cols...)) + " " + strings.Join(appends, "")
 	case InsertOptionDelayed:
 		return fmt.Sprintf(`INSERT DELAYED INTO %s %s`,
 			s.TableName,
-			NamedInsertArgumentsCombined(strings_.SliceCombine(s.Columns, s.Conditions)...)) + " " + strings.Join(appends, "")
+			NamedInsertArgumentsCombined(cols...)) + " " + strings.Join(appends, "")
 	case InsertOptionInsert:
 		fallthrough
 	default:
 		return fmt.Sprintf(`INSERT INTO %s %s`,
 			s.TableName,
-			NamedInsertArgumentsCombined(strings_.SliceCombine(s.Columns, s.Conditions)...)) + " " + strings.Join(appends, "")
+			NamedInsertArgumentsCombined(cols...)) + " " + strings.Join(appends, "")
 	}
 }
 
