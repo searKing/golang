@@ -56,6 +56,13 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 		switch col {
 {{- range .Fields}}	
 		case m.MapColumn({{$.StructType}}Field{{.FieldName}}):
+			v := reflect.ValueOf(&m.{{.FieldName}})
+			if v.Type().NumMethod() > 0 && v.CanInterface() {
+				if u, ok := v.Interface().(sql.Scanner); ok {
+					return u.Scan(val)
+				}
+			}
+
 			data, err := json.Marshal(val)
 			if err != nil {
 				return fmt.Errorf("marshal col %q, got %w", col, err)
