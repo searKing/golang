@@ -124,7 +124,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 			{
 				for _, protoTag := range protoTags.Tags() {
 					goTag, _ := goTags[protoTag.Key]
-
+					goTag.Key = protoTag.Key
 					if protoTag.Name != "" {
 						goTag.Name = protoTag.Name
 					}
@@ -132,9 +132,10 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 
 					goTags[protoTag.Key] = goTag
 				}
-				if goTags.AstString() != field.Tag.Value {
+				netTag := goTags.AstString()
+				if netTag != field.Tag.Value {
 					g.fileChanged = true
-					field.Tag.Value = goTags.AstString()
+					field.Tag.Value = netTag
 				}
 			}
 		}

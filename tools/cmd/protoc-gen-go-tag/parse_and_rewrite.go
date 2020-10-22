@@ -51,6 +51,8 @@ func Rewrite(g *generator.Generator) {
 			s := StructInfo{}
 			s.StructNameInProto = messageType.GetName()
 			s.StructNameInGo = generator.CamelCase(messageType.GetName())
+
+			//typeNames := []string{s.StructNameInGo}
 			for _, field := range messageType.GetField() {
 				if field.GetOptions() == nil {
 					continue
@@ -67,16 +69,19 @@ func Rewrite(g *generator.Generator) {
 					if err != nil {
 						g.Error(err, "failed to parse struct tag in field extension")
 					}
+
 					s.FieldInfos = append(s.FieldInfos, FieldInfo{
 						FieldNameInProto: field.GetName(),
-						FieldNameInGo:    generator.CamelCase(field.GetName()),
-						FieldTag:         tags,
+						//FieldNameInGo:    generator.CamelCaseSlice(append(typeNames, generator.CamelCase(field.GetName()))),
+						FieldNameInGo: generator.CamelCase(field.GetName()),
+						FieldTag:      tags,
 					})
 				}
 			}
 			if len(s.FieldInfos) > 0 {
 				f.StructInfos = append(f.StructInfos, s)
 			}
+
 		}
 		if len(f.StructInfos) > 0 {
 			protoFiles = append(protoFiles, f)
