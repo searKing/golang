@@ -65,6 +65,7 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 					if err := u.Scan(val); err != nil {
 						return fmt.Errorf("unmarshal col %q, got %w", col, err)
 					}
+					break
 				}
 			}
 
