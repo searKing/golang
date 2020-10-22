@@ -23,6 +23,8 @@ import (
 
 	reflect_ "github.com/searKing/golang/go/reflect"
 	sqlx_ "github.com/searKing/golang/third_party/github.com/jmoiron/sqlx"
+	sql_ "github.com/searKing/golang/go/database/sql"
+
 
 {{- if .WithDao }}
 	"github.com/jmoiron/sqlx"
