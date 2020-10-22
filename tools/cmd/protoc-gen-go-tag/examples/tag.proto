@@ -2,14 +2,15 @@ syntax = "proto3";
 
 package pb;
 
-import "google/protobuf/descriptor.proto";
+//import "google/protobuf/descriptor.proto";
 import "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag/tag.proto";
 
 message Http{
-  string version = 1[json_name = "Url", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\""}];;
-  Url url = 2[json_name = "Url", (google.protobuf.field_tag) = {struct_tag: "json:\"url_tag,omitempty\""}];
+  string protocol = 1;
+  string version = 2[json_name = "Url", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\""}];;
+  Url url = 3[json_name = "Url", (google.protobuf.field_tag) = {struct_tag: "json:\"url_tag,omitempty\""}];
   message Url {
-    string scheme = 1[json_name = "Scheme", (google.protobuf.field_tag) = {struct_tag: "json:\"schema_tah,omitempty\""}];
+    string scheme = 1[json_name = "Scheme", (google.protobuf.field_tag) = {struct_tag: "json:\"schema_tag,omitempty\""}];
     //  string scheme = 1[json_name = "Scheme"];
   }
 }

@@ -33,16 +33,16 @@ func main() {
 	// report failure.
 	g := generator.New()
 
-	//data, err := ioutil.ReadAll(os.Stdin)
-	//if err != nil {
-	//	g.Error(err, "reading input")
-	//}
-	//ioutil.WriteFile("in.pb", data, 0666)
-	//return
-	data, err := ioutil.ReadFile("in.pb")
+	data, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		g.Error(err, "reading input")
 	}
+	//ioutil.WriteFile("in.pb", data, 0666)
+	//return
+	//data, err := ioutil.ReadFile("in.pb")
+	//if err != nil {
+	//	g.Error(err, "reading input")
+	//}
 
 	if err := proto.Unmarshal(data, g.Request); err != nil {
 		g.Error(err, "parsing input proto")
