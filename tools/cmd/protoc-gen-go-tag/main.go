@@ -35,7 +35,7 @@ func main() {
 
 	//data, err := ioutil.ReadAll(os.Stdin)
 	//if err != nil {
-	//	protoGenerator.Error(err, "reading input")
+	//	g.Error(err, "reading input")
 	//}
 	//ioutil.WriteFile("in.pb", data, 0666)
 	//return
