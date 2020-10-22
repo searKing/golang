@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/descriptor.proto";
+import "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag/tag.proto";
+
+message URL {
+  string scheme = 1[json_name = "Scheme", (google.protobuf.field_tag) = {struct_tag: "json:\"sql_data_id,omitempty\""}];
+  //  string scheme = 1[json_name = "Scheme"];
+}
