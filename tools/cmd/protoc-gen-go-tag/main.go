@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// protoc-gen-validator is a plugin for the Google protocol buffer compiler to Generate
+// protoc-gen-go-tag is a plugin for the Google protocol buffer compiler to Generate
 // Go code. Install it by building this program and making it accessible within
 // your PATH with the name:
-//	protoc-gen-go-validator
+//	protoc-gen-go-tag
 //
 // The 'go' suffix becomes part of the argument for the protocol compiler,
 // such that it can be invoked as:
-//	protoc --go-validator_out=paths=source_relative:. path/to/astFile.proto
+//	protoc --go-tag_out=paths=source_relative:. path/to/astFile.proto
 //
 // This generates Go bindings for the protocol buffer defined by astFile.proto.
 // With that input, the output will be written to:
