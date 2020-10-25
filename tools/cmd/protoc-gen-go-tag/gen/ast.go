@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package gen
 
 import (
 	"fmt"
@@ -112,16 +112,12 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 			}
 			protoTags := protoField.FieldTag
 
-			switch protoField.UpdateStrategy {
-			case tag.FieldTag_replace:
-				field.Tag = nil
-			default:
-			}
 			if field.Tag == nil {
 				field.Tag = &ast.BasicLit{}
 			}
+			goTag := field.Tag.Value
 
-			goTags, err := reflect.ParseAstStructTag(field.Tag.Value)
+			goTags, err := reflect.ParseAstStructTag(goTag)
 			if err != nil {
 				g.goGenerator.protoGenerator.Error(err, "malformed struct tag in field extension")
 			}
@@ -134,14 +130,20 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 					if protoTag.Name != "" {
 						goTag.Name = protoTag.Name
 					}
+
+					switch protoField.UpdateStrategy {
+					case tag.FieldTag_replace:
+						goTag.Options = nil
+					default:
+					}
 					goTag.AddOptions(protoTag.Options...)
 
 					goTags[protoTag.Key] = goTag
 				}
-				netTag := goTags.AstString()
-				if netTag != field.Tag.Value {
+				newGoTag := goTags.AstString()
+				if newGoTag != goTag {
 					g.fileChanged = true
-					field.Tag.Value = netTag
+					field.Tag.Value = newGoTag
 				}
 			}
 		}

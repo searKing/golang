@@ -25,6 +25,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
+	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/gen"
 )
 
 func main() {
@@ -60,7 +61,7 @@ func main() {
 
 	g.SetPackageNames()
 	g.BuildTypeNameMap()
-	Rewrite(g)
+	gen.Rewrite(g)
 
 	// Send back the results.
 	data, err = proto.Marshal(g.Response)
