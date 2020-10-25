@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/searKing/golang/go/reflect"
+	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -111,6 +112,11 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 			}
 			protoTags := protoField.FieldTag
 
+			switch protoField.UpdateStrategy {
+			case tag.FieldTag_replace:
+				field.Tag = nil
+			default:
+			}
 			if field.Tag == nil {
 				field.Tag = &ast.BasicLit{}
 			}

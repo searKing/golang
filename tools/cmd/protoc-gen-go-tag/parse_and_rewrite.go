@@ -17,6 +17,7 @@ type FieldInfo struct {
 	FieldNameInProto string
 	FieldNameInGo    string
 	FieldTag         reflect.StructTag
+	UpdateStrategy   pb.FieldTag_UpdateStrategy
 }
 type StructInfo struct {
 	StructNameInProto string
@@ -67,6 +68,7 @@ func WalkDescriptorProto(g *generator.Generator, dp *descriptor.DescriptorProto,
 				FieldNameInProto: field.GetName(),
 				FieldNameInGo:    generator.CamelCase(field.GetName()),
 				FieldTag:         tags,
+				UpdateStrategy:   v.GetUpdateStrategy(),
 			})
 		}
 	}
