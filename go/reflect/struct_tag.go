@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 // cmd/vendor/golang.org/x/tools/go/analysis/passes/structtag/structtag.go
@@ -33,12 +35,15 @@ var (
 // characters other than space (U+0020 ' '), quote (U+0022 '"'),
 // and colon (U+003A ':').  Each value is quoted using U+0022 '"'
 // characters and Go string literal syntax.
-type StructTag map[string]SubStructTag
+type StructTag struct {
+	tagsByKey   map[string]SubStructTag
+	orderedKeys []string
+}
 
 // ParseAstStructTag parses a single struct field tag of AST and returns the set of subTags.
 // This code is based on the validateStructTag code in package
 // tag `json:"name,omitempty"`, field.Tag.Value returned by AST
-func ParseAstStructTag(tag string) (StructTag, error) {
+func ParseAstStructTag(tag string) (*StructTag, error) {
 	if tag != "" {
 		var err error
 		tag, err = strconv.Unquote(tag)
@@ -52,12 +57,14 @@ func ParseAstStructTag(tag string) (StructTag, error) {
 // ParseStructTag parses a single struct field tag and returns the set of subTags.
 // This code is based on the validateStructTag code in package
 // tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
-func ParseStructTag(tag string) (StructTag, error) {
+func ParseStructTag(tag string) (*StructTag, error) {
 	// This code is based on the validateStructTag code in package
-	// cmd/vendor/golang.org/x/tools/go/analysis/passes/structtag/structtag.go.
-	var tags = map[string]SubStructTag{}
+	// golang.org/x/tools/go/analysis/passes/structtag/structtag.go.
+	var st = StructTag{
+		tagsByKey: map[string]SubStructTag{},
+	}
 
-	// Code borrowed from cmd/vendor/golang.org/x/tools/go/analysis/passes/structtag/structtag.go
+	// Code borrowed from golang.org/x/tools/go/analysis/passes/structtag/structtag.go
 	// Code borrowed from reflect/type.go
 	n := 0
 	for ; tag != ""; n++ {
@@ -165,17 +172,18 @@ func ParseStructTag(tag string) (StructTag, error) {
 			options = nil
 		}
 
-		if _, has := tags[key]; has {
+		if _, has := st.tagsByKey[key]; has {
 			return nil, errTagDuplicatedKey
 		}
-		tags[key] = SubStructTag{
+		st.orderedKeys = append(st.orderedKeys, key)
+		st.tagsByKey[key] = SubStructTag{
 			Key:     key,
 			Name:    name,
 			Options: options,
 		}
 	}
 
-	return tags, nil
+	return &st, nil
 }
 
 // Get returns the tag associated with the given key. If the key is present
@@ -183,83 +191,116 @@ func ParseStructTag(tag string) (StructTag, error) {
 // returned value will be the empty string. The ok return value reports whether
 // the tag exists or not (which the return value is nil).
 func (t StructTag) Get(key string) (tag SubStructTag, ok bool) {
-	tag, ok = t[key]
+	if t.orderedKeys == nil {
+		return SubStructTag{}, false
+	}
+	tag, ok = t.tagsByKey[key]
 	return
 }
 
+func (t *StructTag) appendOrderedKeysIfNotPresent(key string) {
+	if t.tagsByKey == nil {
+		t.tagsByKey = make(map[string]SubStructTag)
+	}
+	if _, has := t.tagsByKey[key]; !has {
+		t.orderedKeys = append(t.orderedKeys, key)
+	}
+}
+
 // Set sets the given tag. If the tag key already exists it'll override it
-func (t StructTag) Set(subTag SubStructTag) error {
+func (t *StructTag) Set(subTag SubStructTag) error {
 	if subTag.Key == "" {
 		return errKeyNotSet
 	}
-
-	t[subTag.Key] = subTag
+	t.appendOrderedKeysIfNotPresent(subTag.Key)
+	t.tagsByKey[subTag.Key] = subTag
 	return nil
 }
 
 // AddNameAndOptions sets the given name for the given key.
-func (t StructTag) SetName(key string, name string) {
-	val, _ := t[key]
+func (t *StructTag) SetName(key string, name string) {
+	t.appendOrderedKeysIfNotPresent(key)
+
+	val, _ := t.tagsByKey[key]
 	val.Key = key
 	val.Name = name
-	t[key] = val
+	t.tagsByKey[key] = val
 }
 
 // AddOptions adds the given option for the given key.
 // It appends to any existing options associated with key.
-func (t StructTag) AddOptions(key string, options ...string) {
-	val, _ := t[key]
+func (t *StructTag) AddOptions(key string, options ...string) {
+	t.appendOrderedKeysIfNotPresent(key)
+
+	val, _ := t.tagsByKey[key]
 	val.Key = key
 	val.AddOptions(options...)
-	t[key] = val
+	t.tagsByKey[key] = val
 }
 
 // DeleteOptions deletes the given options for the given key
 func (t StructTag) DeleteOptions(key string, options ...string) {
+	if t.tagsByKey == nil {
+		return
+	}
 
-	val, has := t[key]
+	val, has := t.tagsByKey[key]
 	if !has {
 		return
 	}
 	val.DeleteOptions(options...)
-	t[key] = val
+	t.tagsByKey[key] = val
 }
 
 // Delete deletes the tag for the given keys
 func (t StructTag) Delete(keys ...string) {
+	if t.tagsByKey == nil {
+		return
+	}
+
 	for _, key := range keys {
-		delete(t, key)
+		delete(t.tagsByKey, key)
+		strings_.SliceTrim(t.orderedKeys, key)
 	}
 }
 
-// StructTag returns a slice of subTags sorted by keys in increasing order.
-func (t StructTag) Tags() []SubStructTag {
+// Keys returns a slice of subTags.
+func (t StructTag) Keys() []string {
+	var keys []string
+	for key := range t.tagsByKey {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+// Keys returns a slice of subTags sorted by keys in increasing order.
+func (t StructTag) SortedKeys() []string {
 	keys := t.Keys()
+	sort.Strings(keys)
+	return keys
+}
+
+// Keys returns a slice of subTags with original order.
+func (t StructTag) OrderKeys() []string {
+	return t.orderedKeys
+}
+
+// SelectedTags returns a slice of subTags in keys order.
+func (t StructTag) SelectedTags(keys ...string) []SubStructTag {
 	if len(keys) == 0 {
 		return nil
 	}
 	var tags []SubStructTag
 	for _, key := range keys {
-		tags = append(tags, t[key])
+		tags = append(tags, t.tagsByKey[key])
 	}
 	return tags
 }
 
-// StructTag returns a slice of subTags sorted by keys in increasing order.
-func (t StructTag) Keys() []string {
-	var keys []string
-	for key, _ := range t {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-// String reassembles the subTags into a valid literal tag field representation
-// key is sorted by keys in increasing order.
+// SelectString reassembles the subTags selected by keys into a valid literal tag field representation
 // tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
-func (t StructTag) String() string {
-	tags := t.Tags()
+func (t StructTag) SelectString(keys ...string) string {
+	tags := t.SelectedTags(keys...)
 	if len(tags) == 0 {
 		return ""
 	}
@@ -274,14 +315,71 @@ func (t StructTag) String() string {
 	return buf.String()
 }
 
-// String reassembles the subTags into a valid literal tag field representation
-// tag `json:"name,omitempty"`, field.Tag.Value returned by AST
-func (t StructTag) AstString() string {
-	tag := t.String()
+// SelectAstString reassembles the subTags selected by keys into a valid literal tag field representation
+// tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
+func (t StructTag) SelectAstString(keys ...string) string {
+	tag := t.SelectString(keys...)
 	if tag == "" {
 		return tag
 	}
 	return "`" + tag + "`"
+}
+
+// Tags returns a slice of subTags with original order.
+func (t StructTag) Tags() []SubStructTag {
+	return t.SelectedTags(t.Keys()...)
+}
+
+// OrderedTags returns a slice of subTags sorted by keys in increasing order.
+func (t StructTag) SortedTags() []SubStructTag {
+	return t.SelectedTags(t.SortedKeys()...)
+}
+
+// Tags returns a slice of subTags with original order.
+func (t StructTag) OrderedTags() []SubStructTag {
+	return t.SelectedTags(t.OrderKeys()...)
+}
+
+// String reassembles the subTags into a valid literal tag field representation
+// key is random.
+// tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
+func (t StructTag) String() string {
+	return t.SelectString(t.Keys()...)
+}
+
+// String reassembles the subTags into a valid literal tag field representation
+// key is sorted by keys in increasing order.
+// tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
+func (t StructTag) SortedString() string {
+	return t.SelectString(t.SortedKeys()...)
+}
+
+// String reassembles the subTags into a valid literal tag field representation
+// key is in the original order.
+// tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
+func (t StructTag) OrderedString() string {
+	return t.SelectString(t.OrderKeys()...)
+}
+
+// AstString reassembles the subTags into a valid literal ast tag field representation
+// key is random.
+// tag `json:"name,omitempty"`, field.Tag.Value returned by AST
+func (t StructTag) AstString() string {
+	return t.SelectAstString(t.Keys()...)
+}
+
+// SortedAstString reassembles the subTags into a valid literal ast tag field representation
+// key is sorted by keys in increasing order.
+// tag `json:"name,omitempty"`, field.Tag.Value returned by AST
+func (t StructTag) SortedAstString() string {
+	return t.SelectAstString(t.SortedKeys()...)
+}
+
+// OrderedAstString reassembles the subTags into a valid literal ast tag field representation
+// key is in the original order.
+// tag `json:"name,omitempty"`, field.Tag.Value returned by AST
+func (t StructTag) OrderedAstString() string {
+	return t.SelectAstString(t.OrderKeys()...)
 }
 
 var checkTagDups = []string{"json", "xml"}
