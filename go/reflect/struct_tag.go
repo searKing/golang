@@ -7,6 +7,7 @@ package reflect
 import (
 	"bytes"
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -231,25 +232,31 @@ func (t StructTag) Delete(keys ...string) {
 	}
 }
 
-// StructTag returns a slice of subTags.
+// StructTag returns a slice of subTags sorted by keys in increasing order.
 func (t StructTag) Tags() []SubStructTag {
+	keys := t.Keys()
+	if len(keys) == 0 {
+		return nil
+	}
 	var tags []SubStructTag
-	for _, tag := range t {
-		tags = append(tags, tag)
+	for _, key := range keys {
+		tags = append(tags, t[key])
 	}
 	return tags
 }
 
-// StructTag returns a slice of subTags.
+// StructTag returns a slice of subTags sorted by keys in increasing order.
 func (t StructTag) Keys() []string {
 	var keys []string
 	for key, _ := range t {
 		keys = append(keys, key)
 	}
+	sort.Strings(keys)
 	return keys
 }
 
 // String reassembles the subTags into a valid literal tag field representation
+// key is sorted by keys in increasing order.
 // tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
 func (t StructTag) String() string {
 	tags := t.Tags()

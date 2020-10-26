@@ -12,7 +12,6 @@ import (
 )
 
 func TestGetppid(t *testing.T) {
-
 	if os.Getenv("GO_WANT_HELPER_PROCESS") == "1" {
 		fmt.Print(os.Getppid())
 		os.Exit(0)
