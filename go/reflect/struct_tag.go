@@ -292,7 +292,11 @@ func (t StructTag) SelectedTags(keys ...string) []SubStructTag {
 	}
 	var tags []SubStructTag
 	for _, key := range keys {
-		tags = append(tags, t.tagsByKey[key])
+		tag, has := t.tagsByKey[key]
+		if !has {
+			continue
+		}
+		tags = append(tags, tag)
 	}
 	return tags
 }
