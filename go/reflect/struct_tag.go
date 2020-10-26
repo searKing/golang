@@ -239,7 +239,7 @@ func (t *StructTag) AddOptions(key string, options ...string) {
 }
 
 // DeleteOptions deletes the given options for the given key
-func (t StructTag) DeleteOptions(key string, options ...string) {
+func (t *StructTag) DeleteOptions(key string, options ...string) {
 	if t.tagsByKey == nil {
 		return
 	}
@@ -253,7 +253,7 @@ func (t StructTag) DeleteOptions(key string, options ...string) {
 }
 
 // Delete deletes the tag for the given keys
-func (t StructTag) Delete(keys ...string) {
+func (t *StructTag) Delete(keys ...string) {
 	if t.tagsByKey == nil {
 		return
 	}
