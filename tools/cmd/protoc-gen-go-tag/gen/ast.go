@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/searKing/golang/go/reflect"
+	strings_ "github.com/searKing/golang/go/strings"
 	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -125,7 +126,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 			// rewrite tags
 			{
 				for _, protoTag := range protoTags.Tags() {
-					goTag, _ := goTags[protoTag.Key]
+					goTag, _ := goTags.Get(protoTag.Key)
 					goTag.Key = protoTag.Key
 					if protoTag.Name != "" {
 						goTag.Name = protoTag.Name
@@ -137,10 +138,13 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 					default:
 					}
 					goTag.AddOptions(protoTag.Options...)
-
-					goTags[protoTag.Key] = goTag
+					_ = goTags.Set(goTag)
 				}
-				newGoTag := goTags.AstString()
+
+				// struct tags: protobuf, json, other tags ordered by ascii
+				var keys = []string{"protobuf", "json"}
+				keys = append(keys, strings_.SliceTrim(keys, "protobuf", "json")...)
+				newGoTag := goTags.SelectAstString(keys...)
 				if newGoTag != goTag {
 					g.fileChanged = true
 					field.Tag.Value = newGoTag
