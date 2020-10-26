@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package reflect_test
 
 import (
@@ -123,7 +127,7 @@ func TestParseStructTag(t *testing.T) {
 			}
 
 			for _, tag := range ts.exp {
-				got := tags[tag.Key]
+				got, _ := tags.Get(tag.Key)
 				if !reflect.DeepEqual(tag, got) {
 					t.Errorf("#%d, parse\n\twant: %#v\n\tgot : %#v", i, tag, got)
 				}
@@ -254,8 +258,8 @@ func TestTags_Delete(t *testing.T) {
 	}
 
 	tags.Delete("xml")
-	if len(tags) != 2 {
-		t.Fatalf("tag length should be 2, have %d", len(tags))
+	if len(tags.Keys()) != 2 {
+		t.Fatalf("tag length should be 2, have %d", len(tags.Keys()))
 	}
 
 	found, ok := tags.Get("json")
@@ -338,5 +342,52 @@ func TestTags_String(t *testing.T) {
 	got := tags.String()
 	if len(got) != len(tag) {
 		t.Errorf("string\n\twant: %#v\n\tgot : %#v", tag, got)
+	}
+}
+
+func TestTags_OrderedString(t *testing.T) {
+	tag := `json:"foo" yaml:"bar,omitempty" xml:"-"`
+
+	tags, err := reflect_.ParseStructTag(tag)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := tags.OrderedString()
+	want := `json:"foo" yaml:"bar,omitempty" xml:"-"`
+
+	if got != want {
+		t.Errorf("string\n\twant: %#v\n\tgot : %#v", want, got)
+	}
+}
+
+func TestTags_SortedString(t *testing.T) {
+	tag := `json:"foo" yaml:"bar,omitempty" xml:"-"`
+
+	tags, err := reflect_.ParseStructTag(tag)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := tags.SortedString()
+	want := `json:"foo" xml:"-" yaml:"bar,omitempty"`
+
+	if got != want {
+		t.Errorf("string\n\twant: %#v\n\tgot : %#v", want, got)
+	}
+}
+
+func TestTags_AstString(t *testing.T) {
+	tag := `json:"foo" yaml:"bar,omitempty" xml:"-"`
+
+	tags, err := reflect_.ParseStructTag(tag)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := tags.AstString()
+	want := "`json:\"foo\" yaml:\"bar,omitempty\" xml:\"-\"`"
+	if len(got) != len(want) {
+		t.Errorf("string\n\twant: %#v\n\tgot : %#v", want, got)
 	}
 }
