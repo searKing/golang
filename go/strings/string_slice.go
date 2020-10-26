@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package strings
 
 import (
@@ -57,10 +61,10 @@ func SliceTrimEmpty(ss ...string) []string {
 	})
 }
 
-// SliceTrim returns a slice of the string ss with t removed.
-func SliceTrim(s []string, t string) []string {
-	return SliceTrimFunc(s, func(s string) bool {
-		return s == t
+// SliceTrim returns a slice of the string ss with tt removed.
+func SliceTrim(ss []string, tt ...string) []string {
+	return SliceTrimFunc(ss, func(s string) bool {
+		return SliceContains(tt, s)
 	})
 }
 
@@ -76,14 +80,21 @@ func SliceTrimFunc(ss []string, f func(s string) bool) []string {
 	return trimmed
 }
 
-// SliceContains  reports whether s is within ss.
-func SliceContains(ss []string, s string) bool {
-	for _, v := range ss {
-		if v == s {
-			return true
-		}
+// SliceContains  reports whether any t in tt is within ss.
+func SliceContains(ss []string, tt ...string) bool {
+	if len(tt) == 0 {
+		return false
 	}
-	return false
+
+	if len(tt) == 1 {
+		for _, v := range ss {
+			if v == tt[0] {
+				return true
+			}
+		}
+		return false
+	}
+	return SliceContains(ss, tt[1:]...)
 }
 
 // SliceUnique returns the given string slice with unique values.
