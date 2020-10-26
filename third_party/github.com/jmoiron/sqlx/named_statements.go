@@ -105,7 +105,7 @@ func (s SimpleStatements) NamedInsertStatement(update bool, appends ...string) s
 	if len(s.Columns)+len(s.Conditions) > 0 && update {
 		insertOption = InsertOptionUpdate
 	}
-	cols := strings_.SliceUnique(strings_.SliceCombine(s.Columns, s.Conditions))
+	cols := strings_.SliceUnique(strings_.SliceCombine(s.Columns, s.Conditions)...)
 	switch insertOption {
 	case InsertOptionReplace:
 		return fmt.Sprintf(`REPLACE INTO %s %s`,
