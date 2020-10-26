@@ -57,6 +57,13 @@ func SliceTrimEmpty(ss ...string) []string {
 	})
 }
 
+// SliceTrim returns a slice of the string ss with t removed.
+func SliceTrim(s []string, t string) []string {
+	return SliceTrimFunc(s, func(s string) bool {
+		return s == t
+	})
+}
+
 // SliceTrimFunc returns a slice of the string ss satisfying f(c) removed.
 func SliceTrimFunc(ss []string, f func(s string) bool) []string {
 	var trimmed []string
