@@ -67,7 +67,7 @@ func WalkDescriptorProto(g *generator.Generator, dp *descriptor.DescriptorProto,
 			s.FieldInfos = append(s.FieldInfos, FieldInfo{
 				FieldNameInProto: field.GetName(),
 				FieldNameInGo:    generator.CamelCase(field.GetName()),
-				FieldTag:         tags,
+				FieldTag:         *tags,
 				UpdateStrategy:   v.GetUpdateStrategy(),
 			})
 		}
