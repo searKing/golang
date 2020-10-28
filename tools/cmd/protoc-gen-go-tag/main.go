@@ -20,56 +20,31 @@
 package main
 
 import (
-	"io/ioutil"
+	"flag"
 	"os"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/generator"
-	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/gen"
+	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/ast"
+	gengo "google.golang.org/protobuf/cmd/protoc-gen-go/internal_gengo"
+	"google.golang.org/protobuf/compiler/protogen"
 )
 
 func main() {
-	// Begin by allocating a generator. The request and response structures are stored there
-	// so we can do error handling easily - the response structure contains the field to
-	// report failure.
-	g := generator.New()
+	var (
+		flags flag.FlagSet
+	)
+	os.Stdin, _ = os.Open("in.pb")
+	os.Stdout, _ = os.Create("out.pb")
+	protogen.Options{
+		ParamFunc: flags.Set,
+	}.Run(func(gen *protogen.Plugin) error {
+		gen.SupportedFeatures = gengo.SupportedFeatures
+		ast.Rewrite(gen)
 
-	data, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		g.Error(err, "reading input")
-	}
-	//ioutil.WriteFile("in.pb", data, 0666)
-	//return
-	//data, err := ioutil.ReadFile("in.pb")
-	//if err != nil {
-	//	g.Error(err, "reading input")
-	//}
-
-	if err := proto.Unmarshal(data, g.Request); err != nil {
-		g.Error(err, "parsing input proto")
-	}
-
-	if len(g.Request.FileToGenerate) == 0 {
-		g.Fail("no goFiles to Generate")
-	}
-
-	g.CommandLineParameters(g.Request.GetParameter())
-
-	// Create a wrapped version of the Descriptors and EnumDescriptors that
-	// point to the astFile that defines them.
-	g.WrapTypes()
-
-	g.SetPackageNames()
-	g.BuildTypeNameMap()
-	gen.Rewrite(g)
-
-	// Send back the results.
-	data, err = proto.Marshal(g.Response)
-	if err != nil {
-		g.Error(err, "failed to marshal output proto")
-	}
-	_, err = os.Stdout.Write(data)
-	if err != nil {
-		g.Error(err, "failed to write output proto")
-	}
+		for _, f := range gen.Files {
+			if f.Generate {
+				gengo.GenerateFile(gen, f)
+			}
+		}
+		return nil
+	})
 }

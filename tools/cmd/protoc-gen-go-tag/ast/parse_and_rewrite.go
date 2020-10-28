@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package gen
+package ast
 
 import (
+	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/golang/protobuf/protoc-gen-go/generator"
 	"github.com/searKing/golang/go/reflect"
 	strings_ "github.com/searKing/golang/go/strings"
 	pb "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag"
+	"google.golang.org/protobuf/compiler/protogen"
 )
 
 type FieldInfo struct {
@@ -39,12 +41,12 @@ func (si *StructInfo) FindField(name string) (FieldInfo, bool) {
 	return FieldInfo{}, false
 }
 
-func WalkDescriptorProto(g *generator.Generator, dp *descriptor.DescriptorProto, typeNames []string) []StructInfo {
+func WalkDescriptorProto(g *protogen.Plugin, dp *descriptor.DescriptorProto, typeNames []string) []StructInfo {
 	var ss []StructInfo
 
 	s := StructInfo{}
 	s.StructNameInProto = dp.GetName()
-	s.StructNameInGo = generator.CamelCaseSlice(append(typeNames, generator.CamelCase(dp.GetName())))
+	s.StructNameInGo = CamelCaseSlice(append(typeNames, CamelCase(dp.GetName())))
 
 	//typeNames := []string{s.StructNameInGo}
 	for _, field := range dp.GetField() {
@@ -61,12 +63,12 @@ func WalkDescriptorProto(g *generator.Generator, dp *descriptor.DescriptorProto,
 			tag := v.GetStructTag()
 			tags, err := reflect.ParseStructTag(tag)
 			if err != nil {
-				g.Error(err, "failed to parse struct tag in field extension")
+				g.Error(fmt.Errorf("failed to parse struct tag in field extension: %w", err))
 			}
 
 			s.FieldInfos = append(s.FieldInfos, FieldInfo{
 				FieldNameInProto: field.GetName(),
-				FieldNameInGo:    generator.CamelCase(field.GetName()),
+				FieldNameInGo:    CamelCase(field.GetName()),
 				FieldTag:         *tags,
 				UpdateStrategy:   v.GetUpdateStrategy(),
 			})
@@ -76,7 +78,7 @@ func WalkDescriptorProto(g *generator.Generator, dp *descriptor.DescriptorProto,
 		ss = append(ss, s)
 	}
 
-	typeNames = append(typeNames, generator.CamelCase(dp.GetName()))
+	typeNames = append(typeNames, CamelCase(dp.GetName()))
 	for _, nest := range dp.GetNestedType() {
 		nestSs := WalkDescriptorProto(g, nest, typeNames)
 		if len(nestSs) > 0 {
@@ -86,7 +88,7 @@ func WalkDescriptorProto(g *generator.Generator, dp *descriptor.DescriptorProto,
 	return ss
 }
 
-func Rewrite(g *generator.Generator) {
+func Rewrite(g *protogen.Plugin) {
 	var protoFiles []FileInfo
 
 	for _, protoFile := range g.Request.GetProtoFile() {
@@ -110,13 +112,12 @@ func Rewrite(g *generator.Generator) {
 		return
 	}
 
-	g.GenerateAllFiles()
-	if len(g.Response.GetFile()) == 0 {
+	if len(g.Response().GetFile()) == 0 {
 		return
 	}
 
 	rewriter := NewGenerator(protoFiles)
-	for _, f := range g.Response.GetFile() {
+	for _, f := range g.Response().GetFile() {
 		rewriter.ParseGoContent(f)
 	}
 	rewriter.Generate()

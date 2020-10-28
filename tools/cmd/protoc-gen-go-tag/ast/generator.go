@@ -2,16 +2,17 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package gen
+package ast
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
 
-	"github.com/golang/protobuf/protoc-gen-go/generator"
+	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -26,7 +27,7 @@ type Generator struct {
 	// proto's astFile info
 	protoFiles []FileInfo
 
-	protoGenerator *generator.Generator
+	protoGenerator *protogen.Plugin
 }
 
 func NewGenerator(protoFiles []FileInfo) *Generator {
@@ -45,7 +46,7 @@ func (g *Generator) ParseGoContent(outerFile *pluginpb.CodeGeneratorResponse_Fil
 
 	f, err := parser.ParseFile(fset, "", outerFile.GetContent(), mode)
 	if err != nil {
-		g.protoGenerator.Error(err, "failed to parse struct tag in field extension")
+		g.protoGenerator.Error(fmt.Errorf("failed to parse struct tag in field extension: %w", err))
 	}
 	g.addGoFile(f, outerFile)
 }
@@ -73,7 +74,7 @@ func (g *Generator) Generate() {
 			var buf bytes.Buffer
 			err := format.Node(&buf, file.fset, file.astFile)
 			if err != nil {
-				g.protoGenerator.Error(err, "failed to format go content")
+				g.protoGenerator.Error(fmt.Errorf("failed to format go content: %w", err))
 			}
 
 			content := buf.String()

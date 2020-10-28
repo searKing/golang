@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package gen
+package ast
 
 import (
 	"fmt"
@@ -80,7 +80,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 		}
 
 		if sExpr.Fields.NumFields() <= 0 {
-			g.goGenerator.protoGenerator.Error(fmt.Errorf("%s has no Fields", typ), "miss struct fields")
+			g.goGenerator.protoGenerator.Error(fmt.Errorf("miss struct fields: %w", fmt.Errorf("%s has no Fields", typ)))
 		}
 
 		// Handle comment
@@ -120,7 +120,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 
 			goTags, err := reflect.ParseAstStructTag(goTag)
 			if err != nil {
-				g.goGenerator.protoGenerator.Error(err, "malformed struct tag in field extension")
+				g.goGenerator.protoGenerator.Error(fmt.Errorf("malformed struct tag in field extension: %w", err))
 			}
 
 			// rewrite tags
