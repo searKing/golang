@@ -21,7 +21,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/ast"
 	gengo "google.golang.org/protobuf/cmd/protoc-gen-go/internal_gengo"
@@ -33,8 +32,8 @@ func main() {
 		flags flag.FlagSet
 	)
 	// For Debug Only
-	os.Stdin, _ = os.Open("in.pb")
-	os.Stdout, _ = os.Create("out.pb")
+	//os.Stdin, _ = os.Open("in.pb")
+	//os.Stdout, _ = os.Create("out.pb")
 	protogen.Options{
 		ParamFunc: flags.Set,
 	}.Run(func(gen *protogen.Plugin) error {
