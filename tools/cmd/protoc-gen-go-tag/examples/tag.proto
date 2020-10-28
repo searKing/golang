@@ -4,6 +4,7 @@ package pb;
 
 //import "google/protobuf/descriptor.proto";
 import "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag/tag.proto";
+option go_package = "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/examples;pb";
 
 message Http{
   string protocol = 1;
