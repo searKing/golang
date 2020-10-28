@@ -98,7 +98,7 @@ func (f {{.StructType}}Field) FieldName() string {
 		return "{{.FieldName}}"
 {{- end}}
 	}
-	return "{{.StructType}}Field(" + string(f) + ")"
+	return string(f)
 }
 
 
@@ -109,7 +109,7 @@ func (f {{.StructType}}Field) ColumnName() string {
 		return "{{.DbName}}"
 {{- end}}
 	}
-	return "{{.StructType}}Field(" + string(f) + ")"
+	return string(f)
 }
 
 func (a {{.StructType}}) ColumnEditor() *{{.StructType}}Columns {
