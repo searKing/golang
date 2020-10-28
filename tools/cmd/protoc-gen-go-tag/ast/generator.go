@@ -30,9 +30,10 @@ type Generator struct {
 	protoGenerator *protogen.Plugin
 }
 
-func NewGenerator(protoFiles []FileInfo) *Generator {
+func NewGenerator(protoFiles []FileInfo, protoGenerator *protogen.Plugin) *Generator {
 	return &Generator{
-		protoFiles: protoFiles,
+		protoFiles:     protoFiles,
+		protoGenerator: protoGenerator,
 	}
 }
 
@@ -78,8 +79,13 @@ func (g *Generator) Generate() {
 				g.protoGenerator.Error(fmt.Errorf("failed to format go content: %w", err))
 			}
 
-			content := buf.String()
-			file.outerFile.Content = &content
+			// fix Response will always be generated, so add a new generated file directly.
+			//content := buf.String()
+			//file.outerFile.Content = &content
+			_, err = g.protoGenerator.NewGeneratedFile(file.outerFile.GetName(), "").Write(buf.Bytes())
+			if err != nil {
+				g.protoGenerator.Error(fmt.Errorf("failed to new generated file to rewrite: %w", err))
+			}
 		}
 	}
 }
