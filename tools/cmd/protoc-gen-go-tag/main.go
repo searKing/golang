@@ -38,13 +38,17 @@ func main() {
 		ParamFunc: flags.Set,
 	}.Run(func(gen *protogen.Plugin) error {
 		gen.SupportedFeatures = gengo.SupportedFeatures
+		var originFiles []*protogen.GeneratedFile
 		for _, f := range gen.Files {
 			if f.Generate {
-				gengo.GenerateFile(gen, f)
+				originFiles = append(originFiles, gengo.GenerateFile(gen, f))
 			}
 		}
 		ast.Rewrite(gen)
 
+		for _, f := range originFiles {
+			f.Skip()
+		}
 		return nil
 	})
 }

@@ -111,12 +111,12 @@ func Rewrite(g *protogen.Plugin) {
 	if len(protoFiles) == 0 {
 		return
 	}
+	// g.Response() will generate files, so skip this step
+	//if len(g.Response().GetFile()) == 0 {
+	//	return
+	//}
 
-	if len(g.Response().GetFile()) == 0 {
-		return
-	}
-
-	rewriter := NewGenerator(protoFiles)
+	rewriter := NewGenerator(protoFiles, g)
 	for _, f := range g.Response().GetFile() {
 		rewriter.ParseGoContent(f)
 	}
