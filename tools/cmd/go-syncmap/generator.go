@@ -68,6 +68,9 @@ func (g *Generator) generate(typeInfo typeInfo) (render TmplMapRender) {
 	if len(values) == 0 {
 		log.Fatalf("no values defined for type %+v", typeInfo)
 	}
+
+	nilValName, nilValDecl := g.createValAndNameDecl(values[0])
+
 	return TmplMapRender{
 		MapTypeName:     values[0].mapName,
 		MapImport:       values[0].mapImport,
@@ -75,9 +78,9 @@ func (g *Generator) generate(typeInfo typeInfo) (render TmplMapRender) {
 		KeyTypeImport:   values[0].keyImport,
 		ValueTypeName:   strings_.LoadElse(values[0].valueIsPointer, "*", "") + values[0].valueTypePrefix + values[0].valueType,
 		ValueTypeImport: values[0].valueImport,
-		ValueTypeNilVal: strings_.LoadElseGet(values[0].valueIsPointer, "nil", func() string {
-			nilValName, _ := g.createValAndNameDecl(values[0])
-			return nilValName
+		ValueTypeNilVal: nilValName,
+		ValueTypeNilDecl: strings_.LoadElseGet(values[0].valueIsPointer, "nil", func() string {
+			return nilValDecl
 		}),
 	}
 }
