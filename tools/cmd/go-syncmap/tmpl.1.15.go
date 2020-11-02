@@ -2,4 +2,4 @@
 
 package main
 
-const WithMethodLoadAndDelete = false
+const WithMethodLoadAndDelete = true
