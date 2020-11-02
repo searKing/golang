@@ -5,6 +5,7 @@
 // go-syncmap Generates Go code using a package as a generic template for sync.Map.
 // Given the name of a sync.Map type T , and the name of a type Key and Value
 // go-syncmap will create a new self-contained Go source file implementing
+// from Go version 1.9 onward
 //	func (m *T) Store(key Key, value Value)
 //	func (m *T) LoadOrStore(key Key, value Value) (Value, bool)
 //	func (m *T) Load(key Key) (Value, bool)
@@ -32,6 +33,7 @@
 // in the same directory will create the file pill_syncmap.go, in package painkiller,
 // containing a definition of
 //
+// from Go version 1.9 onward
 //	func (m *Pill) Store(key int, value time.Time)
 //	func (m *Pill) LoadOrStore(key int, value time.Time) (time.Time, bool)
 //	func (m *Pill) Load(key int) (time.Time, bool)

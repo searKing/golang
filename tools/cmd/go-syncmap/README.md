@@ -11,6 +11,8 @@ go-syncmap will create a new self-contained Go source file implementing
 ```
 // type T sync.Map
 // T<Key,Value>
+
+# from Go version 1.9 onward 
 func (m *T) Load(key Key) (Value, bool)
 func (m *T) Store(key Key, value Value)
 func (m *T) LoadOrStore(key Key, value Value) (Value, bool)
@@ -43,6 +45,8 @@ in the same directory will create the file pill_syncmap.go, in package painkille
 containing a definition of
 
 ```
+
+# from Go version 1.9 onward 
 func (m *Pill) Store(key int, value string)
 func (m *Pill) LoadOrStore(key int, value string) (string, bool)
 func (m *Pill) Load(key int) (string, bool)
