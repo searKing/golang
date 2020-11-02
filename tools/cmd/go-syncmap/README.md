@@ -11,11 +11,14 @@ go-syncmap will create a new self-contained Go source file implementing
 ```
 // type T sync.Map
 // T<Key,Value>
+func (m *T) Load(key Key) (Value, bool)
 func (m *T) Store(key Key, value Value)
 func (m *T) LoadOrStore(key Key, value Value) (Value, bool)
-func (m *T) Load(key Key) (Value, bool)
 func (m *T) Delete(key Key)
 func (m *T) Range(f func(key Key, value Value) bool
+
+# from Go version 1.15 onward 
+func (m *T) LoadAndDelete(key Key) (Value, bool)
 ```
 
 The file is created in the same package and directory as the package that defines T, Key and Value.
@@ -45,6 +48,9 @@ func (m *Pill) LoadOrStore(key int, value string) (string, bool)
 func (m *Pill) Load(key int) (string, bool)
 func (m *Pill) Delete(key int)
 func (m *Pill) Range(f func(key int, value string) bool)
+
+# from Go version 1.15 onward 
+func (m *Pill) LoadAndDelete(key int) (string, bool)
 ```
 
 Typically this process would be run using go generate, like this:
