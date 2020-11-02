@@ -12,6 +12,7 @@ type TmplPackageRender struct {
 	MapRenders []TmplMapRender
 
 	// Options
+	WithSyncMapMethod       bool
 	WithMethodLoadAndDelete bool
 }
 

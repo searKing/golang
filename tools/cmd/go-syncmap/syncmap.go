@@ -146,6 +146,7 @@ func main() {
 	var render TmplPackageRender
 	render.GenerateToolArgs = goSyncMapToolName
 	render.GenerateToolArgs = strings.Join(os.Args[1:], " ")
+	render.WithSyncMapMethod = WithSyncMapMethod
 	render.WithMethodLoadAndDelete = WithMethodLoadAndDelete
 	render.PackageName = g.pkg.name
 
