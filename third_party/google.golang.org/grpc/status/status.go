@@ -12,11 +12,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type Status = status.Status
+
 // Newe returns a Status representing c and error, that is .
 // if err == nil, return codes.OK
 // if err != nil but c == codes.OK, return codes.Internal
 // otherwise, return c
-func Newe(c codes.Code, err error, details ...proto.Message) *status.Status {
+func Newe(c codes.Code, err error, details ...proto.Message) *Status {
 	if err == nil {
 		return status.New(codes.OK, "")
 	}
@@ -35,7 +37,7 @@ func Errore(c codes.Code, err error, details ...proto.Message) error {
 // FromError returns a Status representing err if it was produced from this
 // package or has a method `GRPCStatus() *Status`. Otherwise, ok is false and a
 // Status is returned with code.Code and the original error message.
-func FromError(c codes.Code, err error) (s *status.Status, ok bool) {
+func FromError(c codes.Code, err error) (s *Status, ok bool) {
 	stat, ok := status.FromError(err)
 	if ok {
 		return stat, ok
@@ -45,13 +47,13 @@ func FromError(c codes.Code, err error) (s *status.Status, ok bool) {
 
 // Convert is a convenience function which removes the need to handle the
 // boolean return value from FromError.
-func Convert(c codes.Code, err error) *status.Status {
+func Convert(c codes.Code, err error) *Status {
 	s, _ := FromError(c, err)
 	return s
 }
 
 // WithBadRequestDetails returns a new status with the provided bad requests messages appended to the status.
-func WithBadRequestDetails(s *status.Status, fields ...errdetails.BadRequest_FieldViolation) *status.Status {
+func WithBadRequestDetails(s *Status, fields ...errdetails.BadRequest_FieldViolation) *Status {
 	var badRequest errdetails.BadRequest
 	for _, f := range fields {
 		badRequest.FieldViolations = append(badRequest.FieldViolations, &f)
@@ -62,7 +64,7 @@ func WithBadRequestDetails(s *status.Status, fields ...errdetails.BadRequest_Fie
 // WithDetails returns a new status with the provided details messages appended to the status.
 // If any errors are encountered, it returns original status.
 // WithDetails does not change original code always.
-func WithDetails(s *status.Status, details ...proto.Message) *status.Status {
+func WithDetails(s *Status, details ...proto.Message) *Status {
 	stat, err := s.WithDetails(details...)
 	if err == nil {
 		return stat
