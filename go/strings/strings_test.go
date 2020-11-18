@@ -309,3 +309,91 @@ func TestJoinRepeat(t *testing.T) {
 		}
 	}
 }
+
+func TestPadLeft(t *testing.T) {
+	table := []struct {
+		Q   string
+		pad string
+		n   int
+		R   string
+	}{
+		{
+			Q:   "a",
+			pad: "*",
+			n:   -1,
+			R:   "a",
+		},
+		{
+			Q:   "a",
+			pad: "*",
+			n:   10,
+			R:   "*********a",
+		},
+		{
+			Q:   "a",
+			pad: "*^",
+			n:   5,
+			R:   "*^*^a",
+		},
+		{
+			Q:   "a",
+			pad: "*^",
+			n:   6,
+			R:   "*^*^ a",
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.PadLeft(test.Q, test.pad, test.n)
+		if qr != test.R {
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}
+
+func TestPadRight(t *testing.T) {
+	table := []struct {
+		Q   string
+		pad string
+		n   int
+		R   string
+	}{
+		{
+			Q:   "a",
+			pad: "*",
+			n:   -1,
+			R:   "a",
+		},
+		{
+			Q:   "a",
+			pad: "*",
+			n:   1,
+			R:   "a",
+		},
+		{
+			Q:   "a",
+			pad: "*",
+			n:   10,
+			R:   "a*********",
+		},
+		{
+			Q:   "a",
+			pad: "*^",
+			n:   5,
+			R:   "a*^*^",
+		},
+		{
+			Q:   "a",
+			pad: "*^",
+			n:   6,
+			R:   "a *^*^",
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.PadRight(test.Q, test.pad, test.n)
+		if qr != test.R {
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}

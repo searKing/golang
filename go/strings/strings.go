@@ -96,7 +96,6 @@ func JoinRepeat(s string, sep string, n int) string {
 	return b.String()
 }
 
-
 // MapLeading returns a copy of the string s with its first characters modified
 // according to the mapping function. If mapping returns a negative value, the character is
 // dropped from the string with no replacement.
@@ -125,4 +124,45 @@ func ToLowerLeading(s string) string {
 // ToUpperLeading returns s with it's first Unicode letter mapped to their upper case.
 func ToUpperLeading(s string) string {
 	return MapLeading(unicode.ToUpper, s)
+}
+
+// PadLeft returns s padded to length n, padded left with repeated pad
+// return s directly if pad is empty
+// padding s with {{pad}} and spaces(less than len(pad)) as a prefix, as [pad]...[pad][space]...[space][s]
+func PadLeft(s string, pad string, n int) string {
+	if len(pad) == 0 {
+		return s
+	}
+
+	pc, sc := computePad(s, pad, n)
+
+	return strings.Repeat(pad, pc) + strings.Repeat(" ", sc) + s
+}
+
+// PadRight returns s padded to length n, padded right with repeated pad
+// return s directly if pad is empty
+// padding s with {{pad}} and spaces(less than len(pad))  as a suffix, as [s][space]...[space][pad]...[pad]
+func PadRight(s string, pad string, n int) string {
+	if len(pad) == 0 {
+		return s
+	}
+	pc, sc := computePad(s, pad, n)
+
+	return s + strings.Repeat(" ", sc) + strings.Repeat(pad, pc)
+}
+
+func computePad(s string, pad string, n int) (padCount, spaceCount int) {
+	if len(pad) == 0 {
+		return 0, 0
+	}
+
+	c := n - len(s)
+	if c < 0 {
+		c = 0
+	}
+
+	padCount = c / len(pad)
+
+	spaceCount = c - padCount*len(pad)
+	return padCount, spaceCount
 }
