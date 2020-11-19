@@ -41,41 +41,58 @@ func (_ {{.StructType}}) TableName() string {
 	return "{{.TableName}}"
 }
 
-{{- range .Fields }}
-// Column{{$package_scope.StructType}} return column name in db, from struct tag db:"{{.DbName}}"
-func (_ {{$package_scope.StructType}})Column{{.FieldName}}() string{
-	return "{{.DbName}}"
+func (m {{.StructType}}) TableColumn(col string) string {
+	return fmt.Sprintf("%s.%s", m.TableName(),col)
 }
 
-// TableColumn{{$package_scope.StructType}} return column name with TableName
-// "{{$package_scope.TableName}}.{{.DbName}}"
-func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
-	// avoid runtime cost of fmt.Sprintf
-	// return fmt.Sprintf("%s.%s", a.TableName(), a.Column{{$package_scope.StructType}}())
-	return "{{$package_scope.TableName}}.{{.DbName}}"
-}
-
-// MapColumn{{$package_scope.StructType}} return column name with TableName
-// "{{$package_scope.TableName}}_{{.DbName}}"
-func (m {{$package_scope.StructType}})MapColumn{{.FieldName}}() string{
-	// avoid runtime cost of fmt.Sprintf
-	// return fmt.Sprintf("%s_%s", m.TableName(), m.Column{{$package_scope.StructType}}())
-	// return "{{$package_scope.TableName}}_{{.DbName}}"
-	return sql_.CompliantName(m.TableColumn{{.FieldName}}())
-}
-{{- end }}
-
-func (m {{.StructType}}) Column(col {{.StructType}}Field) string {
-	return col.ColumnName()
-}
-
-func (m {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
-	return fmt.Sprintf("%s.%s", m.TableName(), m.Column(col))
-}
-
-func (m {{.StructType}}) MapColumn(col {{.StructType}}Field) string {
+// CompliantTableColumn returns a compliant TableColumn name
+// replace special runes with '_'
+// a.b -> a_b
+func (m {{.StructType}}) CompliantTableColumn(col string) string {
 	return sql_.CompliantName(m.TableColumn(col))
-	//return fmt.Sprintf("%s_%s", m.TableName(), m.Column(col))
+}
+
+func (m {{.StructType}}) MapColumn(col string) string {
+	return m.CompliantTableColumn(col)
+	//return fmt.Sprintf("%s_%s", m.TableName(), col)
+}
+
+func (m {{.StructType}}) Columns() []string {
+	var cols []string
+{{- range .Fields}}
+	cols = append(cols, m.Column{{.FieldName}}())
+{{- end}}
+	return cols
+}
+
+func (m {{.StructType}}) NonzeroColumns() []string {
+	var cols []string
+{{- range .Fields}}
+	{
+		var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+		if(!zero){
+		cols = append(cols, m.Column{{.FieldName}}())
+		}
+	}
+{{- end}}
+	return cols
+}
+
+func (m {{.StructType}}) NonzeroColumnsIn(cols ...string) []string {
+	var nonzeroCols []string
+	for _, col := range cols {
+		switch col {
+{{- range .Fields}}	
+		case m.Column{{.FieldName}}():
+			var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+			if(!zero){
+				cols = append(cols, m.Column{{.FieldName}}())
+			}
+{{- end}}
+		default:
+		}
+	}
+	return nonzeroCols
 }
 
 // MarshalMap marshal themselves into or append a valid map
@@ -84,7 +101,7 @@ func (m {{.StructType}}) MarshalMap(valueByCol map[string]interface{}) map[strin
 		valueByCol = map[string]interface{}{}
 	}
 {{- range .Fields}}	
-	valueByCol[m.TableColumn({{$.StructType}}Field{{.FieldName}})] = m.{{.FieldName}}
+	valueByCol[m.TableColumn{{.FieldName}}()] = m.{{.FieldName}}
 {{- end}}
 	return valueByCol
 }
@@ -95,7 +112,7 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 	for col, val := range valueByCol {
 		switch col {
 {{- range .Fields}}	
-		case m.MapColumn({{$.StructType}}Field{{.FieldName}}):
+		case m.MapColumn{{.FieldName}}():
 			// for sql.Scanner
 			v := reflect.ValueOf(&m.{{.FieldName}})
 			if v.Type().NumMethod() > 0 && v.CanInterface() {
@@ -120,76 +137,34 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 	}
 	return nil
 }
-// 列名
-type {{.StructType}}Field string
 
-const (
 {{- range .Fields }}
-	{{$.StructType}}Field{{.FieldName}}    {{$.StructType}}Field = "{{.DbName}}"
+// Column{{$package_scope.StructType}} return column name in db, from struct tag db:"{{.DbName}}"
+func (_ {{$package_scope.StructType}})Column{{.FieldName}}() string{
+	return "{{.DbName}}"
+}
 {{- end }}
-)
 
-func (f {{.StructType}}Field) FieldName() string {
-	switch f {
-{{- range .Fields}}
-	case {{$.StructType}}Field{{.FieldName}}:
-		return "{{.FieldName}}"
-{{- end}}
-	}
-	return string(f)
+{{- range .Fields }}
+// TableColumn{{$package_scope.StructType}} return column name with TableName
+// "{{$package_scope.TableName}}.{{.DbName}}"
+func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
+	// avoid runtime cost of fmt.Sprintf
+	// return fmt.Sprintf("%s.%s", a.TableName(), a.Column{{$package_scope.StructType}}())
+	return "{{$package_scope.TableName}}.{{.DbName}}"
 }
+{{- end }}
 
-
-func (f {{.StructType}}Field) ColumnName() string {
-	switch f {
-{{- range .Fields}}
-	case {{$.StructType}}Field{{.FieldName}}:
-		return "{{.DbName}}"
-{{- end}}
-	}
-	return string(f)
+{{- range .Fields }}
+// MapColumn{{$package_scope.StructType}} return column name with TableName
+// "{{$package_scope.TableName}}_{{.DbName}}"
+func (m {{$package_scope.StructType}})MapColumn{{.FieldName}}() string{
+	// avoid runtime cost of fmt.Sprintf
+	// return fmt.Sprintf("%s_%s", m.TableName(), m.Column{{$package_scope.StructType}}())
+	// return "{{$package_scope.TableName}}_{{.DbName}}"
+	return sql_.CompliantName(m.TableColumn{{.FieldName}}())
 }
-
-func (a {{.StructType}}) ColumnEditor() *{{.StructType}}Columns {
-	return &{{.StructType}}Columns{
-		arg: a,
-	}
-}
-
-// columns
-
-type {{.StructType}}Columns struct {
-	arg  {{.StructType}}
-	cols []string
-}
-
-func (c {{.StructType}}Columns) Columns(cols ...string) []string {
-	return append(c.cols, cols...)
-}
-
-func (c *{{.StructType}}Columns) AppendColumn(col {{.StructType}}Field, forceAppend bool) *{{.StructType}}Columns {
-	if forceAppend {
-		c.cols = append(c.cols, col.ColumnName())
-		return c
-	}
-	var zero = reflect_.IsZeroValue(reflect.ValueOf(c.arg).FieldByName(col.FieldName()))
-	if !zero {
-		c.cols = append(c.cols, col.ColumnName())
-	}
-	return c
-}
-
-func (c *{{.StructType}}Columns) AppendAll(forceAppend bool) *{{.StructType}}Columns {
-	return c.
-{{- range .Fields}}
-		AppendColumn({{$.StructType}}Field{{.FieldName}}, forceAppend).
-{{- end}}
-		self()
-}
-
-func (c *{{.StructType}}Columns) self() *{{.StructType}}Columns {
-	return c
-}
+{{- end }}
 
 {{- if .WithDao }}
 
@@ -198,7 +173,7 @@ func (c *{{.StructType}}Columns) self() *{{.StructType}}Columns {
 func (arg {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, update bool) error {
 	query := sqlx_.SimpleStatements{
 		TableName: arg.TableName(),
-		Columns:   arg.ColumnEditor().AppendAll(false).Columns(),
+		Columns:   arg.NonzeroColumns(),
 	}.NamedInsertStatement(update)
 
 	_, err := db.NamedExecContext(ctx, query, arg)
@@ -215,7 +190,7 @@ func (arg {{.StructType}}) Add{{.StructType}}(ctx context.Context, db *sqlx.DB, 
 func (arg {{.StructType}}) Add{{.StructType}}WithTx(ctx context.Context, tx *sqlx.Tx, update bool) error {
 	query := sqlx_.SimpleStatements{
 		TableName: arg.TableName(),
-		Columns:   arg.ColumnEditor().AppendAll(false).Columns(),
+		Columns:   arg.NonzeroColumns(),
 	}.NamedInsertStatement(update)
 
 	_, err := tx.NamedExecContext(ctx, query, arg)
@@ -398,11 +373,11 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 		" %s", // LIMIT
 		func() string { // SELECT
 			cols := sqlx_.ShrinkEmptyColumns(
-				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), arg.ColumnEditor().
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), 
 {{- range .Fields}}
-					AppendColumn({{$.StructType}}Field{{.FieldName}}, true).
+					arg.Column{{.FieldName}}(),
 {{- end}}
-					Columns()...))
+			))
 
 			if len(cols) == 0 {
 				return "*"
@@ -416,23 +391,18 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 				// =
 				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareEqual, sqlx_.SqlOperatorAnd,
 					arg.TableName(),
-					arg.ColumnEditor().
 {{- range .Fields}}
-						AppendColumn({{$.StructType}}Field{{.FieldName}}, true).
+					arg.Column{{.FieldName}}(),
 {{- end}}
-						Columns()...),
+					//arg.NonzeroColumnsIn(arg.Columns()...)...,
+					//arg.NonzeroColumns()...,
+				),
 				// <>
 				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareNotEqual, sqlx_.SqlOperatorAnd,
-					arg.TableName(),
-					arg.ColumnEditor().
-						// cols
-						Columns()...),
+					arg.TableName()),
 				// LIKE
 				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd,
-					arg.TableName(),
-					arg.ColumnEditor().
-						// cols
-						Columns()...),
+					arg.TableName()),
 			)
 
 			if len(cols) == 0 {
@@ -443,9 +413,7 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 		}(), // WHERE
 		func() string { // GROUP BY
 			cols := sqlx_.ShrinkEmptyColumns(
-				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), arg.ColumnEditor().
-					// cols
-					Columns()...))
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName()))
 
 			if len(cols) == 0 {
 				return ""
@@ -454,9 +422,7 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 		}(),  
 		func() string { // ORDER BY
 			cols := sqlx_.ShrinkEmptyColumns(
-				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), arg.ColumnEditor().
-					// cols
-					Columns()...))
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName()))
 
 			if len(cols) == 0 {
 				return ""
