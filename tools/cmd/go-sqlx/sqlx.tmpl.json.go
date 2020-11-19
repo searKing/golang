@@ -9,6 +9,7 @@ package main
 //	TableName: value type trimmedStructName
 //	NilValue: nil value of map type
 const tmplJson = `
+{{ $package_scope := . }}
 import (
 {{- if .WithDao }}
 	"context"
@@ -38,6 +39,43 @@ import (
 // TableName returns table's name
 func (_ {{.StructType}}) TableName() string {
 	return "{{.TableName}}"
+}
+
+{{- range .Fields }}
+// Column{{$package_scope.StructType}} return column name in db, from struct tag db:"{{.DbName}}"
+func (_ {{$package_scope.StructType}})Column{{.FieldName}}() string{
+	return "{{.DbName}}"
+}
+
+// TableColumn{{$package_scope.StructType}} return column name with TableName
+// "{{$package_scope.TableName}}.{{.DbName}}"
+func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
+	// avoid runtime cost of fmt.Sprintf
+	// return fmt.Sprintf("%s.%s", a.TableName(), a.Column{{$package_scope.StructType}}())
+	return "{{$package_scope.TableName}}.{{.DbName}}"
+}
+
+// MapColumn{{$package_scope.StructType}} return column name with TableName
+// "{{$package_scope.TableName}}_{{.DbName}}"
+func (m {{$package_scope.StructType}})MapColumn{{.FieldName}}() string{
+	// avoid runtime cost of fmt.Sprintf
+	// return fmt.Sprintf("%s_%s", m.TableName(), m.Column{{$package_scope.StructType}}())
+	// return "{{$package_scope.TableName}}_{{.DbName}}"
+	return sql_.CompliantName(m.TableColumn{{.FieldName}}())
+}
+{{- end }}
+
+func (m {{.StructType}}) Column(col {{.StructType}}Field) string {
+	return col.ColumnName()
+}
+
+func (m {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
+	return fmt.Sprintf("%s.%s", m.TableName(), m.Column(col))
+}
+
+func (m {{.StructType}}) MapColumn(col {{.StructType}}Field) string {
+	return sql_.CompliantName(m.TableColumn(col))
+	//return fmt.Sprintf("%s_%s", m.TableName(), m.Column(col))
 }
 
 // MarshalMap marshal themselves into or append a valid map
@@ -116,18 +154,6 @@ func (a {{.StructType}}) ColumnEditor() *{{.StructType}}Columns {
 	return &{{.StructType}}Columns{
 		arg: a,
 	}
-}
-func (a {{.StructType}}) Column(col {{.StructType}}Field) string {
-	return col.ColumnName()
-}
-
-func (a {{.StructType}}) TableColumn(col {{.StructType}}Field) string {
-	return fmt.Sprintf("%s.%s", a.TableName(), a.Column(col))
-}
-
-func (a {{.StructType}}) MapColumn(col {{.StructType}}Field) string {
-	return sql_.CompliantName(a.TableColumn(col))
-	//return fmt.Sprintf("%s_%s", a.TableName(), a.Column(col))
 }
 
 // columns
