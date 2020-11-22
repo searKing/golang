@@ -5,10 +5,11 @@
 package grpc
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
 type serverHandler struct {
@@ -18,22 +19,16 @@ type serverHandler struct {
 }
 
 func (s *serverHandler) refreshHandler(httpHandler http.Handler) {
-	oldOtherErrorHandler := runtime.OtherErrorHandler
-
-	runtime.OtherErrorHandler = func(w http.ResponseWriter, r *http.Request, msg string, code int) {
+	runtime.WithRoutingErrorHandler(func(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, code int) {
 		if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
 			httpHandler.ServeHTTP(w, r)
 			return
 		}
-		oldOtherErrorHandler(w, r, msg, code)
-		return
-	}
+		runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
+	})
 }
 
 func (s *serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	oldOtherErrorHandler := runtime.OtherErrorHandler
-	defer func() { runtime.OtherErrorHandler = oldOtherErrorHandler }()
-
 	httpHandler := s.gateway.Handler
 	if httpHandler == nil {
 		httpHandler = http.DefaultServeMux
