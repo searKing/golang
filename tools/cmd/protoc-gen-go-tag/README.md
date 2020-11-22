@@ -7,7 +7,7 @@ Generates Go code using a package as a tag rewriter that enhanced protoc-gen-go.
 
 protoc-gen-go-tag Generates Go code using a package as a tag rewriter that enhanced protoc-gen-go.
 
-The file xxx.pb.go is modified by protoc-gen-go xxx.proto.
+The file xxx.pb.go is modified by protoc-gen-go based on xxx.proto.
 It has helpful defaults designed for use with protobuf with custom struct tags.
 
 For example, given this snippet,
@@ -36,7 +36,9 @@ message Http{
 running this command
 
 ```bash
-protoc -I . -I /Users/chenhaixin/workspace/src/ --go-tag_out=paths=source_relative:. *.proto
+# https://github.com/searKing/golang/blob/master/tools/cmd/protoc-gen-go-tag/tag/tag.proto
+# `tag.proto` needs to be on the `protoc` include path 
+protoc -I . --go-tag_out=paths=source_relative:. *.proto
 ```
 
 in the same directory will create the file pill.pb.go,
@@ -193,6 +195,15 @@ var fileDescriptor_27f545bcde37ecb5 = []byte{
 
 The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/protoc-gen-go-tag`. You can
 also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/protoc-gen-go-tag`.
+
+### protoc-gen-go-tagssss: program not found or is not executable  
+The `protoc` compiler expects to find plugins named `proto-gen-xxx` on the execution `$PATH`. So first:
+```sh
+export PATH=${PATH}:$(go env GOPATH)/bin
+```
+
+Basically the magical incantation (apart from includes) is the `--govalidators_out`. That triggers the 
+`protoc-gen-govalidators` plugin to generate `mymessage.validator.pb.go`. That's it :)
 
 ## Inspiring projects
 * [stringer](https://godoc.org/github.com/golang/protobuf)
