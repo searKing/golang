@@ -14,7 +14,7 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/sirupsen/logrus"
@@ -109,9 +109,10 @@ func WithStreamErrorHandler(fn runtime.StreamErrorHandlerFunc) GatewayOption {
 // WithHTTPErrorHandler replies to the request with the error.
 // You can set a custom function to this variable to customize error format.
 func WithHTTPErrorHandler(fn HTTPErrorHandler) GatewayOption {
-	return GatewayOptionFunc(func(gateway *Gateway) {
-		runtime.HTTPError = fn.HandleHTTPError
-	})
+	return WithGrpcServeMuxOption(runtime.WithErrorHandler(fn.HandleHTTPError))
+	//return GatewayOptionFunc(func(gateway *Gateway) {
+	//	runtime.HTTPError = fn.HandleHTTPError
+	//})
 }
 
 func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption {

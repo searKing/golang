@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/pkg/net/http"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

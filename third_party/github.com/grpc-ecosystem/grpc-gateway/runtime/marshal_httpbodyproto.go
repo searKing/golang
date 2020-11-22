@@ -5,7 +5,7 @@
 package runtime
 
 import (
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
 // HTTPBodyPb is a Marshaler which supports marshaling of a
