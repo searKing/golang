@@ -46,7 +46,7 @@ func walkDir(dir, gosyncmap, dirname string, t *testing.T) {
 		}
 		if file.Mode().IsRegular() {
 			if !strings.HasSuffix(name, ".go") {
-				t.Errorf("%s is not a Go file", name)
+				t.Logf("%s is not a Go file", name)
 				continue
 			}
 			if strings.HasPrefix(name, "tag_") || strings.HasPrefix(name, "vary_") {
