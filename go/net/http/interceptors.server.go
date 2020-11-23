@@ -30,6 +30,7 @@ func (chain HandlerInterceptorChain) InjectHttpHandler(next http.Handler) http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// short circuit
 		if len(chain.interceptors) == 0 {
+			next.ServeHTTP(w, r)
 			return
 		}
 

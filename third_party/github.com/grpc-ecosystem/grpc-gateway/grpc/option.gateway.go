@@ -34,9 +34,6 @@ type gatewayOption struct {
 
 	srvMuxOpts []runtime.ServeMuxOption
 
-	// fastMode is true to set runtime.OtherErrorHandler only once
-	fastMode bool
-
 	interceptors http_.HandlerInterceptorChain
 }
 
@@ -129,12 +126,6 @@ func WithDefaultMarsherOption() []GatewayOption {
 		WithMarshalerOption(binding.MIMEYAML, runtime_.NewHTTPBodyYamlMarshaler()),
 	}
 
-}
-
-func WithFastMode(fastMode bool) GatewayOption {
-	return GatewayOptionFunc(func(gateway *Gateway) {
-		gateway.opt.fastMode = fastMode
-	})
 }
 
 //func WithForwardResponseMessageHandler(fn ForwardResponseMessageHandler) GatewayOption {
