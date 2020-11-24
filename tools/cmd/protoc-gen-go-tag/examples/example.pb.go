@@ -27,11 +27,11 @@ type Http struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Protocol string `protobuf:"bytes,1,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	Protocol string `protobuf:"bytes,1,opt,name=protocol,proto3" json:"protocol,omitempty" validate:"oneof=http https"`
 	// version_default is the same as version_update
-	VersionDefault string    `protobuf:"bytes,2,opt,name=version_default,json=VersionDefault,proto3" json:"version_with_default,omitempty"`
-	VersionUpdate  string    `protobuf:"bytes,3,opt,name=version_update,json=VersionUpdate,proto3" json:"version_with_update,omitempty"`
-	VersionReplace string    `protobuf:"bytes,4,opt,name=version_replace,json=VersionReplace,proto3" json:"version_with_replace"`
+	VersionDefault string    `protobuf:"bytes,2,opt,name=version_default,json=VersionDefault,proto3" json:"version_with_default,omitempty" validate:"gte=0,lte=130"`
+	VersionUpdate  string    `protobuf:"bytes,3,opt,name=version_update,json=VersionUpdate,proto3" json:"version_with_update,omitempty" validate:"gte=0,lte=130"`
+	VersionReplace string    `protobuf:"bytes,4,opt,name=version_replace,json=VersionReplace,proto3" json:"version_with_replace" validate:"gte=0,lte=130"`
 	Url            *Http_Url `protobuf:"bytes,5,opt,name=url,json=Url,proto3" json:"url_tag,omitempty"`
 }
 
