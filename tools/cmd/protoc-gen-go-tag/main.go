@@ -32,8 +32,20 @@ func main() {
 		flags flag.FlagSet
 	)
 	// For Debug Only
-	//os.Stdin, _ = os.Open("in.pb")
-	//os.Stdout, _ = os.Create("out.pb")
+	//{ // Dump
+	//	in, err := ioutil.ReadAll(os.Stdin)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	if err := ioutil.WriteFile("in.pb", in, 0666); err != nil {
+	//		panic(err)
+	//	}
+	//}
+	//{ // Debug
+	//	os.Stdin, _ = os.Open("in.pb")
+	//	os.Stdout, _ = os.Create("out.pb")
+	//}
+
 	protogen.Options{
 		ParamFunc: flags.Set,
 	}.Run(func(gen *protogen.Plugin) error {
