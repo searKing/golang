@@ -7,7 +7,7 @@ import "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag/tag.proto";
 option go_package = "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/examples;pb";
 
 message Http{
-  string protocol = 1;
+  string protocol = 1[(google.protobuf.field_tag) = {struct_tag: 'validate:"oneof=http https"'}];
   // version_default is the same as version_update
   string version_default = 2[json_name = "VersionDefault", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\" json:\"version_with_default\""}];
   string version_update = 3[json_name = "VersionUpdate", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\" json:\"version_with_update\"", update_strategy:update}];
