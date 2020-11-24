@@ -81,6 +81,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 
 		if sExpr.Fields.NumFields() <= 0 {
 			g.goGenerator.protoGenerator.Error(fmt.Errorf("miss struct fields: %w", fmt.Errorf("%s has no Fields", typ)))
+			continue
 		}
 
 		// Handle comment
@@ -121,6 +122,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 			goTags, err := reflect.ParseAstStructTag(goTag)
 			if err != nil {
 				g.goGenerator.protoGenerator.Error(fmt.Errorf("malformed struct tag in field extension: %w", err))
+				continue
 			}
 
 			// rewrite tags
@@ -143,7 +145,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 
 				// struct tags: protobuf, json, other tags ordered by ascii
 				var keys = []string{"protobuf", "json"}
-				keys = append(keys, strings_.SliceTrim(keys, "protobuf", "json")...)
+				keys = append(keys, strings_.SliceTrim(goTags.OrderKeys(), "protobuf", "json")...)
 				newGoTag := goTags.SelectAstString(keys...)
 				if newGoTag != goTag {
 					g.fileChanged = true
