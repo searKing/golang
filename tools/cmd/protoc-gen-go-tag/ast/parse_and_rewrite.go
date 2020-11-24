@@ -64,6 +64,8 @@ func WalkDescriptorProto(g *protogen.Plugin, dp *descriptor.DescriptorProto, typ
 			tags, err := reflect.ParseStructTag(tag)
 			if err != nil {
 				g.Error(fmt.Errorf("failed to parse struct tag in field extension: %w", err))
+				// ignore this tag
+				continue
 			}
 
 			s.FieldInfos = append(s.FieldInfos, FieldInfo{
