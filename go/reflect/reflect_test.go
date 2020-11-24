@@ -111,6 +111,15 @@ func TestParseStructTag(t *testing.T) {
 			tag:     `json:"foo   " `,
 			invalid: true,
 		},
+		{
+			name:    "json tag value with space",
+			tag:     `json:"oneof=http https"`,
+			invalid: true,
+		},
+		{
+			name: "tag[^json|xml|asn1] value with space",
+			tag:  `validate:"oneof=http https"`,
+		},
 	}
 
 	for i, ts := range test {

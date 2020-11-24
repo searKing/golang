@@ -159,10 +159,11 @@ func ParseStructTag(tag string) (*StructTag, error) {
 
 				//value = value[comma+1:]
 			}
-		}
-
-		if strings.IndexByte(value, ' ') >= 0 {
-			return nil, errTagValueSpace
+			
+			// If spaces exists in tag's value, it is suspicious.
+			if strings.IndexByte(value, ' ') >= 0 {
+				return nil, errTagValueSpace
+			}
 		}
 
 		res := strings.Split(value, ",")
