@@ -99,7 +99,7 @@ func (srv *Server) Serve(l net.Listener) error {
 	l = &onceCloseListener{Listener: l}
 	defer l.Close()
 
-	var tempDelay = time_.NewDefaultDelay() // how long to sleep on accept failure
+	var tempDelay = time_.NewDefaultExponentialDelay() // how long to sleep on accept failure
 	ctx := context.WithValue(context.Background(), ServerContextKey, srv)
 	for {
 		rw, e := l.Accept()
@@ -112,9 +112,9 @@ func (srv *Server) Serve(l net.Listener) error {
 			}
 			// retry if it's recoverable
 			if ne, ok := e.(net.Error); ok && ne.Temporary() {
-				tempDelay.Update()
-				srv.logf("http: Accept error: %v; retrying in %v", e, tempDelay)
-				time.Sleep(tempDelay.Duration())
+				delay := tempDelay.NextBackOff()
+				srv.logf("http: Accept error: %v; retrying in %v", e, delay)
+				time.Sleep(delay)
 				continue
 			}
 			// return otherwise
