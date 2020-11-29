@@ -48,6 +48,7 @@ func (g *Generator) ParseGoContent(outerFile *pluginpb.CodeGeneratorResponse_Fil
 	f, err := parser.ParseFile(fset, "", outerFile.GetContent(), mode)
 	if err != nil {
 		g.protoGenerator.Error(fmt.Errorf("failed to parse struct tag in field extension: %w", err))
+		return
 	}
 	g.addGoFile(f, outerFile)
 }
@@ -77,6 +78,7 @@ func (g *Generator) Generate() {
 			err := format.Node(&buf, file.fset, file.astFile)
 			if err != nil {
 				g.protoGenerator.Error(fmt.Errorf("failed to format go content: %w", err))
+				continue
 			}
 
 			// fix Response will always be generated, so add a new generated file directly.
@@ -85,6 +87,7 @@ func (g *Generator) Generate() {
 			_, err = g.protoGenerator.NewGeneratedFile(file.outerFile.GetName(), "").Write(buf.Bytes())
 			if err != nil {
 				g.protoGenerator.Error(fmt.Errorf("failed to new generated file to rewrite: %w", err))
+				continue
 			}
 		}
 	}

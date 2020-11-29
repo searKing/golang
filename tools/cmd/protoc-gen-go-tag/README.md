@@ -196,14 +196,17 @@ var fileDescriptor_27f545bcde37ecb5 = []byte{
 The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/protoc-gen-go-tag`. You can
 also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/protoc-gen-go-tag`.
 
-### protoc-gen-go-tagssss: program not found or is not executable  
+### protoc-gen-go-tag: program not found or is not executable  
 The `protoc` compiler expects to find plugins named `proto-gen-xxx` on the execution `$PATH`. So first:
 ```sh
 export PATH=${PATH}:$(go env GOPATH)/bin
 ```
 
-Basically the magical incantation (apart from includes) is the `--govalidators_out`. That triggers the 
-`protoc-gen-govalidators` plugin to generate `mymessage.validator.pb.go`. That's it :)
+### xxx.proto: Tried to write the same file twice.  
+The `protoc-gen-go-tag` rewrites `*.pb.go` by `proto-gen-go` already. So use `protoc-gen-go-tag` instead of `protoc-gen-go`
+
+Basically the magical incantation (apart from includes) is the `--go-tag_out`. That triggers the 
+`protoc-gen-go-tag` plugin to generate `*.pb.go`. That's it :)
 
 ## Inspiring projects
-* [stringer](https://godoc.org/github.com/golang/protobuf)
+* [protobuf](https://pkg.go.dev/google.golang.org/protobuf)
