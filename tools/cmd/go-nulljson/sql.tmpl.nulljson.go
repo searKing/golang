@@ -43,7 +43,7 @@ func (nj *{{.SqlJsonType}}) Scan(src interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("unsupported Scan, storing driver.Value type %%T into type %%T : %%w", src, nj.Data, err)
+	return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T: %w", src, nj.Data, err)
 }
 
 // Value implements the driver.Valuer interface.
