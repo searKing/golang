@@ -81,7 +81,7 @@ func EqualJitterDelayHandler(attempt int, cap, base, _ time.Duration) time.Durat
 		temp = cap
 	}
 	delay := temp / 2
-	return delay + time.Duration(delay+rand.Float64()*float64(delay))
+	return delay + time.Duration(float64(delay)+rand.Float64()*float64(delay))
 }
 
 // exponentially backed-off with decorrelated jitter
