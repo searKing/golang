@@ -30,24 +30,24 @@ func TestAdd(t *testing.T) {
 	x := New(WithNumberNodeRepetitions(numReps))
 	x.AddNodes(StringNode("abcdefg"))
 
-	if len(x.nodes) != numReps {
-		t.Errorf("got %d, want %d", len(x.nodes), numReps)
+	if len(x.nodeByKey) != numReps {
+		t.Errorf("got %d, want %d", len(x.nodeByKey), numReps)
 	}
-	if len(x.sortedHashes) != numReps {
-		t.Errorf("got %d, want %d", len(x.sortedHashes), numReps)
+	if len(x.sortedKeys) != numReps {
+		t.Errorf("got %d, want %d", len(x.sortedKeys), numReps)
 	}
-	if sort.IsSorted(x.sortedHashes) == false {
+	if sort.IsSorted(x.sortedKeys) == false {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
 	x.AddNodes(StringNode("qwer"))
 
-	if len(x.nodes) != 2*numReps {
-		t.Errorf("got %d, want %d", len(x.nodes), 2*numReps)
+	if len(x.nodeByKey) != 2*numReps {
+		t.Errorf("got %d, want %d", len(x.nodeByKey), 2*numReps)
 	}
-	if len(x.sortedHashes) != 2*numReps {
-		t.Errorf("got %d, want %d", len(x.nodes), 2*numReps)
+	if len(x.sortedKeys) != 2*numReps {
+		t.Errorf("got %d, want %d", len(x.nodeByKey), 2*numReps)
 	}
-	if sort.IsSorted(x.sortedHashes) == false {
+	if sort.IsSorted(x.sortedKeys) == false {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
 }
@@ -57,11 +57,11 @@ func TestRemove(t *testing.T) {
 	x := New(WithNumberNodeRepetitions(numReps))
 	x.AddNodes(StringNode("abcdefg"))
 	x.RemoveNodes(StringNode("abcdefg"))
-	if len(x.nodes) != 0 {
-		t.Errorf("got %d, want %d", len(x.nodes), 0)
+	if len(x.nodeByKey) != 0 {
+		t.Errorf("got %d, want %d", len(x.nodeByKey), 0)
 	}
-	if len(x.sortedHashes) != 0 {
-		t.Errorf("got %d, want %d", len(x.nodes), 0)
+	if len(x.sortedKeys) != 0 {
+		t.Errorf("got %d, want %d", len(x.nodeByKey), 0)
 	}
 }
 
@@ -70,8 +70,8 @@ func TestRemoveNonExisting(t *testing.T) {
 	x := New(WithNumberNodeRepetitions(numReps))
 	x.AddNodes(StringNode("abcdefg"))
 	x.RemoveNodes(StringNode("abcdefghijk"))
-	if len(x.nodes) != numReps {
-		t.Errorf("got %d, want %d", len(x.nodes), numReps)
+	if len(x.nodeByKey) != numReps {
+		t.Errorf("got %d, want %d", len(x.nodeByKey), numReps)
 	}
 }
 

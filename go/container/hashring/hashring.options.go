@@ -24,7 +24,7 @@ func WithFormatter(formatter *KetamaNodeKeyFormatter) NodeLocatorOption {
 
 func WithWeights(weights map[Node]int) NodeLocatorOption {
 	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
-		l.weights = weights
+		l.weightByNode = weights
 		l.isWeighted = len(weights) > 0
 	})
 }

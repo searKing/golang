@@ -49,16 +49,16 @@ type NodeLocator struct {
 	// The List of nodes to use in the Ketama consistent hash continuum
 	// 模拟一致性哈希环的环状结构，存放的都是可用节点
 	// 一致性Hash环
-	sortedHashes uint32Slice       // []HashKey, Index for nodes binary search
-	nodes        map[uint32]Node   // <HashKey,Node>
-	allNodes     map[Node]struct{} // <Node>
+	sortedKeys uint32Slice       // []HashKey, Index for nodes binary search
+	nodeByKey  map[uint32]Node   // <HashKey,Node>
+	allNodes   map[Node]struct{} // <Node>
 
 	// The hash algorithm to use when choosing a node in the Ketama consistent hash continuum
 	hashAlg HashAlgorithm
 
 	// node weights for ketama, a map from InetSocketAddress to weight as Integer
-	weights    map[Node]int
-	isWeighted bool
+	weightByNode map[Node]int
+	isWeighted   bool
 
 	// the number of discrete hashes that should be defined for each node in the continuum.
 	numReps int
@@ -69,10 +69,10 @@ type NodeLocator struct {
 // New creates a hash ring of n replicas for each entry.
 func New(opts ...NodeLocatorOption) *NodeLocator {
 	r := &NodeLocator{
-		nodes:            make(map[uint32]Node),
+		nodeByKey:        make(map[uint32]Node),
 		allNodes:         make(map[Node]struct{}),
 		hashAlg:          KetamaHash,
-		weights:          make(map[Node]int),
+		weightByNode:     make(map[Node]int),
 		numReps:          defaultNumReps,
 		nodeKeyFormatter: NewKetamaNodeKeyFormatter(SpyMemcached),
 	}
@@ -83,7 +83,7 @@ func New(opts ...NodeLocatorOption) *NodeLocator {
 // GetAllNodes returns all available nodes
 func (c *NodeLocator) GetAllNodes() []Node {
 	var nodes []Node
-	for node, _ := range c.allNodes {
+	for node := range c.allNodes {
 		nodes = append(nodes, node)
 	}
 	return nodes
@@ -97,19 +97,19 @@ func (c *NodeLocator) GetPrimaryNode(name string) (Node, bool) {
 // GetMaxHashKey returns the last available node's HashKey
 // that is, Maximum HashKey in the Hash Cycle
 func (c *NodeLocator) GetMaxHashKey() (uint32, error) {
-	if len(c.sortedHashes) == 0 {
+	if len(c.sortedKeys) == 0 {
 		return 0, fmt.Errorf("NoSuchElementException")
 	}
-	return c.sortedHashes[len(c.sortedHashes)-1], nil
+	return c.sortedKeys[len(c.sortedKeys)-1], nil
 }
 
 // getNodeForHashKey returns the first available node since iterateHashKey, such as HASH(“127.0.0.1:11311-0”)
 func (c *NodeLocator) getNodeForHashKey(hash uint32) (Node, bool) {
-	if len(c.sortedHashes) == 0 {
+	if len(c.sortedKeys) == 0 {
 		return nil, false
 	}
 
-	rv, has := c.getNodes()[hash]
+	rv, has := c.getNodeByKey()[hash]
 	if has {
 		return rv, true
 	}
@@ -118,19 +118,14 @@ func (c *NodeLocator) getNodeForHashKey(hash uint32) (Node, bool) {
 		firstKey = 0
 	}
 
-	hash = c.sortedHashes[firstKey]
-	rv, has = c.getNodes()[hash]
+	hash = c.sortedKeys[firstKey]
+	rv, has = c.getNodeByKey()[hash]
 	return rv, has
 }
 
 // 根据输入物理节点列表，重新构造Hash环，即虚拟节点环
 // updateLocator reconstructs the hash ring with the input nodes
 func (c *NodeLocator) updateLocator(nodes ...Node) {
-	allNodes := make(map[Node]struct{})
-	for _, node := range nodes {
-		allNodes[node] = struct{}{}
-	}
-	c.allNodes = allNodes
 	c.SetNodes(nodes...)
 }
 
@@ -140,9 +135,9 @@ func (c *NodeLocator) getNodeRepetitions() int {
 	return c.numReps
 }
 
-// getNodes returns the nodes
-func (c *NodeLocator) getNodes() map[uint32]Node {
-	return c.nodes
+// getNodeByKey returns the nodes
+func (c *NodeLocator) getNodeByKey() map[uint32]Node {
+	return c.nodeByKey
 }
 
 // SetNodes setups the NodeLocator with the list of nodes it should use.
@@ -163,13 +158,17 @@ func (c *NodeLocator) setNoWeightNodes(nodes ...Node) {
 	var nodesToBeRemoved []Node
 	// remove missing Nodes
 	for k := range c.allNodes {
+		var found bool
 		for _, v := range nodes {
 			if k.String() == v.String() {
 				// found
+				found = true
 				break
 			}
 		}
-		nodesToBeRemoved = append(nodesToBeRemoved, k)
+		if !found {
+			nodesToBeRemoved = append(nodesToBeRemoved, k)
+		}
 	}
 	if len(nodesToBeRemoved) == len(nodes) {
 		c.RemoveAllNodes()
@@ -179,7 +178,7 @@ func (c *NodeLocator) setNoWeightNodes(nodes ...Node) {
 	// add all missing elements present in nodes.
 	var nodesToBeAdded []Node
 	for _, k := range nodes {
-		found := false
+		var found bool
 		for v := range c.allNodes {
 			if k.String() == v.String() {
 				found = true
@@ -200,25 +199,26 @@ func (c *NodeLocator) setWeightNodes(nodes ...Node) {
 	totalWeight := 0
 
 	for _, node := range nodes {
-		totalWeight += c.weights[node]
+		totalWeight += c.weightByNode[node]
 	}
 
 	// add all elements present in nodes.
 	for _, node := range nodes {
-		thisWeight := c.weights[node]
+		thisWeight := c.weightByNode[node]
 		percent := float64(thisWeight) / float64(totalWeight)
 		// floor(percent * numReps * nodeCount + 1e10)
 		pointerPerServer := (int)(math.Floor(percent*(float64(numReps))*float64(nodeCount) + 0.0000000001))
 		c.addNodeWithoutSort(node, pointerPerServer)
 	}
 
+	// sort keys
 	c.updateSortedNodes()
 }
 
 // RemoveAllNodes removes all nodes in the continuum....
 func (c *NodeLocator) RemoveAllNodes() {
-	c.sortedHashes = nil
-	c.nodes = make(map[uint32]Node)
+	c.sortedKeys = nil
+	c.nodeByKey = make(map[uint32]Node)
 	c.allNodes = make(map[Node]struct{})
 }
 
@@ -265,12 +265,12 @@ func (c *NodeLocator) addNodeWithoutSort(node Node, numReps int) {
 			if i+j > numReps { // out of bound
 				break
 			}
-			if _, has := c.getNodes()[pos]; has {
+			if _, has := c.getNodeByKey()[pos]; has {
 				// skip this node, duplicated
 				numReps++
 				continue
 			}
-			c.getNodes()[pos] = node
+			c.getNodeByKey()[pos] = node
 		}
 		i += len(positions)
 	}
@@ -311,12 +311,12 @@ func (c *NodeLocator) removeNoWeightNodes(nodes ...Node) {
 				if i+j > numReps { // out of bound
 					break
 				}
-				if n, has := c.nodes[pos]; has {
+				if n, has := c.nodeByKey[pos]; has {
 					if n.String() != node.String() {
 						numReps++ // ignore no hash node
 						continue
 					}
-					delete(c.nodes, pos)
+					delete(c.nodeByKey, pos)
 				}
 			}
 			i += len(positions)
@@ -330,11 +330,11 @@ func (c *NodeLocator) removeNoWeightNodes(nodes ...Node) {
 func (c *NodeLocator) tailSearch(key uint32) (i int, found bool) {
 	found = true
 	f := func(x int) bool {
-		return c.sortedHashes[x] >= key
+		return c.sortedKeys[x] >= key
 	}
 	// Search uses binary search to find and return the smallest index since iterateHashKey's Index
-	i = sort.Search(len(c.sortedHashes), f)
-	if i >= len(c.sortedHashes) {
+	i = sort.Search(len(c.sortedKeys), f)
+	if i >= len(c.sortedKeys) {
 		found = false
 	}
 	return
@@ -342,7 +342,7 @@ func (c *NodeLocator) tailSearch(key uint32) (i int, found bool) {
 
 // Get returns an element close to where name hashes to in the nodes.
 func (c *NodeLocator) Get(name string) (Node, bool) {
-	if len(c.nodes) == 0 {
+	if len(c.nodeByKey) == 0 {
 		return nil, false
 	}
 	return c.GetPrimaryNode(name)
@@ -350,7 +350,7 @@ func (c *NodeLocator) Get(name string) (Node, bool) {
 
 // GetTwo returns the two closest distinct elements to the name input in the nodes.
 func (c *NodeLocator) GetTwo(name string) (Node, Node, bool) {
-	if len(c.getNodes()) == 0 {
+	if len(c.getNodeByKey()) == 0 {
 		return nil, nil, false
 	}
 	key := c.getHashKey(name)
@@ -358,7 +358,7 @@ func (c *NodeLocator) GetTwo(name string) (Node, Node, bool) {
 	if !found {
 		firstKey = 0
 	}
-	firstNode, has := c.getNodes()[c.sortedHashes[firstKey]]
+	firstNode, has := c.getNodeByKey()[c.sortedKeys[firstKey]]
 
 	if len(c.allNodes) == 1 {
 		return firstNode, nil, has
@@ -367,10 +367,10 @@ func (c *NodeLocator) GetTwo(name string) (Node, Node, bool) {
 	start := firstKey
 	var secondNode Node
 	for i := start + 1; i != start; i++ {
-		if i >= len(c.sortedHashes) {
+		if i >= len(c.sortedKeys) {
 			i = 0
 		}
-		secondNode = c.getNodes()[c.sortedHashes[i]]
+		secondNode = c.getNodeByKey()[c.sortedKeys[i]]
 		if secondNode.String() != firstNode.String() {
 			break
 		}
@@ -380,12 +380,12 @@ func (c *NodeLocator) GetTwo(name string) (Node, Node, bool) {
 
 // GetN returns the N closest distinct elements to the name input in the nodes.
 func (c *NodeLocator) GetN(name string, n int) ([]Node, bool) {
-	if len(c.getNodes()) == 0 {
+	if len(c.getNodeByKey()) == 0 {
 		return nil, false
 	}
 
-	if len(c.getNodes()) < n {
-		n = len(c.getNodes())
+	if len(c.getNodeByKey()) < n {
+		n = len(c.getNodeByKey())
 	}
 
 	key := c.getHashKey(name)
@@ -393,7 +393,7 @@ func (c *NodeLocator) GetN(name string, n int) ([]Node, bool) {
 	if !found {
 		firstKey = 0
 	}
-	firstNode, has := c.getNodes()[c.sortedHashes[firstKey]]
+	firstNode, has := c.getNodeByKey()[c.sortedKeys[firstKey]]
 
 	nodes := make([]Node, 0, n)
 	nodes = append(nodes, firstNode)
@@ -405,10 +405,10 @@ func (c *NodeLocator) GetN(name string, n int) ([]Node, bool) {
 	start := firstKey
 	var secondNode Node
 	for i := start + 1; i != start; i++ {
-		if i >= len(c.sortedHashes) {
+		if i >= len(c.sortedKeys) {
 			i = 0
 		}
-		secondNode = c.getNodes()[c.sortedHashes[i]]
+		secondNode = c.getNodeByKey()[c.sortedKeys[i]]
 		if !sliceContainsMember(nodes, secondNode) {
 			nodes = append(nodes, secondNode)
 		}
@@ -421,17 +421,18 @@ func (c *NodeLocator) GetN(name string, n int) ([]Node, bool) {
 }
 
 func (c *NodeLocator) updateSortedNodes() {
-	hashes := c.sortedHashes[:0]
+	hashes := c.sortedKeys[:0]
 	// reallocate if we're holding on to too much (1/4th)
 	// len(nodes) * replicas < cap / 4
-	if cap(c.sortedHashes)/(c.numReps*4) > len(c.nodes) {
+	// len(c.nodeByKey) ≈ len(c.allNodes)*c.numReps
+	if cap(c.sortedKeys)/4 > len(c.nodeByKey) {
 		hashes = nil
 	}
-	for k := range c.nodes {
+	for k := range c.nodeByKey {
 		hashes = append(hashes, k)
 	}
 	sort.Sort(hashes)
-	c.sortedHashes = hashes
+	c.sortedKeys = hashes
 }
 
 func sliceContainsMember(set []Node, member Node) bool {

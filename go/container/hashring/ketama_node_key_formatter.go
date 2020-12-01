@@ -46,17 +46,17 @@ const (
 
 	// LibMemcached uses the format traditionally used by libmemcached to map
 	// nodes to names. The format is HOSTNAME:[PORT]-ITERATION the PORT is not
-	// part of the node identifier if it is the default memecached port (11211)
+	// part of the node identifier if it is the default memcached port (11211)
 	LibMemcached
 )
 
 type KetamaNodeKeyFormatter struct {
 	format Format
 
-	// Carrried over from the DefaultKetamaNodeLocatorConfiguration:
+	// Carried over from the DefaultKetamaNodeLocatorConfiguration:
 	// Internal lookup map to try to carry forward the optimisation that was
 	// previously in NodeLocator
-	nodeKeys map[Node]string
+	keyByNode map[Node]string
 }
 
 func (f KetamaNodeKeyFormatter) GetFormat() Format {
@@ -65,8 +65,8 @@ func (f KetamaNodeKeyFormatter) GetFormat() Format {
 
 func NewKetamaNodeKeyFormatter(format Format) *KetamaNodeKeyFormatter {
 	return &KetamaNodeKeyFormatter{
-		format:   format,
-		nodeKeys: make(map[Node]string),
+		format:    format,
+		keyByNode: make(map[Node]string),
 	}
 }
 
@@ -87,7 +87,7 @@ func (f KetamaNodeKeyFormatter) getKeyForNode(node Node, repetition int) string 
 	// a node has never been seen before concurrently on two different
 	// threads, so it the socketaddress will be requested multiple times!
 	// all other cases should be as fast as possible.
-	nodeKey, has := f.nodeKeys[node]
+	nodeKey, has := f.keyByNode[node]
 	if !has {
 		switch f.format {
 		case LibMemcached:
@@ -102,7 +102,7 @@ func (f KetamaNodeKeyFormatter) getKeyForNode(node Node, repetition int) string 
 		default:
 			panic(fmt.Errorf("unsupport format %d", f.format))
 		}
-		f.nodeKeys[node] = nodeKey
+		f.keyByNode[node] = nodeKey
 	}
 	return fmt.Sprintf("%s-%d", nodeKey, repetition)
 }
