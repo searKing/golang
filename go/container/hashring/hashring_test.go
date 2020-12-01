@@ -454,6 +454,7 @@ func TestGetNMoreQuick(t *testing.T) {
 	x.AddNodes(StringNode("hijklmn"))
 	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
+		t.Log("check", s)
 		members, has := x.GetN(s, 5)
 		if !has {
 			t.Logf("missing nodes")

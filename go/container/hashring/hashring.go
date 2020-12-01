@@ -407,6 +407,9 @@ func (c *NodeLocator) GetN(name string, n int) ([]Node, bool) {
 	for i := start + 1; i != start; i++ {
 		if i >= len(c.sortedKeys) {
 			i = 0
+			// take care of i++ after this loop of for
+			i--
+			continue
 		}
 		secondNode = c.getNodeByKey()[c.sortedKeys[i]]
 		if !sliceContainsMember(nodes, secondNode) {
