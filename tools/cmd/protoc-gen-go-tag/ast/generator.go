@@ -72,7 +72,9 @@ func (g *Generator) Generate() {
 			ast.Inspect(file.astFile, file.genDecl)
 		}
 
-		if file.fileChanged {
+		//if file.fileChanged {
+		// FIXME: always generate *.pb.go, to replace protoc-go, avoid "Tried to write the same file twice"
+		{
 			PrintComment(file.astFile)
 			var buf bytes.Buffer
 			err := format.Node(&buf, file.fset, file.astFile)
