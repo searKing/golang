@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/searKing/golang/go/error/multi"
+	"github.com/searKing/golang/go/errors"
 )
 
 var Ipv4LoopbackHosts = []string{"localhost", "127.0.0.1"}
@@ -52,5 +52,5 @@ func LoopbackListener(ports ...string) (net.Listener, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("net: failed to listen on ports: %v", multi.New(errs...))
+	return nil, fmt.Errorf("net: failed to listen on ports: %v", errors.Multi(errs...))
 }

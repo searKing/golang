@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/searKing/golang/go/error/multi"
+	"github.com/searKing/golang/go/errors"
 )
 
 // MultiListener is a net.Listener that accepts all the connections from all listeners.
@@ -55,7 +55,7 @@ func (l *MultiListener) Close() error {
 	for _, listener := range l.listeners {
 		errs = append(errs, listener.Close())
 	}
-	return multi.New(errs...)
+	return errors.Multi(errs...)
 }
 
 func (l *MultiListener) logf(format string, args ...interface{}) {
