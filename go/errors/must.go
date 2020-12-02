@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package must
+package errors
 
 // Must panics if err != nil
-// Deprecated: Use errors.Must instead.
 func Must(err error) {
 	if err == nil {
 		return

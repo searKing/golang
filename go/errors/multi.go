@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package multi
+package errors
 
 import (
 	"fmt"
@@ -11,8 +11,7 @@ import (
 
 // New returns an error with the supplied errors.
 // If no error contained, return nil.
-// Deprecated: Use errors.Multi instead.
-func New(errs ...error) error {
+func Multi(errs ...error) error {
 	var has bool
 	for _, err := range errs {
 		if err != nil {

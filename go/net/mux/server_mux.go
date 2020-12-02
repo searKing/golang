@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/searKing/golang/go/error/multi"
+	"github.com/searKing/golang/go/errors"
 	io_ "github.com/searKing/golang/go/io"
 	net_ "github.com/searKing/golang/go/net"
 )
@@ -186,13 +186,13 @@ func (mux *ServeMux) Serve(c net.Conn) {
 }
 
 func (mux *ServeMux) Close() error {
-	var errors []error
+	var errs []error
 	for _, e := range mux.m {
 		if l := e.l; l != nil {
-			errors = append(errors, l.Close())
+			errs = append(errs, l.Close())
 		}
 	}
-	return multi.New(errors...)
+	return errors.Multi(errs...)
 }
 
 func HandleListener(pattern Matcher) net.Listener {
