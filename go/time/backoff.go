@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package time
 
 import (
@@ -113,6 +117,8 @@ func (o *StopBackOff) NextBackOff() time.Duration {
 	return StopDuration
 }
 
+//go:generate go-option -type "ExponentialBackOff"
+
 // Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
 // src/main/java/com/google/api/client/util/ExponentialBackOff.java
 type ExponentialBackOff struct {
@@ -142,7 +148,7 @@ type ExponentialBackOff struct {
 	maxElapsedDuration time.Duration
 }
 
-func NewExponentialBackOff() *ExponentialBackOff {
+func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
 	o := &ExponentialBackOff{
 		initialInterval:     DefaultInitialInterval,
 		randomizationFactor: DefaultRandomizationFactor,
@@ -150,6 +156,7 @@ func NewExponentialBackOff() *ExponentialBackOff {
 		maxInterval:         DefaultMaxInterval,
 		maxElapsedDuration:  DefaultMaxElapsedDuration,
 	}
+	o.ApplyOptions(opts...)
 	o.Reset()
 	return o
 }
