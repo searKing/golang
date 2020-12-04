@@ -20,40 +20,24 @@ func ExampleGetCaller() {
 }
 
 //go:nosplit
-func sp() (got, expect uintptr) {
-	var sp uintptr
-	sp = runtime.GetSP(0)
-	return sp, uintptr(unsafe.Pointer(&sp))
-}
-
-//func ExampleGetSP() {
-//	got, expect := sp()
-//	if got != expect {
-//		fmt.Printf("got = %#x\n", got)
-//		fmt.Printf("expect = %#x\n", expect)
-//	}
-//	fmt.Printf("%t", got == expect)
-//
-//	// Output:
-//	// true
-//}
-
-//go:nosplit
-func spv() (got, expect int) {
-	var spv = 1
+func cf() (got, expect uintptr) {
+	var spv = 99
 	var sp *int
-	sp = (*int)(unsafe.Pointer(runtime.GetSP(0)))
-	return *sp, spv
-}
+	sp = (*int)(unsafe.Pointer(runtime.GetEIP(unsafe.Sizeof(uintptr(0)))))
+	//sp = (*int)(unsafe.Pointer(runtime.GetEIP(0)))
+	*sp = 0xFFFFFFF
 
-//func ExampleGetSPV() {
-//	got, expect := spv()
-//	if got != expect {
-//		fmt.Printf("got = %d\n", got)
-//		fmt.Printf("expect = %d\n", expect)
-//	}
-//	fmt.Printf("%t", got == expect)
-//
-//	// Output:
-//	// true
-//}
+	return uintptr(unsafe.Pointer(sp)), uintptr(unsafe.Pointer(&spv))
+}
+func ExampleGetCallFrame() {
+	got, expect := cf()
+	if got != expect {
+		fmt.Printf("got = %#x\n", got)
+		fmt.Printf("expect = %#x\n", expect)
+	}
+	fmt.Printf("%t", got == expect)
+
+	// Output:
+	// true
+
+}
