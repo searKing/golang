@@ -11,41 +11,24 @@ import (
 	"github.com/searKing/golang/go/reflect"
 )
 
-// ReadNextSP returns the value, that is SP pointed to where the caller
-// value Next SP pointed to will be reset randomly when ReadNextSP returns
-//go:linkname ReadNextSP github.com/searKing/golang/go/runtime.readNextSP
-func ReadNextSP() int
-
-// readNextSP returns the value, that is SP pointed to where the caller
-// value Next SP pointed to will be reset randomly when ReadNextSP returns
+// GetEIP returns the location, that is EIP after CALL
+//go:linkname GetEIP github.com/searKing/golang/go/runtime.getEIP
 //go:nosplit
 //go:noinline
-func readNextSP() (x int) {
-	return
-}
+func GetEIP(uintptr) uintptr
 
-// GetSP returns the location, that is SP where the caller
-//go:linkname GetSP github.com/searKing/golang/go/runtime.getSP
+// getEIP returns the location, that is EIP after CALL
+// -> arg+argsize-1(FP)
+// arg includes returns and arguments
+// call frame stack <-> argsize+tmpsize+framesize
+// tmp is for EIP AND EBP
 //go:nosplit
 //go:noinline
-func GetSP(uintptr) uintptr
-
-// getSP returns the location, that is SP where the caller
-//go:nosplit
-//go:noinline
-func getSP(x uintptr) uintptr {
+func getEIP(x uintptr) uintptr {
 	// x is an argument mainly so that we can return its address.
-	//return uintptr(noescape(unsafe.Pointer(&x))) + unsafe.Sizeof(struct{ _, _ uintptr }{})
-	//return uintptr(noescape(unsafe.Pointer(&x))) + unsafe.Sizeof(uintptr(0))*2
-	return uintptr(noescape(unsafe.Pointer(&x))) + reflect.PtrSize*2
-}
-
-// getNextSP returns the location, that is SP after PUSH 0 where the caller
-//go:nosplit
-//go:noinline
-func getNextSP() (x uintptr) {
-	// x is an argument mainly so that we can return its address.
-	return uintptr(noescape(unsafe.Pointer(&x)))
+	// plus reflect.PtrSize *2 for shrink call frame to zero, that is EIP
+	// ATTENTION NO BSP ON STACK FOR NO SUB FUNC CALL IN THIS FUNCTION, so plus 1: EIP,VAR
+	return uintptr(noescape(unsafe.Pointer(&x))) + reflect.PtrSize + x
 }
 
 // noescape hides a pointer from escape analysis.  noescape is
