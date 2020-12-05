@@ -50,7 +50,10 @@ func WithSignal(parent context.Context, sig ...os.Signal) (ctx context.Context, 
 
 	signal.Notify(c, sig...)
 	go func() {
-		<-c
+		select {
+		case <-c:
+		case <-ctx.Done():
+		}
 		stopSignal()
 		cancel()
 	}()
