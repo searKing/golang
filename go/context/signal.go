@@ -40,13 +40,24 @@ func WithShutdownSignal(parent context.Context, sig ...os.Signal) context.Contex
 // WithSignal registered for signals. A context.Context is returned.
 // which is done on one of these incoming signals.
 // signals can be stoped by stopSignal, context will never be Done() if stoped.
-func WithSignal(parent context.Context, sig ...os.Signal) (ctx context.Context, stopSignal context.CancelFunc) {
+
+// WithSignal returns a copy of the parent context registered for signals.
+// If the parent's context is already done than d, WithSignal(parent, sig...) is semantically
+// equivalent to parent. The returned context's Done channel is closed when one of these
+// incoming signals, when the returned cancel function is called, or when the parent context's
+// Done channel is closed, whichever happens first.
+// Canceling this context releases resources associated with it, so code should
+// call cancel as soon as the operations running in this Context complete.
+func WithSignal(parent context.Context, sig ...os.Signal) (ctx context.Context, cancel context.CancelFunc) {
 	var c chan os.Signal
-
 	c = make(chan os.Signal, 1)
-	stopSignal = func() { signal.Stop(c) }
 
-	ctx, cancel := context.WithCancel(parent)
+	ctx, cancel_ := context.WithCancel(parent)
+
+	cancel = func() {
+		signal.Stop(c)
+		cancel_()
+	}
 
 	signal.Notify(c, sig...)
 	go func() {
@@ -54,9 +65,8 @@ func WithSignal(parent context.Context, sig ...os.Signal) (ctx context.Context, 
 		case <-c:
 		case <-ctx.Done():
 		}
-		stopSignal()
 		cancel()
 	}()
 
-	return ctx, stopSignal
+	return ctx, cancel
 }
