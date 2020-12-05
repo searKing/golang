@@ -44,14 +44,16 @@ func WithSignal(parent context.Context, sig ...os.Signal) (ctx context.Context, 
 	var c chan os.Signal
 
 	c = make(chan os.Signal, 1)
+	stopSignal = func() { signal.Stop(c) }
 
 	ctx, cancel := context.WithCancel(parent)
 
 	signal.Notify(c, sig...)
 	go func() {
 		<-c
+		stopSignal()
 		cancel()
 	}()
 
-	return ctx, func() { signal.Stop(c) }
+	return ctx, stopSignal
 }
