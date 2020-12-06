@@ -27,7 +27,7 @@ var expectTokensKey expectKeyType
 // See https://en.wikipedia.org/wiki/Token_bucket for more about token buckets.
 //
 // The zero value is a valid BurstLimiter, but it will reject all events.
-// Use NewBurstLimiter to create non-zero Limiters.
+// Use NewFullBurstLimiter to create non-zero Limiters.
 //
 // BurstLimiter has three main methods, Allow, Reserve, and Wait.
 // Most callers should use Wait.
@@ -57,12 +57,20 @@ func (lim *BurstLimiter) Burst() int {
 	return lim.burst
 }
 
-// NewBurstLimiter returns a new BurstLimiter that allows events up to rate r and permits
-// bursts of at most b tokens.
-func NewBurstLimiter(b int) *BurstLimiter {
+// NewFullBurstLimiter returns a new BurstLimiter inited with full tokens that allows
+// events up to burst b and permits bursts of at most b tokens.
+func NewFullBurstLimiter(b int) *BurstLimiter {
 	return &BurstLimiter{
 		burst:  b,
 		tokens: b,
+	}
+}
+
+// NewEmptyBurstLimiter returns a new BurstLimiter inited with zero tokens that allows
+// events up to burst b and permits bursts of at most b tokens.
+func NewEmptyBurstLimiter(b int) *BurstLimiter {
+	return &BurstLimiter{
+		burst: b,
 	}
 }
 

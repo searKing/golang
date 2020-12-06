@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleNewBurstLimiter() {
-	limiter := rate.NewBurstLimiter(3)
+	limiter := rate.NewFullBurstLimiter(3)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
