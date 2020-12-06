@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	context_ "github.com/searKing/golang/go/context"
+	"github.com/searKing/golang/go/runtime"
 )
 
 // StarFunc is the type of the function invoked by Graceful to start the server
@@ -16,6 +17,7 @@ type ShutdownFunc func(context.Context) error
 // Graceful sets up graceful handling of SIGINT and SIGTERM, typically for an HTTP server.
 // When signal is trapped, the shutdown handler will be invoked with a context.
 func Graceful(ctx context.Context, start StartFunc, shutdown ShutdownFunc) (err error) {
+	defer runtime.LogPanic.Recover()
 	if start == nil {
 		start = func(ctx context.Context) error { return nil }
 	}
