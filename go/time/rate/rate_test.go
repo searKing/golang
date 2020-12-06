@@ -38,14 +38,14 @@ func run(t *testing.T, lim *BurstLimiter, allows []allow) {
 }
 
 func TestLimiterBurst1(t *testing.T) {
-	run(t, NewBurstLimiter(1), []allow{
+	run(t, NewFullBurstLimiter(1), []allow{
 		{1, true},
 		{2, false}, // burst size is 1, so n=2 always fails
 	})
 }
 
 func TestLimiterBurst3(t *testing.T) {
-	run(t, NewBurstLimiter(3), []allow{
+	run(t, NewFullBurstLimiter(3), []allow{
 		{1, true},
 		{2, true},
 		{3, true},
@@ -64,7 +64,7 @@ func TestSimultaneousRequests(t *testing.T) {
 	)
 
 	// Very slow replenishing bucket.
-	lim := NewBurstLimiter(burst)
+	lim := NewFullBurstLimiter(burst)
 
 	// Tries to take a token, atomically updates the counter and decreases the wait
 	// group counter.
@@ -101,7 +101,7 @@ func TestLongRunningQPS(t *testing.T) {
 	)
 	var numOK = int32(0)
 
-	lim := NewBurstLimiter(burst)
+	lim := NewFullBurstLimiter(burst)
 
 	var wg sync.WaitGroup
 	f := func() {
@@ -158,7 +158,7 @@ func runReserveMax(t *testing.T, lim *BurstLimiter, req request, maxReserve time
 }
 
 func TestSimpleReserve(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true})
 	runReserve(t, lim, request{2, true})
@@ -166,7 +166,7 @@ func TestSimpleReserve(t *testing.T) {
 }
 
 func TestMix(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{3, false}) // should return false because n > Burst
 	runReserve(t, lim, request{2, true})
@@ -176,7 +176,7 @@ func TestMix(t *testing.T) {
 }
 
 func TestCancelInvalid(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true})
 	r := runReserve(t, lim, request{3, false})
@@ -185,7 +185,7 @@ func TestCancelInvalid(t *testing.T) {
 }
 
 func TestCancelLast(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true})
 	r := runReserve(t, lim, request{2, true})
@@ -194,7 +194,7 @@ func TestCancelLast(t *testing.T) {
 }
 
 func TestCancelTooLate(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true})
 	r := runReserve(t, lim, request{2, true})
@@ -203,7 +203,7 @@ func TestCancelTooLate(t *testing.T) {
 }
 
 func TestCancel0Tokens(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true})
 	r := runReserve(t, lim, request{1, true})
@@ -213,7 +213,7 @@ func TestCancel0Tokens(t *testing.T) {
 }
 
 func TestCancel1Token(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true})
 	r := runReserve(t, lim, request{2, true})
@@ -223,7 +223,7 @@ func TestCancel1Token(t *testing.T) {
 }
 
 func TestCancelMulti(t *testing.T) {
-	lim := NewBurstLimiter(4)
+	lim := NewFullBurstLimiter(4)
 
 	runReserve(t, lim, request{4, true})
 	rA := runReserve(t, lim, request{3, true})
@@ -235,7 +235,7 @@ func TestCancelMulti(t *testing.T) {
 }
 
 func TestReserveJumpBack(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true}) // start at t1
 	runReserve(t, lim, request{1, true}) // should violate Limit,Burst
@@ -243,7 +243,7 @@ func TestReserveJumpBack(t *testing.T) {
 }
 
 func TestReserveJumpBackCancel(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 
 	runReserve(t, lim, request{2, true}) // start at t1
 	r := runReserve(t, lim, request{2, true})
@@ -253,7 +253,7 @@ func TestReserveJumpBackCancel(t *testing.T) {
 }
 
 func TestReserveMax(t *testing.T) {
-	lim := NewBurstLimiter(2)
+	lim := NewFullBurstLimiter(2)
 	maxT := d
 
 	runReserveMax(t, lim, request{2, true}, maxT)
@@ -280,7 +280,7 @@ func runWait(t *testing.T, lim *BurstLimiter, w wait) {
 }
 
 func TestWaitSimple(t *testing.T) {
-	lim := NewBurstLimiter(3)
+	lim := NewFullBurstLimiter(3)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -295,7 +295,7 @@ func TestWaitSimple(t *testing.T) {
 }
 
 func TestWaitTimeout(t *testing.T) {
-	lim := NewBurstLimiter(3)
+	lim := NewFullBurstLimiter(3)
 
 	ctx, cancel := context.WithTimeout(context.Background(), d)
 	defer cancel()
@@ -304,7 +304,7 @@ func TestWaitTimeout(t *testing.T) {
 }
 
 func BenchmarkAllowN(b *testing.B) {
-	lim := NewBurstLimiter(1)
+	lim := NewFullBurstLimiter(1)
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -315,7 +315,7 @@ func BenchmarkAllowN(b *testing.B) {
 }
 
 func BenchmarkWaitNNoDelay(b *testing.B) {
-	lim := NewBurstLimiter(b.N)
+	lim := NewFullBurstLimiter(b.N)
 	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()

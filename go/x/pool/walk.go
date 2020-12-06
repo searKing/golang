@@ -46,7 +46,7 @@ func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn Wal
 		defer close(done)
 		defer p.wg.Done()
 		ctx, cancel := context.WithCancel(ctx)
-		limiter := rate.NewBurstLimiter(p.Burst)
+		limiter := rate.NewFullBurstLimiter(p.Burst)
 		for {
 			// Wait blocks until lim permits 1 events to happen.
 			if err := limiter.Wait(ctx); err != nil {
