@@ -25,6 +25,9 @@ type ShutdownFunc func(context.Context) error
 // Graceful sets up graceful handling of SIGINT and SIGTERM, typically for an HTTP server.
 // When signal is trapped, the shutdown handler will be invoked with a context.
 func Graceful(ctx context.Context, handlers ...Handler) (err error) {
+	if len(handlers) == 0 {
+		return nil
+	}
 	defer runtime.LogPanic.Recover()
 	ctx = context_.WithShutdownSignal(ctx)
 	var wg sync.WaitGroup
