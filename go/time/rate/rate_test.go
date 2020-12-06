@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	time_ "github.com/searKing/golang/go/time"
 )
 
 const (
@@ -138,7 +140,7 @@ type request struct {
 }
 
 func runReserve(t *testing.T, lim *BurstLimiter, req request) *Reservation {
-	return runReserveMax(t, lim, req, InfDuration)
+	return runReserveMax(t, lim, req, time_.InfDuration)
 }
 
 func runReserveMax(t *testing.T, lim *BurstLimiter, req request, maxReserve time.Duration) *Reservation {
