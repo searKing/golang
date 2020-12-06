@@ -19,9 +19,10 @@ var expectTokensKey expectKeyType
 
 // A BurstLimiter controls how frequently events are allowed to happen.
 // It implements a "token bucket" of size b, initially full and refilled
-// at rate r tokens per second.
+// by PutToken or PutTokenN.
+
 // Informally, in any large enough time interval, the BurstLimiter limits the
-// rate to r tokens per second, with a maximum burst size of b events.
+// burst tokens, with a maximum burst size of b events.
 // As a special case, if r == Inf (the infinite rate), b is ignored.
 // See https://en.wikipedia.org/wiki/Token_bucket for more about token buckets.
 //
@@ -66,6 +67,7 @@ func NewBurstLimiter(b int) *BurstLimiter {
 }
 
 // Allow is shorthand for AllowN(time.Now(), 1).
+// 当没有可用或足够的事件时，返回false
 func (lim *BurstLimiter) Allow() bool {
 	return lim.AllowN(1)
 }
@@ -73,6 +75,7 @@ func (lim *BurstLimiter) Allow() bool {
 // AllowN reports whether n events may happen at time now.
 // Use this method if you intend to drop / skip events that exceed the rate limit.
 // Otherwise use Reserve or Wait.
+// 当没有可用或足够的事件时，返回false
 func (lim *BurstLimiter) AllowN(n int) bool {
 	return lim.reserveN(context.Background(), n, false).ok
 }
@@ -95,6 +98,7 @@ func (r *Reservation) OK() bool {
 	return r.ok
 }
 
+// 当没有可用或足够的事件时，将阻塞等待
 func (r *Reservation) Wait(ctx context.Context) error {
 	// Wait if necessary
 	if r.tokensGot == nil {
@@ -114,9 +118,6 @@ func (r *Reservation) Wait(ctx context.Context) error {
 		return ctx.Err()
 	}
 }
-
-// InfDuration is the duration returned by Delay when a Reservation is not OK.
-const InfDuration = time.Duration(1<<63 - 1)
 
 // Cancel indicates that the reservation holder will not perform the reserved action
 // and reverses the effects of this Reservation on the rate limit as much as possible,
@@ -147,6 +148,7 @@ func (r *Reservation) Cancel() {
 }
 
 // Reserve is shorthand for ReserveN(1).
+// 当没有可用或足够的事件时，返回 Reservation，和要等待多久才能获得足够的事件。
 func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 	return lim.ReserveN(ctx, 1)
 }
@@ -165,6 +167,7 @@ func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 // Use this method if you wish to wait and slow down in accordance with the rate limit without dropping events.
 // If you need to respect a deadline or cancel the delay, use Wait instead.
 // To drop or skip events exceeding rate limit, use Allow instead.
+// 当没有可用或足够的事件时，返回 Reservation，和要等待多久才能获得足够的事件。
 func (lim *BurstLimiter) ReserveN(ctx context.Context, n int) *Reservation {
 	r := lim.reserveN(ctx, n, true)
 	return &r
