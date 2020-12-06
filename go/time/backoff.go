@@ -247,7 +247,7 @@ func (o *ExponentialBackOff) GetElapsedDuration() time.Duration {
 // Increments the current interval by multiplying it with the multiplier.
 func (o *ExponentialBackOff) incrementCurrentInterval() {
 	// Check for overflow, if overflow is detected set the current interval to the max interval.
-	if o.currentInterval >= o.maxInterval/time.Duration(o.multiplier) {
+	if o.currentInterval*time.Duration(o.multiplier) >= o.maxInterval {
 		o.currentInterval = o.maxInterval
 	} else {
 		o.currentInterval *= time.Duration(o.multiplier)
