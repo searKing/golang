@@ -180,7 +180,7 @@ func (o *ExponentialBackOff) NextBackOff() time.Duration {
 	if o.GetElapsedDuration() > o.maxElapsedDuration {
 		return StopDuration
 	}
-	randomizedInterval := o.GetRandomValueFromInterval(o.randomizationFactor, rand.Float64(), o.currentInterval)
+	randomizedInterval := o.GetRandomValueFromInterval(o.randomizationFactor, o.currentInterval)
 	o.incrementCurrentInterval()
 	return randomizedInterval
 }
@@ -190,15 +190,8 @@ func (o *ExponentialBackOff) NextBackOff() time.Duration {
  * randomizationFactor * currentInterval].
  */
 func (o *ExponentialBackOff) GetRandomValueFromInterval(
-	randomizationFactor float64, random float64, currentInterval time.Duration) time.Duration {
-	delta := time.Duration(randomizationFactor) * currentInterval
-	minInterval := currentInterval - delta
-	maxInterval := currentInterval + delta
-	// Get a random value from the range [minInterval, maxInterval].
-	// The formula used below has a +1 because if the minInterval is 1 and the maxInterval is 3 then
-	// we want a 33% chance for selecting either 1, 2 or 3.
-	randomValue := minInterval + (time.Duration(random) * (maxInterval - minInterval + 1))
-	return randomValue
+	randomizationFactor float64, currentInterval time.Duration) time.Duration {
+	return Jitter(currentInterval, randomizationFactor)
 }
 
 // Returns the initial retry interval.
@@ -252,4 +245,18 @@ func (o *ExponentialBackOff) incrementCurrentInterval() {
 	} else {
 		o.currentInterval *= time.Duration(o.multiplier)
 	}
+}
+
+// Jitter returns a time.Duration between
+// [duration - maxFactor*duration, duration + maxFactor*duration].
+//
+// This allows clients to avoid converging on periodic behavior.
+func Jitter(duration time.Duration, maxFactor float64) time.Duration {
+	delta := time.Duration(maxFactor) * duration
+	minInterval := duration - delta
+	maxInterval := duration + delta
+	// Get a random value from the range [minInterval, maxInterval].
+	// The formula used below has a +1 because if the minInterval is 1 and the maxInterval is 3 then
+	// we want a 33% chance for selecting either 1, 2 or 3.
+	return minInterval + time.Duration(rand.Float64()*float64(maxInterval-minInterval+1))
 }
