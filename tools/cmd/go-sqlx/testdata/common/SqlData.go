@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package common
+package main
 
 import (
 	"database/sql"
@@ -20,3 +20,6 @@ type SqlData struct {
 
 	Version uint `db:"version" json:"sql_data_version,omitempty"`
 } // sql_data
+
+func main() {
+}

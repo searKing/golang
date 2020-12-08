@@ -95,8 +95,81 @@ func (m {{.StructType}}) NonzeroColumnsIn(cols ...string) []string {
 	return nonzeroCols
 }
 
+func (m {{.StructType}}) NonzeroTableColumns() []string {
+	var cols []string
+{{- range .Fields}}
+	{
+		var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+		if(!zero){
+		cols = append(cols, m.TableColumn{{.FieldName}}())
+		}
+	}
+{{- end}}
+	return cols
+}
+
+func (m {{.StructType}}) NonzeroTableColumnsIn(cols ...string) []string {
+	var nonzeroCols []string
+	for _, col := range cols {
+		switch col {
+{{- range .Fields}}	
+		case m.Column{{.FieldName}}():
+			var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+			if(!zero){
+				cols = append(cols, m.TableColumn{{.FieldName}}())
+			}
+{{- end}}
+		default:
+		}
+	}
+	return nonzeroCols
+}
+
+func (m {{.StructType}}) NonzeroMapColumns() []string {
+	var cols []string
+{{- range .Fields}}
+	{
+		var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+		if(!zero){
+		cols = append(cols, m.TableColumn{{.FieldName}}())
+		}
+	}
+{{- end}}
+	return cols
+}
+
+func (m {{.StructType}}) NonzeroMapColumnsIn(cols ...string) []string {
+	var nonzeroCols []string
+	for _, col := range cols {
+		switch col {
+{{- range .Fields}}	
+		case m.Column{{.FieldName}}():
+			var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+			if(!zero){
+				cols = append(cols, m.TableColumn{{.FieldName}}())
+			}
+{{- end}}
+		default:
+		}
+	}
+	return nonzeroCols
+}
+
 // MarshalMap marshal themselves into or append a valid map
+// key is column name in db, from struct tag db:"xxxx"
 func (m {{.StructType}}) MarshalMap(valueByCol map[string]interface{}) map[string]interface{} {
+	if valueByCol == nil {
+		valueByCol = map[string]interface{}{}
+	}
+{{- range .Fields}}	
+	valueByCol[m.Column{{.FieldName}}()] = m.{{.FieldName}}
+{{- end}}
+	return valueByCol
+}
+
+// MarshalTableMap marshal themselves into or append a valid map
+// key is column name in db with table name, from struct tag db:"xxxx"
+func (m {{.StructType}}) MarshalTableMap(valueByCol map[string]interface{}) map[string]interface{} {
 	if valueByCol == nil {
 		valueByCol = map[string]interface{}{}
 	}
@@ -108,7 +181,42 @@ func (m {{.StructType}}) MarshalMap(valueByCol map[string]interface{}) map[strin
 
 // UnmarshalMap is the interface implemented by types
 // that can unmarshal a map description of themselves.
+// key is column name in db, from struct tag db:"xxxx"
 func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error {
+	for col, val := range valueByCol {
+		switch col {
+{{- range .Fields}}	
+		case m.Column{{.FieldName}}():
+			// for sql.Scanner
+			v := reflect.ValueOf(&m.{{.FieldName}})
+			if v.Type().NumMethod() > 0 && v.CanInterface() {
+				if u, ok := v.Interface().(sql.Scanner); ok {
+					if err := u.Scan(val); err != nil {
+						return fmt.Errorf("unmarshal col %q, got %w", col, err)
+					}
+					break
+				}
+			}
+
+			data, err := json.Marshal(val)
+			if err != nil {
+				return fmt.Errorf("marshal col %q, got %w", col, err)
+			}
+			err = json.Unmarshal(data, &m.{{.FieldName}})
+			if err != nil {
+				return fmt.Errorf("unmarshal col %q, got %w", col, err)
+			}
+{{- end}}
+		}
+	}
+	return nil
+}
+
+
+// UnmarshalTableMap is the interface implemented by types
+// that can unmarshal a map description of themselves.
+// key is column name with table name in db, from struct tag db:"xxxx"
+func (m *{{.StructType}}) UnmarshalTableMap(valueByCol map[string]interface{}) error {
 	for col, val := range valueByCol {
 		switch col {
 {{- range .Fields}}	
@@ -139,17 +247,23 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 }
 
 {{- range .Fields }}
-// Column{{$package_scope.StructType}} return column name in db, from struct tag db:"{{.DbName}}"
+// Column{{.FieldName}} return column name in db, from struct tag db:"{{.DbName}}"
 func (_ {{$package_scope.StructType}})Column{{.FieldName}}() string{
 	return "{{.DbName}}"
 }
 
-// TableColumn{{$package_scope.StructType}} return column name with TableName
+// TableColumn{{.FieldName}} return column name with TableName
 // "{{$package_scope.TableName}}.{{.DbName}}"
 func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
 	// avoid runtime cost of fmt.Sprintf
 	// return fmt.Sprintf("%s.%s", a.TableName(), a.Column{{$package_scope.StructType}}())
 	return "{{$package_scope.TableName}}.{{.DbName}}"
+}
+
+// TableColumn{{.FieldName}}WithAs return column name with TableName
+// "{{$package_scope.TableName}}.{{.DbName}}"
+func (m {{$package_scope.StructType}})TableColumn{{.FieldName}}WithAs() string{
+	return fmt.Sprintf("%s AS %s", m.TableColumn{{.FieldName}}(), m.MapColumn{{.FieldName}})
 }
 
 // MapColumn{{$package_scope.StructType}} return column name with TableName
@@ -441,7 +555,7 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 
 	defer ns.Close()
 
-	rows, err := ns.QueryxContext(ctx, arg.MarshalMap(nil))
+	rows, err := ns.QueryxContext(ctx, arg.MarshalTableMap(nil))
 	if err != nil {
 {{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
@@ -468,7 +582,7 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 		}
 
 		resp := {{.StructType}}{}
-		err = resp.UnmarshalMap(row)
+		err = resp.UnmarshalTableMap(row)
 		if err != nil {
 {{- if .WithQueryInfo }}
 			return nil, fmt.Errorf("%w, sql %q", err, query)
