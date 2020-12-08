@@ -143,9 +143,7 @@ func (m *{{.StructType}}) UnmarshalMap(valueByCol map[string]interface{}) error 
 func (_ {{$package_scope.StructType}})Column{{.FieldName}}() string{
 	return "{{.DbName}}"
 }
-{{- end }}
 
-{{- range .Fields }}
 // TableColumn{{$package_scope.StructType}} return column name with TableName
 // "{{$package_scope.TableName}}.{{.DbName}}"
 func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
@@ -153,9 +151,7 @@ func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
 	// return fmt.Sprintf("%s.%s", a.TableName(), a.Column{{$package_scope.StructType}}())
 	return "{{$package_scope.TableName}}.{{.DbName}}"
 }
-{{- end }}
 
-{{- range .Fields }}
 // MapColumn{{$package_scope.StructType}} return column name with TableName
 // "{{$package_scope.TableName}}_{{.DbName}}"
 func (m {{$package_scope.StructType}})MapColumn{{.FieldName}}() string{

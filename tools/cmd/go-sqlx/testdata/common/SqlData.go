@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package common
 
 import (
 	"database/sql"
 	"time"
 )
 
+//go:generate go-sqlx -type=SqlData --with-dao
 type SqlData struct {
 	Id        uint      `db:"id" json:"sql_data_id,omitempty"`
 	CreatedAt time.Time `db:"created_at" json:"sql_data_created_at,omitempty"`
@@ -19,7 +20,3 @@ type SqlData struct {
 
 	Version uint `db:"version" json:"sql_data_version,omitempty"`
 } // sql_data
-
-func main() {
-
-}
