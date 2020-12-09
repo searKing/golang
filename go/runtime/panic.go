@@ -18,6 +18,7 @@ var (
 // called in case of panic.
 type Panic struct {
 	// IgnoreCrash controls the behavior of Recover and now defaults false.
+	// if false, crash immediately, rather than eating panics.
 	IgnoreCrash bool
 
 	// PanicHandlers for something like logging the panic message, shutting down go routines gracefully.
@@ -43,7 +44,7 @@ func (p *Panic) AppendHandler(handlers ...func(interface{})) *Panic {
 	return p
 }
 
-func PanicWith(handlers ...func(interface{})) Panic {
+func HandlePanicWith(handlers ...func(interface{})) Panic {
 	p := Panic{}
 	p.AppendHandler(handlers...)
 	return p

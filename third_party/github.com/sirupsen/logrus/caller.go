@@ -12,7 +12,7 @@ import (
 // file keys in the data when ReportCaller is activated.
 // INFO[0000] main.go:23 main() hello world
 var ShortCallerPrettyfier = func(f *runtime.Frame) (function string, file string) {
-	funcname := path.Ext(f.Function)
+	funcname := path.Base(f.Function)
 	filename := path.Base(f.File)
 	return fmt.Sprintf("%s()", funcname), fmt.Sprintf("%s:%d", filename, f.Line)
 }

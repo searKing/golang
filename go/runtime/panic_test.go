@@ -31,7 +31,7 @@ func TestPanicWith(t *testing.T) {
 				t.Errorf("Expected a panic to recover from")
 			}
 		}()
-		defer runtime.PanicWith(func(r interface{}) {
+		defer runtime.HandlePanicWith(func(r interface{}) {
 			result = r
 		}).Recover()
 		panic("test")

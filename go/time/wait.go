@@ -14,8 +14,10 @@ import (
 // Forever calls f every period for ever.
 //
 // Forever is syntactic sugar on top of Until.
-func Forever(f func(ctx context.Context), period time.Duration) {
-	Until(context.Background(), f, period)
+func Forever(f func(), period time.Duration) {
+	Until(context.Background(), func(ctx context.Context) {
+		f()
+	}, period)
 }
 
 // Until loops until context is done, running f every period.
