@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+//go:generate go-sqlx -type=SqlData --with-dao
 type SqlData struct {
 	Id        uint      `db:"id" json:"sql_data_id,omitempty"`
 	CreatedAt time.Time `db:"created_at" json:"sql_data_created_at,omitempty"`
@@ -21,5 +22,4 @@ type SqlData struct {
 } // sql_data
 
 func main() {
-
 }
