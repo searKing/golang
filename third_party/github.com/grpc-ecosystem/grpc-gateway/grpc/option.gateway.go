@@ -141,6 +141,31 @@ func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) Gat
 	})
 }
 
+// Deprecated: Use WithHttpPreHandler instead.
 func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
-	return WithHttpHandlerInterceptor(http_.WithHandlerInterceptor(rewriter, nil, nil))
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
+}
+
+func WithHttpPreHandler(preHandle func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(preHandle, nil, nil, nil))
+}
+
+// WithHttpWrapper is a decorator or middleware of http.Handler
+func WithHttpWrapper(wrapper func(http.Handler) http.Handler) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(nil, wrapper, nil, nil))
+}
+
+func WithHttpPostHandler(
+	postHandle func(w http.ResponseWriter, r *http.Request)) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(nil, nil, postHandle, nil))
+}
+
+func WithHttpAfterCompletion(
+	afterCompletion func(w http.ResponseWriter, r *http.Request, err interface{})) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(nil, nil, nil, afterCompletion))
 }

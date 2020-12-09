@@ -1,3 +1,7 @@
+// Copyright 2020 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package http
 
 import (
@@ -64,6 +68,11 @@ func (chain HandlerInterceptorChain) InjectHttpHandler(next http.Handler) http.H
 			// the execution chain should proceed with the next interceptor or the handler itself
 			it = i
 		}
+
+		for _, filter := range chain.interceptors {
+			next = filter.WrapHandle(next)
+		}
+
 		next.ServeHTTP(w, r)
 	})
 
