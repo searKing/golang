@@ -141,12 +141,6 @@ func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) Gat
 	})
 }
 
-// Deprecated: Use WithHttpPreHandler instead.
-func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
-	return WithHttpHandlerInterceptor(
-		http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
-}
-
 func WithHttpPreHandler(preHandle func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
 	return WithHttpHandlerInterceptor(
 		http_.WithHandlerInterceptor(preHandle, nil, nil, nil))
@@ -168,4 +162,10 @@ func WithHttpAfterCompletion(
 	afterCompletion func(w http.ResponseWriter, r *http.Request, err interface{})) GatewayOption {
 	return WithHttpHandlerInterceptor(
 		http_.WithHandlerInterceptor(nil, nil, nil, afterCompletion))
+}
+
+// Deprecated: Use WithHttpPreHandler instead.
+func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
 }
