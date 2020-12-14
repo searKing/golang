@@ -69,9 +69,8 @@ func (m {{.StructType}}) NonzeroColumns() []string {
 	var cols []string
 {{- range .Fields}}
 	{
-		var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
-		if(!zero){
-		cols = append(cols, m.Column{{.FieldName}}())
+		if(!m.Is{{.FieldName}}Zero()){
+			cols = append(cols, m.Column{{.FieldName}}())
 		}
 	}
 {{- end}}
@@ -84,8 +83,7 @@ func (m {{.StructType}}) NonzeroColumnsIn(cols ...string) []string {
 		switch col {
 {{- range .Fields}}	
 		case m.Column{{.FieldName}}():
-			var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
-			if(!zero){
+			if(!m.Is{{.FieldName}}Zero()){
 				cols = append(cols, m.Column{{.FieldName}}())
 			}
 {{- end}}
@@ -99,9 +97,8 @@ func (m {{.StructType}}) NonzeroTableColumns() []string {
 	var cols []string
 {{- range .Fields}}
 	{
-		var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
-		if(!zero){
-		cols = append(cols, m.TableColumn{{.FieldName}}())
+		if(!m.Is{{.FieldName}}Zero()){
+			cols = append(cols, m.TableColumn{{.FieldName}}())
 		}
 	}
 {{- end}}
@@ -114,38 +111,7 @@ func (m {{.StructType}}) NonzeroTableColumnsIn(cols ...string) []string {
 		switch col {
 {{- range .Fields}}	
 		case m.Column{{.FieldName}}():
-			var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
-			if(!zero){
-				cols = append(cols, m.TableColumn{{.FieldName}}())
-			}
-{{- end}}
-		default:
-		}
-	}
-	return nonzeroCols
-}
-
-func (m {{.StructType}}) NonzeroMapColumns() []string {
-	var cols []string
-{{- range .Fields}}
-	{
-		var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
-		if(!zero){
-		cols = append(cols, m.TableColumn{{.FieldName}}())
-		}
-	}
-{{- end}}
-	return cols
-}
-
-func (m {{.StructType}}) NonzeroMapColumnsIn(cols ...string) []string {
-	var nonzeroCols []string
-	for _, col := range cols {
-		switch col {
-{{- range .Fields}}	
-		case m.Column{{.FieldName}}():
-			var zero = reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
-			if(!zero){
+			if(!m.Is{{.FieldName}}Zero()){
 				cols = append(cols, m.TableColumn{{.FieldName}}())
 			}
 {{- end}}
@@ -247,10 +213,12 @@ func (m *{{.StructType}}) UnmarshalTableMap(valueByCol map[string]interface{}) e
 }
 
 {{- range .Fields }}
+
 // Column{{.FieldName}} return column name in db, from struct tag db:"{{.DbName}}"
 func (_ {{$package_scope.StructType}})Column{{.FieldName}}() string{
 	return "{{.DbName}}"
 }
+
 
 // TableColumn{{.FieldName}} return column name with TableName
 // "{{$package_scope.TableName}}.{{.DbName}}"
@@ -261,7 +229,7 @@ func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
 }
 
 // TableColumn{{.FieldName}}WithAs return column name with TableName
-// "{{$package_scope.TableName}}.{{.DbName}}"
+// "{{$package_scope.TableName}}.{{.DbName}} AS {{$package_scope.TableName}}_{{.DbName}}"
 func (m {{$package_scope.StructType}})TableColumn{{.FieldName}}WithAs() string{
 	return fmt.Sprintf("%s AS %s", m.TableColumn{{.FieldName}}(), m.MapColumn{{.FieldName}})
 }
@@ -273,6 +241,53 @@ func (m {{$package_scope.StructType}})MapColumn{{.FieldName}}() string{
 	// return fmt.Sprintf("%s_%s", m.TableName(), m.Column{{$package_scope.StructType}}())
 	// return "{{$package_scope.TableName}}_{{.DbName}}"
 	return sql_.CompliantName(m.TableColumn{{.FieldName}}())
+}
+
+// NonZero
+
+// Is{{.FieldName}}Zero return {{.FieldName}} is zero or not
+func (m {{$package_scope.StructType}})Is{{.FieldName}}Zero() bool{
+	return reflect_.IsZeroValue(reflect.ValueOf(m.{{.FieldName}}))
+}
+
+// NonzeroColumn{{.FieldName}} return column name in db, from struct tag db:"{{.DbName}}"
+// return empty string if field is zero value
+func (m {{$package_scope.StructType}})NonzeroColumn{{.FieldName}}() string{
+	if m.Is{{.FieldName}}Zero() {
+		return ""
+	}
+	return m.Column{{.FieldName}}()
+}
+
+// TableColumn{{.FieldName}} return column name with TableName
+// return empty string if field is zero value
+// "{{$package_scope.TableName}}.{{.DbName}}"
+func (m {{$package_scope.StructType}})NonzeroTableColumn{{.FieldName}}() string{
+	if m.Is{{.FieldName}}Zero() {
+		return ""
+	}
+	// avoid runtime cost of fmt.Sprintf
+	// return fmt.Sprintf("%s.%s", a.TableName(), a.Column{{$package_scope.StructType}}())
+	return m.TableColumn{{.FieldName}}()
+}
+
+// TableColumn{{.FieldName}}WithAs return column name with TableName
+// return empty string if field is zero value
+// "{{$package_scope.TableName}}.{{.DbName}} AS {{$package_scope.TableName}}_{{.DbName}}"
+func (m {{$package_scope.StructType}})NonzeroTableColumn{{.FieldName}}WithAs() string{
+	if m.Is{{.FieldName}}Zero() {
+		return ""
+	}
+	return m.TableColumn{{.FieldName}}WithAs()
+}
+
+// MapColumn{{$package_scope.StructType}} return column name with TableName
+// "{{$package_scope.TableName}}_{{.DbName}}"
+func (m {{$package_scope.StructType}})NonzeroMapColumn{{.FieldName}}() string{
+	if m.Is{{.FieldName}}Zero() {
+		return ""
+	}
+	return m.MapColumn{{.FieldName}}()
 }
 {{- end }}
 
