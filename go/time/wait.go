@@ -66,6 +66,7 @@ func JitterUntil(ctx context.Context, f func(ctx context.Context), sliding bool,
 // period includes the runtime for f.
 func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff BackOff, sliding bool) {
 	var elapsed time.Duration
+	var ok bool
 	for {
 		select {
 		case <-ctx.Done():
@@ -74,7 +75,7 @@ func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff Back
 		}
 
 		if !sliding {
-			elapsed = backoff.NextBackOff()
+			elapsed, ok = backoff.NextBackOff()
 		}
 
 		func() {
@@ -83,11 +84,11 @@ func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff Back
 		}()
 
 		if sliding {
-			elapsed = backoff.NextBackOff()
+			elapsed, ok = backoff.NextBackOff()
 		}
 
 		func() {
-			if elapsed < 0 {
+			if !ok || elapsed < 0 {
 				return
 			}
 			timer := time.NewTimer(elapsed)
