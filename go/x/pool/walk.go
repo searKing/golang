@@ -79,8 +79,9 @@ func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn Wal
 }
 
 // Wait blocks until the WaitGroup counter is zero.
-func (p *Walk) Wait() {
+func (p *Walk) Wait() error {
 	p.wg.Wait()
+	return p.Error()
 }
 
 func (p *Walk) Error() error {

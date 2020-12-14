@@ -70,9 +70,6 @@ const (
 
 	// The default maximum elapsed time (15 minutes).
 	DefaultMaxElapsedDuration = 15 * time.Minute
-
-	// Indicates that no more retries should be made for use in {@link #NextBackOff()}.
-	StopDuration = time.Duration(-1)
 )
 
 // Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
@@ -81,16 +78,17 @@ type BackOff interface {
 	// Reset to initial state.
 	Reset()
 
-	// Gets duration to wait before retrying the operation or {@link #STOP} to
+	// Gets duration to wait before retrying the operation to
 	// indicate that no retries should be made.
+	// ok indicates that no more retries should be made.
 	// Example usage:
-	// var backOffDuration = backoff.NextBackOff();
-	// if (backOffDuration == Backoff.STOP) {
+	// var backOffDuration, ok = backoff.NextBackOff();
+	// if (!ok) {
 	// 	// do not retry operation
 	// } else {
 	//	// sleep for backOffDuration milliseconds and retry operation
 	// }
-	NextBackOff() time.Duration
+	NextBackOff() (backoff time.Duration, ok bool)
 }
 
 //  Fixed back-off policy whose back-off time is always zero, meaning that the operation is retried
@@ -101,8 +99,8 @@ type ZeroBackOff struct {
 
 func (o *ZeroBackOff) Reset() {
 }
-func (o *ZeroBackOff) NextBackOff() time.Duration {
-	return 0
+func (o *ZeroBackOff) NextBackOff() (backoff time.Duration, ok bool) {
+	return 0, true
 }
 
 // Fixed back-off policy that always returns {@code #STOP} for {@link #NextBackOff()},
@@ -113,8 +111,8 @@ type StopBackOff struct {
 
 func (o *StopBackOff) Reset() {
 }
-func (o *StopBackOff) NextBackOff() time.Duration {
-	return StopDuration
+func (o *StopBackOff) NextBackOff() (backoff time.Duration, ok bool) {
+	return 0, false
 }
 
 //go:generate go-option -type "ExponentialBackOff"
@@ -175,14 +173,14 @@ func (o *ExponentialBackOff) Reset() {
  *
  * <p>Subclasses may override if a different algorithm is required.
  */
-func (o *ExponentialBackOff) NextBackOff() time.Duration {
+func (o *ExponentialBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	// Make sure we have not gone over the maximum elapsed time.
 	if o.GetElapsedDuration() > o.maxElapsedDuration {
-		return StopDuration
+		return 0, false
 	}
 	randomizedInterval := o.GetRandomValueFromInterval(o.randomizationFactor, o.currentInterval)
 	o.incrementCurrentInterval()
-	return randomizedInterval
+	return randomizedInterval, true
 }
 
 /**

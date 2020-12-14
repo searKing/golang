@@ -154,14 +154,7 @@ func (d *Delay) Reset() {
 
 // Gets duration to wait before retrying the operation or {@link #STOP} to
 // indicate that no retries should be made.
-// Example usage:
-// var backOffMillis = backoff.NextBackOff();
-// if (backOffMillis == Backoff.STOP) {
-// 	// do not retry operation
-// } else {
-//	// sleep for backOffMillis milliseconds and retry operation
-// }
-func (d *Delay) NextBackOff() time.Duration {
+func (d *Delay) NextBackOff() (backoff time.Duration, ok bool) {
 	d.Update()
-	return d.delay
+	return d.delay, ok
 }
