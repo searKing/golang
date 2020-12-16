@@ -86,6 +86,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	strings_ "github.com/searKing/golang/go/strings"
 	"golang.org/x/tools/go/packages"
@@ -211,6 +212,14 @@ type Generator struct {
 // Printf format & write to the buf in this generator
 func (g *Generator) Printf(format string, args ...interface{}) {
 	_, _ = fmt.Fprintf(&g.buf, format, args...)
+}
+
+func (g *Generator) Render(text string, arg TmplRender) {
+	tmpl, err := template.New("go-nulljson").Parse(text)
+	if err != nil {
+		panic(err)
+	}
+	_ = tmpl.Execute(&g.buf, &arg)
 }
 
 // File holds a single parsed file and associated data.
@@ -413,78 +422,16 @@ func (g *Generator) buildOneRun(value Value) {
 	g.declareNameVar(value)
 
 	//The generated code is simple enough to write as a Printf format.
-	optionInterfaceName := strings_.UpperCamelCaseSlice(value.eleName, "option")
-	g.Printf(stringOneRun, value.eleName, optionInterfaceName)
-	if strings.TrimSpace(value.eleImport) != "" {
-		g.Printf("\n")
-		g.Printf(stringApplyOptionsAsCFunction, value.eleName, optionInterfaceName)
-	} else {
-		g.Printf("\n")
-		g.Printf(stringApplyOptionsAsMemberFunction, value.eleName, optionInterfaceName)
+	tmplRender := TmplRender{
+		OptionInterfaceName: strings_.UpperCamelCaseSlice(value.eleName, "option"),
+		OptionTypeName:      value.eleName,
+		OptionTypeImport:    value.eleImport,
 	}
+	tmplRender.Complete()
+	g.Render(tmplOption, tmplRender)
 }
 
 // Arguments to format are:
 //	[1]: import path
 const stringImport = `import "%s"
-`
-
-// Arguments to format are:
-//	[1]: option type name
-//	[2]: optionInterface type name
-const stringOneRun = `// A %[2]s sets options.
-type %[2]s interface {
-	apply(*%[1]s)
-}
-
-// Empty%[2]s does not alter the configuration. It can be embedded
-// in another structure to build custom options.
-//
-// This API is EXPERIMENTAL.
-type Empty%[2]s struct{}
-
-func (Empty%[2]s) apply(*%[1]s) {}
-
-// %[2]sFunc wraps a function that modifies %[1]s into an
-// implementation of the %[2]s interface.
-type %[2]sFunc func(*%[1]s)
-
-func (f %[2]sFunc) apply(do *%[1]s) {
-	f(do)
-}
-
-// sample code for option, default for nothing to change
-func _%[2]sWithDefault() %[2]s {
-	return %[2]sFunc(func( *%[1]s) {
-		// nothing to change
-	})
-}
-`
-
-// Arguments to format are:
-//	[1]: option type name
-//	[2]: optionInterface type name
-const stringApplyOptionsAsMemberFunction = `func (o *%[1]s) ApplyOptions(options ...%[2]s) *%[1]s {
-	for _, opt := range options {
-		if opt == nil {
-			continue
-		}
-		opt.apply(o)
-	}
-	return o
-}
-`
-
-// Arguments to format are:
-//	[1]: option type name
-//	[2]: optionInterface type name
-const stringApplyOptionsAsCFunction = `func ApplyOptions(o *%[1]s, options ...%[2]s) *%[1]s {
-	for _, opt := range options {
-		if opt == nil {
-			continue
-		}
-		opt.apply(o)
-	}
-	return o
-}
 `
