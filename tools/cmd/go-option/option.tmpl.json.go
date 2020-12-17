@@ -51,26 +51,27 @@ type Completed{{.OptionTypeName}} struct {
 // recommend to implement codes below
 // Code borrowed from https://github.com/kubernetes/kubernetes
 
-// Complete fills in any fields not set that are required to have valid data and can be derived
-// from other fields. If you're going to ApplyOptions, do that first. It's mutating the receiver.
-// func (o *{{.OptionTypeName}}) Complete() Completed{{.OptionTypeName}} {
+//// Complete fills in any fields not set that are required to have valid data and can be derived
+//// from other fields. If you're going to ApplyOptions, do that first. It's mutating the receiver.
+//// ApplyOptions is called inside.
+// func (o *{{.OptionTypeName}}) Complete(options ...{{.OptionInterfaceName}})) Completed{{.OptionTypeName}} {
 //  o.ApplyOptions(options...)
 //  // Add custom codes here
 //  return Completed{{.OptionTypeName}}{&completed{{.OptionTypeName}}{o}}
 // }
 
 
-// New creates a new server which logically combines the handling chain with the passed server.
-// name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delgating.
-// New usually called after Complete
+//// New creates a new server which logically combines the handling chain with the passed server.
+//// name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delgating.
+//// New usually called after Complete
 //func (c completed{{.OptionTypeName}}) New(name string) (*{{.OptionTypeName}}, error) {
 //  // Add custom codes here
 //	return nil, fmt.Errorf("not implemented")
 //}
 
-// Apply set options and something else as global init, act likes New but without {{.OptionTypeName}}'s instance
-// Apply usually called after Complete
-//func (c completed{{.OptionTypeName}}) Apply() error {
+//// Apply set options and something else as global init, act likes New but without {{.OptionTypeName}}'s instance
+//// Apply usually called after Complete
+////func (c completed{{.OptionTypeName}}) Apply() error {
 //  // Add custom codes here
 //	return fmt.Errorf("not implemented")
 //}
