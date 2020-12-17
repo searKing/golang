@@ -54,18 +54,24 @@ type Completed{{.OptionTypeName}} struct {
 // Complete fills in any fields not set that are required to have valid data and can be derived
 // from other fields. If you're going to ApplyOptions, do that first. It's mutating the receiver.
 // func (o *{{.OptionTypeName}}) Complete() Completed{{.OptionTypeName}} {
+//  o.ApplyOptions(options...)
+//  // TODO Add custom codes here
 //  return Completed{{.OptionTypeName}}{&completed{{.OptionTypeName}}{o}}
 // }
 
 
 // New creates a new server which logically combines the handling chain with the passed server.
 // name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delgating.
+// New usually called after Complete
 //func (c completed{{.OptionTypeName}}) New(name string) (*{{.OptionTypeName}}, error) {
+//  // TODO Add custom codes here
 //	return nil, fmt.Errorf("not implemented")
 //}
 
 // Apply set options and something else as global init, act likes New but without {{.OptionTypeName}}'s instance
+// Apply usually called after Complete
 //func (c completed{{.OptionTypeName}}) Apply() error {
+//  // TODO Add custom codes here
 //	return fmt.Errorf("not implemented")
 //}
 
