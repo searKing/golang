@@ -54,7 +54,7 @@ type Completed{{.OptionTypeName}} struct {
 //// Complete fills in any fields not set that are required to have valid data and can be derived
 //// from other fields. If you're going to ApplyOptions, do that first. It's mutating the receiver.
 //// ApplyOptions is called inside.
-// func (o *{{.OptionTypeName}}) Complete(options ...{{.OptionInterfaceName}})) Completed{{.OptionTypeName}} {
+// func (o *{{.OptionTypeName}}) Complete(options ...{{.OptionInterfaceName}}) Completed{{.OptionTypeName}} {
 //  o.ApplyOptions(options...)
 //  // Add custom codes here
 //  return Completed{{.OptionTypeName}}{&completed{{.OptionTypeName}}{o}}
@@ -71,7 +71,7 @@ type Completed{{.OptionTypeName}} struct {
 
 //// Apply set options and something else as global init, act likes New but without {{.OptionTypeName}}'s instance
 //// Apply usually called after Complete
-////func (c completed{{.OptionTypeName}}) Apply() error {
+//func (c completed{{.OptionTypeName}}) Apply() error {
 //  // Add custom codes here
 //	return fmt.Errorf("not implemented")
 //}
