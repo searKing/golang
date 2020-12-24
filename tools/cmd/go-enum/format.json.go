@@ -30,7 +30,7 @@ func (i %[1]s) MarshalJSON() ([]byte, error) {
 func (i *%[1]s) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("%[1]s should be a string, got %[1]s", data)
+		return fmt.Errorf("%[1]s should be a string, got %%[1]s", data)
 	}
 
 	var err error
