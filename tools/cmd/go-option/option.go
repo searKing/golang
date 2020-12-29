@@ -101,6 +101,8 @@ var (
 	buildTags   = flag.String("tags", "", "comma-separated list of build tags to apply")
 	option      = flag.Bool("option", true, "generate options for type names")
 	config      = flag.Bool("config", false, "generate completed config for type names")
+	optionOnly  = flag.Bool("optiononly", false, "generate option, mute config; overwrite flags --config and --option; --optionOnly and --configOnly can not both be set")
+	configOnly  = flag.Bool("configonly", false, "generate config, mute option; overwrite flags --config and --option; --optionOnly and --configOnly can not both be set")
 )
 
 // Usage is a replacement usage function for the flags package.
@@ -132,6 +134,20 @@ func main() {
 	if len(types) == 0 {
 		flag.Usage()
 		os.Exit(3)
+	}
+
+	if *optionOnly && *configOnly {
+		flag.Usage()
+		os.Exit(4)
+	}
+
+	if *optionOnly {
+		*option = true
+		*config = false
+	}
+	if *configOnly {
+		*option = false
+		*config = true
 	}
 
 	if !*option && !*config {
