@@ -31,7 +31,7 @@ func (t *TmplConfigRender) Complete() {
 
 	t.OptionInterfaceName = strings_.UpperCamelCaseSlice("option")
 	t.OptionStructName = strings_.UpperCamelCaseSlice("config")
-	if !*noPrefix && t.TrimmedTypeName != "" {
+	if !*trim && t.TrimmedTypeName != "" {
 		t.OptionInterfaceName = strings_.UpperCamelCaseSlice(t.TrimmedTypeName, "option")
 		t.OptionStructName = strings_.UpperCamelCaseSlice(t.TrimmedTypeName, "config")
 	}

@@ -96,7 +96,7 @@ var (
 	typeInfos   = flag.String("type", "", "comma-separated list of type names; must be set")
 	output      = flag.String("output", "", "output file name; default srcdir/<type>_option.go")
 	trimPrefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
-	noPrefix    = flag.Bool("noprefix", false, "trim type names as prefix from the generated constant names")
+	trim        = flag.Bool("trim", false, "trim type names as prefix from the generated constant names")
 	lineComment = flag.Bool("linecomment", false, "use line comment text as printed text when present")
 	buildTags   = flag.String("tags", "", "comma-separated list of build tags to apply")
 	option      = flag.Bool("option", true, "generate options for type names")
