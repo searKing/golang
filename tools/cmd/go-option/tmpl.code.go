@@ -53,6 +53,7 @@ package {{.PackageName}}
 {{range $path := .ImportPaths}} import "{{$path}}" {{end}}
 
 // Code borrowed from https://github.com/kubernetes/kubernetes
+// call chains: NewConfig -> Complete -> [Validate] -> New|Apply
 type {{.OptionStructName}} struct {
 	// TODO Add config fields here
 }
@@ -82,6 +83,13 @@ func New{{.OptionStructName}}() *{{.OptionStructName}} {
 func (o *{{.OptionStructName}}) Complete() Completed{{.OptionStructName}} {
 	// TODO Add custom codes here
 	return Completed{{.OptionStructName}}{&completed{{.OptionStructName}}{o}}
+}
+
+// Validate checks {{.OptionStructName}} and return a slice of found errs.
+func (o *{{.OptionStructName}}) Validate() []error {
+	var errs []error
+	// TODO Add custom validate codes here
+	return errs
 }
 
 // New creates a new server which logically combines the handling chain with the passed server.
