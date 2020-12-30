@@ -7,7 +7,11 @@
 // The key observation and some code (shr) is borrowed from https://github.com/protocolbuffers/protobuf-go/blob/v1.25.0/internal/pragma/pragma.go
 package pragma
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+	"unsafe"
+)
 
 // NoUnkeyedLiterals can be embedded in a struct to prevent unkeyed literals.
 type NoUnkeyedLiterals struct{}
@@ -17,7 +21,8 @@ type NoUnkeyedLiterals struct{}
 //
 // This is useful to prevent unauthorized implementations of an interface
 // so that it can be extended in the future for any protobuf language changes.
-type DoNotImplement interface{ ProtoInternal(DoNotImplement) }
+type doNotImplement struct{}
+type DoNotImplement interface{ ProtoInternal(doNotImplement) }
 
 // DoNotCompare can be embedded in a struct to prevent comparability.
 type DoNotCompare [0]func()
@@ -28,3 +33,22 @@ type DoNotCompare [0]func()
 //
 // See https://golang.org/issues/8005.
 type DoNotCopy [0]sync.Mutex
+
+// CopyChecker holds back pointer to itself to detect object copying.
+// Deprecated. use DoNotCopy instead, check by go vet.
+// methods Copied or Check return not copied if none of methods Copied or Check have bee called before
+type CopyChecker uintptr
+
+// Copied returns true if this object is copied
+func (c *CopyChecker) Copied() bool {
+	return uintptr(*c) != uintptr(unsafe.Pointer(c)) &&
+		!atomic.CompareAndSwapUintptr((*uintptr)(c), 0, uintptr(unsafe.Pointer(c))) &&
+		uintptr(*c) != uintptr(unsafe.Pointer(c))
+}
+
+// Check panic is c is copied
+func (c *CopyChecker) Check() {
+	if c.Copied() {
+		panic("object is copied")
+	}
+}
