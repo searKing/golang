@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -20,7 +20,7 @@ func Parse%[1]sString(s string) (%[1]s, error) {
 	if val, ok := _%[1]s_name_to_values[s]; ok {
 		return val, nil
 	}
-	return 0, fmt.Errorf("%%[1]s does not belong to %[1]s values", s)
+	return 0, fmt.Errorf("%%s does not belong to %[1]s values", s)
 }
 `
 
