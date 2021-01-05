@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -16,7 +16,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/go/net/http"
-	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/runtime"
+	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
