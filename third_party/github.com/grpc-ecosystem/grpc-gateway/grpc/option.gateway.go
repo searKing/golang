@@ -150,5 +150,5 @@ func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) Gat
 }
 
 func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
-	return WithHttpHandlerInterceptor(http_.WithHandlerInterceptor(rewriter, nil, nil))
+	return WithHttpHandlerInterceptor(http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
 }
