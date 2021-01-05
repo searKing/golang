@@ -5,16 +5,16 @@
 package runtime
 
 // Whether to render enum values as integers, as opposed to string values.
-func WithEmitAsInts(enumsAsInts bool) JSONPbOption {
+func WithUseEnumNumbers(useEnumNumbers bool) JSONPbOption {
 	return JSONPbOptionFunc(func(pb *JSONPb) {
-		pb.JSONPb.EnumsAsInts = enumsAsInts
+		pb.JSONPb.UseEnumNumbers = useEnumNumbers
 	})
 }
 
 // Whether to render fields with zero values.
-func WithEmitDefaults(emitDefaults bool) JSONPbOption {
+func WithEmitUnpopulated(emitUnpopulated bool) JSONPbOption {
 	return JSONPbOptionFunc(func(pb *JSONPb) {
-		pb.JSONPb.EmitDefaults = emitDefaults
+		pb.JSONPb.EmitUnpopulated = emitUnpopulated
 	})
 }
 
@@ -29,8 +29,23 @@ func WithIndent(indent string) JSONPbOption {
 }
 
 // Whether to use the original (.proto) name for fields.
-func WithOrigName(origName bool) JSONPbOption {
+func WithUseProtoNames(useProtoNames bool) JSONPbOption {
 	return JSONPbOptionFunc(func(pb *JSONPb) {
-		pb.JSONPb.OrigName = origName
+		pb.JSONPb.UseProtoNames = useProtoNames
 	})
+}
+
+// Deprecated: Use WithUseEnumNumbers instead.
+func WithEmitAsInts(enumsAsInts bool) JSONPbOption {
+	return WithUseEnumNumbers(enumsAsInts)
+}
+
+// Deprecated: Use WithEmitUnpopulated instead.
+func WithEmitDefaults(emitDefaults bool) JSONPbOption {
+	return WithEmitUnpopulated(emitDefaults)
+}
+
+// Deprecated: Use WithUseProtoNames instead.
+func WithOrigName(origName bool) JSONPbOption {
+	return WithUseProtoNames(origName)
 }

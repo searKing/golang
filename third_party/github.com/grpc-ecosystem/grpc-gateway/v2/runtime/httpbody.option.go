@@ -4,7 +4,7 @@
 
 package runtime
 
-import "github.com/grpc-ecosystem/grpc-gateway/runtime"
+import "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
 // Whether to render enum values as integers, as opposed to string values.
 func WithMarshaler(marshaler runtime.Marshaler) HTTPBodyPbOption {

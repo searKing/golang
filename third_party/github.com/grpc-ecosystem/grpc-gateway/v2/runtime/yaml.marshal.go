@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/gin-gonic/gin/binding"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,7 +40,7 @@ func (*YamlMarshaller) NewEncoder(w io.Writer) runtime.Encoder {
 }
 
 // ContentType returns the Content-Type which this marshaler is responsible for.
-func (*YamlMarshaller) ContentType() string {
+func (*YamlMarshaller) ContentType(_ interface{}) string {
 	return binding.MIMEYAML
 }
 

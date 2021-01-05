@@ -6,7 +6,7 @@ package runtime
 
 import (
 	"github.com/gin-gonic/gin/binding"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
 // []byte -> proto|interface{}
@@ -15,6 +15,6 @@ type ProtoMarshaller struct {
 }
 
 // ContentType always returns "application/x-protobuf".
-func (*ProtoMarshaller) ContentType() string {
+func (*ProtoMarshaller) ContentType(_ interface{}) string {
 	return binding.MIMEPROTOBUF
 }

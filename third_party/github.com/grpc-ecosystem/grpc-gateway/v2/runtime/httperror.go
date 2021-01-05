@@ -8,12 +8,12 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	struct_ "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/protobuf/proto"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

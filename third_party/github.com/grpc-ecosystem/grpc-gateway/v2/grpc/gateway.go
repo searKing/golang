@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/pkg/net/http"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -118,7 +118,7 @@ func ServeTLS(l net.Listener, handler http.Handler, certFile, keyFile string, op
 	return srv.ApplyOptions(opts...).ServeTLS(l, certFile, keyFile)
 }
 
-func (gateway *Gateway) lazy_init(opts ...GatewayOption) {
+func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 	gateway.once.Do(func() {
 		gateway.ApplyOptions(opts...)
 
@@ -134,6 +134,19 @@ func (gateway *Gateway) lazy_init(opts ...GatewayOption) {
 				gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithInsecure())
 			}
 		}
+
+		gateway.opt.srvMuxOpts = append(gateway.opt.srvMuxOpts, runtime.WithRoutingErrorHandler(func(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, code int) {
+			httpHandler := gateway.Handler
+			if httpHandler == nil {
+				httpHandler = http.DefaultServeMux
+			}
+			if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
+				httpHandler.ServeHTTP(w, r)
+				return
+			}
+			runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
+		}))
+
 		gateway.grpcServer = grpc.NewServer(gateway.opt.ServerOptions()...)
 		gateway.httpMuxToGrpc = runtime.NewServeMux(gateway.opt.srvMuxOpts...)
 		gateway.Server.Handler = http_.GrpcOrDefaultHandler(gateway.grpcServer, &serverHandler{
@@ -143,7 +156,7 @@ func (gateway *Gateway) lazy_init(opts ...GatewayOption) {
 
 }
 func (gateway *Gateway) Serve(l net.Listener) error {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	return gateway.Server.Serve(l)
 }
 
@@ -161,7 +174,7 @@ func (gateway *Gateway) Serve(l net.Listener) error {
 // ServeTLS always returns a non-nil error. After Shutdown or Close, the
 // returned error is ErrServerClosed.
 func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	return gateway.Server.ServeTLS(l, certFile, keyFile)
 }
 
@@ -174,7 +187,7 @@ func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error
 // ListenAndServe always returns a non-nil error. After Shutdown or Close,
 // the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServe() error {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	return gateway.Server.ListenAndServe()
 }
 
@@ -194,31 +207,31 @@ func (gateway *Gateway) ListenAndServe() error {
 // ListenAndServeTLS always returns a non-nil error. After Shutdown or
 // Close, the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	return gateway.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
 // RegisterGRPCHandler registers grpc handler of the gateway
 func (gateway *Gateway) RegisterGRPCHandler(handler GRPCHandler) {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	handler.Register(gateway.grpcServer)
 }
 
 // RegisterHTTPHandler registers http handler of the gateway
 func (gateway *Gateway) RegisterHTTPHandler(ctx context.Context, handler HTTPHandler) error {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	//scheme://authority/endpoint
 	return handler.Register(ctx, gateway.httpMuxToGrpc, "passthrough:///"+gateway.Server.Addr, gateway.opt.grpcClientDialOpts)
 }
 
 // RegisterGRPCFunc registers grpc handler of the gateway
 func (gateway *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	gateway.RegisterGRPCHandler(GRPCHandlerFunc(handler))
 }
 
 // RegisterHTTPFunc registers http handler of the gateway
 func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error) error {
-	gateway.lazy_init()
+	gateway.lazyInit()
 	return gateway.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
 }

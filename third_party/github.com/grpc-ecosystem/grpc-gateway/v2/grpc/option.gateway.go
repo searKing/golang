@@ -14,7 +14,7 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/sirupsen/logrus"
@@ -33,9 +33,6 @@ type gatewayOption struct {
 	grpcClientDialOpts []grpc.DialOption
 
 	srvMuxOpts []runtime.ServeMuxOption
-
-	// fastMode is true to set runtime.OtherErrorHandler only once
-	fastMode bool
 
 	interceptors http_.HandlerInterceptorChain
 }
@@ -109,9 +106,10 @@ func WithStreamErrorHandler(fn runtime.StreamErrorHandlerFunc) GatewayOption {
 // WithHTTPErrorHandler replies to the request with the error.
 // You can set a custom function to this variable to customize error format.
 func WithHTTPErrorHandler(fn HTTPErrorHandler) GatewayOption {
-	return GatewayOptionFunc(func(gateway *Gateway) {
-		runtime.HTTPError = fn.HandleHTTPError
-	})
+	return WithGrpcServeMuxOption(runtime.WithErrorHandler(fn.HandleHTTPError))
+	//return GatewayOptionFunc(func(gateway *Gateway) {
+	//	runtime.HTTPError = fn.HandleHTTPError
+	//})
 }
 
 func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption {
@@ -130,12 +128,6 @@ func WithDefaultMarsherOption() []GatewayOption {
 
 }
 
-func WithFastMode(fastMode bool) GatewayOption {
-	return GatewayOptionFunc(func(gateway *Gateway) {
-		gateway.opt.fastMode = fastMode
-	})
-}
-
 //func WithForwardResponseMessageHandler(fn ForwardResponseMessageHandler) GatewayOption {
 //	return GatewayOptionFunc(func(gateway *Gateway) {
 //		runtime.WithForwardResponseOption()
@@ -149,6 +141,31 @@ func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) Gat
 	})
 }
 
+func WithHttpPreHandler(preHandle func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(preHandle, nil, nil, nil))
+}
+
+// WithHttpWrapper is a decorator or middleware of http.Handler
+func WithHttpWrapper(wrapper func(http.Handler) http.Handler) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(nil, wrapper, nil, nil))
+}
+
+func WithHttpPostHandler(
+	postHandle func(w http.ResponseWriter, r *http.Request)) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(nil, nil, postHandle, nil))
+}
+
+func WithHttpAfterCompletion(
+	afterCompletion func(w http.ResponseWriter, r *http.Request, err interface{})) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(nil, nil, nil, afterCompletion))
+}
+
+// Deprecated: Use WithHttpPreHandler instead.
 func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
-	return WithHttpHandlerInterceptor(http_.WithHandlerInterceptor(rewriter, nil, nil))
+	return WithHttpHandlerInterceptor(
+		http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
 }
