@@ -12,9 +12,11 @@ import (
 	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	http_ "github.com/searKing/golang/pkg/net/http"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
+
+	http_ "github.com/searKing/golang/pkg/net/http"
 )
 
 //go:generate go-option -type=Gateway
@@ -125,9 +127,11 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 		tlsConfig := gateway.TLSConfig
 		if tlsConfig != nil {
 			// for grpc server
-			gateway.opt.grpcServerOpts.opts = append(gateway.opt.grpcServerOpts.opts, grpc.Creds(credentials.NewTLS(tlsConfig)))
+			gateway.opt.grpcServerOpts.opts = append(gateway.opt.grpcServerOpts.opts,
+				grpc.Creds(credentials.NewTLS(tlsConfig)))
 			// for grpc client to server
-			gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+			gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts,
+				grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 		} else {
 			if len(gateway.opt.grpcClientDialOpts) == 0 {
 				// disables transport security
@@ -135,17 +139,21 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 			}
 		}
 
-		gateway.opt.srvMuxOpts = append(gateway.opt.srvMuxOpts, runtime.WithRoutingErrorHandler(func(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, code int) {
-			httpHandler := gateway.Handler
-			if httpHandler == nil {
-				httpHandler = http.DefaultServeMux
-			}
-			if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
-				httpHandler.ServeHTTP(w, r)
-				return
-			}
-			runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
-		}))
+		gateway.opt.srvMuxOpts = append(gateway.opt.srvMuxOpts,
+			runtime.WithRoutingErrorHandler(
+				func(ctx context.Context, mux *runtime.ServeMux,
+					marshaler runtime.Marshaler,
+					w http.ResponseWriter, r *http.Request, code int) {
+					httpHandler := gateway.Handler
+					if httpHandler == nil {
+						httpHandler = http.DefaultServeMux
+					}
+					if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
+						httpHandler.ServeHTTP(w, r)
+						return
+					}
+					runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
+				}))
 
 		gateway.grpcServer = grpc.NewServer(gateway.opt.ServerOptions()...)
 		gateway.httpMuxToGrpc = runtime.NewServeMux(gateway.opt.srvMuxOpts...)
@@ -157,6 +165,7 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 }
 func (gateway *Gateway) Serve(l net.Listener) error {
 	gateway.lazyInit()
+	gateway.registerGrpcReflection()
 	return gateway.Server.Serve(l)
 }
 
@@ -175,6 +184,7 @@ func (gateway *Gateway) Serve(l net.Listener) error {
 // returned error is ErrServerClosed.
 func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error {
 	gateway.lazyInit()
+	gateway.registerGrpcReflection()
 	return gateway.Server.ServeTLS(l, certFile, keyFile)
 }
 
@@ -188,6 +198,7 @@ func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error
 // the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServe() error {
 	gateway.lazyInit()
+	gateway.registerGrpcReflection()
 	return gateway.Server.ListenAndServe()
 }
 
@@ -208,6 +219,7 @@ func (gateway *Gateway) ListenAndServe() error {
 // Close, the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
 	gateway.lazyInit()
+	gateway.registerGrpcReflection()
 	return gateway.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
@@ -234,4 +246,17 @@ func (gateway *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
 func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error) error {
 	gateway.lazyInit()
 	return gateway.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
+}
+
+// registerGrpcReflection registers the server reflection service on the given gRPC server.
+// can be called once, recommently to be called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
+func (gateway *Gateway) registerGrpcReflection() {
+	if gateway.grpcServer == nil || !gateway.opt.grpcServerOpts.withReflectionService {
+		return
+	}
+	// grpcurl -plaintext localhost:1234 list
+	// -plaintext: avoid Failed to dial target host "localhost:1234": tls: first record does not look like a TLS handshake
+	// avoid: Failed to list services: server does not support the reflection API
+	// Register reflection service on gRPC server.
+	reflection.Register(gateway.grpcServer)
 }

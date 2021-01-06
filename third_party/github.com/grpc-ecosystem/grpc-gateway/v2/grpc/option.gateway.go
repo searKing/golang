@@ -24,9 +24,10 @@ import (
 type gatewayOption struct {
 	// for grpc server
 	grpcServerOpts struct {
-		opts               []grpc.ServerOption
-		unaryInterceptors  []grpc.UnaryServerInterceptor
-		streamInterceptors []grpc.StreamServerInterceptor
+		opts                  []grpc.ServerOption
+		unaryInterceptors     []grpc.UnaryServerInterceptor
+		streamInterceptors    []grpc.StreamServerInterceptor
+		withReflectionService bool // registers the server reflection service on the given gRPC server.
 	}
 
 	// for http client to redirect to grpc server
@@ -66,6 +67,12 @@ func WithGrpcUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) Gatew
 func WithGrpcStreamServerChain(interceptors ...grpc.StreamServerInterceptor) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		gateway.opt.grpcServerOpts.streamInterceptors = append(gateway.opt.grpcServerOpts.streamInterceptors, interceptors...)
+	})
+}
+
+func WithGrpcReflectionService(autoRegistered bool) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.grpcServerOpts.withReflectionService = autoRegistered
 	})
 }
 
@@ -124,8 +131,16 @@ func WithDefaultMarsherOption() []GatewayOption {
 		WithMarshalerOption(binding.MIMEJSON, runtime_.NewHTTPBodyJsonMarshaler()),
 		WithMarshalerOption(binding.MIMEPROTOBUF, runtime_.NewHTTPBodyProtoMarshaler()),
 		WithMarshalerOption(binding.MIMEYAML, runtime_.NewHTTPBodyYamlMarshaler()),
+		WithGrpcReflectionService(true),
 	}
 
+}
+
+func WithDefault() []GatewayOption {
+	var opts []GatewayOption
+	opts = append(opts, WithDefaultMarsherOption()...)
+	opts = append(opts, WithGrpcReflectionService(true))
+	return opts
 }
 
 //func WithForwardResponseMessageHandler(fn ForwardResponseMessageHandler) GatewayOption {
