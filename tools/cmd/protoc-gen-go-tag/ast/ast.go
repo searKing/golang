@@ -10,10 +10,11 @@ import (
 	"go/token"
 	"unicode"
 
+	"google.golang.org/protobuf/types/pluginpb"
+
 	"github.com/searKing/golang/go/reflect"
 	strings_ "github.com/searKing/golang/go/strings"
 	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func isPublicName(name string) bool {

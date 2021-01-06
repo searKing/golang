@@ -9,10 +9,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/compiler/protogen"
+
 	"github.com/searKing/golang/go/reflect"
 	strings_ "github.com/searKing/golang/go/strings"
 	pb "github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/tag"
-	"google.golang.org/protobuf/compiler/protogen"
 )
 
 type FieldInfo struct {

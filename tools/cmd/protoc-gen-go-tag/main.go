@@ -22,9 +22,10 @@ package main
 import (
 	"flag"
 
-	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/ast"
 	gengo "google.golang.org/protobuf/cmd/protoc-gen-go/internal_gengo"
 	"google.golang.org/protobuf/compiler/protogen"
+
+	"github.com/searKing/golang/tools/cmd/protoc-gen-go-tag/ast"
 )
 
 func main() {
