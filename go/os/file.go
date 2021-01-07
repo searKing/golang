@@ -5,6 +5,7 @@
 package os
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -93,4 +94,39 @@ func createAll(path string, perm os.FileMode, touch bool, truncate bool) error {
 	}
 	_ = f.Close()
 	return os.Chmod(path, perm)
+}
+
+// CopyFile copies from src to dst.
+// Overload os.CopyFile by file path
+func CopyFile(dst string, src string, flag int, perm os.FileMode) error {
+	srcFile, err := os.Open(dst)
+	if err != nil {
+		return err
+	}
+
+	defer srcFile.Close()
+
+	dstFile, err := os.OpenFile(src, flag, perm)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	return err
+}
+
+// SameFile reports whether fi1 and fi2 describe the same file.
+// Overload os.SameFile by file path
+func SameFile(fi1, fi2 string) bool {
+	stat1, err := os.Stat(fi1)
+	if err != nil {
+		return false
+	}
+
+	stat2, err := os.Stat(fi2)
+	if err != nil {
+		return false
+	}
+	return os.SameFile(stat1, stat2)
 }
