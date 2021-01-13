@@ -99,20 +99,20 @@ func createAll(path string, perm os.FileMode, touch bool, truncate bool) error {
 // CopyFile copies from src to dst.
 // Overload os.CopyFile by file path
 func CopyFile(dst string, src string, flag int, perm os.FileMode) error {
-	srcFile, err := os.Open(dst)
+	srcFile, err := os.OpenFile(src, flag, perm)
 	if err != nil {
 		return err
 	}
-
 	defer srcFile.Close()
 
-	dstFile, err := os.OpenFile(src, flag, perm)
+	dstFile, err := os.Open(dst)
 	if err != nil {
 		return err
 	}
+
 	defer dstFile.Close()
 
-	_, err = io.Copy(dstFile, srcFile)
+	_, err = io.Copy(srcFile, dstFile)
 	return err
 }
 
