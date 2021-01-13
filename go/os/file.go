@@ -112,7 +112,7 @@ func CopyFile(dst string, src string, flag int, perm os.FileMode) error {
 
 	defer dstFile.Close()
 
-	_, err = io.Copy(srcFile, dstFile)
+	_, err = io.Copy(dstFile, srcFile)
 	return err
 }
 
