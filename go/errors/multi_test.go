@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/searKing/golang/go/error/multi"
+	"github.com/searKing/golang/go/errors"
 )
 
-func TestNew(t *testing.T) {
+func TestMulti(t *testing.T) {
 	tests := []struct {
 		errs []error
 		want error
@@ -23,7 +24,7 @@ func TestNew(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := multi.New(tt.errs...)
+		got := errors.Multi(tt.errs...)
 		if got == tt.want {
 			continue
 		}

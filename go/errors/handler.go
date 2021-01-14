@@ -17,7 +17,7 @@ var ErrorHandlers = []func(error){
 			// 1ms was the number folks were able to stomach as a global rate limit.
 			// If you need to log errors more than 1000 times a second you
 			// should probably consider fixing your code instead. :)
-			limiter.Wait(context.Background())
+			_ = limiter.Wait(context.Background())
 		}
 	}(),
 }

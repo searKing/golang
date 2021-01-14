@@ -7,21 +7,43 @@ package errors_test
 import (
 	"fmt"
 
-	"github.com/searKing/golang/go/error/multi"
+	"github.com/searKing/golang/go/errors"
 )
 
-func ExampleNew() {
-	err := multi.New(fmt.Errorf("whoops"), fmt.Errorf("foo"))
+func ExampleMulti() {
+	err := errors.Multi(nil, nil)
+	fmt.Println(err)
+	err = errors.Multi(fmt.Errorf("whoops"), nil)
+	fmt.Println(err)
+	err = errors.Multi(fmt.Errorf("whoops"), fmt.Errorf("foo"))
 	fmt.Println(err)
 
-	// Output: whoops|foo
+	// Output:
+	// <nil>
+	// whoops
+	// whoops|foo
 }
 
 func ExampleFormat() {
-	err := multi.New(fmt.Errorf("whoops"), fmt.Errorf("foo"))
-	fmt.Printf("%+v", err)
+	err := errors.Multi(nil)
+	fmt.Printf("v: %v\n", err)
+	fmt.Printf("+v: %+v\n", err)
+
+	err = errors.Multi(fmt.Errorf("whoops"), nil)
+	fmt.Printf("v: %v\n", err)
+	fmt.Printf("+v: %+v\n", err)
+
+	err = errors.Multi(fmt.Errorf("whoops"), fmt.Errorf("foo"))
+	fmt.Printf("v: %v\n", err)
+	fmt.Printf("+v: %+v\n", err)
 
 	// Output:
-	// Multiple errors occurred:
-	//	whoops|foo
+	// v: <nil>
+	// +v: <nil>
+	// v: whoops
+	// +v: whoops
+	// v: whoops|foo
+	// +v: Multiple errors occurred:
+	// |	whoops
+	// |	foo
 }

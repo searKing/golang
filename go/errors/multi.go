@@ -12,59 +12,61 @@ import (
 // New returns an error with the supplied errors.
 // If no error contained, return nil.
 func Multi(errs ...error) error {
-	var has bool
-	for _, err := range errs {
-		if err != nil {
-			has = true
-			break
-		}
-	}
-	if !has {
+	me := multiError(errs).clean()
+	if me == nil || len(me) == 0 {
 		return nil
 	}
-	return &multiError{
-		errs: errs,
-	}
+	return me
 }
 
-type multiError struct {
-	errs []error
-}
+type multiError []error
 
-func (w *multiError) Error() string {
-	if w == nil || len(w.errs) == 0 {
+func (e multiError) Error() string {
+	errs := e.clean()
+	if errs == nil || len(errs) == 0 {
 		return ""
 	}
-	message := w.errs[0].Error()
-	for _, err := range w.errs[1:] {
+	message := errs[0].Error()
+	for _, err := range errs[1:] {
 		message += "|" + err.Error()
 	}
 
 	return message
 }
 
-func (w *multiError) Format(s fmt.State, verb rune) {
-	if w == nil {
+func (e multiError) Format(s fmt.State, verb rune) {
+	errs := e.clean()
+	if errs == nil || len(errs) == 0 {
 		return
 	}
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			if len(w.errs) == 0 {
+			if len(errs) == 1 {
+				_, _ = fmt.Fprintf(s, "%+v", errs[0])
 				return
 			}
+			_, _ = io.WriteString(s, "Multiple errors occurred:\n")
 
-			_, _ = io.WriteString(s, "Multiple errors occurred:\n\t")
-
-			_, _ = io.WriteString(s, w.errs[0].Error())
-
-			for _, err := range w.errs[1:] {
-				_, _ = fmt.Fprintf(s, "|%+v", err)
+			_, _ = fmt.Fprintf(s, "|\t%+v", errs[0])
+			for _, err := range errs[1:] {
+				_, _ = fmt.Fprintf(s, "\n|\t%+v", err)
 			}
 			return
 		}
 		fallthrough
 	case 's', 'q':
-		_, _ = io.WriteString(s, w.Error())
+		_, _ = io.WriteString(s, errs.Error())
 	}
+}
+
+// clean removes all none nil elem in all of the errors
+func (e multiError) clean() multiError {
+	var errs []error
+	for _, err := range e {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
 }
