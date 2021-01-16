@@ -108,6 +108,7 @@ import (
 var (
 	typeInfos string
 	useAll    bool
+	useNew    bool
 	useString bool
 	useBinary bool
 	useText   bool
@@ -127,6 +128,7 @@ func ParseCommandLine(def bool) *flag.FlagSet {
 	var commandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	commandLine.StringVar(&typeInfos, "type", "", "comma-separated list of type names; must be set")
 	commandLine.BoolVar(&useAll, "all", def, "if true, all interfaces will be implemented default. Default: true.")
+	commandLine.BoolVar(&useNew, "new", def, "if true, the New will be implemented. Default: true.")
 	commandLine.BoolVar(&useString, "string", def, "if true, the fmt.Stringer interface will be implemented. Default: true, you can use stringer instead.")
 	commandLine.BoolVar(&useBinary, "binary", def, "if true, the encoding.BinaryMarshaler and encoding.BinaryUnmarshaler interface will be implemented. Default: true")
 	commandLine.BoolVar(&useText, "text", def, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: true")
@@ -381,6 +383,11 @@ func (g *Generator) generate(typeInfo typeInfo) {
 		g.Printf(stringImport, im)
 	}
 
+	if useNew {
+		for _, im := range newImportPackages {
+			g.Printf(stringImport, im)
+		}
+	}
 	if useBinary {
 		for _, im := range binaryImportPackages {
 			g.Printf(stringImport, im)
@@ -435,6 +442,9 @@ func (g *Generator) generate(typeInfo typeInfo) {
 		}
 	}
 
+	if useNew {
+		g.Printf(newTemplate, typeInfo.Name)
+	}
 	if useBinary {
 		g.buildCheck(runs, typeInfo.Name, threshold)
 		g.Printf(binaryTemplate, typeInfo.Name)
