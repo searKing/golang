@@ -139,6 +139,17 @@ func PadLeft(s string, pad string, n int) string {
 	return strings.Repeat(pad, pc) + strings.Repeat(" ", sc) + s
 }
 
+// Truncate shrinks s's len to n at most
+func Truncate(s string, n int) string {
+	if n < 0 {
+		n = 0
+	}
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
+}
+
 // PadRight returns s padded to length n, padded right with repeated pad
 // return s directly if pad is empty
 // padding s with {{pad}} and spaces(less than len(pad))  as a suffix, as [s][space]...[space][pad]...[pad]
