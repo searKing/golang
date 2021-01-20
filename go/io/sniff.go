@@ -12,7 +12,7 @@ import (
 // ReadSniffer is the interface that groups the basic Read and Sniff methods.
 type ReadSniffer interface {
 	io.Reader
-	Sniff(sniffing bool)
+	Sniff(sniffing bool) ReadSniffer
 }
 
 type sniffReader struct {
@@ -28,9 +28,9 @@ type sniffReader struct {
 // Sniff starts or stops sniffing, restarts if stop and start called one by one
 // true to start sniffing all data unread actually
 // false to return a multi reader with all data sniff buffered and source
-func (sr *sniffReader) Sniff(sniffing bool) {
+func (sr *sniffReader) Sniff(sniffing bool) ReadSniffer {
 	if sr.sniffing == sniffing {
-		return
+		return sr
 	}
 	sr.sniffing = sniffing
 	if sniffing {
@@ -45,9 +45,10 @@ func (sr *sniffReader) Sniff(sniffing bool) {
 		sr.selectorF = func() io.Reader {
 			return reader
 		}
-		return
+		return sr
 	}
 	sr.resetSelector()
+	return sr
 }
 
 // shrinkToHistory shrink buffer to history buffers

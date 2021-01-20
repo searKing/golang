@@ -66,6 +66,57 @@ func ExampleSniffReader() {
 	// some
 	// some io.Reader stream to be read
 }
+func ExampleReplayReader() {
+	r := strings.NewReader("MSG:some io.Reader stream to be read")
+	replayR := io_.ReplayReader(r)
+
+	printReplay := func(r io.Reader, n int) {
+		b := make([]byte, n)
+		_, err := r.Read(b)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("%s", b)
+	}
+
+	printall := func(r io.Reader) {
+		b, err := ioutil.ReadAll(r)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("%s", b)
+	}
+
+	// print "MSG:"
+	printReplay(replayR, len("MSG:"))
+	fmt.Printf("\n")
+
+	// start replay
+	replayR.Replay()
+	// print "MSG:"
+	printReplay(replayR, len("MSG:"))
+	fmt.Printf("\n")
+
+	// start replay
+	replayR.Replay()
+	// print "MSG:"
+	printall(replayR)
+	fmt.Printf("\n")
+
+	// start replay
+	replayR.Replay()
+	// print "MSG:"
+	printall(replayR)
+	fmt.Printf("\n")
+
+	// Output:
+	// MSG:
+	// MSG:
+	// MSG:some io.Reader stream to be read
+	// MSG:some io.Reader stream to be read
+}
 
 func ExampleEOFReader() {
 	r := io_.EOFReader()
