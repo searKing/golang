@@ -37,13 +37,8 @@ func RequestWithBodyRewindable(req *http.Request) *http.Request {
 		return req
 	}
 
-	if seek, ok := req.Body.(io.Seeker); ok {
-		req.GetBody = func() (io.ReadCloser, error) {
-			_, err := seek.Seek(0, io.SeekStart)
-			return req.Body, err
-		}
-		return req
-	}
+	// Body in Request will be closed before redirect automaticly, so io.Seeker can not be used.
+
 	var replay bytes.Buffer
 	// Use a replay reader to capture any body sent in case we have to replay it again
 	replayR := io_.ReplayReader(req.Body)
@@ -56,13 +51,6 @@ func RequestWithBodyRewindable(req *http.Request) *http.Request {
 		// take care of req.Body set to nil by caller outside
 		if req.Body == nil {
 			return nil, nil
-		}
-		// try to use io.Seeker if exists
-		if seek, ok := req.Body.(io.Seeker); ok {
-			_, err := seek.Seek(0, io.SeekStart)
-			if err == nil {
-				return req.Body, nil
-			}
 		}
 		return ioutil.NopCloser(&replay), nil
 	}
