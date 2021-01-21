@@ -148,6 +148,27 @@ func CopyFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode
 	return err
 }
 
+// Copy creates or truncates the dst file or dir, filled with content from src file.
+// If the dst file already exists, it is truncated.
+// If the dst file does not exist, it is created with mode 0666 (before umask).
+// If the dst dir does not exist, it is created with mode 0755 (before umask).
+// parent dirs will not be created, otherwise, use CopyAll instead.
+func Copy(dst string, src string, flag int, perm os.FileMode) error {
+	return CopyFile(dst, src, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+}
+
+// Append creates or appends the dst file or dir, filled with content from src file.
+// If the dst file already exists, it is truncated.
+// If the dst file does not exist, it is created with mode 0666 (before umask).
+// If the dst dir does not exist, it is created with mode 0755 (before umask).
+// parent dirs will not be created, otherwise, use AppendAll instead.
+func Append(dst string, src string, flag int, perm os.FileMode) error {
+	return CopyFile(dst, src, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+}
+
+// CopyFile is the generalized open call; most users will use Copy
+// or Append instead. It opens the named file or directory with specified flag
+// (O_RDONLY etc.).
 // CopyFile copies from src to dst.
 // parent dirs will not be created, otherwise, use CopyFileAll instead.
 func CopyFile(dst string, src string, flag int, perm os.FileMode) error {
