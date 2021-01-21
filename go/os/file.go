@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	DefaultPermissionFile      os.FileMode = 0644
+	DefaultPermissionDirectory os.FileMode = 0755
+)
+
 func GetAbsBinDir() (dir string, err error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
@@ -37,67 +42,114 @@ func ChtimesNow(name string) error {
 	return os.Chtimes(name, now, now)
 }
 
-// TouchAll creates the named file or dir. If the file already exists,
-// it is touched to now. If the file does not exist, it is created with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0666 (before umask).
-func TouchAll(path string, perm os.FileMode) error {
-	return createAll(path, perm, true, false)
+// TouchAll creates the named file or dir. If the file already exists, it is touched to now.
+// If the file does not exist, it is created with mode 0666 (before umask).
+// If the dir does not exist, it is created with mode 0755 (before umask).
+func TouchAll(path string) (*os.File, error) {
+	f, err := OpenFileAll(path, os.O_WRONLY|os.O_CREATE, 0755, 0666)
+	if err != nil {
+		return nil, err
+	}
+	if err := ChtimesNow(path); err != nil {
+		defer f.Close()
+		return nil, err
+	}
+	return f, nil
 }
 
 // CreateAll creates or truncates the named file or dir. If the file already exists,
 // it is truncated. If the file does not exist, it is created with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0666 (before umask).
-func CreateAll(path string, perm os.FileMode) error {
-	return createAll(path, perm, false, true)
+// If the dir does not exist, it is created with mode 0755 (before umask).
+func CreateAll(path string) (*os.File, error) {
+	return OpenFileAll(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755, 0666)
 }
 
 // CreateAllIfNotExist creates the named file or dir. If the file does not exist, it is created
 // with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0666 (before umask).
-// If path is already a directory, CreateAllIfNotExist does nothing
-// and returns nil.
-func CreateAllIfNotExist(path string, perm os.FileMode) error {
-	return createAll(path, perm, false, false)
+// If the dir does not exist, it is created with mode 0755 (before umask).
+// If path is already a directory, CreateAllIfNotExist does nothing and returns nil.
+func CreateAllIfNotExist(path string) (*os.File, error) {
+	return OpenFileAll(path, os.O_RDWR|os.O_CREATE, 0755, 0666)
 }
 
-func createAll(path string, perm os.FileMode, touch bool, truncate bool) error {
+// OpenAll opens the named file or dir for reading. If successful, methods on
+// the returned file or dir can be used for reading; the associated file
+// descriptor has mode O_RDONLY.
+// If there is an error, it will be of type *PathError.
+func OpenAll(path string) (*os.File, error) {
+	return OpenFileAll(path, os.O_RDONLY, 0, 0)
+}
+
+// OpenFileAll is the generalized open call; most users will use OpenAll
+// or CreateAll instead. It opens the named file or directory with specified flag
+// (O_RDONLY etc.).
+// If the file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask).
+// If the directory does not exist,, it is created with mode dirperm (before umask).
+// If successful, methods on the returned File can be used for I/O.
+// If there is an error, it will be of type *PathError.
+func OpenFileAll(path string, flag int, dirperm, fileperm os.FileMode) (*os.File, error) {
 	dir, file := filepath.Split(path)
 	// file or dir exists
-	if fi, err := os.Stat(path); err == nil {
-		if touch {
-			return ChtimesNow(path)
-		}
-		if fi.IsDir() || !truncate {
-			return nil
-		}
-		// truncates file
-		f, err := os.Create(path)
-		if err != nil {
-			return err
-		}
-		return f.Close()
+	if _, err := os.Stat(path); err == nil {
+		return os.OpenFile(path, flag, 0)
 	}
 
 	// mkdir -p dir
-	if err := os.MkdirAll(dir, perm); err != nil {
-		return err
+	if err := os.MkdirAll(dir, dirperm); err != nil {
+		return nil, err
 	}
 
 	// create file if needed
 	if file == "" {
-		return nil
+		return nil, nil
 	}
 
-	f, err := os.Create(path)
+	return os.OpenFile(path, flag, fileperm)
+}
+
+// CopyAll creates or truncates the dst file or dir, filled with content from src file.
+// If the dst file already exists, it is truncated.
+// If the dst file does not exist, it is created with mode 0666 (before umask).
+// If the dst dir does not exist, it is created with mode 0755 (before umask).
+func CopyAll(dst string, src string) error {
+	return CopyFileAll(dst, src, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755, 0666)
+}
+
+// AppendAll creates or appends the dst file or dir, filled with content from src file.
+// If the dst file already exists, it is truncated.
+// If the dst file does not exist, it is created with mode 0666 (before umask).
+// If the dst dir does not exist, it is created with mode 0755 (before umask).
+func AppendAll(dst string, src string) error {
+	return CopyFileAll(dst, src, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755, 0666)
+}
+
+// CopyFileAll is the generalized open call; most users will use CopyAll
+// or AppendAll instead. It opens the named file or directory with specified flag
+// (O_RDONLY etc.).
+// If the dst file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask).
+// If the dst directory does not exist,, it is created with mode dirperm (before umask).
+// If successful, methods on the returned File can be used for I/O.
+// If there is an error, it will be of type *PathError.
+func CopyFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode) error {
+	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	_ = f.Close()
-	return os.Chmod(path, perm)
+	defer srcFile.Close()
+
+	dstFile, err := OpenFileAll(dst, flag, dirperm, fileperm)
+	if err != nil {
+		return err
+	}
+
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	return err
 }
 
 // CopyFile copies from src to dst.
-// Overload os.CopyFile by file path
+// parent dirs will not be created, otherwise, use CopyFileAll instead.
 func CopyFile(dst string, src string, flag int, perm os.FileMode) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
