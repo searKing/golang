@@ -110,7 +110,7 @@ func TestResolveReference(t *testing.T) {
 		},
 	}
 	for i, test := range table {
-		toPath := path.ResolveReference(test.FromBase, test.ToBase, test.FromPath)
+		toPath := path.ResolveReference(test.FromPath, test.FromBase, test.ToBase)
 		if !strings.EqualFold(toPath, test.ToPath) {
 			t.Errorf("#%d. got %q, want %q", i, toPath, test.ToPath)
 		}

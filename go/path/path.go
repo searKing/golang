@@ -91,7 +91,7 @@ func Rel(basepath, targpath string) (string, error) {
 
 // ResolveReference resolves a path reference to a target base path from a base path.
 // If path_ is not under frombasepath, then ResolveReference ignores frombasepath and return a path under tobasepath.
-func ResolveReference(frombasepath, tobasepath, path_ string) string {
+func ResolveReference(path_, frombasepath, tobasepath string) string {
 	relPath, err := Rel(frombasepath, path_)
 	if err != nil {
 		return path.Clean(path.Join(tobasepath, path_))

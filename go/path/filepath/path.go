@@ -88,3 +88,13 @@ func TouchAll(path string, perm os.FileMode) error {
 	_ = f.Close()
 	return nil
 }
+
+// ResolveReference resolves a path reference to a target base path from a base path.
+// If path_ is not under frombasepath, then ResolveReference ignores frombasepath and return a path under tobasepath.
+func ResolveReference(path_, frombasepath, tobasepath string) string {
+	relPath, err := filepath.Rel(frombasepath, path_)
+	if err != nil {
+		return filepath.Clean(filepath.Join(tobasepath, path_))
+	}
+	return filepath.Clean(filepath.Join(tobasepath, relPath))
+}
