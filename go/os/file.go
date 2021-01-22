@@ -42,6 +42,21 @@ func ChtimesNow(name string) error {
 	return os.Chtimes(name, now, now)
 }
 
+// MakeAll creates a directory named path,
+// along with any necessary parents, and returns nil,
+// or else returns an error.
+// If the dir does not exist, it is created with mode 0755 (before umask).
+func MakeAll(name string) error {
+	return os.MkdirAll(name, 0755)
+}
+
+// MakeAll creates a directory named path and returns nil,
+// or else returns an error.
+// If the dir does not exist, it is created with mode 0755 (before umask).
+func Make(name string) error {
+	return os.Mkdir(name, 0755)
+}
+
 // TouchAll creates the named file or dir. If the file already exists, it is touched to now.
 // If the file does not exist, it is created with mode 0666 (before umask).
 // If the dir does not exist, it is created with mode 0755 (before umask).
