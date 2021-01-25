@@ -5,6 +5,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"io"
 )
@@ -69,4 +70,24 @@ func (e multiError) clean() multiError {
 		}
 	}
 	return errs
+}
+
+// Is reports whether any error in multiError and it's chain chain matches target.
+func (e multiError) Is(target error) bool {
+	if target == nil {
+		errs := e.clean()
+		if errs == nil || len(errs) == 0 {
+			return true
+		}
+		return false
+	}
+	for _, err := range e {
+		if err == nil {
+			continue
+		}
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+	return false
 }
