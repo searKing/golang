@@ -15,7 +15,7 @@ func (t UnixTimeMillisecond) unit() time.Duration {
 }
 
 func (t UnixTimeMillisecond) String() string {
-	ratio, divide := RatioFrom(t.unit(), time.Nanosecond)
+	ratio, divide := RatioFrom(time.Nanosecond, t.unit())
 	if divide {
 		return fmt.Sprintf("%d", t.UnixNano()/int64(ratio))
 	}

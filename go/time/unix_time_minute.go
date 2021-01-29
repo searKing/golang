@@ -15,7 +15,7 @@ func (t UnixTimeMinute) unit() time.Duration {
 }
 
 func (t UnixTimeMinute) String() string {
-	ratio, divide := RatioFrom(t.unit(), time.Second)
+	ratio, divide := RatioFrom(time.Second, t.unit())
 	if divide {
 		return fmt.Sprintf("%d", t.Unix()/int64(ratio))
 	}
