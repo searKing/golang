@@ -9,8 +9,9 @@ import (
 	"reflect"
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/searKing/golang/go/encoding/defaults"
-	"gopkg.in/yaml.v2"
 )
 
 type inputType struct {

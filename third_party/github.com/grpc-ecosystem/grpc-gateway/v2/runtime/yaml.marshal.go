@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin/binding"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // []byte -> proto|interface{}

@@ -35,3 +35,9 @@ func WithExponentialBackOffOptionMaxElapsedDuration(duration time.Duration) Expo
 		o.maxElapsedDuration = duration
 	})
 }
+
+func WithExponentialBackOffOptionMaxElapsedCount(count int) ExponentialBackOffOption {
+	return ExponentialBackOffOptionFunc(func(o *ExponentialBackOff) {
+		o.maxElapsedCount = count
+	})
+}

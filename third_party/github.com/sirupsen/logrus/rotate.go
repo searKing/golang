@@ -12,8 +12,9 @@ import (
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/pkg/errors"
 	"github.com/rifflock/lfshook"
-	filepath_ "github.com/searKing/golang/go/path/filepath"
 	"github.com/sirupsen/logrus"
+
+	filepath_ "github.com/searKing/golang/go/path/filepath"
 )
 
 // WithRotation enhances logrus log to be written to local filesystem, with file rotation

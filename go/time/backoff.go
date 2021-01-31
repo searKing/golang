@@ -5,7 +5,7 @@
 package time
 
 import (
-	"math/rand"
+	"math"
 	"time"
 )
 
@@ -70,6 +70,9 @@ const (
 
 	// The default maximum elapsed time (15 minutes).
 	DefaultMaxElapsedDuration = 15 * time.Minute
+
+	// The default maximum elapsed count (-1).
+	DefaultMaxElapsedCount = -1
 )
 
 // Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
@@ -80,7 +83,7 @@ type BackOff interface {
 
 	// Gets duration to wait before retrying the operation to
 	// indicate that no retries should be made.
-	// ok indicates that no more retries should be made.
+	// ok indicates that no more retries should be made, max duration is returned also.
 	// Example usage:
 	// var backOffDuration, ok = backoff.NextBackOff();
 	// if (!ok) {
@@ -93,37 +96,57 @@ type BackOff interface {
 
 //  Fixed back-off policy whose back-off time is always zero, meaning that the operation is retried
 //  immediately without waiting.
-
-type ZeroBackOff struct {
-}
-
-func (o *ZeroBackOff) Reset() {
-}
-func (o *ZeroBackOff) NextBackOff() (backoff time.Duration, ok bool) {
-	return 0, true
-}
+const ZeroBackOff = NonSlidingBackOff(0)
 
 // Fixed back-off policy that always returns {@code #STOP} for {@link #NextBackOff()},
 // meaning that the operation should not be retried.
+type StopBackOff struct{}
 
-type StopBackOff struct {
-}
-
-func (o *StopBackOff) Reset() {
-}
+func (o *StopBackOff) Reset() {}
 func (o *StopBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	return 0, false
 }
 
-//go:generate go-option -type "ExponentialBackOff"
+//  Fixed back-off policy whose back-off time is always const, meaning that the operation is retried
+//  after waiting every duration.
+type NonSlidingBackOff time.Duration
+
+func (o *NonSlidingBackOff) Reset() {}
+func (o *NonSlidingBackOff) NextBackOff() (backoff time.Duration, ok bool) {
+	return time.Duration(*o), false
+}
+
+// JitterBackOff returns a time.Duration between
+// [duration - maxFactor*duration, duration + maxFactor*duration].
+//
+// This allows clients to avoid converging on periodic behavior.
+func JitterBackOff(duration time.Duration, maxFactor float64) *jitterBackOff {
+	return &jitterBackOff{
+		duration:  duration,
+		maxFactor: maxFactor,
+	}
+}
+
+type jitterBackOff struct {
+	duration  time.Duration
+	maxFactor float64
+}
+
+func (o *jitterBackOff) Reset() {}
+func (o *jitterBackOff) NextBackOff() (backoff time.Duration, ok bool) {
+	return Jitter(o.duration, o.maxFactor), false
+}
 
 // Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
 // src/main/java/com/google/api/client/util/ExponentialBackOff.java
+//go:generate go-option -type "ExponentialBackOff"
 type ExponentialBackOff struct {
 	// The current retry interval.
 	currentInterval time.Duration
 	// The initial retry interval.
 	initialInterval time.Duration
+	// The current retry count.
+	currentCount int
 
 	// The randomization factor to use for creating a range around the retry interval.
 	// A randomization factor of 0.5 results in a random period ranging between 50% below and 50%
@@ -135,6 +158,7 @@ type ExponentialBackOff struct {
 
 	// The maximum value of the back off period. Once the retry interval reaches this
 	// value it stops increasing.
+	// It takes no effect If maxInterval < 0
 	maxInterval time.Duration
 
 	// The system time in nanoseconds. It is calculated when an ExponentialBackOffPolicy instance is
@@ -143,7 +167,13 @@ type ExponentialBackOff struct {
 
 	// The maximum elapsed time after instantiating {@link ExponentialBackOff} or calling {@link
 	// #reset()} after which {@link #NextBackOff()} returns {@link BackOff#STOP}.
+	// It takes no effect If maxElapsedDuration < 0
 	maxElapsedDuration time.Duration
+
+	// The maximum elapsed count after instantiating {@link ExponentialBackOff} or calling {@link
+	// #reset()} after which {@link #NextBackOff()} returns {@link BackOff#STOP}.
+	// It takes no effect If maxElapsedCount < 0
+	maxElapsedCount int
 }
 
 func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
@@ -153,6 +183,7 @@ func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff
 		multiplier:          DefaultMultiplier,
 		maxInterval:         DefaultMaxInterval,
 		maxElapsedDuration:  DefaultMaxElapsedDuration,
+		maxElapsedCount:     DefaultMaxElapsedCount,
 	}
 	o.ApplyOptions(opts...)
 	o.Reset()
@@ -162,6 +193,7 @@ func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff
 // Sets the interval back to the initial retry interval and restarts the timer.
 func (o *ExponentialBackOff) Reset() {
 	o.currentInterval = o.initialInterval
+	o.currentCount = 0
 	o.startTime = time.Now()
 }
 
@@ -174,12 +206,19 @@ func (o *ExponentialBackOff) Reset() {
  * <p>Subclasses may override if a different algorithm is required.
  */
 func (o *ExponentialBackOff) NextBackOff() (backoff time.Duration, ok bool) {
-	// Make sure we have not gone over the maximum elapsed time.
-	if o.GetElapsedDuration() > o.maxElapsedDuration {
-		return 0, false
+	// Make sure we have not gone over the maximum elapsed count.
+	if o.maxElapsedCount > 0 && o.GetElapsedCount() >= o.maxElapsedCount {
+		return o.currentInterval, false
 	}
+
+	// Make sure we have not gone over the maximum elapsed time.
+	if o.maxElapsedDuration > 0 && o.GetElapsedDuration() > o.maxElapsedDuration {
+		return o.currentInterval, false
+	}
+
 	randomizedInterval := o.GetRandomValueFromInterval(o.randomizationFactor, o.currentInterval)
 	o.incrementCurrentInterval()
+	o.incrementCurrentCount()
 	return randomizedInterval, true
 }
 
@@ -235,26 +274,28 @@ func (o *ExponentialBackOff) GetElapsedDuration() time.Duration {
 	return time.Now().Sub(o.startTime)
 }
 
+// Returns the elapsed count since an {@link ExponentialBackOff} instance is
+// created and is reset when {@link #reset()} is called.
+func (o *ExponentialBackOff) GetElapsedCount() int {
+	return o.currentCount
+}
+
 // Increments the current interval by multiplying it with the multiplier.
 func (o *ExponentialBackOff) incrementCurrentInterval() {
 	// Check for overflow, if overflow is detected set the current interval to the max interval.
-	if o.currentInterval*time.Duration(o.multiplier) >= o.maxInterval {
+	if o.maxInterval >= 0 && o.currentInterval*time.Duration(o.multiplier) >= o.maxInterval {
 		o.currentInterval = o.maxInterval
-	} else {
-		o.currentInterval *= time.Duration(o.multiplier)
+		return
 	}
+	o.currentInterval = time.Duration(float64(o.currentInterval) * o.multiplier)
 }
 
-// Jitter returns a time.Duration between
-// [duration - maxFactor*duration, duration + maxFactor*duration].
-//
-// This allows clients to avoid converging on periodic behavior.
-func Jitter(duration time.Duration, maxFactor float64) time.Duration {
-	delta := time.Duration(maxFactor) * duration
-	minInterval := duration - delta
-	maxInterval := duration + delta
-	// Get a random value from the range [minInterval, maxInterval].
-	// The formula used below has a +1 because if the minInterval is 1 and the maxInterval is 3 then
-	// we want a 33% chance for selecting either 1, 2 or 3.
-	return minInterval + time.Duration(rand.Float64()*float64(maxInterval-minInterval+1))
+// Increments the current count by ++.
+func (o *ExponentialBackOff) incrementCurrentCount() {
+	// Check for overflow, if overflow is detected set the current interval to the max interval.
+	if o.currentCount >= math.MaxInt64 {
+		o.currentCount = math.MaxInt64
+		return
+	}
+	o.currentCount++
 }

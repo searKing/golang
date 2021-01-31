@@ -47,7 +47,7 @@ func NonSlidingUntil(ctx context.Context, f func(ctx context.Context), period ti
 
 // JitterUntil loops until context is done, running f every period.
 //
-// peroid set by WithExponentialBackOffOptionInitialInterval
+// period set by WithExponentialBackOffOptionInitialInterval
 // jitterFactor set by WithExponentialBackOffOptionRandomizationFactor
 // If jitterFactor is positive, the period is jittered before every run of f.
 // If jitterFactor is not positive, the period is unchanged and not jittered.

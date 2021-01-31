@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tag
+package tag_test
 
 import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
+
+	"github.com/searKing/golang/go/encoding/internal/tag"
 )
 
 type inputType struct {
@@ -20,9 +22,9 @@ type inputType struct {
 }
 type Name string
 
-func (thiz *Name) TagDefault() error {
-	if *thiz == "" {
-		*thiz = "Bob"
+func (name *Name) TagDefault() error {
+	if *name == "" {
+		*name = "Bob"
 	}
 	return nil
 }
@@ -35,7 +37,7 @@ func TestTag(t *testing.T) {
 		StringArray: []string{"stdout", "./logs"},
 		Map:         map[string]string{"name": "Alice", "age": "18"},
 	}
-	err := Tag(i, func(val reflect.Value, tag reflect.StructTag) error {
+	err := tag.Tag(i, func(val reflect.Value, tag reflect.StructTag) error {
 		return yaml.Unmarshal([]byte(tag.Get("default")), val.Addr().Interface())
 	})
 	if err != nil {
