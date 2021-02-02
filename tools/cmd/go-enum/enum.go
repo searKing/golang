@@ -8,7 +8,7 @@
 // 	json        ==>  encoding/json.MarshalJSON and encoding/json.UnmarshalJSON
 // 	text        ==>  encoding.TextMarshaler and encoding.TextUnmarshaler
 // 	sql         ==>  database/sql.Scanner and database/sql/driver.Valuer
-// 	yaml        ==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+// 	yaml        ==>  gopkg.in/yaml.v3:yaml.Marshaler and gopkg.in/yaml.v3:yaml.Unmarshaler
 //
 // Given the name of a (signed or unsigned) integer type T that has constants
 // defined, stringer will create a new self-contained Go source file implementing
@@ -26,7 +26,7 @@
 // 	sql         ==>  database/sql.Scanner and database/sql/driver.Valuer
 //		func (t T) Value() (driver.Value, error)
 //		func (t *T) Scan(value interface{}) error
-// 	yaml        ==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
+// 	yaml        ==>  gopkg.in/yaml.v3:yaml.Marshaler and gopkg.in/yaml.v3:yaml.Unmarshaler
 //		func (t T) MarshalYAML() (interface{}, error)
 //		func (t *T) UnmarshalYAML(unmarshal func(interface{}) error) error
 //
@@ -134,7 +134,7 @@ func ParseCommandLine(def bool) *flag.FlagSet {
 	commandLine.BoolVar(&useText, "text", def, "if true, the encoding.TextMarshaler and encoding.TextUnmarshaler interface will be implemented. Default: true")
 	commandLine.BoolVar(&useJson, "json", def, "if true, the encoding/json.Marshaler and encoding/json.Unmarshaler interface will be implemented. Default: true")
 	commandLine.BoolVar(&useSql, "sql", def, "if true, the database/sql.Scanner and database/sql/driver.Valuer interface will be implemented. Default: true")
-	commandLine.BoolVar(&useYaml, "yaml", def, "if true, the gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler interface will be implemented. Default: true")
+	commandLine.BoolVar(&useYaml, "yaml", def, "if true, the gopkg.in/yaml.v3:yaml.Marshaler and gopkg.in/yaml.v3:yaml.Unmarshaler interface will be implemented. Default: true")
 
 	commandLine.BoolVar(&useContains, "contains", def, "if true, the XXXSliceContains|XXXSliceContainsAny methods will be generated(XXX will be replaced by typename), such as strings.Contains|ContainsAny. Default: true")
 
