@@ -75,7 +75,10 @@ func (g *Generator) Generate() {
 		//if file.fileChanged {
 		// FIXME: always generate *.pb.go, to replace protoc-go, avoid "Tried to write the same file twice"
 		{
-			PrintComment(file.astFile)
+			// PrintComment when file is changed by protoc-gen-go-tag.
+			if file.fileChanged {
+				PrintComment(file.astFile)
+			}
 			var buf bytes.Buffer
 			err := format.Node(&buf, file.fset, file.astFile)
 			if err != nil {
