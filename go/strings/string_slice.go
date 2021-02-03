@@ -81,20 +81,40 @@ func SliceTrimFunc(ss []string, f func(s string) bool) []string {
 }
 
 // SliceContains  reports whether any t in tt is within ss.
-func SliceContains(ss []string, tt ...string) bool {
-	if len(tt) == 0 {
-		return false
-	}
+func SliceContainsAny(ss []string, tt ...string) bool {
+	return sliceContains(false, true, ss, tt...)
+}
 
-	if len(tt) == 1 {
+// SliceContains reports whether all t in tt is within ss.
+func SliceContains(ss []string, tt ...string) bool {
+	return sliceContains(true, false, ss, tt...)
+}
+
+func sliceContains(containsBefore bool, any bool, ss []string, tt ...string) bool {
+	var containsFirst bool
+	if len(tt) == 0 {
+		containsFirst = true
+	} else {
 		for _, v := range ss {
 			if v == tt[0] {
-				return true
+				containsFirst = true
+				break
 			}
 		}
-		return false
 	}
-	return SliceContains(ss, tt[1:]...)
+
+	// concat before and first string in ss
+	if any {
+		containsBefore = containsBefore || containsFirst
+	} else { // all
+		containsBefore = containsBefore && containsFirst
+	}
+
+	if len(tt) <= 1 {
+		return containsBefore
+	}
+
+	return sliceContains(containsBefore, any, ss, tt[1:]...)
 }
 
 // SliceUnique returns the given string slice with unique values.

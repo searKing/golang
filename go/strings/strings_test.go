@@ -16,20 +16,84 @@ import (
 
 type SliceContainsTest struct {
 	inputSS []string
-	inputS  string
+	inputTT []string
 	output  bool
+}
+
+var (
+	sliceContainsAnyTests = []SliceContainsTest{
+		{
+			[]string{"A", "B", "C", "D"},
+			nil,
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"A"},
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"A", "D"},
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"A", "E"},
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"E", "A"},
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"E"},
+			false,
+		},
+	}
+)
+
+func TestSliceContainsAny(t *testing.T) {
+	for n, test := range sliceContainsAnyTests {
+		out := strings.SliceContainsAny(test.inputSS, test.inputTT...)
+		if out != test.output {
+			t.Errorf("#%d: got %v; expected %v", n, out, test.output)
+		}
+	}
 }
 
 var (
 	sliceContainsTests = []SliceContainsTest{
 		{
 			[]string{"A", "B", "C", "D"},
-			"A",
+			nil,
 			true,
 		},
 		{
 			[]string{"A", "B", "C", "D"},
-			"E",
+			[]string{"A"},
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"A", "D"},
+			true,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"A", "E"},
+			false,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"E", "A"},
+			false,
+		},
+		{
+			[]string{"A", "B", "C", "D"},
+			[]string{"E"},
 			false,
 		},
 	}
@@ -37,7 +101,7 @@ var (
 
 func TestSliceContains(t *testing.T) {
 	for n, test := range sliceContainsTests {
-		out := strings.SliceContains(test.inputSS, test.inputS)
+		out := strings.SliceContains(test.inputSS, test.inputTT...)
 		if out != test.output {
 			t.Errorf("#%d: got %v; expected %v", n, out, test.output)
 		}
