@@ -13,7 +13,6 @@ import (
 // load sequence: protos..., file, env, replace if member has been set
 // that is, later cfg appeared, higher priority cfg has
 func DefaultLoad(viper_ *viper.Viper, v proto.Message, cfgFile string, envPrefix string, protos ...proto.Message) error {
-	viper.Reset()
 	if err := MergeAll(viper_, cfgFile, envPrefix, protos...); err != nil {
 		return err
 	}
@@ -21,7 +20,7 @@ func DefaultLoad(viper_ *viper.Viper, v proto.Message, cfgFile string, envPrefix
 	return UnmarshalProtoMessageByJsonpb(viper_, v)
 }
 
-// DefaultGlobalLoad load config from the global Viper instance.
-func DefaultGlobalLoad(v proto.Message, cfgFile string, envPrefix string, protos ...proto.Message) error {
+// LoadGlobalConfig load config from the global Viper instance.
+func LoadGlobalConfig(v proto.Message, cfgFile string, envPrefix string, protos ...proto.Message) error {
 	return DefaultLoad(viper.GetViper(), v, cfgFile, envPrefix, protos...)
 }

@@ -5,13 +5,15 @@
 package viper
 
 import (
-	"encoding/json"
 	"reflect"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
+
+	json_ "github.com/searKing/golang/go/encoding/json"
 )
 
 // Unmarshal returns the latest config viper proto
@@ -33,7 +35,34 @@ func UnmarshalProtoMessageByJsonpb(viper_ *viper.Viper, v proto.Message, opts ..
 func UnmarshalProtoMessageByJsonpbHookFunc(v proto.Message) mapstructure.DecodeHookFunc {
 	return func(src reflect.Type, dst reflect.Type, data interface{}) (interface{}, error) {
 		// Convert it by parsing
-		dataBytes, err := json.Marshal(data)
+		dataBytes, err := json_.Marshal(data)
+		if err != nil {
+			return nil, err
+		}
+
+		// apply protobuf check
+		if err := jsonpb.UnmarshalString(string(dataBytes), v); err != nil {
+			return data, err
+		}
+		return v, nil
+	}
+}
+
+func unmarshalProtoMessageByJsonpbHookFunc(v proto.Message) mapstructure.DecodeHookFunc {
+	return func(src reflect.Type, dst reflect.Type, data interface{}) (interface{}, error) {
+		// Convert it by parsing
+		dataBytes, err := yaml.Marshal(data)
+		if err != nil {
+			return nil, err
+		}
+
+		var d interface{}
+		err = yaml.Unmarshal(dataBytes, &d)
+		if err != nil {
+			return nil, err
+		}
+
+		dataBytes, err = json_.Marshal(d)
 		if err != nil {
 			return nil, err
 		}
