@@ -14,6 +14,7 @@ import (
 	"time"
 
 	net_ "github.com/searKing/golang/go/net"
+	http_ "github.com/searKing/golang/go/net/http"
 	"github.com/searKing/golang/go/strings"
 	"github.com/searKing/golang/go/sync/atomic"
 )
@@ -192,7 +193,7 @@ func (srv *Server) Serve(l net.Listener) error {
 // ServeTLS always returns a non-nil error. After Shutdown or Close, the
 // returned error is ErrServerClosed.
 func (srv *Server) ServeTLS(l net.Listener, tLSConfig *tls.Config, certFile, keyFile string) error {
-	config := cloneTLSConfig(tLSConfig)
+	config := http_.CloneTLSConfig(tLSConfig)
 	if !strings.SliceContains(config.NextProtos, "http/1.1") {
 		config.NextProtos = append(config.NextProtos, "http/1.1")
 	}
