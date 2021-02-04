@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	errors_ "github.com/searKing/golang/go/errors"
-	os_ "github.com/searKing/golang/go/os"
 	proto_ "github.com/searKing/golang/third_party/github.com/golang/protobuf/proto"
 )
 
@@ -35,11 +34,6 @@ func MergeConfigFromFile(v *viper.Viper, cfgFile string) error {
 	if cfgFile != "" {
 		// enable ability to specify config file via flag
 		v.SetConfigFile(cfgFile)
-		file, err := os_.CreateAllIfNotExist(cfgFile)
-		if err != nil {
-			return fmt.Errorf("create %s %w", cfgFile, err)
-		}
-		defer file.Close()
 	}
 
 	return v.MergeInConfig()
