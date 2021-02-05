@@ -62,10 +62,19 @@ type Version struct {
 	Patch      int
 	PreRelease string
 
+	// NOTE: The $Format strings are replaced during 'git archive' thanks to the
+	// companion .gitattributes file containing 'export-subst' in this same
+	// directory.  See also https://git-scm.com/docs/gitattributes
+	// git describe --long --tags --dirty --tags --always
+	// "v0.0.0-master+$Format:%h$"
 	RawVersion string
 
+	// build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+	// "1970-01-01T00:00:00Z"
 	BuildTime string
-	GitHash   string
+	// sha1 from git, output of $(git rev-parse HEAD)
+	// "$Format:%H$"
+	GitHash string
 
 	MetaData []string // take effect when PreRelease contains devel
 }
