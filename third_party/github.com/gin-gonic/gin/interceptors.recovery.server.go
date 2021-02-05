@@ -14,23 +14,29 @@ import (
 	"github.com/searKing/golang/go/error/builtin"
 )
 
-func Recovery(f func(c *gin.Context, err interface{})) gin.HandlerFunc {
-	return RecoveryWithWriter(gin.DefaultErrorWriter, f)
+//go:generate go-option -type "recovery"
+type recovery struct {
+	recoveryHandler func(c *gin.Context, err interface{}) error
 }
 
-func RecoveryWithWriter(out io.Writer, f func(c *gin.Context, err interface{})) gin.HandlerFunc {
+// Recovery returns a middleware that recovers from any panics and writes a 500 if there was one.
+func Recovery(opts ...RecoveryOption) gin.HandlerFunc {
+	return RecoveryWithWriter(gin.DefaultErrorWriter, opts...)
+}
+
+// RecoveryWithWriter returns a middleware for a given writer
+// that recovers from any panics and writes a 500 if there was one.
+func RecoveryWithWriter(out io.Writer, opts ...RecoveryOption) gin.HandlerFunc {
+	var opt recovery
+	opt.ApplyOptions(WithRecoveryHandler(RecoverHandler))
+	opt.ApplyOptions(opts...)
 	return func(c *gin.Context) {
 		defer func() {
 			builtin.Recover(out, func(err interface{}) interface{} {
-				var brokenPipe = builtin.ErrorIsBrokenPipe(err)
-				// If the connection is dead, we can't write a status to it.
-				if brokenPipe {
-					_ = c.Error(err.(error)) // nolint: errcheck
-					c.Abort()
-				} else {
-					c.AbortWithStatus(http.StatusInternalServerError)
+				if opt.recoveryHandler != nil {
+					return opt.recoveryHandler(c, err)
 				}
-				return nil
+				return err
 			}, func() string {
 				httpRequest, _ := httputil.DumpRequest(c.Request, false)
 				headers := strings.Split(string(httpRequest), "\r\n")
@@ -45,4 +51,16 @@ func RecoveryWithWriter(out io.Writer, f func(c *gin.Context, err interface{})) 
 		}()
 		c.Next() // execute all the handlers
 	}
+}
+
+func RecoverHandler(c *gin.Context, err interface{}) error {
+	var brokenPipe = builtin.ErrorIsBrokenPipe(err)
+	// If the connection is dead, we can't write a status to it.
+	if brokenPipe {
+		_ = c.Error(err.(error)) // nolint: errcheck
+		c.Abort()
+	} else {
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	return nil
 }
