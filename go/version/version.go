@@ -10,6 +10,8 @@ package version
 
 import (
 	"fmt"
+	"io"
+	"runtime"
 	"strings"
 )
 
@@ -59,6 +61,13 @@ type Version struct {
 	Minor      int
 	Patch      int
 	PreRelease string
+
+	RawVersion string
+
+	BuildTime string
+	GitHash   string
+
+	MetaData []string // take effect when PreRelease contains devel
 }
 
 // String formats the version string for this module in semver format.
@@ -67,17 +76,53 @@ type Version struct {
 //	v1.20.1
 //	v1.21.0-rc.1
 func (ver Version) String() string {
+	if ver.RawVersion != "" {
+		return ver.RawVersion
+	}
 	v := fmt.Sprintf("v%d.%d.%d", ver.Major, ver.Minor, ver.Patch)
 	if ver.PreRelease != "" {
 		v += "-" + ver.PreRelease
-
-		// TODO: Add metadata about the commit or build hash.
-		// See https://golang.org/issue/29814
-		// See https://golang.org/issue/33533
-		var metadata string
-		if strings.Contains(ver.PreRelease, "devel") && metadata != "" {
-			v += "+" + metadata
-		}
+	}
+	if ver.GitHash != "" {
+		v += "(" + ver.GitHash + ")"
+	}
+	// TODO: Add metadata about the commit or build hash.
+	// See https://golang.org/issue/29814
+	// See https://golang.org/issue/33533
+	var metadata = strings.Join(ver.MetaData, ".")
+	if strings.Contains(ver.PreRelease, "devel") && metadata != "" {
+		v += "+" + metadata
 	}
 	return v
+}
+
+func (ver Version) BuildInfo() string {
+	//	GoVersion = runtime.Version()
+	//	Compiler  = runtime.Compiler
+	//	Platform  = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("%s-%s-%s",
+		runtime.Compiler, runtime.Version(),
+		fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
+}
+
+// Examples:
+// v1.2.3-fix, Build #gc-go1.15.6-darwin/amd64, built on NOW
+func (ver Version) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		if s.Flag('+') {
+			_, _ = io.WriteString(s, ver.String())
+			if buildInfo := ver.BuildInfo(); buildInfo != "" {
+				_, _ = io.WriteString(s, ", Build #"+buildInfo)
+			}
+
+			if ver.BuildTime != "" {
+				_, _ = io.WriteString(s, ", built on "+ver.BuildTime)
+			}
+			return
+		}
+		fallthrough
+	case 's', 'q':
+		_, _ = io.WriteString(s, ver.String())
+	}
 }
