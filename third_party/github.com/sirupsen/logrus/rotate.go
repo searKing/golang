@@ -33,10 +33,10 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithLinkName(filepath.Base(path+".log")), // 生成软链，指向最新日志文件
-		rotatelogs.WithRotationTime(duration),               // 日志切割时间间隔
-		rotatelogs.WithRotationCount(maxCount),              // 文件片段最大保存个数
-		rotatelogs.WithMaxAge(maxAge),                       // 文件最大保存时间
+		rotatelogs.WithLinkName(path+".log"),   // 生成软链，指向最新日志文件
+		rotatelogs.WithRotationTime(duration),  // 日志切割时间间隔
+		rotatelogs.WithRotationCount(maxCount), // 文件片段最大保存个数
+		rotatelogs.WithMaxAge(maxAge),          // 文件最大保存时间
 	)
 	if err != nil {
 		return errors.Wrap(err, "create rotate logs failed")
