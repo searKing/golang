@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package net_test
+package addr_test
 
 import (
 	"net"
 	"testing"
 
-	net_ "github.com/searKing/golang/go/net"
+	"github.com/searKing/golang/go/net/addr"
 )
 
 func TestScoreAddr(t *testing.T) {
@@ -79,7 +79,7 @@ func TestScoreAddr(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		gotScore, gotIP := net_.ScoreAddr(tt.iface, tt.addr)
+		gotScore, gotIP := addr.ScoreAddr(tt.iface, tt.addr)
 		if tt.wantScore != gotScore {
 			t.Errorf("%s: expected %q got %q", tt.msg, tt.wantScore, gotScore)
 		}
