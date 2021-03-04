@@ -16,6 +16,17 @@ func GetCaller() string {
 	return f.Name()
 }
 
+// GetCallerFileLine returns the __FUNCTION__ and __LINE__ of the function that calls it.
+func GetCallerFileLine() (file string, line int) {
+	var ok bool
+	_, file, line, ok = runtime.Caller(2)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	return file, line
+}
+
 // GetCallStack Same as stdlib http server code. Manually allocate stack trace buffer size
 // to prevent excessively large logs
 func GetCallStack(size int) string {

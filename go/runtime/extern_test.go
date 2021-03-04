@@ -1,6 +1,7 @@
 package runtime_test
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -14,6 +15,21 @@ func TestGetCaller(t *testing.T) {
 	caller := runtime.GetCaller()
 	if match, _ := regexp.MatchString(`TestGetCaller(.*)`, caller); !match {
 		t.Errorf("mismatch symbolized function name: %s", caller)
+	}
+}
+
+func caller() string {
+	file, line := runtime.GetCallerFileLine()
+	return fmt.Sprintf("%s:%d", file, line)
+}
+
+func TestGetCallerFunctionLine(t *testing.T) {
+	// Example:
+	// /usr/local/go/src/testing/testing.go:1194
+	fl := caller()
+	if match, _ := regexp.MatchString(
+		`.*github.com/searKing/golang/go/runtime/extern_test.go:([0-9]+)`, fl); !match {
+		t.Errorf("mismatch caller's file line: %s", fl)
 	}
 }
 
