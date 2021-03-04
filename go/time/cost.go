@@ -29,6 +29,8 @@ func (c *Cost) ElapseFunc(f func(d time.Duration)) {
 type CostTick struct {
 	points   []time.Time
 	messages []string
+
+	flag int // properties
 }
 
 func (c *CostTick) Reset() {
@@ -38,8 +40,8 @@ func (c *CostTick) Reset() {
 
 func (c *CostTick) Tick(msg string) {
 	if msg == "" {
-		file, line := runtime_.GetCallerFileLine()
-		msg = fmt.Sprintf("%s:%d", file, line)
+		caller, file, line := runtime_.GetShortCallerFuncFileLine(1)
+		msg = fmt.Sprintf("%s() %s:%d", caller, file, line)
 	}
 	c.points = append(c.points, time.Now())
 	c.messages = append(c.messages, msg)

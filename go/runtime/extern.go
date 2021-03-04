@@ -1,14 +1,18 @@
 package runtime
 
 import (
+	"path"
 	"runtime"
 	"strings"
 )
 
 // GetCaller returns the caller of the function that calls it.
-func GetCaller() string {
+// The argument skip is the number of stack frames
+// to skip before recording in pc, with 0 identifying the frame for Callers itself and
+// 1 identifying the caller of Callers.
+func GetCaller(skip int) string {
 	var pc [1]uintptr
-	runtime.Callers(2, pc[:])
+	runtime.Callers(skip+1, pc[:])
 	f := runtime.FuncForPC(pc[0])
 	if f == nil {
 		return "Unable to find caller"
@@ -16,15 +20,27 @@ func GetCaller() string {
 	return f.Name()
 }
 
-// GetCallerFileLine returns the __FUNCTION__ and __LINE__ of the function that calls it.
-func GetCallerFileLine() (file string, line int) {
+// GetCallerFuncFileLine returns the __FUNCTION__, __FILE__ and __LINE__ of the function that calls it.
+// The argument skip is the number of stack frames
+// to skip before recording in pc, with 0 identifying the frame for Callers itself and
+// 1 identifying the caller of Callers.
+func GetCallerFuncFileLine(skip int) (caller string, file string, line int) {
 	var ok bool
-	_, file, line, ok = runtime.Caller(2)
+	_, file, line, ok = runtime.Caller(skip + 1)
 	if !ok {
 		file = "???"
 		line = 0
 	}
-	return file, line
+	return GetCaller(skip + 1), file, line
+}
+
+// GetShortCallerFuncFileLine returns the short form of GetCallerFuncFileLine.
+// The argument skip is the number of stack frames
+// to skip before recording in pc, with 0 identifying the frame for Callers itself and
+// 1 identifying the caller of Callers.
+func GetShortCallerFuncFileLine(skip int) (caller string, file string, line int) {
+	caller, file, line = GetCallerFuncFileLine(skip + 1)
+	return strings.TrimPrefix(path.Ext(caller), "."), path.Base(file), line
 }
 
 // GetCallStack Same as stdlib http server code. Manually allocate stack trace buffer size

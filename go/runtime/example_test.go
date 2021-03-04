@@ -12,11 +12,19 @@ import (
 )
 
 func ExampleGetCaller() {
-	caller := runtime.GetCaller()
+	caller := runtime.GetCaller(1)
 	fmt.Print(caller)
 
 	// Output:
 	// github.com/searKing/golang/go/runtime_test.ExampleGetCaller
+}
+
+func ExampleGetShortCallerFuncFileLine() {
+	caller, file, line := runtime.GetShortCallerFuncFileLine(1)
+	fmt.Printf("%s() %s:%d", caller, file, line)
+
+	// Output:
+	// ExampleGetShortCallerFuncFileLine() run_example.go:63
 }
 
 //go:nosplit
