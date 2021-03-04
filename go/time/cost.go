@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	runtime_ "github.com/searKing/golang/go/runtime"
 )
 
 type Cost struct {
@@ -35,6 +37,10 @@ func (c *CostTick) Reset() {
 }
 
 func (c *CostTick) Tick(msg string) {
+	if msg == "" {
+		file, line := runtime_.GetCallerFileLine()
+		msg = fmt.Sprintf("%s:%d", file, line)
+	}
 	c.points = append(c.points, time.Now())
 	c.messages = append(c.messages, msg)
 }
@@ -54,9 +60,12 @@ func (c *CostTick) Summary(f func(idx int, msg string, cost time.Duration, at ti
 	if c == nil || len(c.points) == 0 {
 		return
 	}
-	var start = c.points[0]
 
 	for i, p := range c.points {
-		f(i, c.messages[i], p.Sub(start), p)
+		if i == 0 {
+			f(i, c.messages[i], 0, p)
+			continue
+		}
+		f(i, c.messages[i], p.Sub(c.points[i-1]), p)
 	}
 }
