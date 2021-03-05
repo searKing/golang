@@ -49,8 +49,13 @@ func (c *CostTick) Tick(msg string) {
 
 func (c *CostTick) String() string {
 	var buf strings.Builder
+	var scanned bool
 	c.Summary(func(idx int, msg string, cost time.Duration, at time.Time) {
+		if scanned {
+			buf.WriteString("\n")
+		}
 		buf.WriteString(fmt.Sprintf("#%d, msg: %s, cost %s, at %s", idx, msg, cost, at))
+		scanned = true
 	})
 	return buf.String()
 }
