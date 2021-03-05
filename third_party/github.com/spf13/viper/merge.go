@@ -31,10 +31,11 @@ func MergeAll(v *viper.Viper, cfgFile string, envPrefix string, protos ...proto.
 
 // read from file
 func MergeConfigFromFile(v *viper.Viper, cfgFile string) error {
-	if cfgFile != "" {
-		// enable ability to specify config file via flag
-		v.SetConfigFile(cfgFile)
+	if cfgFile == "" {
+		return nil
 	}
+	// enable ability to specify config file via flag
+	v.SetConfigFile(cfgFile)
 
 	return v.MergeInConfig()
 }
