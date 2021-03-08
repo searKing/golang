@@ -25,6 +25,7 @@ require (
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.3.2
+	github.com/syndtr/goleveldb v1.0.0
 	github.com/urfave/negroni v1.0.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73
