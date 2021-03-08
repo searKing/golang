@@ -25,8 +25,6 @@ type Subject struct {
 	channels map[chan interface{}]struct{}
 
 	doneC chan struct{}
-
-	checker pragma.CopyChecker
 }
 
 // Subscribe returns a channel that's closed when awoken by PublishSignal or PublishBroadcast.
@@ -43,7 +41,6 @@ func (s *Subject) Subscribe() (<-chan interface{}, context.CancelFunc) {
 
 // PublishSignal wakes one listener waiting on c, if there is any.
 func (s *Subject) PublishSignal(ctx context.Context, event interface{}) {
-	s.checker.Check()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for eventC := range s.channels {
@@ -54,7 +51,6 @@ func (s *Subject) PublishSignal(ctx context.Context, event interface{}) {
 
 // PublishBroadcast wakes all listeners waiting on c.
 func (s *Subject) PublishBroadcast(ctx context.Context, event interface{}) {
-	s.checker.Check()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for eventC := range s.channels {
