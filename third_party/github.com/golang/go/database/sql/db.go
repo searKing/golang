@@ -16,7 +16,6 @@ import (
 	"github.com/luna-duclos/instrumentedsql/opentracing"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	_ "go.uber.org/automaxprocs"
 
 	"github.com/searKing/golang/go/database/dsn"
 	strings_ "github.com/searKing/golang/go/strings"

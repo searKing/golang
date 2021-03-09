@@ -27,7 +27,6 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/urfave/negroni v1.0.0
-	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73
 	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
