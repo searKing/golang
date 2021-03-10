@@ -6,6 +6,7 @@ package os
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -109,16 +110,17 @@ func OpenFileAll(path string, flag int, dirperm, fileperm os.FileMode) (*os.File
 		return os.OpenFile(path, flag, 0)
 	}
 
-	// mkdir -p dir
-	if err := os.MkdirAll(dir, dirperm); err != nil {
-		return nil, err
+	if dir != "" {
+		// mkdir -p dir
+		if err := os.MkdirAll(dir, dirperm); err != nil {
+			return nil, err
+		}
 	}
 
 	// create file if needed
 	if file == "" {
 		return nil, nil
 	}
-
 	return os.OpenFile(path, flag, fileperm)
 }
 
@@ -217,4 +219,63 @@ func SameFile(fi1, fi2 string) bool {
 		return false
 	}
 	return os.SameFile(stat1, stat2)
+}
+
+// ReLink creates or replaces newname as a hard link to the oldname file.
+// If there is an error, it will be of type *LinkError.
+func ReLink(oldname, newname string) error {
+	tempLink, err := ioutil.TempFile(filepath.Dir(newname), filepath.Base(newname))
+	if err != nil {
+		return err
+	}
+	if err = tempLink.Close(); err != nil {
+		return err
+	}
+
+	if err = os.Remove(tempLink.Name()); err != nil {
+		return err
+	}
+
+	defer os.Remove(tempLink.Name())
+	// keep mode the same if newname already exists.
+	if fi, err := os.Stat(newname); err == nil {
+		if err := os.Chmod(tempLink.Name(), fi.Mode()); err != nil {
+			return err
+		}
+	}
+
+	if err := os.Link(oldname, tempLink.Name()); err != nil {
+		return err
+	}
+	return os.Rename(tempLink.Name(), newname)
+
+}
+
+// ReSymlink creates or replace newname as a symbolic link to oldname.
+// If there is an error, it will be of type *LinkError.
+func ReSymlink(oldname, newname string) error {
+	tempLink, err := ioutil.TempFile(filepath.Dir(newname), filepath.Base(newname))
+	if err != nil {
+		return err
+	}
+	if err = tempLink.Close(); err != nil {
+		return err
+	}
+
+	if err = os.Remove(tempLink.Name()); err != nil {
+		return err
+	}
+
+	defer os.Remove(tempLink.Name())
+	// keep mode the same if newname already exists.
+	if fi, err := os.Stat(newname); err == nil {
+		if err := os.Chmod(tempLink.Name(), fi.Mode()); err != nil {
+			return err
+		}
+	}
+
+	if err := os.Symlink(oldname, tempLink.Name()); err != nil {
+		return err
+	}
+	return os.Rename(tempLink.Name(), newname)
 }

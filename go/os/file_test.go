@@ -54,3 +54,47 @@ func TestCreateAllIfNotExist(t *testing.T) {
 		t.Fatalf("temp file CreateAllIfNotExist failed: %v", err)
 	}
 }
+
+func TestRelink(t *testing.T) {
+	tmpOld := tmpFile(t)
+	tmpNew := tmpFile(t)
+	func() {
+		f, err := os_.CreateAllIfNotExist(tmpOld)
+		if err != nil {
+			t.Fatalf("temp file CreateAllIfNotExist failed: %v", err)
+		}
+		defer f.Close()
+	}()
+	err := os_.ReLink(tmpOld, tmpNew)
+	if err != nil {
+		t.Fatalf("temp file ReSymlink failed: %v", err)
+	}
+	if err := os.Remove(tmpOld); err != nil {
+		t.Fatalf("temp file[%s] Remove failed: %v", tmpOld, err)
+	}
+	if err := os.Remove(tmpNew); err != nil {
+		t.Fatalf("temp file[%s] Remove failed: %v", tmpNew, err)
+	}
+}
+
+func TestReSymlink(t *testing.T) {
+	tmpOld := tmpFile(t)
+	tmpNew := tmpFile(t)
+	func() {
+		f, err := os_.CreateAllIfNotExist(tmpOld)
+		if err != nil {
+			t.Fatalf("temp file CreateAllIfNotExist failed: %v", err)
+		}
+		defer f.Close()
+	}()
+	err := os_.ReSymlink(tmpOld, tmpNew)
+	if err != nil {
+		t.Fatalf("temp file ReSymlink failed: %v", err)
+	}
+	if err := os.Remove(tmpOld); err != nil {
+		t.Fatalf("temp file[%s] Remove failed: %v", tmpOld, err)
+	}
+	if err := os.Remove(tmpNew); err != nil {
+		t.Fatalf("temp file[%s] Remove failed: %v", tmpNew, err)
+	}
+}
