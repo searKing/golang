@@ -7,6 +7,7 @@ package strings
 import (
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	unicode_ "github.com/searKing/golang/go/unicode"
 )
@@ -176,4 +177,66 @@ func computePad(s string, pad string, n int) (padCount, spaceCount int) {
 
 	spaceCount = c - padCount*len(pad)
 	return padCount, spaceCount
+}
+
+// ReverseByByte returns a string with the bytes of s in reverse order.
+func ReverseByByte(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := len(s) - 1; i >= 0; i-- {
+		b.WriteByte(s[i])
+	}
+	return b.String()
+}
+
+// ReverseByRune returns a string with the runes of s in reverse order.
+// Invalid UTF-8 sequences, if any, will be reversed byte by byte.
+func ReverseByRune(s string) string {
+	res := make([]byte, len(s))
+	prevPos, resPos := 0, len(s)
+	for pos := range s {
+		resPos -= pos - prevPos
+		copy(res[resPos:], s[prevPos:pos])
+		prevPos = pos
+	}
+	copy(res[0:], s[prevPos:])
+	return string(res)
+}
+
+// CountPrefix counts the number of non-overlapping instances of continuous substr prefix in s.
+// If substr is an empty string, CountPrefix returns 1 + the number of Unicode code points in s.
+func CountPrefix(s, substr string) int {
+	// special case
+	if len(substr) == 0 {
+		return utf8.RuneCountInString(s) + 1
+	}
+	n := 0
+	gap := len(substr)
+	for i := 0; i+gap <= len(s); i += gap {
+		if s[i:i+gap] == substr {
+			n++
+			continue
+		}
+		break
+	}
+	return n
+}
+
+// CountPrefix counts the number of non-overlapping instances of continuous substr suffix in s.
+// If substr is an empty string, CountPrefix returns 1 + the number of Unicode code points in s.
+func CountSuffix(s, substr string) int {
+	// special case
+	if len(substr) == 0 {
+		return utf8.RuneCountInString(s) + 1
+	}
+	n := 0
+	gap := len(substr)
+	for i := len(s); i-gap >= 0; i -= gap {
+		if s[i-gap:i] == substr {
+			n++
+			continue
+		}
+		break
+	}
+	return n
 }

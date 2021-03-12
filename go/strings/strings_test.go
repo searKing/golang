@@ -461,3 +461,151 @@ func TestPadRight(t *testing.T) {
 		}
 	}
 }
+
+func TestReverseByByte(t *testing.T) {
+	table := []struct {
+		Q string
+		R string
+	}{
+		{
+			Q: "abc123",
+			R: "321cba",
+		},
+		{
+			Q: "Hello, 世界",
+			R: "\x8c\x95疸\xe4 ,olleH",
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.ReverseByByte(test.Q)
+		if qr != test.R {
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}
+
+func TestReverseByRune(t *testing.T) {
+	table := []struct {
+		Q string
+		R string
+	}{
+		{
+			Q: "abc123",
+			R: "321cba",
+		},
+		{
+			Q: "Hello, 世界",
+			R: "界世 ,olleH",
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.ReverseByRune(test.Q)
+		if qr != test.R {
+			t.Errorf("#%d. got %q, want %q", i, qr, test.R)
+		}
+	}
+}
+
+func TestCountPrefix(t *testing.T) {
+	table := []struct {
+		Q string
+		p string
+		R int
+	}{
+		{
+			Q: "abc123",
+			p: "a",
+			R: 1,
+		},
+		{
+			Q: "世界, Hello",
+			p: "世界",
+			R: 1,
+		},
+		{
+			Q: "aaaabc123",
+			p: "a",
+			R: 4,
+		},
+		{
+			Q: "aaaabc123",
+			p: "aa",
+			R: 2,
+		},
+		{
+			Q: "aaaabc123",
+			p: "aaa",
+			R: 1,
+		},
+		{
+			Q: "aaaabc123",
+			p: "aaaa",
+			R: 1,
+		},
+		{
+			Q: "aaaabc123",
+			p: "aaaaa",
+			R: 0,
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.CountPrefix(test.Q, test.p)
+		if qr != test.R {
+			t.Errorf("#%d. got %d, want %d", i, qr, test.R)
+		}
+	}
+}
+
+func TestCountSuffix(t *testing.T) {
+	table := []struct {
+		Q string
+		p string
+		R int
+	}{
+		{
+			Q: "abc123",
+			p: "3",
+			R: 1,
+		},
+		{
+			Q: "Hello, 世界",
+			p: "世界",
+			R: 1,
+		},
+		{
+			Q: "abc123333",
+			p: "3",
+			R: 4,
+		},
+		{
+			Q: "abc123333",
+			p: "33",
+			R: 2,
+		},
+		{
+			Q: "abc123333",
+			p: "333",
+			R: 1,
+		},
+		{
+			Q: "abc123333",
+			p: "3333",
+			R: 1,
+		},
+		{
+			Q: "abc123333",
+			p: "33333",
+			R: 0,
+		},
+	}
+
+	for i, test := range table {
+		qr := strings.CountSuffix(test.Q, test.p)
+		if qr != test.R {
+			t.Errorf("#%d. got %d, want %d", i, qr, test.R)
+		}
+	}
+}
