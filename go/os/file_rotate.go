@@ -1,0 +1,339 @@
+// Copyright 2021 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package os
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"regexp"
+	"sort"
+	"sync"
+	"time"
+
+	filepath_ "github.com/searKing/golang/go/path/filepath"
+	atomic_ "github.com/searKing/golang/go/sync/atomic"
+	time_ "github.com/searKing/golang/go/time"
+)
+
+type RotateMode int
+
+const (
+	// create new rotate file directly
+	RotateModeNew RotateMode = iota
+
+	// Make a copy of the log file, but don't change the original at all. This option can be
+	// used, for instance, to make a snapshot of the current log file, or when some other
+	// utility needs to truncate or parse the file. When this option is used, the create
+	// option will have no effect, as the old log file stays in place.
+	RotateModeCopyRename RotateMode = iota
+
+	// Truncate the original log file in place after creating a copy, instead of moving the
+	// old log file and optionally creating a new one. It can be used when some program can‐
+	// not be told to close its rotatefile and thus might continue writing (appending) to the
+	// previous log file forever. Note that there is a very small time slice between copying
+	// the file and truncating it, so some logging data might be lost. When this option is
+	// used, the create option will have no effect, as the old log file stays in place.
+	RotateModeCopyTruncate RotateMode = iota
+)
+
+// logrotate reads everything about the log files it should be handling from the series of con‐
+// figuration files specified on the command line.  Each configuration file can set global
+// options (local definitions override global ones, and later definitions override earlier ones)
+// and specify rotatefiles to rotate. A simple configuration file looks like this:
+//go:generate go-option -type "RotateFile"
+type RotateFile struct {
+	RotateMode RotateMode
+
+	FilePathPrefix       string // FilePath = FilePathPrefix + now.Format(filePathRotateLayout)
+	FilePathRotateLayout string // Time layout to format rotate file
+
+	RotateFileGlob string // file glob to clean
+
+	// sets the symbolic link name that gets linked to the current file name being used.
+	FileLinkPath string
+
+	// Rotate files are rotated until RotateInterval expired before being removed
+	// If RotateInterval is 0, old versions are removed rather than rotated.
+	RotateInterval time.Duration
+
+	// Rotate files are rotated if they grow bigger then size bytes.
+	RotateSize int64
+
+	// max age of a log file before it gets purged from the file system.
+	// Remove rotated logs older than duration. The age is only checked if the file is
+	// to be rotated.
+	MaxAge time.Duration
+
+	// Rotate files are rotated MaxCount times before being removed
+	// If MaxCount is 0, old versions are removed rather than rotated.
+	MaxCount int
+
+	mu            sync.Mutex
+	partSeq       int // file rotated by size limit meet
+	usingFilePath string
+	usingFile     *os.File
+}
+
+func NewRotateFile(layout string) *RotateFile {
+	return &RotateFile{
+		FilePathRotateLayout: layout,
+		RotateFileGlob:       fileGlobFromStrftimeLayout(time_.LayoutTimeToSimilarStrftime(layout)),
+		RotateInterval:       time.Hour,
+	}
+}
+
+func NewRotateFileWithStrftime(strftimeLayout string) *RotateFile {
+	return &RotateFile{
+		FilePathRotateLayout: time_.LayoutStrftimeToSimilarTime(strftimeLayout),
+		RotateFileGlob:       fileGlobFromStrftimeLayout(strftimeLayout),
+		RotateInterval:       time.Hour,
+	}
+}
+
+func fileGlobFromStrftimeLayout(strftimeLayout string) string {
+	var regexps = []*regexp.Regexp{
+		regexp.MustCompile(`%[%+A-Za-z]`),
+		regexp.MustCompile(`\*+`),
+	}
+	globPattern := strftimeLayout
+	for _, re := range regexps {
+		globPattern = re.ReplaceAllString(globPattern, "*")
+	}
+	return globPattern
+}
+
+func (f *RotateFile) Write(b []byte) (n int, err error) {
+	// Guard against concurrent writes
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	out, err := f.getWriterLocked(false, false)
+	if err != nil {
+		return 0, fmt.Errorf("acquite rotated file :%w", err)
+	}
+
+	return out.Write(b)
+}
+
+// WriteString is like Write, but writes the contents of string s rather than
+// a slice of bytes.
+func (f *RotateFile) WriteString(s string) (n int, err error) {
+	return f.Write([]byte(s))
+}
+
+// WriteAt writes len(b) bytes to the File starting at byte offset off.
+// It returns the number of bytes written and an error, if any.
+// WriteAt returns a non-nil error when n != len(b).
+//
+// If file was opened with the O_APPEND flag, WriteAt returns an error.
+func (f *RotateFile) WriteAt(b []byte, off int64) (n int, err error) {
+	// Guard against concurrent writes
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.WriteAt(b, off)
+}
+
+// Close satisfies the io.Closer interface. You must
+// call this method if you performed any writes to
+// the object.
+func (f *RotateFile) Close() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.usingFile == nil {
+		return nil
+	}
+
+	defer func() { f.usingFile = nil }()
+	return f.usingFile.Close()
+}
+
+// Rotate forcefully rotates the file. If the generated file name
+// clash because file already exists, a numeric suffix of the form
+// ".1", ".2", ".3" and so forth are appended to the end of the log file
+//
+// This method can be used in conjunction with a signal handler so to
+// emulate servers that generate new log files when they receive a SIGHUP
+func (f *RotateFile) Rotate(forceRotate bool) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, err := f.getWriterLocked(true, forceRotate); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *RotateFile) filePathByRotateTime() string {
+	// create a new file name using the regular time layout
+	return f.FilePathPrefix + time_.TruncateByLocation(time.Now(), f.RotateInterval).Format(f.FilePathRotateLayout)
+}
+
+func (f *RotateFile) filePathByRotateSize() (name string, seq int) {
+	// instead of just using the regular time layout,
+	// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
+	return nextFileName(f.filePathByRotateTime(), f.partSeq)
+}
+
+func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, byTime, bySize bool) {
+	name = f.filePathByRotateTime()
+	// rotate by time
+	if name != f.usingFilePath || f.usingFile == nil {
+		// rotate by time, reset part seq of rotate by size
+		f.partSeq = 0
+		return name, true, false
+	}
+	// rotate by size
+	fi, err := os.Stat(name)
+	if forceRotate || (err == nil && (fi.Size() > f.RotateSize)) {
+		// instead of just using the regular time layout,
+		// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
+		name, f.partSeq = nextFileName(name, f.partSeq+1)
+		return name, false, true
+	}
+	return name, false, false
+}
+
+func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (io.Writer, error) {
+	newName, byTime, bySize := f.filePathByRotate(forceRotate)
+	if !byTime && !bySize {
+		return f.usingFile, nil
+	}
+	newFile, err := f.rotateLocked(newName)
+	if err != nil {
+		if bailOnRotateFail {
+			// Failure to rotate is a problem, but it's really not a great
+			// idea to stop your application just because you couldn't rename
+			// your log.
+			//
+			// We only return this error when explicitly needed (as specified by bailOnRotateFail)
+			//
+			// However, we *NEED* to close `fh` here
+			if newFile != nil {
+				_ = newFile.Close()
+				newFile = nil
+			}
+			return nil, err
+		}
+	}
+	if newFile == nil {
+		return f.usingFile, nil
+	}
+
+	if f.usingFile != nil {
+		_ = f.usingFile.Close()
+		f.usingFile = nil
+	}
+	f.usingFile = newFile
+	f.usingFilePath = newName
+
+	return f.usingFile, nil
+}
+
+// file may not be nil if err is nil
+func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
+	var mu = atomic_.File(newName + "_lock")
+	err := mu.TryLock()
+	if err != nil {
+		// Can't lock, just return
+		return nil, err
+	}
+	defer mu.TryUnlock()
+
+	// if we got here, then we need to create a file
+	switch f.RotateMode {
+	case RotateModeCopyRename:
+		// for which open the file, and write file not by RotateFile
+		err = CopyRenameAll(newName, f.usingFilePath)
+	case RotateModeCopyTruncate:
+		// for which open the file, and write file not by RotateFile
+		err = CopyTruncateAll(newName, f.usingFilePath)
+	case RotateModeNew:
+		// for which open the file, and write file by RotateFile
+		fallthrough
+	default:
+	}
+	if err != nil {
+		return nil, err
+	}
+	file, err := CreateAllIfNotExist(newName)
+	if err != nil {
+		return nil, err
+	}
+
+	// link -> filename
+	if f.FileLinkPath != "" {
+		if err := ReSymlink(newName, f.FileLinkPath); err != nil {
+			return nil, err
+		}
+	}
+
+	now := time.Now()
+
+	// find old files
+	var filesNotExpired int
+	matches, err := filepath_.GlobFunc(f.RotateFileGlob, func(name string) bool {
+		fi, err := os.Stat(name)
+		if err != nil {
+			return false
+		}
+
+		fl, err := os.Lstat(name)
+		if err != nil {
+			return false
+		}
+
+		if f.MaxAge > 0 && now.Sub(fi.ModTime()) < f.MaxAge {
+			filesNotExpired++
+			return false
+		}
+
+		if fl.Mode()&os.ModeSymlink == os.ModeSymlink {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return file, err
+	}
+
+	if len(matches) <= 0 {
+		return file, nil
+	}
+
+	if f.MaxCount > filesNotExpired {
+		keepCount := f.MaxCount - filesNotExpired
+		if keepCount > len(matches) {
+			keepCount = len(matches)
+		}
+		sort.Sort(FileModeTimeSlice(matches))
+		matches = matches[:len(matches)-keepCount]
+	}
+
+	go func() {
+		// unlink files on a separate goroutine
+		for _, path := range matches {
+			os.Remove(path)
+		}
+	}()
+
+	return file, nil
+}
+
+func nextFileName(name string, seq int) (string, int) {
+	// A new file has been requested. Instead of just using the
+	// regular strftime pattern, we create a new file name using
+	// generational names such as "foo.1", "foo.2", "foo.3", etc
+	nf, seqUsed, err := NextFile(name+".*", seq)
+	if err != nil {
+		return name, seq
+	}
+	defer nf.Close()
+	if seqUsed == 0 {
+		return name, seqUsed
+	}
+	return nf.Name(), seqUsed
+}
