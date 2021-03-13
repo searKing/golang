@@ -10,8 +10,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
+	filepath_ "github.com/searKing/golang/go/path/filepath"
 )
 
 const (
@@ -119,6 +122,14 @@ func CreateAll(path string) (*os.File, error) {
 // If path is already a directory, CreateAllIfNotExist does nothing and returns nil.
 func CreateAllIfNotExist(path string) (*os.File, error) {
 	return OpenFileAll(path, DefaultFlagCreateIfNotExist, DefaultPermissionDirectory, DefaultPermissionFile)
+}
+
+// AppendAllIfNotExist appends the named file or dir. If the file does not exist, it is created
+// with mode 0666 (before umask).
+// If the dir does not exist, it is created with mode 0755 (before umask).
+// If path is already a directory, CreateAllIfNotExist does nothing and returns nil.
+func AppendAllIfNotExist(path string) (*os.File, error) {
+	return OpenFileAll(path, DefaultFlagCreateAppend, DefaultPermissionDirectory, DefaultPermissionFile)
 }
 
 // OpenAll opens the named file or dir for reading. If successful, methods on
@@ -445,6 +456,25 @@ func NextFile(pattern string, seq int) (f *os.File, seqUsed int, err error) {
 		break
 	}
 	return
+}
+
+// MaxSeq return max seq set by NextFile
+func MaxSeq(pattern string) int {
+	// prefixAndSuffix splits pattern by the last wildcard "*", if applicable,
+	// returning prefix as the part before "*" and suffix as the part after "*".
+	prefix, suffix := prefixAndSuffix(pattern)
+
+	var maxSeq int
+	_, _ = filepath_.GlobFunc(fmt.Sprintf("%s*%s", prefix, suffix), func(name string) bool {
+		seqStr := strings.TrimSuffix(strings.TrimPrefix(name, prefix), suffix)
+		if seq, err := strconv.Atoi(seqStr); err == nil {
+			if seq > maxSeq {
+				maxSeq = seq
+			}
+		}
+		return false
+	})
+	return maxSeq
 }
 
 // prefixAndSuffix splits pattern by the last wildcard "*", if applicable,

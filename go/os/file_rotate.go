@@ -14,7 +14,6 @@ import (
 	"time"
 
 	filepath_ "github.com/searKing/golang/go/path/filepath"
-	atomic_ "github.com/searKing/golang/go/sync/atomic"
 	time_ "github.com/searKing/golang/go/time"
 )
 
@@ -72,7 +71,7 @@ type RotateFile struct {
 	MaxCount int
 
 	mu            sync.Mutex
-	partSeq       int // file rotated by size limit meet
+	usingSeq      int // file rotated by size limit meet
 	usingFilePath string
 	usingFile     *os.File
 }
@@ -102,7 +101,7 @@ func fileGlobFromStrftimeLayout(strftimeLayout string) string {
 	for _, re := range regexps {
 		globPattern = re.ReplaceAllString(globPattern, "*")
 	}
-	return globPattern
+	return globPattern + `*`
 }
 
 func (f *RotateFile) Write(b []byte) (n int, err error) {
@@ -175,23 +174,29 @@ func (f *RotateFile) filePathByRotateTime() string {
 func (f *RotateFile) filePathByRotateSize() (name string, seq int) {
 	// instead of just using the regular time layout,
 	// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
-	return nextFileName(f.filePathByRotateTime(), f.partSeq)
+	return nextFileName(f.filePathByRotateTime(), f.usingSeq)
 }
 
 func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, byTime, bySize bool) {
 	name = f.filePathByRotateTime()
+	fi, err := os.Stat(name)
 	// rotate by time
 	if name != f.usingFilePath || f.usingFile == nil {
-		// rotate by time, reset part seq of rotate by size
-		f.partSeq = 0
-		return name, true, false
-	}
-	// rotate by size
-	fi, err := os.Stat(name)
-	if forceRotate || (err == nil && (fi.Size() > f.RotateSize)) {
+		if os.IsNotExist(err) {
+			// rotate by time, reset part seq of rotate by size
+			f.usingSeq = MaxSeq(name + ".")
+			return name, true, false
+		}
 		// instead of just using the regular time layout,
 		// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
-		name, f.partSeq = nextFileName(name, f.partSeq+1)
+		name, f.usingSeq = nextFileName(name, f.usingSeq+1)
+		return name, false, true
+	}
+	// rotate by size
+	if forceRotate || (err == nil && (f.RotateSize > 0 && fi.Size() > f.RotateSize)) {
+		// instead of just using the regular time layout,
+		// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
+		name, f.usingSeq = nextFileName(name, f.usingSeq+1)
 		return name, false, true
 	}
 	return name, false, false
@@ -235,14 +240,7 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (io.Wri
 
 // file may not be nil if err is nil
 func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
-	var mu = atomic_.File(newName + "_lock")
-	err := mu.TryLock()
-	if err != nil {
-		// Can't lock, just return
-		return nil, err
-	}
-	defer mu.TryUnlock()
-
+	var err error
 	// if we got here, then we need to create a file
 	switch f.RotateMode {
 	case RotateModeCopyRename:
@@ -259,7 +257,7 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := CreateAllIfNotExist(newName)
+	file, err := AppendAllIfNotExist(newName)
 	if err != nil {
 		return nil, err
 	}
@@ -274,8 +272,8 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 	now := time.Now()
 
 	// find old files
-	var filesNotExpired int
-	matches, err := filepath_.GlobFunc(f.RotateFileGlob, func(name string) bool {
+	var filesNotExpired []string
+	filesExpired, err := filepath_.GlobFunc(f.RotateFileGlob, func(name string) bool {
 		fi, err := os.Stat(name)
 		if err != nil {
 			return false
@@ -285,9 +283,13 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 		if err != nil {
 			return false
 		}
+		if f.MaxAge <= 0 {
+			filesNotExpired = append(filesNotExpired, name)
+			return false
+		}
 
-		if f.MaxAge > 0 && now.Sub(fi.ModTime()) < f.MaxAge {
-			filesNotExpired++
+		if now.Sub(fi.ModTime()) < f.MaxAge {
+			filesNotExpired = append(filesNotExpired, name)
 			return false
 		}
 
@@ -300,22 +302,22 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 		return file, err
 	}
 
-	if len(matches) <= 0 {
-		return file, nil
-	}
-
-	if f.MaxCount > filesNotExpired {
-		keepCount := f.MaxCount - filesNotExpired
-		if keepCount > len(matches) {
-			keepCount = len(matches)
+	var filesExceedMaxCount []string
+	if f.MaxCount > 0 && len(filesNotExpired) > 0 {
+		removeCount := len(filesNotExpired) - f.MaxCount
+		if removeCount < 0 {
+			removeCount = 0
 		}
-		sort.Sort(FileModeTimeSlice(matches))
-		matches = matches[:len(matches)-keepCount]
+		sort.Sort(rotateFileSlice(filesNotExpired))
+		filesExceedMaxCount = filesNotExpired[:removeCount]
 	}
 
 	go func() {
 		// unlink files on a separate goroutine
-		for _, path := range matches {
+		for _, path := range filesExpired {
+			os.Remove(path)
+		}
+		for _, path := range filesExceedMaxCount {
 			os.Remove(path)
 		}
 	}()
@@ -336,4 +338,32 @@ func nextFileName(name string, seq int) (string, int) {
 		return name, seqUsed
 	}
 	return nf.Name(), seqUsed
+}
+
+// sort filename by mode time and ascii in increase order
+type rotateFileSlice []string
+
+func (s rotateFileSlice) Len() int {
+	return len(s)
+}
+func (s rotateFileSlice) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s rotateFileSlice) Less(i, j int) bool {
+	fi, err := os.Stat(s[i])
+	if err != nil {
+		return false
+	}
+	fj, err := os.Stat(s[j])
+	if err != nil {
+		return false
+	}
+	if fi.ModTime().Equal(fj.ModTime()) {
+		if len(s[i]) == len(s[j]) {
+			return s[i] < s[j]
+		}
+		return len(s[i]) > len(s[j]) // foo.1, foo.2, ..., foo
+	}
+	return fi.ModTime().Before(fj.ModTime())
 }
