@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/pkg/errors"
-	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 
+	os_ "github.com/searKing/golang/go/os"
 	filepath_ "github.com/searKing/golang/go/path/filepath"
 )
 
@@ -22,7 +21,7 @@ import (
 // duration sets the time between rotation.
 // maxCount sets the number of files should be kept before it gets purged from the file system.
 // maxAge sets the max age of a log file before it gets purged from the file system.
-func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCount uint, maxAge time.Duration) error {
+func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCount int, maxAge time.Duration) error {
 	if log == nil {
 		return nil
 	}
@@ -31,24 +30,28 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 		return errors.Wrap(err, fmt.Sprintf("create dir[%s] for log failed", dir))
 	}
 
-	writer, err := rotatelogs.New(
-		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithLinkName(path+".log"),   // 生成软链，指向最新日志文件
-		rotatelogs.WithRotationTime(duration),  // 日志切割时间间隔
-		rotatelogs.WithRotationCount(maxCount), // 文件片段最大保存个数
-		rotatelogs.WithMaxAge(maxAge),          // 文件最大保存时间
-	)
-	if err != nil {
-		return errors.Wrap(err, "create rotate logs failed")
-	}
-	lfHook := lfshook.NewHook(lfshook.WriterMap{
-		logrus.DebugLevel: writer, // 为不同级别设置不同的输出目的
-		logrus.InfoLevel:  writer,
-		logrus.WarnLevel:  writer,
-		logrus.ErrorLevel: writer,
-		logrus.FatalLevel: writer,
-		logrus.PanicLevel: writer,
-	}, log.Formatter)
-	log.AddHook(lfHook)
+	file := os_.NewRotateFileWithStrftime(".%Y%m%d%H%M.log")
+	file.FilePathPrefix = path
+	file.FileLinkPath = filepath.Base(path) + ".log"
+	file.RotateInterval = duration
+	file.MaxCount = maxCount
+	file.MaxAge = maxAge
+	log.AddHook(HookFunc(func(entry *logrus.Entry) error {
+		var msg []byte
+		var err error
+
+		if log.Formatter == nil {
+			msg_, err_ := entry.String()
+			msg, err = []byte(msg_), err_
+		} else {
+			msg, err = log.Formatter.Format(entry)
+		}
+
+		if err != nil {
+			return err
+		}
+		_, err = file.Write(msg)
+		return err
+	}))
 	return nil
 }

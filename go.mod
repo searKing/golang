@@ -16,13 +16,10 @@ require (
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/lestrrat-go/file-rotatelogs v2.3.0+incompatible
-	github.com/lestrrat-go/strftime v1.0.4 // indirect
 	github.com/luna-duclos/instrumentedsql v1.1.3
 	github.com/luna-duclos/instrumentedsql/opentracing v0.0.0-20201103091713-40d03108b6f4
 	github.com/mitchellh/mapstructure v1.2.3
 	github.com/pkg/errors v0.9.1
-	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.3.2
 	github.com/syndtr/goleveldb v1.0.0
