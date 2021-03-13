@@ -47,5 +47,4 @@ func TestTruncateByLocation(t *testing.T) {
 			t.Errorf("#%d: TruncateByLocation expected %q got %q", i, tt.wantTimeByLocation, gotTime)
 		}
 	}
-
 }
