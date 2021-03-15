@@ -44,6 +44,11 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 			msg_, err_ := entry.String()
 			msg, err = []byte(msg_), err_
 		} else {
+			switch f := log.Formatter.(type) {
+			case *logrus.TextFormatter:
+				// disable colors in log file
+				f.DisableColors = true
+			}
 			msg, err = log.Formatter.Format(entry)
 		}
 

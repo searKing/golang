@@ -42,7 +42,6 @@ const (
 // figuration files specified on the command line.  Each configuration file can set global
 // options (local definitions override global ones, and later definitions override earlier ones)
 // and specify rotatefiles to rotate. A simple configuration file looks like this:
-//go:generate go-option -type "RotateFile"
 type RotateFile struct {
 	RotateMode RotateMode
 
