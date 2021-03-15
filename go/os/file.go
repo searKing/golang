@@ -419,6 +419,9 @@ func ReSymlink(oldname, newname string) error {
 	}
 
 	defer os.Remove(tempLink.Name())
+	if err := os.Symlink(oldname, tempLink.Name()); err != nil {
+		return err
+	}
 	// keep mode the same if newname already exists.
 	if fi, err := os.Stat(newname); err == nil {
 		if err := os.Chmod(tempLink.Name(), fi.Mode()); err != nil {
@@ -426,9 +429,6 @@ func ReSymlink(oldname, newname string) error {
 		}
 	}
 
-	if err := os.Symlink(oldname, tempLink.Name()); err != nil {
-		return err
-	}
 	return os.Rename(tempLink.Name(), newname)
 }
 
@@ -459,14 +459,16 @@ func NextFile(pattern string, seq int) (f *os.File, seqUsed int, err error) {
 }
 
 // MaxSeq return max seq set by NextFile
-func MaxSeq(pattern string) int {
+// split pattern by the last wildcard "*"
+func MaxSeq(pattern string) (prefix string, seq int, suffix string) {
 	// prefixAndSuffix splits pattern by the last wildcard "*", if applicable,
 	// returning prefix as the part before "*" and suffix as the part after "*".
-	prefix, suffix := prefixAndSuffix(pattern)
+	prefix, suffix = prefixAndSuffix(pattern)
 
 	var maxSeq int
 	_, _ = filepath_.GlobFunc(fmt.Sprintf("%s*%s", prefix, suffix), func(name string) bool {
-		seqStr := strings.TrimSuffix(strings.TrimPrefix(name, prefix), suffix)
+		// filepath.Clean fix ./xxx -> xxx
+		seqStr := strings.TrimSuffix(strings.TrimPrefix(name, filepath.Clean(prefix)), suffix)
 		if seq, err := strconv.Atoi(seqStr); err == nil {
 			if seq > maxSeq {
 				maxSeq = seq
@@ -474,7 +476,7 @@ func MaxSeq(pattern string) int {
 		}
 		return false
 	})
-	return maxSeq
+	return prefix, maxSeq, suffix
 }
 
 // prefixAndSuffix splits pattern by the last wildcard "*", if applicable,

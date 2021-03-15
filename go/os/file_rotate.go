@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -68,6 +69,9 @@ type RotateFile struct {
 	// Rotate files are rotated MaxCount times before being removed
 	// If MaxCount is 0, old versions are removed rather than rotated.
 	MaxCount int
+
+	// Force File Rotate when start up
+	ForceNewFileOnStartup bool
 
 	mu            sync.Mutex
 	usingSeq      int // file rotated by size limit meet
@@ -173,29 +177,43 @@ func (f *RotateFile) filePathByRotateTime() string {
 func (f *RotateFile) filePathByRotateSize() (name string, seq int) {
 	// instead of just using the regular time layout,
 	// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
-	return nextFileName(f.filePathByRotateTime(), f.usingSeq)
+	return nextSeqFileName(f.filePathByRotateTime(), f.usingSeq)
 }
 
 func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, byTime, bySize bool) {
 	name = f.filePathByRotateTime()
 	fi, err := os.Stat(name)
+
+	// startup
+	if f.usingFilePath == "" {
+		if f.ForceNewFileOnStartup {
+			// instead of just using the regular time layout,
+			// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
+			name, f.usingSeq = nextSeqFileName(name, f.usingSeq+1)
+			return name, false, true
+		}
+		name, f.usingSeq = maxSeqFileName(name)
+		return name, true, false
+	}
+
 	// rotate by time
-	if name != f.usingFilePath || f.usingFile == nil {
+	if name != trimSeqFromNextFileName(f.usingFilePath, f.usingSeq) {
 		if os.IsNotExist(err) {
 			// rotate by time, reset part seq of rotate by size
-			f.usingSeq = MaxSeq(name + ".")
-			return name, true, false
+			name_, seq := maxSeqFileName(name)
+			f.usingSeq = seq
+			return name_, true, false
 		}
 		// instead of just using the regular time layout,
 		// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
-		name, f.usingSeq = nextFileName(name, f.usingSeq+1)
+		name, f.usingSeq = nextSeqFileName(name, f.usingSeq+1)
 		return name, false, true
 	}
 	// rotate by size
 	if forceRotate || (err == nil && (f.RotateSize > 0 && fi.Size() > f.RotateSize)) {
 		// instead of just using the regular time layout,
 		// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
-		name, f.usingSeq = nextFileName(name, f.usingSeq+1)
+		name, f.usingSeq = nextSeqFileName(name, f.usingSeq+1)
 		return name, false, true
 	}
 	return name, false, false
@@ -324,7 +342,9 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 	return file, nil
 }
 
-func nextFileName(name string, seq int) (string, int) {
+// foo.txt, 0 -> foo.txt
+// foo.txt, 1 -> foo.txt.[1,2,...], which is not exist and seq is max
+func nextSeqFileName(name string, seq int) (string, int) {
 	// A new file has been requested. Instead of just using the
 	// regular strftime pattern, we create a new file name using
 	// generational names such as "foo.1", "foo.2", "foo.3", etc
@@ -337,6 +357,25 @@ func nextFileName(name string, seq int) (string, int) {
 		return name, seqUsed
 	}
 	return nf.Name(), seqUsed
+}
+
+// foo.txt -> foo.txt
+// foo.txt.1 -> foo.txt
+// foo.txt.1.1 -> foo.txt.1
+func trimSeqFromNextFileName(name string, seq int) string {
+	if seq == 0 {
+		return name
+	}
+	return strings.TrimSuffix(name, fmt.Sprintf(".%d", seq))
+}
+
+// foo.txt.* -> foo.txt.[1,2,...], which is exist and seq is max
+func maxSeqFileName(name string) (string, int) {
+	prefix, seq, suffix := MaxSeq(name + ".*")
+	if seq == 0 {
+		return name, seq
+	}
+	return fmt.Sprintf("%s%d%s", prefix, seq, suffix), seq
 }
 
 // sort filename by mode time and ascii in increase order
