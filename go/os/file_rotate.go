@@ -44,8 +44,7 @@ const (
 // options (local definitions override global ones, and later definitions override earlier ones)
 // and specify rotatefiles to rotate. A simple configuration file looks like this:
 type RotateFile struct {
-	RotateMode RotateMode
-
+	RotateMode           RotateMode
 	FilePathPrefix       string // FilePath = FilePathPrefix + now.Format(filePathRotateLayout)
 	FilePathRotateLayout string // Time layout to format rotate file
 
@@ -55,19 +54,21 @@ type RotateFile struct {
 	FileLinkPath string
 
 	// Rotate files are rotated until RotateInterval expired before being removed
-	// If RotateInterval is 0, old versions are removed rather than rotated.
+	// take effects if only RotateInterval is bigger than 0.
 	RotateInterval time.Duration
 
 	// Rotate files are rotated if they grow bigger then size bytes.
+	// take effects if only RotateSize is bigger than 0.
 	RotateSize int64
 
 	// max age of a log file before it gets purged from the file system.
 	// Remove rotated logs older than duration. The age is only checked if the file is
 	// to be rotated.
+	// take effects if only MaxAge is bigger than 0.
 	MaxAge time.Duration
 
 	// Rotate files are rotated MaxCount times before being removed
-	// If MaxCount is 0, old versions are removed rather than rotated.
+	// take effects if only MaxCount is bigger than 0.
 	MaxCount int
 
 	// Force File Rotate when start up
@@ -83,7 +84,7 @@ func NewRotateFile(layout string) *RotateFile {
 	return &RotateFile{
 		FilePathRotateLayout: layout,
 		RotateFileGlob:       fileGlobFromStrftimeLayout(time_.LayoutTimeToSimilarStrftime(layout)),
-		RotateInterval:       time.Hour,
+		RotateInterval:       24 * time.Hour,
 	}
 }
 
@@ -91,7 +92,7 @@ func NewRotateFileWithStrftime(strftimeLayout string) *RotateFile {
 	return &RotateFile{
 		FilePathRotateLayout: time_.LayoutStrftimeToSimilarTime(strftimeLayout),
 		RotateFileGlob:       fileGlobFromStrftimeLayout(strftimeLayout),
-		RotateInterval:       time.Hour,
+		RotateInterval:       24 * time.Hour,
 	}
 }
 

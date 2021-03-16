@@ -5,37 +5,79 @@
 package logrus
 
 import (
-	"fmt"
+	"io"
 	"path/filepath"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	os_ "github.com/searKing/golang/go/os"
-	filepath_ "github.com/searKing/golang/go/path/filepath"
+	time_ "github.com/searKing/golang/go/time"
 )
 
-// WithRotation enhances logrus log to be written to local filesystem, with file rotation
+//go:generate go-option -type "rotate"
+type rotate struct {
+	// Time layout to format rotate file
+	FilePathRotateLayout string
+
+	// sets the symbolic link name that gets linked to the current file name being used.
+	FileLinkPath string
+
+	// Rotate files are rotated until RotateInterval expired before being removed
+	// take effects if only RotateInterval is bigger than 0.
+	RotateInterval time.Duration
+
+	// Rotate files are rotated if they grow bigger then size bytes.
+	// take effects if only RotateSize is bigger than 0.
+	RotateSize int64
+
+	// max age of a log file before it gets purged from the file system.
+	// Remove rotated logs older than duration. The age is only checked if the file is
+	// to be rotated.
+	// take effects if only MaxAge is bigger than 0.
+	MaxAge time.Duration
+
+	// Rotate files are rotated MaxCount times before being removed
+	// take effects if only MaxCount is bigger than 0.
+	MaxCount int
+
+	// Force File Rotate when start up
+	ForceNewFileOnStartup bool
+
+	// mute writer of logrus.Output if level is InfoLevel、DebugLevel、TraceLevel...
+	MuteDirectlyOutput bool
+}
+
+// WithRotate enhances logrus log to be written to local filesystem, with file rotation
 // path sets log's base path prefix
-// duration sets the time between rotation.
-// maxCount sets the number of files should be kept before it gets purged from the file system.
-// maxAge sets the max age of a log file before it gets purged from the file system.
-func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCount int, maxAge time.Duration) error {
+func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error {
 	if log == nil {
 		return nil
 	}
-	dir := filepath_.ToDir(filepath.Dir(path))
-	if err := filepath_.TouchAll(dir, filepath_.PrivateDirMode); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("create dir[%s] for log failed", dir))
+	if err := os_.MakeAll(filepath.Dir(path)); err != nil {
+		return err
 	}
 
-	file := os_.NewRotateFileWithStrftime(".%Y%m%d%H%M.log")
+	var opt rotate
+	opt.FilePathRotateLayout = time_.LayoutStrftimeToSimilarTime(".%Y%m%d%H%M%S.log")
+	opt.FileLinkPath = filepath.Base(path) + ".log"
+	opt.MuteDirectlyOutput = true
+	opt.ApplyOptions(options...)
+
+	file := os_.NewRotateFileWithStrftime(opt.FilePathRotateLayout)
 	file.FilePathPrefix = path
-	file.FileLinkPath = filepath.Base(path) + ".log"
-	file.RotateInterval = duration
-	file.MaxCount = maxCount
-	file.MaxAge = maxAge
+	file.FileLinkPath = opt.FileLinkPath
+	file.RotateInterval = opt.RotateInterval
+	file.RotateSize = opt.RotateSize
+	file.MaxAge = opt.MaxAge
+	file.MaxCount = opt.MaxCount
+	file.ForceNewFileOnStartup = opt.ForceNewFileOnStartup
+
+	var out = io.Discard
+	if opt.MuteDirectlyOutput {
+		out = log.Out
+		log.SetOutput(io.Discard)
+	}
 	log.AddHook(HookFunc(func(entry *logrus.Entry) error {
 		var msg []byte
 		var err error
@@ -46,14 +88,24 @@ func WithRotation(log *logrus.Logger, path string, duration time.Duration, maxCo
 		} else {
 			switch f := log.Formatter.(type) {
 			case *logrus.TextFormatter:
+				var disableColors = f.DisableColors
 				// disable colors in log file
 				f.DisableColors = true
+				msg, err = log.Formatter.Format(entry)
+				f.DisableColors = disableColors
+			default:
+				msg, err = log.Formatter.Format(entry)
 			}
-			msg, err = log.Formatter.Format(entry)
 		}
 
 		if err != nil {
 			return err
+		}
+
+		if opt.MuteDirectlyOutput && entry.Level <= logrus.WarnLevel {
+			if out != nil {
+				_, _ = out.Write(msg)
+			}
 		}
 		_, err = file.Write(msg)
 		return err
