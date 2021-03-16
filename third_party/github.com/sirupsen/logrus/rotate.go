@@ -6,6 +6,7 @@ package logrus
 
 import (
 	"io"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
@@ -73,10 +74,10 @@ func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error 
 	file.MaxCount = opt.MaxCount
 	file.ForceNewFileOnStartup = opt.ForceNewFileOnStartup
 
-	var out = io.Discard
+	var out = ioutil.Discard
 	if opt.MuteDirectlyOutput {
 		out = log.Out
-		log.SetOutput(io.Discard)
+		log.SetOutput(ioutil.Discard)
 	}
 	log.AddHook(HookFunc(func(entry *logrus.Entry) error {
 		var msg []byte
