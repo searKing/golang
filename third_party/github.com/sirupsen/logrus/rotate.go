@@ -5,7 +5,6 @@
 package logrus
 
 import (
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"time"
