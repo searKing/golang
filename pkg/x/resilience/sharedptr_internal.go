@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	logrus2 "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
+	logrus_ "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,7 +18,7 @@ type sharedPtr struct {
 	// It may not be changed concurrently with calls to Get.
 	// readonly
 	New func() (Ptr, error)
-	*logrus2.FieldLogger
+	*logrus_.FieldLogger
 
 	// to judge whether Get&Construct is timeout
 	// readonly
@@ -42,7 +42,7 @@ type sharedPtr struct {
 func newSharedPtrSafe(ctx context.Context, new func() (Ptr, error), l logrus.FieldLogger) *sharedPtr {
 	return &sharedPtr{
 		New:                  new,
-		FieldLogger:          logrus2.New(l),
+		FieldLogger:          logrus_.New(l),
 		TaskMaxRetryDuration: DefaultResilienceTaskMaxRetryDuration,
 		ConstructTimeout:     DefaultResilienceConstructTimeout,
 		ctx:                  ctx,

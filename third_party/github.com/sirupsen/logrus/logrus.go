@@ -13,6 +13,7 @@ import (
 
 type FieldLogger struct {
 	logger logrus.FieldLogger
+	level  logrus.Level
 	mu     sync.Mutex
 }
 
@@ -21,16 +22,53 @@ var stdFieldLogger = New(nil)
 func New(l logrus.FieldLogger) *FieldLogger {
 	return &FieldLogger{
 		logger: l,
+		level:  logrus.InfoLevel,
+	}
+}
+
+func (b *FieldLogger) Clone() *FieldLogger {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return &FieldLogger{
+		logger: b.logger,
+		level:  b.level,
 	}
 }
 
 func (b *FieldLogger) Write(p []byte) (n int, err error) {
-	b.GetLogger().Printf("%s", string(p))
+	b.mu.Lock()
+	var level = b.level
+	b.mu.Unlock()
+	switch level {
+	case logrus.PanicLevel:
+		b.GetLogger().Panicf("%s", string(p))
+	case logrus.FatalLevel:
+		b.GetLogger().Fatalf("%s", string(p))
+	case logrus.ErrorLevel:
+		b.GetLogger().Errorf("%s", string(p))
+	case logrus.WarnLevel:
+		b.GetLogger().Warnf("%s", string(p))
+	case logrus.InfoLevel:
+		b.GetLogger().Infof("%s", string(p))
+	case logrus.DebugLevel:
+		b.GetLogger().Debugf("%s", string(p))
+	case logrus.TraceLevel:
+		logger := b.GetLogger()
+		if logger_, ok := logger.(logrus.Ext1FieldLogger); ok {
+			logger_.Tracef("%s", string(p))
+		}
+	}
 	return len(p), nil
 }
 
 func (b *FieldLogger) GetStdLogger() *log.Logger {
 	return log.New(New(b.GetLogger()), "", 0)
+}
+
+func (b *FieldLogger) GetStdLoggerWithLevel(level logrus.Level) *log.Logger {
+	logger := b.Clone()
+	logger.level = level
+	return log.New(logger, "", 0)
 }
 
 func (b *FieldLogger) GetLogger() logrus.FieldLogger {
