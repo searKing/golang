@@ -16,16 +16,27 @@ import (
 	time_ "github.com/searKing/golang/go/time"
 )
 
+func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
+	if req.Body != nil {
+		req.Body.Close()
+	}
+	rc, ok := body.(io.ReadCloser)
+	if !ok && body != nil {
+		rc = io.NopCloser(body)
+	}
+	req.Body = rc
+}
+
 // Do sends an HTTP request and returns an HTTP response, following
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
-func HttpDo(req *http.Request) (*http.Response, error) {
+func Do(req *http.Request) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
-// HttpDoWithBackoff will retry by exponential backoff if failed.
+// DoWithBackoff will retry by exponential backoff if failed.
 // If request is not rewindable, retry wil be skipped.
-func HttpDoWithBackoff(httpReq *http.Request, opts ...time_.ExponentialBackOffOption) (*http.Response, error) {
+func DoWithBackoff(httpReq *http.Request, opts ...time_.ExponentialBackOffOption) (*http.Response, error) {
 	var option []time_.ExponentialBackOffOption
 	option = append(option, time_.WithExponentialBackOffOptionMaxElapsedCount(3))
 	option = append(option, opts...)
@@ -40,7 +51,7 @@ func HttpDoWithBackoff(httpReq *http.Request, opts ...time_.ExponentialBackOffOp
 			}
 			httpReq.Body = newBody
 		}
-		resp, err := HttpDo(httpReq)
+		resp, err := Do(httpReq)
 		if err == nil {
 			return resp, nil
 		}
@@ -65,19 +76,8 @@ func HttpDoWithBackoff(httpReq *http.Request, opts ...time_.ExponentialBackOffOp
 	}
 }
 
-func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
-	if req.Body != nil {
-		req.Body.Close()
-	}
-	rc, ok := body.(io.ReadCloser)
-	if !ok && body != nil {
-		rc = io.NopCloser(body)
-	}
-	req.Body = rc
-}
-
-// HttpDoJson the same as HttpDo, but bind with json
-func HttpDoJson(httpReq *http.Request, req, resp interface{}) error {
+// DoJson the same as HttpDo, but bind with json
+func DoJson(httpReq *http.Request, req, resp interface{}) error {
 	if req != nil {
 		data, err := json.Marshal(req)
 		if err != nil {
@@ -88,7 +88,7 @@ func HttpDoJson(httpReq *http.Request, req, resp interface{}) error {
 		ReplaceHttpRequestBody(httpReq, reqBody)
 	}
 
-	httpResp, err := HttpDo(httpReq)
+	httpResp, err := Do(httpReq)
 	if err != nil {
 		return err
 	}
@@ -105,15 +105,15 @@ func HttpDoJson(httpReq *http.Request, req, resp interface{}) error {
 	return json.Unmarshal(body, resp)
 }
 
-// HttpDoJsonWithBackoff the same as HttpDoWithBackoff, but bind with json
-func HttpDoJsonWithBackoff(httpReq *http.Request, req, resp interface{}, opts ...time_.ExponentialBackOffOption) error {
+// DoJsonWithBackoff the same as DoWithBackoff, but bind with json
+func DoJsonWithBackoff(httpReq *http.Request, req, resp interface{}, opts ...time_.ExponentialBackOffOption) error {
 	var option []time_.ExponentialBackOffOption
 	option = append(option, time_.WithExponentialBackOffOptionMaxElapsedCount(3))
 	option = append(option, opts...)
 	backoff := time_.NewExponentialBackOff(option...)
 	var retries int
 	for {
-		err := HttpDoJson(httpReq, req, resp)
+		err := DoJson(httpReq, req, resp)
 		if err == nil {
 			return nil
 		}
