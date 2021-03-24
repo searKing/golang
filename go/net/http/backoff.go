@@ -78,22 +78,24 @@ func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
 
 // HttpDoJson the same as HttpDo, but bind with json
 func HttpDoJson(httpReq *http.Request, req, resp interface{}) error {
-	var reqBody io.Reader
 	if req != nil {
 		data, err := json.Marshal(req)
 		if err != nil {
 			return err
 		}
-		reqBody = bytes.NewReader(data)
+		reqBody := bytes.NewReader(data)
 		httpReq.Header.Set("Content-Type", "application/json")
+		ReplaceHttpRequestBody(httpReq, reqBody)
 	}
-	ReplaceHttpRequestBody(httpReq, reqBody)
 
 	httpResp, err := HttpDo(httpReq)
 	if err != nil {
 		return err
 	}
 	defer httpResp.Body.Close()
+	if resp == nil {
+		return nil
+	}
 
 	body, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
