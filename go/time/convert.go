@@ -28,6 +28,11 @@ func ConvertTimestamp(timestamp int64, from, to time.Duration) int64 {
 	return int64(time.Duration(timestamp) * ratio)
 }
 
+// Timestamp convert time to timestamp reprensent in unit
+func Timestamp(t time.Time, unit time.Duration) int64 {
+	return ConvertTimestamp(t.UnixNano(), time.Nanosecond, unit)
+}
+
 // UnixWithUnit returns the local Time corresponding to the given Unix time by unit
 func UnixWithUnit(timestamp int64, unit time.Duration) time.Time {
 	sec := ConvertTimestamp(timestamp, unit, time.Second)

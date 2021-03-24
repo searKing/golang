@@ -40,6 +40,42 @@ func TestConvertTimestamp(t *testing.T) {
 	}
 }
 
+func TestTimestamp(t *testing.T) {
+	now := time.Now()
+	tests := []struct {
+		timestamp     time.Time
+		unit          time.Duration
+		wantTimestamp int64
+	}{
+		{
+			timestamp:     now,
+			unit:          time.Second,
+			wantTimestamp: now.Unix(),
+		},
+		{
+			timestamp:     now,
+			unit:          time.Millisecond,
+			wantTimestamp: now.UnixNano() * int64(time.Nanosecond) / int64(time.Millisecond),
+		},
+		{
+			timestamp:     now,
+			unit:          time.Nanosecond,
+			wantTimestamp: now.UnixNano(),
+		},
+		{
+			timestamp:     now,
+			unit:          time.Second,
+			wantTimestamp: now.Unix(),
+		},
+	}
+	for i, tt := range tests {
+		gotTimestamp := time_.Timestamp(tt.timestamp, tt.unit)
+		if tt.wantTimestamp != gotTimestamp {
+			t.Errorf("#%d: ConvertTimestamp expected %d got %d", i, tt.wantTimestamp, gotTimestamp)
+		}
+	}
+}
+
 func TestUnixWithUnit(t *testing.T) {
 	now := time.Now()
 	tests := []struct {
