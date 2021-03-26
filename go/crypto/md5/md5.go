@@ -5,6 +5,7 @@
 package md5
 
 import (
+	"bytes"
 	"crypto/md5"
 	"io"
 	"log"
@@ -48,8 +49,46 @@ func SumReader(r io.Reader) ([]byte, error) {
 func SumFile(name string) ([]byte, error) {
 	f, err := os.Open(name)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer f.Close()
 	return SumReader(f)
+}
+
+func SumReaderAt(r io.ReaderAt, offset, size int64, buf []byte) ([]byte, error) {
+	h := md5.New()
+	if len(buf) == 0 {
+		buf = make([]byte, 1024)
+	}
+
+	var total int64
+	for total < size {
+		n, err := r.ReadAt(buf, offset)
+		if err != nil {
+			return nil, err
+		}
+		offset += int64(n)
+		total += int64(n)
+		var copied int64
+		for copied < int64(n) {
+			copiedCount, err := io.CopyN(h, bytes.NewReader(buf), int64(n))
+			if err != nil {
+				return nil, err
+			}
+			copied += copiedCount
+		}
+	}
+
+	return h.Sum(nil), nil
+}
+
+// SumFileAt return ms5sum of data by offset and len is size
+// buf is a buffer to read from file every time.
+func SumFileAt(name string, offset, size int64, buf []byte) ([]byte, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return SumReaderAt(f, offset, size, buf)
 }
