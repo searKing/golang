@@ -23,6 +23,8 @@ Useful libs or tools for Golang
     - ID() — returns goroutine id of the goroutine that calls it.
     - Lock — represents a goroutine ID, with goroutine ID checked, that is whether GoRoutines of lock newer and check caller differ.
 * [hashring](https://pkg.go.dev/github.com/searKing/golang/go/container/hashring) — hashring provides a consistent hashing function, read more about consistent hashing on wikipedia:  [Consistent_hashing](http://en.wikipedia.org/wiki/Consistent_hashing).
+* [RotateFile](https://pkg.go.dev/github.com/searKing/golang/go/os) — RotateFile derived from os.File, and is designed to ease administration of systems that generate large numbers of files.  It allows automatic rotation, removal, and handler of files.  Each file may be handled daily, weekly, monthly, strftimely, time_layoutly or when it grows too large.
+    - [WithRotate]https://pkg.go.dev/github.com/searKing/golang/third_party/github.com/sirupsen/logrus) - WithRotate is an example of os.RotateFile register for logrus.
 
 # GoGenerateTools
 [`go generate`](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete list of useful tools that generate code.

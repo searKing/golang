@@ -304,6 +304,7 @@ func AppendTruncate(dst string, src string) error {
 // AppendTruncate instead. It opens the named file or directory with specified flag (O_RDONLY etc.).
 // CopyTruncateFile copies from src to dst and truncates src.
 // parent dirs will not be created, otherwise, use CopyTruncateFileAll instead.
+// CopyTruncateFile = CopyFile(src->dst) + Truncate(src)
 func CopyTruncateFile(dst string, src string, flag int, perm os.FileMode, size int64) error {
 	if err := CopyFile(dst, src, flag, perm); err != nil {
 		return err
@@ -323,6 +324,7 @@ func CopyRenameAll(dst string, src string) error {
 // It makes a copy of the src file, but don't change the original src at all.
 // CopyRenameFileAll renames from src to dst and creates src if not exist.
 // parent dirs will be created with dirperm if not exist.
+// CopyRenameFileAll = RenameFileAll(src->dst) + OpenFile(src)
 func CopyRenameFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode) error {
 	if err := RenameFileAll(src, dst, dirperm); err != nil {
 		return err

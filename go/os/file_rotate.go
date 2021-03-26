@@ -74,6 +74,14 @@ type RotateFile struct {
 	// Force File Rotate when start up
 	ForceNewFileOnStartup bool
 
+	// PreRotateHandler called before file rotate
+	// name means file path rotated
+	PreRotateHandler func(name string)
+
+	// PostRotateHandler called after file rotate
+	// name means file path rotated
+	PostRotateHandler func(name string)
+
 	mu            sync.Mutex
 	usingSeq      int // file rotated by size limit meet
 	usingFilePath string
@@ -225,7 +233,13 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (io.Wri
 	if !byTime && !bySize {
 		return f.usingFile, nil
 	}
+	if f.PreRotateHandler != nil {
+		f.PreRotateHandler(f.usingFilePath)
+	}
 	newFile, err := f.rotateLocked(newName)
+	if f.PostRotateHandler != nil {
+		f.PostRotateHandler(f.usingFilePath)
+	}
 	if err != nil {
 		if bailOnRotateFail {
 			// Failure to rotate is a problem, but it's really not a great
@@ -263,9 +277,13 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 	switch f.RotateMode {
 	case RotateModeCopyRename:
 		// for which open the file, and write file not by RotateFile
+		// CopyRenameFileAll = RenameFileAll(src->dst) + OpenFile(src)
+		// usingFilePath->newName + recreate usingFilePath
 		err = CopyRenameAll(newName, f.usingFilePath)
 	case RotateModeCopyTruncate:
 		// for which open the file, and write file not by RotateFile
+		// CopyTruncateFile = CopyFile(src->dst) + Truncate(src)
+		// usingFilePath->newName + truncate usingFilePath
 		err = CopyTruncateAll(newName, f.usingFilePath)
 	case RotateModeNew:
 		// for which open the file, and write file by RotateFile
