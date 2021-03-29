@@ -37,3 +37,25 @@ func Marshal(v interface{}) ([]byte, error) {
 
 	return json.Marshal(d)
 }
+
+// ValueMarshalable translate key of map from interface{} to string
+func ValueMarshalable(v interface{}) interface{} {
+	if _, err := json.Marshal(v); err == nil {
+		return v
+	}
+	// If key of a map is not string, like interface{}, which should implement encoding.TextMarshaler(),
+	// or json.Marshal will complain about `error decoding '': json: unsupported type: map[interface {}]interface {}"`
+	// recover this complaint by yaml to transcode.
+	// map[interface{}]interface{} -> map[string]interface{}
+	dataBytes, err := yaml.Marshal(v)
+	if err != nil {
+		return v
+	}
+
+	var d interface{}
+	err = yaml.Unmarshal(dataBytes, &d)
+	if err != nil {
+		return v
+	}
+	return d
+}
