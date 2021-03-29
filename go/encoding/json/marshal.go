@@ -23,6 +23,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	// If key of a map is not string, like interface{}, which should implement encoding.TextMarshaler(),
 	// or json.Marshal will complain about `error decoding '': json: unsupported type: map[interface {}]interface {}"`
 	// recover this complaint by yaml to transcode.
+	// map[interface{}]interface{} -> map[string]interface{}
 	dataBytes, err := yaml.Marshal(v)
 	if err != nil {
 		return nil, err
