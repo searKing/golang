@@ -231,7 +231,7 @@ func (_ {{$package_scope.StructType}})TableColumn{{.FieldName}}() string{
 // TableColumn{{.FieldName}}WithAs return column name with TableName
 // "{{$package_scope.TableName}}.{{.DbName}} AS {{$package_scope.TableName}}_{{.DbName}}"
 func (m {{$package_scope.StructType}})TableColumn{{.FieldName}}WithAs() string{
-	return fmt.Sprintf("%s AS %s", m.TableColumn{{.FieldName}}(), m.MapColumn{{.FieldName}})
+	return fmt.Sprintf("%s AS %s", m.TableColumn{{.FieldName}}(), m.MapColumn{{.FieldName}}())
 }
 
 // MapColumn{{$package_scope.StructType}} return column name with TableName
