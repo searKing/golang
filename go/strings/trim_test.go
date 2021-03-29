@@ -18,10 +18,12 @@ type TrimNumberTest struct {
 
 var (
 	trimNumberTests = []TrimNumberTest{
-		//{"21WhoAmI", []string{"21","WhoAmI"}},
-		//{"2_1WhoAmI", []string{"2_1","WhoAmI"}},
-		//{"0WhoAmI", []string{"0","WhoAmI"}},
-		//{"000WhoAmI", []string{"000","WhoAmI"}},
+		{"21", []string{"21"}},
+		{"WhoAmI21", []string{"WhoAmI21"}},
+		{"21WhoAmI", []string{"21","WhoAmI"}},
+		{"2_1WhoAmI", []string{"2_1","WhoAmI"}},
+		{"0WhoAmI", []string{"0","WhoAmI"}},
+		{"000WhoAmI", []string{"000","WhoAmI"}},
 		{"0x10WhoAmI", []string{"0x10", "WhoAmI"}},
 		{"0x_1_0WhoAmI", []string{"0x_1_0", "WhoAmI"}},
 		{"-0x10WhoAmI", []string{"-0x10", "WhoAmI"}},

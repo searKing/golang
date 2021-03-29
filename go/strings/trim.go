@@ -15,8 +15,13 @@ import (
 // returns a slice of those substrings.
 // If s does not start with number, SplitPrefixNumber returns
 // a slice of length 1 whose only element is s.
+// If s is with number only, SplitPrefixNumber returns
+// a slice of length 1 whose only element is s.
 func SplitPrefixNumber(s string) []string {
 	unparsed := TrimPrefixNumber(s)
+	if unparsed == "" || len(unparsed) == len(s) {
+		return []string{s}
+	}
 	return []string{s[:len(s)-len(unparsed)], unparsed}
 }
 
