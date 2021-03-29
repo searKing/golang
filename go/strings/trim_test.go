@@ -11,19 +11,17 @@ import (
 	"github.com/searKing/golang/go/strings"
 )
 
-type TrimNumberTest struct {
-	input  string
-	output []string
-}
-
-var (
-	trimNumberTests = []TrimNumberTest{
+func TestSplitPrefixNumber(t *testing.T) {
+	for n, test := range []struct {
+		input  string
+		output []string
+	}{
 		{"21", []string{"21"}},
 		{"WhoAmI21", []string{"WhoAmI21"}},
-		{"21WhoAmI", []string{"21","WhoAmI"}},
-		{"2_1WhoAmI", []string{"2_1","WhoAmI"}},
-		{"0WhoAmI", []string{"0","WhoAmI"}},
-		{"000WhoAmI", []string{"000","WhoAmI"}},
+		{"21WhoAmI", []string{"21", "WhoAmI"}},
+		{"2_1WhoAmI", []string{"2_1", "WhoAmI"}},
+		{"0WhoAmI", []string{"0", "WhoAmI"}},
+		{"000WhoAmI", []string{"000", "WhoAmI"}},
 		{"0x10WhoAmI", []string{"0x10", "WhoAmI"}},
 		{"0x_1_0WhoAmI", []string{"0x_1_0", "WhoAmI"}},
 		{"-0x10WhoAmI", []string{"-0x10", "WhoAmI"}},
@@ -63,11 +61,7 @@ var (
 		{"2.3p-66WhoAmI", []string{"2.3p-66", "WhoAmI"}},
 		{"0x2.3p-66WhoAmI", []string{"0x2.3p-66", "WhoAmI"}},
 		{"2_3.4_5WhoAmI", []string{"2_3.4_5", "WhoAmI"}},
-	}
-)
-
-func TestTrimNumber(t *testing.T) {
-	for n, test := range trimNumberTests {
+	} {
 		out := strings.SplitPrefixNumber(test.input)
 		if strings_.Join(out, ",") != strings_.Join(test.output, ",") {
 			t.Errorf("#%d: got %v; want %v", n, out, test.output)
