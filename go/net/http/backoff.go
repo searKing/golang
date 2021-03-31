@@ -22,7 +22,7 @@ func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
 	}
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
-		rc = io.NopCloser(body)
+		rc = ioutil.NopCloser(body)
 	}
 	req.Body = rc
 }
