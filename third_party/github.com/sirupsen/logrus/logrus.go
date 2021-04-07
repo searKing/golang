@@ -39,3 +39,8 @@ func AsStdLogger(l logrus.FieldLogger, level logrus.Level, prefix string, flag i
 	}
 	return log.New(f, prefix, flag)
 }
+
+// AsStdLoggerWithLevel is only a helper of AsStdLogger
+func AsStdLoggerWithLevel(l logrus.FieldLogger, level logrus.Level) *log.Logger {
+	return AsStdLogger(l, level, "", 0)
+}
