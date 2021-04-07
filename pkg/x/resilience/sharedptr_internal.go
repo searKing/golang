@@ -7,9 +7,6 @@ package resilience
 import (
 	"context"
 	"time"
-
-	logrus_ "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus"
 )
 
 type sharedPtr struct {
@@ -18,7 +15,6 @@ type sharedPtr struct {
 	// It may not be changed concurrently with calls to Get.
 	// readonly
 	New func() (Ptr, error)
-	*logrus_.FieldLogger
 
 	// to judge whether Get&Construct is timeout
 	// readonly
@@ -39,10 +35,9 @@ type sharedPtr struct {
 	eventC chan Event
 }
 
-func newSharedPtrSafe(ctx context.Context, new func() (Ptr, error), l logrus.FieldLogger) *sharedPtr {
+func newSharedPtrSafe(ctx context.Context, new func() (Ptr, error)) *sharedPtr {
 	return &sharedPtr{
 		New:                  new,
-		FieldLogger:          logrus_.New(l),
 		TaskMaxRetryDuration: DefaultResilienceTaskMaxRetryDuration,
 		ConstructTimeout:     DefaultResilienceConstructTimeout,
 		ctx:                  ctx,

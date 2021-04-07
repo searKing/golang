@@ -6,105 +6,36 @@ package logrus
 
 import (
 	"log"
-	"sync"
 
 	"github.com/sirupsen/logrus"
+
+	log_ "github.com/searKing/golang/go/log"
 )
 
-type FieldLogger struct {
-	logger logrus.FieldLogger
-	level  logrus.Level
-	mu     sync.Mutex
-}
-
-var stdFieldLogger = New(nil)
-
-func New(l logrus.FieldLogger) *FieldLogger {
-	return &FieldLogger{
-		logger: l,
-		level:  logrus.InfoLevel,
-	}
-}
-
-func (b *FieldLogger) Clone() *FieldLogger {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return &FieldLogger{
-		logger: b.logger,
-		level:  b.level,
-	}
-}
-
-func (b *FieldLogger) Write(p []byte) (n int, err error) {
-	b.mu.Lock()
-	var level = b.level
-	b.mu.Unlock()
+// AsStdLogger returns *log.Logger from logrus.FieldLogger
+func AsStdLogger(l logrus.FieldLogger, level logrus.Level, prefix string, flag int) *log.Logger {
+	var f log_.PrintfFunc
 	switch level {
 	case logrus.PanicLevel:
-		b.GetLogger().Panicf("%s", string(p))
+		f = l.Panicf
 	case logrus.FatalLevel:
-		b.GetLogger().Fatalf("%s", string(p))
+		f = l.Fatalf
 	case logrus.ErrorLevel:
-		b.GetLogger().Errorf("%s", string(p))
+		f = l.Errorf
 	case logrus.WarnLevel:
-		b.GetLogger().Warnf("%s", string(p))
+		f = l.Warnf
 	case logrus.InfoLevel:
-		b.GetLogger().Infof("%s", string(p))
+		f = l.Infof
 	case logrus.DebugLevel:
-		b.GetLogger().Debugf("%s", string(p))
+		f = l.Debugf
 	case logrus.TraceLevel:
-		logger := b.GetLogger()
-		if logger_, ok := logger.(logrus.Ext1FieldLogger); ok {
-			logger_.Tracef("%s", string(p))
+		if l, ok := l.(logrus.Ext1FieldLogger); ok {
+			f = l.Tracef
+		} else {
+			f = l.Printf
 		}
+	default:
+		f = l.Printf
 	}
-	return len(p), nil
-}
-
-func (b *FieldLogger) GetStdLogger() *log.Logger {
-	return log.New(New(b.GetLogger()), "", 0)
-}
-
-func (b *FieldLogger) GetStdLoggerWithLevel(level logrus.Level) *log.Logger {
-	logger := b.Clone()
-	logger.level = level
-	return log.New(logger, "", 0)
-}
-
-func (b *FieldLogger) GetLogger() logrus.FieldLogger {
-	if b == nil {
-		return stdFieldLogger.GetLogger()
-	}
-	if b.logger != nil {
-		return b.logger
-	}
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.logger == nil {
-		b.logger = logrus.StandardLogger()
-		b.logger.Warning("No logger was set, defaulting to standard logger.")
-	}
-	return b.logger
-}
-
-func (b *FieldLogger) SetStdLogger(l *log.Logger) {
-	if l == nil {
-		return
-	}
-	logger := logrus.New()
-	logger.Out = l.Writer()
-	b.SetLogger(logger)
-}
-
-func (b *FieldLogger) SetLogger(l logrus.FieldLogger) {
-	if b == nil {
-		return
-	}
-	if l == nil {
-		return
-	}
-
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	b.logger = l
+	return log.New(f, prefix, flag)
 }

@@ -35,6 +35,8 @@ var (
 )
 
 type SharedPtr struct {
+	ErrorLog logrus.FieldLogger
+
 	sp *sharedPtr
 	mu sync.Mutex
 
@@ -42,9 +44,9 @@ type SharedPtr struct {
 	WatchStopped      atomic.Bool
 }
 
-func NewSharedPtr(ctx context.Context, new func() (Ptr, error), l logrus.FieldLogger) *SharedPtr {
+func NewSharedPtr(ctx context.Context, new func() (Ptr, error)) *SharedPtr {
 	return &SharedPtr{
-		sp: newSharedPtrSafe(ctx, new, l),
+		sp: newSharedPtrSafe(ctx, new),
 	}
 }
 
@@ -57,10 +59,11 @@ func (g *SharedPtr) Context() context.Context {
 	return g.sp.Context()
 }
 
-func (g *SharedPtr) GetLogger() logrus.FieldLogger {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	return g.sp.GetLogger()
+func (g *SharedPtr) logger() logrus.FieldLogger {
+	if g.ErrorLog != nil {
+		return g.ErrorLog
+	}
+	return logrus.StandardLogger()
 }
 
 func (g *SharedPtr) InShutdown() bool {
@@ -83,31 +86,31 @@ func (g *SharedPtr) GetTasks() map[string]*Task {
 
 func (g *SharedPtr) AddTask(task *Task) error {
 	if task == nil {
-		go g.GetLogger().WithError(ErrEmptyValue).
+		go g.logger().WithError(ErrEmptyValue).
 			Error("task is nil to add, ignore it...")
 		return ErrEmptyValue
 	}
 	if task.Handle == nil {
-		go g.GetLogger().WithField("task", task.String()).WithError(ErrEmptyValue).
+		go g.logger().WithField("task", task.String()).WithError(ErrEmptyValue).
 			Error("task is nonsense to add, ignore it...")
 		return ErrEmptyValue
 	}
 	if g.InShutdown() {
-		go g.GetLogger().WithField("task", task.String()).
+		go g.logger().WithField("task", task.String()).
 			Error("resilience is shutdown  already, ignore it...")
 		return ErrAlreadyShutdown
 	}
 	task.Ctx, task.CancelFn = context.WithCancel(g.Context())
 
 	if _, addedTask := g.GetTaskById(task.ID()); addedTask {
-		go g.GetLogger().WithField("task", task.String()).
+		go g.logger().WithField("task", task.String()).
 			Error("task is added already, ignore it...")
 		return ErrAlreadyAddedTask
 	}
 
 	go g.backgroundTask()
 	go func() {
-		go g.GetLogger().WithField("task", task.String()).Info("new task is adding...")
+		go g.logger().WithField("task", task.String()).Info("new task is adding...")
 		g.getTaskC() <- task
 	}()
 	return nil
@@ -183,10 +186,10 @@ func (g *SharedPtr) Watch() chan<- Event {
 					// New x
 					_, err := g.GetWithRetry()
 					if err != nil {
-						go g.GetLogger().WithField("event", event).WithError(err).Warn("handle event failed...")
+						go g.logger().WithField("event", event).WithError(err).Warn("handle event failed...")
 						continue
 					}
-					go g.GetLogger().WithField("event", event).Infof("handle event success...")
+					go g.logger().WithField("event", event).Infof("handle event success...")
 				case EventClose:
 					g.resetPtr()
 				}
@@ -213,7 +216,7 @@ func (g *SharedPtr) Ready() error {
 
 // std::shared_ptr.get() until ptr is ready & std::shared_ptr.make_unique() if necessary
 func (g *SharedPtr) GetUntilReady() (Ptr, error) {
-	err := Retry(g.Context(), g.GetLogger(), g.sp.TaskMaxRetryDuration, g.sp.ConstructTimeout, func() error {
+	err := Retry(g.Context(), g.logger(), g.sp.TaskMaxRetryDuration, g.sp.ConstructTimeout, func() error {
 		x := g.Get()
 		if x != nil {
 			// check  if x is ready
@@ -245,7 +248,7 @@ func (g *SharedPtr) GetWithRetry() (Ptr, error) {
 	}
 
 	// New x
-	err := Retry(g.Context(), g.GetLogger(), g.sp.TaskMaxRetryDuration, g.sp.ConstructTimeout, func() error {
+	err := Retry(g.Context(), g.logger(), g.sp.TaskMaxRetryDuration, g.sp.ConstructTimeout, func() error {
 		_, err := g.allocate()
 		return err
 	})
@@ -326,7 +329,7 @@ func (g *SharedPtr) recoveryTaskLocked() {
 
 		if task.State == TaskStateDormancy {
 			task.State = TaskStateNew
-			go g.sp.GetLogger().WithField("task", task.String()).Info("recover task is adding...")
+			g.logger().WithField("task", task.String()).Info("recover task is adding...")
 			go func() {
 				g.sp.GetTaskC() <- task
 			}()
@@ -355,7 +358,7 @@ L:
 				continue
 			}
 			if task.State != TaskStateNew {
-				go g.GetLogger().WithField("task", task.String()).
+				go g.logger().WithField("task", task.String()).
 					Warn("task is received with unexpected state, ignore duplicate schedule...")
 				continue
 			}
@@ -363,24 +366,24 @@ L:
 			// store task
 			_, addedTask := g.GetTaskById(task.ID())
 
-			go g.GetLogger().WithField("task", task.String()).
+			go g.logger().WithField("task", task.String()).
 				Infof("task is received, try to schedule...")
 
 			if addedTask {
-				go g.GetLogger().WithField("task", task.String()).
+				go g.logger().WithField("task", task.String()).
 					Warn("task is added already, ignore duplicate schedule...")
 				continue
 			}
 
 			if task.Type.Construct {
 				if _, err := g.GetWithRetry(); err != nil {
-					go g.GetLogger().WithField("task", task.String()).
+					go g.logger().WithField("task", task.String()).
 						Warn("task is added but not scheduled, new has not been called yet...")
 					continue
 				}
 			} else {
 				if _, err := g.GetUntilReady(); err != nil {
-					go g.GetLogger().WithField("task", task.String()).
+					go g.logger().WithField("task", task.String()).
 						Warn("task is added but not scheduled, not ready yet...")
 					continue
 				}
@@ -405,14 +408,14 @@ L:
 					return
 				}
 				task.State = TaskStateRunning
-				go g.GetLogger().WithField("task", task.String()).Info("task is running now...")
+				go g.logger().WithField("task", task.String()).Info("task is running now...")
 
 				// execute the task and refresh the state
 				func() {
 					defer func() {
 						if r := recover(); r != nil {
 							task.State = TaskStateDoneErrorHappened
-							go g.GetLogger().WithField("task", task.String()).WithField("recovery", r).
+							go g.logger().WithField("task", task.String()).WithField("recovery", r).
 								Error("task is done failed...")
 						}
 					}()
@@ -422,11 +425,11 @@ L:
 					}
 					if err := task.Handle(); err != nil {
 						task.State = TaskStateDoneErrorHappened
-						go g.GetLogger().WithField("task", task.String()).WithError(err).
+						go g.logger().WithField("task", task.String()).WithError(err).
 							Warnf("task is done failed...")
 						return
 					}
-					go g.GetLogger().WithField("task", task.String()).
+					go g.logger().WithField("task", task.String()).
 						Info("task is done successfully...")
 					task.State = TaskStateDoneNormally
 				}()
@@ -434,12 +437,12 @@ L:
 				// handle completed execution and refresh the state
 				func() {
 					waitBeforeRepeat := func() {
-						go g.GetLogger().WithField("task", task.String()).
+						go g.logger().WithField("task", task.String()).
 							Warnf("task is rescheduled to repeat in %s...", task.RepeatDuration)
 						<-time.After(task.RepeatDuration)
 					}
 					waitBeforeRetry := func() {
-						go g.GetLogger().WithField("task", task.String()).
+						go g.logger().WithField("task", task.String()).
 							Warnf("task is rescheduled to recover in %s...", task.RetryDuration)
 						<-time.After(task.RetryDuration)
 					}
@@ -473,7 +476,7 @@ L:
 						}
 
 						if task.Type.Repeat && task.Type.Construct {
-							go g.GetLogger().WithField("task", task.String()).
+							go g.logger().WithField("task", task.String()).
 								Warnf("task is rescheduled and restart all tasks...")
 							deleteTask(false) // don't recover this task, this task will be added later
 							g.resetPtr()
@@ -489,7 +492,7 @@ L:
 						if task.Type.Construct {
 							//Retry
 							if task.Type.Retry && task.State == TaskStateDoneErrorHappened {
-								go g.GetLogger().WithField("task", task.String()).
+								go g.logger().WithField("task", task.String()).
 									Warnf("task is rescheduled and restart all tasks...")
 								deleteTask(false) // don't recover this task, this task will be added later
 								g.resetPtr()
@@ -507,7 +510,7 @@ L:
 						// !Dop && !Repeat && !Construct
 						if task.Type.Retry {
 							if task.State == TaskStateDoneErrorHappened {
-								go g.GetLogger().WithField("task", task.String()).
+								go g.logger().WithField("task", task.String()).
 									Warnf("task is rescheduled ...")
 								deleteTask(false) // don't recover this task, this task will be added later
 								waitBeforeRetry()
@@ -526,7 +529,7 @@ L:
 				func() {
 					select {
 					case <-task.Context().Done():
-						go g.GetLogger().WithField("task", task.String()).
+						go g.logger().WithField("task", task.String()).
 							Info("task is canceled, go to death now...")
 						deleteTask(false) // canceled already
 						return
@@ -535,21 +538,21 @@ L:
 						case TaskStateNew:
 							deleteTask(false)
 							if task.State == TaskStateRunning {
-								go g.GetLogger().WithField("task", task.String()).
+								go g.logger().WithField("task", task.String()).
 									Infof("task is rescheduled now...")
 							}
-							go g.GetLogger().WithField("task", task.String()).
+							go g.logger().WithField("task", task.String()).
 								Infof("task is rescheduled now...")
 							g.getTaskC() <- task
 						case TaskStateDormancy:
-							go g.GetLogger().WithField("task", task.String()).
+							go g.logger().WithField("task", task.String()).
 								Infof("task is done,  go to dormancy...")
 						case TaskStateDeath:
-							go g.GetLogger().WithField("task", task.String()).
+							go g.logger().WithField("task", task.String()).
 								Infof("task is dead,  go to death...")
 							deleteTask(true)
 						default:
-							go g.GetLogger().WithField("task", task.String()).
+							go g.logger().WithField("task", task.String()).
 								Info("task is with unexpect state, go to death now...")
 							deleteTask(true)
 						}
