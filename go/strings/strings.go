@@ -9,6 +9,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	bytes_ "github.com/searKing/golang/go/bytes"
 	unicode_ "github.com/searKing/golang/go/unicode"
 )
 
@@ -127,19 +128,6 @@ func ToUpperLeading(s string) string {
 	return MapLeading(unicode.ToUpper, s)
 }
 
-// PadLeft returns s padded to length n, padded left with repeated pad
-// return s directly if pad is empty
-// padding s with {{pad}} and spaces(less than len(pad)) as a prefix, as [pad]...[pad][space]...[space][s]
-func PadLeft(s string, pad string, n int) string {
-	if len(pad) == 0 {
-		return s
-	}
-
-	pc, sc := computePad(s, pad, n)
-
-	return strings.Repeat(pad, pc) + strings.Repeat(" ", sc) + s
-}
-
 // Truncate shrinks s's len to n at most
 func Truncate(s string, n int) string {
 	if n < 0 {
@@ -151,6 +139,19 @@ func Truncate(s string, n int) string {
 	return s[:n]
 }
 
+// PadLeft returns s padded to length n, padded left with repeated pad
+// return s directly if pad is empty
+// padding s with {{pad}} and spaces(less than len(pad)) as a prefix, as [pad]...[pad][space]...[space][s]
+func PadLeft(s string, pad string, n int) string {
+	if len(pad) == 0 {
+		return s
+	}
+
+	pc, sc := ComputePad(s, pad, n)
+
+	return strings.Repeat(pad, pc) + strings.Repeat(" ", sc) + s
+}
+
 // PadRight returns s padded to length n, padded right with repeated pad
 // return s directly if pad is empty
 // padding s with {{pad}} and spaces(less than len(pad))  as a suffix, as [s][space]...[space][pad]...[pad]
@@ -158,25 +159,16 @@ func PadRight(s string, pad string, n int) string {
 	if len(pad) == 0 {
 		return s
 	}
-	pc, sc := computePad(s, pad, n)
+	pc, sc := ComputePad(s, pad, n)
 
 	return s + strings.Repeat(" ", sc) + strings.Repeat(pad, pc)
 }
 
-func computePad(s string, pad string, n int) (padCount, spaceCount int) {
-	if len(pad) == 0 {
-		return 0, 0
-	}
-
-	c := n - len(s)
-	if c < 0 {
-		c = 0
-	}
-
-	padCount = c / len(pad)
-
-	spaceCount = c - padCount*len(pad)
-	return padCount, spaceCount
+// ComputePad returns pad's count and space's count(less than len(pad)) will be need to pad s to len n
+// padCount = (n-len(s))/len(pad)
+// spaceCount = (n-len(s))%len(pad)
+func ComputePad(s string, pad string, n int) (padCount, spaceCount int) {
+	return bytes_.ComputePad([]byte(s), []byte(pad), n)
 }
 
 // ReverseByByte returns a string with the bytes of s in reverse order.
