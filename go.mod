@@ -2,9 +2,6 @@ module github.com/searKing/golang
 
 go 1.16
 
-// 撤回错误版本号
-retract v1.0.116
-
 require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-sql-driver/mysql v1.5.0
