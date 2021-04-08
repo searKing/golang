@@ -1,12 +1,12 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package md5
+package sha256
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"io"
 	"log"
@@ -20,7 +20,7 @@ func MySelf() ([]byte, error) {
 	}
 	defer f.Close()
 
-	h := md5.New()
+	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func MySelf() ([]byte, error) {
 }
 
 func SumBytes(b []byte) []byte {
-	h := md5.New()
+	h := sha256.New()
 	h.Write(b)
 	return h.Sum(nil)
 }
@@ -43,7 +43,7 @@ func SumHex(b string) string {
 }
 
 func SumReader(r io.Reader) ([]byte, error) {
-	h := md5.New()
+	h := sha256.New()
 	if _, err := io.Copy(h, r); err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func SumFile(name string) ([]byte, error) {
 }
 
 func SumReaderAt(r io.ReaderAt, offset, size int64, buf []byte) ([]byte, error) {
-	h := md5.New()
+	h := sha256.New()
 	if len(buf) == 0 {
 		buf = make([]byte, 1024)
 	}

@@ -1,26 +1,27 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package md5
+package hmac
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/hmac"
 	"encoding/hex"
+	"hash"
 	"io"
 	"log"
 	"os"
 )
 
-func MySelf() ([]byte, error) {
+func MySelf(hasher func() hash.Hash, key []byte, ) ([]byte, error) {
 	f, err := os.Open(os.Args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 
-	h := md5.New()
+	h := hmac.New(hasher, key)
 	if _, err := io.Copy(h, f); err != nil {
 		return nil, err
 	}
@@ -28,22 +29,22 @@ func MySelf() ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func SumBytes(b []byte) []byte {
-	h := md5.New()
+func SumBytes(hasher func() hash.Hash, key []byte, b []byte) []byte {
+	h := hmac.New(hasher, key)
 	h.Write(b)
 	return h.Sum(nil)
 }
 
-func SumString(b string) string {
-	return string(SumBytes([]byte(b)))
+func SumString(hasher func() hash.Hash, key []byte, b string) string {
+	return string(SumBytes(hasher, key, []byte(b)))
 }
 
-func SumHex(b string) string {
-	return hex.EncodeToString(SumBytes([]byte(b)))
+func SumHex(hasher func() hash.Hash, key []byte, b string) string {
+	return hex.EncodeToString(SumBytes(hasher, key, []byte(b)))
 }
 
-func SumReader(r io.Reader) ([]byte, error) {
-	h := md5.New()
+func SumReader(hasher func() hash.Hash, key []byte, r io.Reader) ([]byte, error) {
+	h := hmac.New(hasher, key)
 	if _, err := io.Copy(h, r); err != nil {
 		return nil, err
 	}
@@ -51,17 +52,17 @@ func SumReader(r io.Reader) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func SumFile(name string) ([]byte, error) {
+func SumFile(hasher func() hash.Hash, key []byte, name string) ([]byte, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	return SumReader(f)
+	return SumReader(hasher, key, f)
 }
 
-func SumReaderAt(r io.ReaderAt, offset, size int64, buf []byte) ([]byte, error) {
-	h := md5.New()
+func SumReaderAt(hasher func() hash.Hash, key []byte, r io.ReaderAt, offset, size int64, buf []byte) ([]byte, error) {
+	h := hmac.New(hasher, key)
 	if len(buf) == 0 {
 		buf = make([]byte, 1024)
 	}
@@ -89,11 +90,11 @@ func SumReaderAt(r io.ReaderAt, offset, size int64, buf []byte) ([]byte, error) 
 
 // SumFileAt return ms5sum of data by offset and len is size
 // buf is a buffer to read from file every time.
-func SumFileAt(name string, offset, size int64, buf []byte) ([]byte, error) {
+func SumFileAt(hasher func() hash.Hash, key []byte, name string, offset, size int64, buf []byte) ([]byte, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	return SumReaderAt(f, offset, size, buf)
+	return SumReaderAt(hasher, key, f, offset, size, buf)
 }
