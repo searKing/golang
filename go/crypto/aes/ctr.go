@@ -13,7 +13,15 @@ import (
 	"github.com/searKing/golang/go/crypto"
 )
 
-func CTREncrypt(key, plaintext []byte) ([]byte, error) {
+func CTREncryptRandom(key, plaintext []byte) ([]byte, error) {
+	var iv = [aes.BlockSize]byte{}
+	if _, err := io.ReadFull(rand.Reader, iv[:]); err != nil {
+		return nil, err
+	}
+	return CBCEncrypt(key, plaintext, iv[:])
+}
+
+func CTREncrypt(key, plaintext []byte, iv []byte) ([]byte, error) {
 	// Load your secret key from a safe place and reuse it across multiple
 	// NewCipher calls. (Obviously don't use this example key for anything
 	// real.) If you want to convert a passphrase to a key, use a suitable
@@ -32,10 +40,12 @@ func CTREncrypt(key, plaintext []byte) ([]byte, error) {
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
 	ciphertext := make([]byte, aes.BlockSize+len(paddingtext))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+	if len(iv) < aes.BlockSize {
+		copy(ciphertext[:aes.BlockSize], iv[:])
+	} else {
+		copy(ciphertext[:aes.BlockSize], iv[:aes.BlockSize])
 	}
+	iv = ciphertext[:aes.BlockSize]
 
 	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], paddingtext)

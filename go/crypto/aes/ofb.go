@@ -13,7 +13,15 @@ import (
 	"github.com/searKing/golang/go/crypto"
 )
 
-func OFBEncrypt(key, plaintext []byte) ([]byte, error) {
+func OFBEncryptRandom(key, plaintext []byte) ([]byte, error) {
+	var iv = [aes.BlockSize]byte{}
+	if _, err := io.ReadFull(rand.Reader, iv[:]); err != nil {
+		return nil, err
+	}
+	return OFBEncrypt(key, plaintext, iv[:])
+}
+
+func OFBEncrypt(key, plaintext, iv []byte) ([]byte, error) {
 	// Load your secret key from a safe place and reuse it across multiple
 	// NewCipher calls. (Obviously don't use this example key for anything
 	// real.) If you want to convert a passphrase to a key, use a suitable
@@ -32,10 +40,12 @@ func OFBEncrypt(key, plaintext []byte) ([]byte, error) {
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
 	ciphertext := make([]byte, aes.BlockSize+len(paddingtext))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+	if len(iv) < aes.BlockSize {
+		copy(ciphertext[:aes.BlockSize], iv[:])
+	} else {
+		copy(ciphertext[:aes.BlockSize], iv[:aes.BlockSize])
 	}
+	iv = ciphertext[:aes.BlockSize]
 
 	stream := cipher.NewOFB(block, iv)
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], paddingtext)

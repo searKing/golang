@@ -20,7 +20,15 @@ const (
 	gcmStandardNonceSize = 12
 )
 
-func GCMEncrypt(key, plaintext []byte) ([]byte, error) {
+func GCMEncryptRandom(key, plaintext []byte) ([]byte, error) {
+	var nonce = [gcmStandardNonceSize]byte{}
+	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
+		return nil, err
+	}
+	return CFBEncrypt(key, plaintext, nonce[:])
+}
+
+func GCMEncrypt(key, plaintext []byte, nonce []byte) ([]byte, error) {
 	// Load your secret key from a safe place and reuse it across multiple
 	// Seal/Open calls. (Obviously don't use this example key for anything
 	// real.) If you want to convert a passphrase to a key, use a suitable
@@ -36,10 +44,14 @@ func GCMEncrypt(key, plaintext []byte) ([]byte, error) {
 	// The nounce needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
 	// Never use more than 2^32 random nonces with a given key because of the risk of a repeat.
-	nonce := make([]byte, gcmStandardNonceSize)
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
+
+	ciphertext := make([]byte, gcmStandardNonceSize)
+	if len(nonce) < gcmStandardNonceSize {
+		copy(ciphertext[:gcmStandardNonceSize], nonce[:])
+	} else {
+		copy(ciphertext[:gcmStandardNonceSize], nonce[:gcmStandardNonceSize])
 	}
+	nonce = ciphertext[:gcmStandardNonceSize]
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
@@ -47,7 +59,7 @@ func GCMEncrypt(key, plaintext []byte) ([]byte, error) {
 	}
 	sealedtext := aesgcm.Seal(nil, nonce, paddingtext, nil)
 
-	ciphertext := append(nonce, sealedtext...)
+	ciphertext = append(nonce, sealedtext...)
 
 	// It's important to remember that ciphertexts must be authenticated
 	// (i.e. by using crypto/hmac) as well as being encrypted in order to
