@@ -36,21 +36,21 @@ func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
 			buf := v.Bytes()
 			req.GetBody = func() (io.ReadCloser, error) {
 				r := bytes.NewReader(buf)
-				return io.NopCloser(r), nil
+				return ioutil.NopCloser(r), nil
 			}
 		case *bytes.Reader:
 			req.ContentLength = int64(v.Len())
 			snapshot := *v
 			req.GetBody = func() (io.ReadCloser, error) {
 				r := snapshot
-				return io.NopCloser(&r), nil
+				return ioutil.NopCloser(&r), nil
 			}
 		case *strings.Reader:
 			req.ContentLength = int64(v.Len())
 			snapshot := *v
 			req.GetBody = func() (io.ReadCloser, error) {
 				r := snapshot
-				return io.NopCloser(&r), nil
+				return ioutil.NopCloser(&r), nil
 			}
 		default:
 			// This is where we'd set it to -1 (at least
