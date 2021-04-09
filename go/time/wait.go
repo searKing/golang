@@ -114,9 +114,12 @@ func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff Back
 		if sliding {
 			elapsed, ok = backoff.NextBackOff()
 		}
+		if !ok {
+			return
+		}
 
 		func() {
-			if !ok || elapsed <= 0 {
+			if elapsed <= 0 {
 				return
 			}
 			timer := time.NewTimer(elapsed)
