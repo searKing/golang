@@ -176,7 +176,23 @@ type ExponentialBackOff struct {
 	maxElapsedCount int
 }
 
+// NewExponentialBackOff returns a no limit backoff
 func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
+	o := &ExponentialBackOff{
+		initialInterval:     DefaultInitialInterval,
+		randomizationFactor: DefaultRandomizationFactor,
+		multiplier:          DefaultMultiplier,
+		maxInterval:         -1,
+		maxElapsedDuration:  -1,
+		maxElapsedCount:     -1,
+	}
+	o.ApplyOptions(opts...)
+	o.Reset()
+	return o
+}
+
+// NewExponentialBackOff returns a backoff with default limit
+func NewDefaultExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
 	o := &ExponentialBackOff{
 		initialInterval:     DefaultInitialInterval,
 		randomizationFactor: DefaultRandomizationFactor,

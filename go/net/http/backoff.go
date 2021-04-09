@@ -87,7 +87,7 @@ func DoWithBackoff(httpReq *http.Request, opts ...time_.ExponentialBackOffOption
 	var option []time_.ExponentialBackOffOption
 	option = append(option, time_.WithExponentialBackOffOptionMaxElapsedCount(3))
 	option = append(option, opts...)
-	backoff := time_.NewExponentialBackOff(option...)
+	backoff := time_.NewDefaultExponentialBackOff(option...)
 	rewindableErr := RequestWithBodyRewindable(httpReq)
 	var retries int
 	for {
@@ -157,7 +157,7 @@ func DoJsonWithBackoff(httpReq *http.Request, req, resp interface{}, opts ...tim
 	var option []time_.ExponentialBackOffOption
 	option = append(option, time_.WithExponentialBackOffOptionMaxElapsedCount(3))
 	option = append(option, opts...)
-	backoff := time_.NewExponentialBackOff(option...)
+	backoff := time_.NewDefaultExponentialBackOff(option...)
 	var retries int
 	for {
 		err := DoJson(httpReq, req, resp)

@@ -23,9 +23,7 @@ import (
 // 2021/04/09 12:45:13 Apr  9 12:45:13
 // 2021/04/09 12:45:14 Apr  9 12:45:14
 func Forever(f func(), period time.Duration) {
-	Until(context.Background(), func(ctx context.Context) {
-		f()
-	}, period)
+	Until(context.Background(), func(ctx context.Context) { f() }, period)
 }
 
 // Until loops until context is done, running f every period.
@@ -44,7 +42,8 @@ func Until(ctx context.Context, f func(ctx context.Context), period time.Duratio
 	JitterUntil(ctx, f, true,
 		WithExponentialBackOffOptionRandomizationFactor(0),
 		WithExponentialBackOffOptionMultiplier(1),
-		WithExponentialBackOffOptionInitialInterval(period))
+		WithExponentialBackOffOptionInitialInterval(period),
+		WithExponentialBackOffOptionMaxElapsedDuration(-1))
 }
 
 // NonSlidingUntil loops until context is done, running f every
@@ -65,7 +64,8 @@ func NonSlidingUntil(ctx context.Context, f func(ctx context.Context), period ti
 	JitterUntil(ctx, f, false,
 		WithExponentialBackOffOptionRandomizationFactor(0),
 		WithExponentialBackOffOptionMultiplier(1),
-		WithExponentialBackOffOptionInitialInterval(period))
+		WithExponentialBackOffOptionInitialInterval(period),
+		WithExponentialBackOffOptionMaxElapsedDuration(-1))
 }
 
 // JitterUntil loops until context is done, running f every period.

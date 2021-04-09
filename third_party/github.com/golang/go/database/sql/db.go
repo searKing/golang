@@ -77,7 +77,7 @@ func (db *DB) fieldLogger() logrus.FieldLogger {
 // GetDatabaseRetry tries to connect to a database and fails after failAfter.
 func (db *DB) GetDatabaseRetry(ctx context.Context, maxWait time.Duration, failAfter time.Duration) (*sqlx.DB, error) {
 	// how long to sleep on retry failure
-	var tempDelay = time_.NewExponentialBackOff(
+	var tempDelay = time_.NewDefaultExponentialBackOff(
 		time_.WithExponentialBackOffOptionMaxInterval(maxWait),
 		time_.WithExponentialBackOffOptionMaxElapsedDuration(failAfter))
 	var err error
