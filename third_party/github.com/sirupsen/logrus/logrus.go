@@ -5,6 +5,7 @@
 package logrus
 
 import (
+	"io"
 	"log"
 
 	"github.com/sirupsen/logrus"
@@ -12,8 +13,11 @@ import (
 	log_ "github.com/searKing/golang/go/log"
 )
 
-// AsStdLogger returns *log.Logger from logrus.FieldLogger
-func AsStdLogger(l logrus.FieldLogger, level logrus.Level, prefix string, flag int) *log.Logger {
+func StandardWriter(level logrus.Level) io.Writer {
+	return Writer(logrus.StandardLogger(), level)
+}
+
+func Writer(l logrus.FieldLogger, level logrus.Level) io.Writer {
 	var f log_.PrintfFunc
 	switch level {
 	case logrus.PanicLevel:
@@ -37,7 +41,12 @@ func AsStdLogger(l logrus.FieldLogger, level logrus.Level, prefix string, flag i
 	default:
 		f = l.Printf
 	}
-	return log.New(f, prefix, flag)
+	return f
+}
+
+// AsStdLogger returns *log.Logger from logrus.FieldLogger
+func AsStdLogger(l logrus.FieldLogger, level logrus.Level, prefix string, flag int) *log.Logger {
+	return log.New(Writer(l, level), prefix, flag)
 }
 
 // AsStdLoggerWithLevel is only a helper of AsStdLogger
