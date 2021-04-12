@@ -133,10 +133,10 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 			gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts,
 				grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 		} else {
-			if len(gateway.opt.grpcClientDialOpts) == 0 {
-				// disables transport security
-				gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithInsecure())
-			}
+			// disables transport security
+			var opts []grpc.DialOption
+			opts = append(opts, grpc.WithInsecure())
+			gateway.opt.grpcClientDialOpts = append(opts, gateway.opt.grpcClientDialOpts...)
 		}
 
 		gateway.opt.srvMuxOpts = append(gateway.opt.srvMuxOpts,
