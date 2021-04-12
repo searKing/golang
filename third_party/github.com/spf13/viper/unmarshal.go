@@ -17,6 +17,9 @@ import (
 
 // Unmarshal returns the latest config viper proto
 func UnmarshalProtoMessageByJsonpb(viper_ *viper.Viper, v proto.Message, opts ...viper.DecoderConfigOption) error {
+	if viper_ == nil { // nop for nil source
+		return nil
+	}
 	// config file -> ViperProto
 	var opt []viper.DecoderConfigOption
 	opt = append(opt, func(decoderConfig *mapstructure.DecoderConfig) {
