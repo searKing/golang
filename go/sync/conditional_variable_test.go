@@ -10,7 +10,7 @@ import (
 
 func TestConditionVariable_Wait(t *testing.T) {
 	var m sync.Mutex
-	c := sync_.NewConditionVariable(&m)
+	var c sync_.ConditionVariable
 	n := 2
 	running := make(chan bool, n)
 	awake := make(chan bool, n)
@@ -18,7 +18,7 @@ func TestConditionVariable_Wait(t *testing.T) {
 		go func() {
 			m.Lock()
 			running <- true
-			c.Wait()
+			c.Wait(&m)
 			awake <- true
 			m.Unlock()
 		}()
@@ -48,7 +48,7 @@ func TestConditionVariable_Wait(t *testing.T) {
 
 func TestConditionVariable_WaitPred(t *testing.T) {
 	var m sync.Mutex
-	c := sync_.NewConditionVariable(&m)
+	var c sync_.ConditionVariable
 	n := 2
 	running := make(chan bool, n)
 	awake := make(chan bool, n)
@@ -57,7 +57,7 @@ func TestConditionVariable_WaitPred(t *testing.T) {
 	go func() {
 		m.Lock()
 		running <- true
-		c.WaitPred(func() bool {
+		c.WaitPred(&m, func() bool {
 			return ctx.Err() != nil
 		})
 		awake <- true
