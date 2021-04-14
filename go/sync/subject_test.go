@@ -2,13 +2,16 @@ package sync_test
 
 import (
 	"context"
-	sync_ "github.com/searKing/golang/go/sync"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/pkg/errors"
+	sync_ "github.com/searKing/golang/go/sync"
 )
 
 func TestSubject_PublishSignal(t *testing.T) {
-	s := sync_.Subject{}
+	var s sync_.Subject
 	n := 2
 	awake := make(chan bool, n)
 	var wg sync.WaitGroup
@@ -23,13 +26,22 @@ func TestSubject_PublishSignal(t *testing.T) {
 	}
 	// Wait for everyone to run.
 	wg.Wait()
+
 	for n > 0 {
 		select {
 		case <-awake:
 			t.Fatal("goroutine not asleep")
 		default:
 		}
-		s.PublishSignal(context.Background(), nil)
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			err := s.PublishSignal(ctx, nil)
+			if err != nil {
+				t.Fatalf("PublishSignal: %s", err)
+				return
+			}
+		}()
 		<-awake // Will deadlock if no goroutine wakes up
 		select {
 		case <-awake:
@@ -38,7 +50,13 @@ func TestSubject_PublishSignal(t *testing.T) {
 		}
 		n--
 	}
-	s.PublishSignal(context.Background(), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	err := s.PublishSignal(ctx, nil)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("PublishSignal: %s", err)
+		return
+	}
 }
 
 func TestSubject_PublishBroadcast(t *testing.T) {
@@ -63,7 +81,15 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 			t.Fatal("goroutine not asleep")
 		default:
 		}
-		s.PublishBroadcast(context.Background(), nil)
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			err := s.PublishBroadcast(ctx, nil)
+			if err != nil {
+				t.Fatalf("PublishBroadcast: %s", err)
+				return
+			}
+		}()
 		for n > 0 {
 			<-awake // Will deadlock if no goroutine wakes up
 			n--
@@ -73,5 +99,12 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 			t.Fatal("too many goroutines awake")
 		default:
 		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	err := s.PublishBroadcast(ctx, nil)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("PublishBroadcast: %s", err)
+		return
 	}
 }
