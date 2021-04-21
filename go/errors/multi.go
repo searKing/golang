@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-// New returns an error with the supplied errors.
+// Multi returns an error with the supplied errors.
 // If no error contained, return nil.
 func Multi(errs ...error) error {
 	me := multiError(errs).clean()
