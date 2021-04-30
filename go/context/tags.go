@@ -29,20 +29,31 @@ type Tags interface {
 
 // ExtractTags returns a pre-existing Tags object in the Context.
 // If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
-func ExtractTags(ctx context.Context, key interface{}) Tags {
+func ExtractTags(ctx context.Context, key interface{}) (tags Tags, has bool) {
 	t, ok := ctx.Value(key).(Tags)
 	if !ok {
-		return NopTags
+		return NopTags, false
 	}
 
-	return t
+	return t, true
+}
+
+// ExtractOrCreateTags extracts or create tags from context by key
+func ExtractOrCreateTags(ctx context.Context, key interface{}, options ...MapTagsOption) (
+	ctx_ context.Context, stags Tags) {
+	tags, has := ExtractTags(ctx, key)
+	if has {
+		return ctx, tags
+	}
+	tags = NewMapTags(options...)
+	return WithTags(ctx, key, tags), tags
 }
 
 func WithTags(ctx context.Context, key interface{}, tags Tags) context.Context {
 	return context.WithValue(ctx, key, tags)
 }
 
-func NewTags(options ...MapTagsOption) Tags {
+func NewMapTags(options ...MapTagsOption) Tags {
 	t := &mapTags{values: make(map[string]interface{})}
 	t.ApplyOptions(options...)
 	return t

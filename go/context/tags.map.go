@@ -40,8 +40,8 @@ func (t *mapTags) Values() map[string]interface{} {
 	return t.values
 }
 
-// represents a MIME-style key mapping
-func WithTagsMimeKey() MapTagsOption {
+// WithMapTagsMimeKey represents a MIME-style key mapping
+func WithMapTagsMimeKey() MapTagsOption {
 	return MapTagsOptionFunc(func(t *mapTags) {
 		t.isMimeKey = true
 	})

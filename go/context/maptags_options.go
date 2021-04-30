@@ -2,8 +2,6 @@
 
 package context
 
-var _default_mapTags_value = func() (val mapTags) { return }()
-
 // A MapTagsOption sets options.
 type MapTagsOption interface {
 	apply(*mapTags)
@@ -28,10 +26,9 @@ func (f MapTagsOptionFunc) apply(do *mapTags) {
 // sample code for option, default for nothing to change
 func _MapTagsOptionWithDefault() MapTagsOption {
 	return MapTagsOptionFunc(func(*mapTags) {
-		// TODO nothing to change
+		// nothing to change
 	})
 }
-
 func (o *mapTags) ApplyOptions(options ...MapTagsOption) *mapTags {
 	for _, opt := range options {
 		if opt == nil {
