@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -38,7 +39,7 @@ func NewGateway(addr string, opts ...GatewayOption) *Gateway {
 	return NewGatewayTLS(addr, nil, opts...)
 }
 
-// TLSConfig optionally provides a TLS configuration for use
+// NewGatewayTLS TLSConfig optionally provides a TLS configuration for use
 // by ServeTLS and ListenAndServeTLS. Note that this value is
 // cloned by ServeTLS and ListenAndServeTLS, so it's not
 // possible to modify the configuration with methods like
@@ -161,11 +162,11 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 			gateway: gateway,
 		})
 	})
-
 }
+
 func (gateway *Gateway) Serve(l net.Listener) error {
 	gateway.lazyInit()
-	gateway.registerGrpcReflection()
+	gateway.preServe()
 	return gateway.Server.Serve(l)
 }
 
@@ -184,7 +185,7 @@ func (gateway *Gateway) Serve(l net.Listener) error {
 // returned error is ErrServerClosed.
 func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error {
 	gateway.lazyInit()
-	gateway.registerGrpcReflection()
+	gateway.preServe()
 	return gateway.Server.ServeTLS(l, certFile, keyFile)
 }
 
@@ -198,7 +199,7 @@ func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error
 // the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServe() error {
 	gateway.lazyInit()
-	gateway.registerGrpcReflection()
+	gateway.preServe()
 	return gateway.Server.ListenAndServe()
 }
 
@@ -219,7 +220,7 @@ func (gateway *Gateway) ListenAndServe() error {
 // Close, the returned error is ErrServerClosed.
 func (gateway *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
 	gateway.lazyInit()
-	gateway.registerGrpcReflection()
+	gateway.preServe()
 	return gateway.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
@@ -249,7 +250,7 @@ func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx c
 }
 
 // registerGrpcReflection registers the server reflection service on the given gRPC server.
-// can be called once, recommently to be called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
+// can be called once, recommend to be called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
 func (gateway *Gateway) registerGrpcReflection() {
 	if gateway.grpcServer == nil || !gateway.opt.grpcServerOpts.withReflectionService {
 		return
@@ -259,4 +260,15 @@ func (gateway *Gateway) registerGrpcReflection() {
 	// avoid: Failed to list services: server does not support the reflection API
 	// Register reflection service on gRPC server.
 	reflection.Register(gateway.grpcServer)
+}
+
+func (gateway *Gateway) preServe() {
+	if gateway == nil {
+		return
+	}
+	if gateway.grpcServer != nil {
+		// After all your registrations, make sure all of the Prometheus metrics are initialized.
+		grpc_prometheus.Register(gateway.grpcServer)
+	}
+	gateway.registerGrpcReflection()
 }
