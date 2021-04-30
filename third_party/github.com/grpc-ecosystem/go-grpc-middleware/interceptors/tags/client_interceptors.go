@@ -18,7 +18,7 @@ func UnaryClientInterceptor(key interface{}, values map[string]interface{}) grpc
 	}
 }
 
-// StreamServerInterceptor returns a new streaming client interceptor with tags in context.
+// StreamClientInterceptor returns a new streaming client interceptor with tags in context.
 func StreamClientInterceptor(key interface{}, values map[string]interface{}) grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		newCtx := newContextTagsForCall(ctx, KindClient, method, key, values)

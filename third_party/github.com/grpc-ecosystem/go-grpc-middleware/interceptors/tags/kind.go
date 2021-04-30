@@ -4,7 +4,7 @@
 
 package tags
 
-// interceptors's kind
+// Kind interceptor's kind
 type Kind string
 
 const (

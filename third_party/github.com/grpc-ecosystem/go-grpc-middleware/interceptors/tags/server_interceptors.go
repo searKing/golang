@@ -48,7 +48,7 @@ func StreamServerInterceptor(key interface{}, values map[string]interface{}) grp
 func newContextTagsForCall(ctx context.Context, kind Kind, fullMethodString string, key interface{}, values map[string]interface{}) context.Context {
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
-	tags := context_.NewTags(context_.WithTagsMimeKey())
+	tags := context_.NewMapTags(context_.WithMapTagsMimeKey())
 	tags.Set(SystemField, "grpc")
 	tags.Set(KindField, kind)
 	tags.Set(ServiceField, service)
