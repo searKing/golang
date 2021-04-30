@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package x_request_id
+package requestid
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func UnaryClientInterceptor(key interface{}, chained bool) grpc.UnaryClientInter
 	}
 }
 
-// StreamServerInterceptor returns a new streaming client interceptor with tags in context.
+// StreamClientInterceptor returns a new streaming client interceptor with tags in context.
 func StreamClientInterceptor(key interface{}, chained bool) grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		var newCtx context.Context
