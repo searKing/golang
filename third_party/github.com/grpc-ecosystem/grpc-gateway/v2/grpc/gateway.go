@@ -234,7 +234,7 @@ func (gateway *Gateway) RegisterGRPCHandler(handler GRPCHandler) {
 func (gateway *Gateway) RegisterHTTPHandler(ctx context.Context, handler HTTPHandler) error {
 	gateway.lazyInit()
 	//scheme://authority/endpoint
-	return handler.Register(ctx, gateway.httpMuxToGrpc, "passthrough:///"+gateway.Server.Addr, gateway.opt.grpcClientDialOpts)
+	return handler.Register(ctx, gateway.httpMuxToGrpc, "passthrough:///"+gateway.Server.Addr, gateway.opt.ClientDialOpts())
 }
 
 // RegisterGRPCFunc registers grpc handler of the gateway

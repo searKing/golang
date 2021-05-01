@@ -58,6 +58,22 @@ func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(unaryInterceptors...)))
 }
 
+func (opt *gatewayOption) ClientDialOpts() []grpc.DialOption {
+	var clientInterceptors []grpc.StreamClientInterceptor
+	clientInterceptors = append(clientInterceptors,
+		grpc_opentracing.StreamClientInterceptor(),
+		grpc_prometheus.StreamClientInterceptor)
+
+	var unaryInterceptors []grpc.UnaryClientInterceptor
+	unaryInterceptors = append(unaryInterceptors,
+		grpc_opentracing.UnaryClientInterceptor(),
+		grpc_prometheus.UnaryClientInterceptor)
+
+	return append(opt.grpcClientDialOpts,
+		grpc.WithChainStreamInterceptor(grpc_middleware.ChainStreamClient(clientInterceptors...)),
+		grpc.WithChainUnaryInterceptor(grpc_middleware.ChainUnaryClient(unaryInterceptors...)))
+}
+
 func WithGrpcUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		gateway.opt.grpcServerOpts.unaryInterceptors = append(gateway.opt.grpcServerOpts.unaryInterceptors, interceptors...)
@@ -67,6 +83,18 @@ func WithGrpcUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) Gatew
 func WithGrpcStreamServerChain(interceptors ...grpc.StreamServerInterceptor) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		gateway.opt.grpcServerOpts.streamInterceptors = append(gateway.opt.grpcServerOpts.streamInterceptors, interceptors...)
+	})
+}
+
+func WithGrpcUnaryClientChain(interceptors ...grpc.UnaryClientInterceptor) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
+	})
+}
+
+func WithGrpcStreamClientChain(interceptors ...grpc.StreamClientInterceptor) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts, grpc.WithChainStreamInterceptor(interceptors...))
 	})
 }
 
