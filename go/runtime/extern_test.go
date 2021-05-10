@@ -18,6 +18,15 @@ func TestGetCaller(t *testing.T) {
 	}
 }
 
+func TestGetShortCaller(t *testing.T) {
+	// Example:
+	// TestGetCaller
+	caller := runtime.GetShortCaller(1)
+	if match, _ := regexp.MatchString(`TestGetShortCaller`, caller); !match {
+		t.Errorf("mismatch symbolized function name: %s", caller)
+	}
+}
+
 func caller() string {
 	function, file, line := runtime.GetCallerFuncFileLine(1)
 	return fmt.Sprintf("%s() %s:%d", function, file, line)

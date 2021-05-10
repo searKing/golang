@@ -20,6 +20,14 @@ func GetCaller(skip int) string {
 	return f.Name()
 }
 
+// GetShortCaller returns the short form of GetCaller.
+// The argument skip is the number of stack frames
+// to skip before recording in pc, with 0 identifying the frame for Callers itself and
+// 1 identifying the caller of Callers.
+func GetShortCaller(skip int) string {
+	return strings.TrimPrefix(path.Ext(GetCaller(skip+1)), ".")
+}
+
 // GetCallerFuncFileLine returns the __FUNCTION__, __FILE__ and __LINE__ of the function that calls it.
 // The argument skip is the number of stack frames
 // to skip before recording in pc, with 0 identifying the frame for Callers itself and
