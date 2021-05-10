@@ -42,7 +42,7 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-// Chtimes changes the access and modification times of the named
+// ChtimesNow changes the access and modification times of the named
 // file with Now, similar to the Unix utime() or utimes() functions.
 //
 // The underlying filesystem may truncate or round the values to a
@@ -61,14 +61,14 @@ func MakeAll(name string) error {
 	return os.MkdirAll(name, DefaultPermissionDirectory)
 }
 
-// MakeAll creates a directory named path and returns nil,
+// Make creates a directory named path and returns nil,
 // or else returns an error.
 // If the dir does not exist, it is created with mode 0755 (before umask).
 func Make(name string) error {
 	return os.Mkdir(name, DefaultPermissionDirectory)
 }
 
-// Rename renames (moves) oldpath to newpath.
+// RenameAll renames (moves) oldpath to newpath.
 // If newpath already exists and is not a directory, Rename replaces it.
 // OS-specific restrictions may apply when oldpath and newpath are in different directories.
 // If there is an error, it will be of type *LinkError.
