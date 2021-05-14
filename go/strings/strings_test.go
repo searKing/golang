@@ -28,6 +28,11 @@ var (
 			true,
 		},
 		{
+			[]string{},
+			[]string{"E"},
+			false,
+		},
+		{
 			[]string{"A", "B", "C", "D"},
 			[]string{"A"},
 			true,

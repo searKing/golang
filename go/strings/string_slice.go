@@ -80,7 +80,7 @@ func SliceTrimFunc(ss []string, f func(s string) bool) []string {
 	return trimmed
 }
 
-// SliceContains  reports whether any t in tt is within ss.
+// SliceContainsAny  reports whether any t in tt is within ss.
 func SliceContainsAny(ss []string, tt ...string) bool {
 	return sliceContains(false, true, ss, tt...)
 }
