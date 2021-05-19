@@ -264,6 +264,13 @@ func (lim *BurstLimiter) GetTokenN(n int) (ok bool) {
 	return lim.getTokenNLocked(n)
 }
 
+// SetBurst sets a new burst size for the limiter.
+func (lim *BurstLimiter) SetBurst(newBurst int) {
+	lim.mu.Lock()
+	defer lim.mu.Unlock()
+	lim.burst = newBurst
+}
+
 // reserveN is a helper method for AllowN, ReserveN, and WaitN.
 // maxFutureReserve specifies the maximum reservation wait duration allowed.
 // reserveN returns Reservation, not *Reservation, to avoid allocation in AllowN and WaitN.
