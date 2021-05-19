@@ -8,9 +8,9 @@ Useful libs or tools for Golang
 # GoLibs
 
 * [BurstLimiter](https://pkg.go.dev/github.com/searKing/golang/go/time/rate) — BurstLimiter behaves like Limiter
-  in `golang.org/x/time`, BurstLimiter controls how frequently events are allowed to happen. It implements a "token
-  bucket" of size b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
-  that `golang.org/x/time/rate.Limiter`initially full and refilled at rate r tokens per second.
+  in `time`, BurstLimiter controls how frequently events are allowed to happen. It implements a "token bucket" of size
+  b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
+  that `time/rate.Limiter`initially full and refilled at rate r tokens per second.
 * [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator) — Generator behaves like Generator in
   python or ES6, with yield and next statements.
 * [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal) — Signal enhances signal.Notify with the
