@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package rate
 // The key observation and some code (shr) is borrowed from
 // golang.org/x/time/rate/rate.go
 package rate
@@ -21,6 +22,7 @@ var expectTokensKey expectKeyType
 // It implements a "token bucket" of size b, initially full and refilled
 // by PutToken or PutTokenN.
 
+// BurstLimiter
 // Informally, in any large enough time interval, the BurstLimiter limits the
 // burst tokens, with a maximum burst size of b events.
 // As a special case, if r == Inf (the infinite rate), b is ignored.
