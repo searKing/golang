@@ -8,7 +8,7 @@ package cgosymbolizer
 /*
 #cgo windows CXXFLAGS:
 #cgo !windows CXXFLAGS: -DBOOST_STACKTRACE_USE_BACKTRACE
-#cgo !windows LDFLAGS: -ldl -lbacktrace
+#cgo !windows LDFLAGS: -ldl -lbacktrace -rdynamic
 */
 import "C"
 

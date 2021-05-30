@@ -8,7 +8,7 @@ package cgosymbolizer
 /*
 #cgo windows CXXFLAGS:
 #cgo !windows CXXFLAGS: -DBOOST_STACKTRACE_USE_ADDR2LINE
-#cgo !windows LDFLAGS: -ldl
+#cgo !windows LDFLAGS: -ldl -rdynamic
 */
 import "C"
 
