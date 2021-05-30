@@ -52,7 +52,7 @@ func PreviousStacktrace() string {
 	return C.GoString(stacktraceChars)
 }
 
-// PreviousStacktrace sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
+// SetSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
 func SetSigInvokeChain(from, to, wait, sleepInSeconds int) {
 	C.CGO_SetSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
 }
