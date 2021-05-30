@@ -18,7 +18,7 @@ void cgoTraceback(cgoTracebackArg* arg) {
     std::size_t max_depth = arg->max;
 
     boost::stacktrace::stacktrace stacktrace(skip, max_depth);
-    std::cout << boost::stacktrace::stacktrace();
+//    std::cout << boost::stacktrace::stacktrace();
 
     std::size_t i = 0;
     for (auto it = stacktrace.cbegin(); it != stacktrace.cend(); it++) {
