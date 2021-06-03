@@ -49,7 +49,7 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
   }
   auto &sig_chain = it->second;
   int from = std::get<0>(sig_chain);
-  // consist validatation
+  // consist validation
   if (from != signum) {
     return;
   }

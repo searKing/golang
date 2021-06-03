@@ -24,7 +24,7 @@ import (
 	_ "github.com/searKing/golang/go/os/signal/cgo/include"
 )
 
-// signalAction act as signal.Notify, which invokes the Go signal handler.
+// SetSig act as signal.Notify, which invokes the Go signal handler.
 // https://godoc.org/os/signal#hdr-Go_programs_that_use_cgo_or_SWIG
 func SetSig(sig int) {
 	C.CGO_SignalHandlerSetSig(C.int(sig))
