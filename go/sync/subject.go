@@ -38,7 +38,9 @@ type Subject struct {
 }
 
 type subscriber struct {
-	msgC  chan interface{}
+	mu   sync.Mutex // guard close of channel msgC
+	msgC chan interface{}
+
 	once  sync.Once
 	doneC chan struct{} // closed when when subscriber is in shutdown, like removed.
 }
@@ -49,6 +51,8 @@ func (s *subscriber) Shutdown() {
 	}
 	s.once.Do(func() {
 		close(s.doneC)
+		s.mu.Lock()
+		defer s.mu.Unlock()
 		close(s.msgC)
 	})
 }
@@ -117,6 +121,19 @@ func (s *Subject) PublishBroadcast(ctx context.Context, event interface{}) error
 // publish wakes a listener waiting on c to consume the event.
 // event will be dropped if ctx is Done before event is received.
 func publish(ctx context.Context, event interface{}, listener *subscriber) error {
+	// guard of msgC's close
+	listener.mu.Lock()
+	defer listener.mu.Unlock()
+	select {
+	case <-ctx.Done():
+		// event dropped because of publisher
+		return ctx.Err()
+	case <-listener.doneC:
+		// event dropped because of subscriber
+		return fmt.Errorf("event dropped because of subscriber unsubscribed")
+	default:
+	}
+
 	select {
 	case <-ctx.Done():
 		// event dropped because of publisher
