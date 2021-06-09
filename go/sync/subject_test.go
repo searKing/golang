@@ -108,3 +108,19 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 		return
 	}
 }
+
+func TestSubject_PublishBroadcastDeadLock(t *testing.T) {
+	s := sync_.Subject{}
+	func() {
+		eventC, cancel := s.Subscribe()
+		go func() {
+			defer cancel()
+			<-eventC
+		}()
+	}()
+	err := s.PublishBroadcast(context.Background(), struct{}{})
+	if err != nil {
+		t.Errorf("PublishBroadcast: %s", err)
+		return
+	}
+}

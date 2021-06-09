@@ -79,7 +79,7 @@ func (s *Subject) PublishSignal(ctx context.Context, event interface{}) error {
 		wg.Add(1)
 		go func(listener *subscriber) {
 			defer wg.Done()
-			err := s.publish(ctx, event, listener)
+			err := publish(ctx, event, listener)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -94,27 +94,29 @@ func (s *Subject) PublishSignal(ctx context.Context, event interface{}) error {
 // PublishBroadcast blocks until event is received or dropped.
 // event will be dropped if ctx is Done before event is received.
 func (s *Subject) PublishBroadcast(ctx context.Context, event interface{}) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	var wg sync.WaitGroup
 	var errs []error
-	for listener := range s.subscribers {
-		wg.Add(1)
-		go func(listener *subscriber) {
-			defer wg.Done()
-			err := s.publish(ctx, event, listener)
-			if err != nil {
-				errs = append(errs, err)
-			}
-		}(listener)
-	}
+	func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		for listener := range s.subscribers {
+			wg.Add(1)
+			go func(listener *subscriber) {
+				defer wg.Done()
+				err := publish(ctx, event, listener)
+				if err != nil {
+					errs = append(errs, err)
+				}
+			}(listener)
+		}
+	}()
 	wg.Wait()
 	return errors.Multi(errs...)
 }
 
 // publish wakes a listener waiting on c to consume the event.
 // event will be dropped if ctx is Done before event is received.
-func (s *Subject) publish(ctx context.Context, event interface{}, listener *subscriber) error {
+func publish(ctx context.Context, event interface{}, listener *subscriber) error {
 	select {
 	case <-ctx.Done():
 		// event dropped because of publisher
