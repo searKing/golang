@@ -6,7 +6,7 @@ package runtime
 
 import "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
-// Whether to render enum values as integers, as opposed to string values.
+// WithMarshaler Whether to render enum values as integers, as opposed to string values.
 func WithMarshaler(marshaler runtime.Marshaler) HTTPBodyPbOption {
 	return HTTPBodyPbOptionFunc(func(pb *HTTPBodyPb) {
 		pb.Marshaler = marshaler
@@ -16,7 +16,11 @@ func WithMarshaler(marshaler runtime.Marshaler) HTTPBodyPbOption {
 func NewHTTPBodyJsonMarshaler(options ...JSONPbOption) runtime.Marshaler {
 	// github.com/grpc-ecosystem/grpc-gateway/runtime/Handler.go
 	// fulfill if httpBodyMarshaler, ok := marshaler.(*HTTPBodyMarshaler); ok
-	var o = []JSONPbOption{WithOrigName(true), WithEmitDefaults(true), WithIndent("\t")}
+	var o = []JSONPbOption{
+		WithUseProtoNames(true),
+		WithEmitUnpopulated(true),
+		WithIndent("\t"),
+		WithDiscardUnknown(true)}
 	o = append(o, options...)
 	return (*runtime.HTTPBodyMarshaler)((&HTTPBodyPb{}).ApplyOptions(
 		WithMarshaler((&JSONPb{}).ApplyOptions(o...))))
