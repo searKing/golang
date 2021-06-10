@@ -4,21 +4,35 @@
 
 package runtime
 
-// Whether to render enum values as integers, as opposed to string values.
+import "google.golang.org/protobuf/encoding/protojson"
+
+func WithMarshalOptions(option protojson.MarshalOptions) JSONPbOption {
+	return JSONPbOptionFunc(func(pb *JSONPb) {
+		pb.JSONPb.MarshalOptions = option
+	})
+}
+
+func WithUnmarshalOptions(option protojson.UnmarshalOptions) JSONPbOption {
+	return JSONPbOptionFunc(func(pb *JSONPb) {
+		pb.JSONPb.UnmarshalOptions = option
+	})
+}
+
+// WithUseEnumNumbers Whether to render enum values as integers, as opposed to string values.
 func WithUseEnumNumbers(useEnumNumbers bool) JSONPbOption {
 	return JSONPbOptionFunc(func(pb *JSONPb) {
 		pb.JSONPb.UseEnumNumbers = useEnumNumbers
 	})
 }
 
-// Whether to render fields with zero values.
+// WithEmitUnpopulated Whether to render fields with zero values.
 func WithEmitUnpopulated(emitUnpopulated bool) JSONPbOption {
 	return JSONPbOptionFunc(func(pb *JSONPb) {
 		pb.JSONPb.EmitUnpopulated = emitUnpopulated
 	})
 }
 
-// A string to indent each level by. The presence of this field will
+// WithIndent A string to indent each level by. The presence of this field will
 // also cause a space to appear between the field separator and
 // value, and for newlines to be appear between fields and array
 // elements.
@@ -28,7 +42,7 @@ func WithIndent(indent string) JSONPbOption {
 	})
 }
 
-// Whether to use the original (.proto) name for fields.
+// WithUseProtoNames Whether to use the original (.proto) name for fields.
 func WithUseProtoNames(useProtoNames bool) JSONPbOption {
 	return JSONPbOptionFunc(func(pb *JSONPb) {
 		pb.JSONPb.UseProtoNames = useProtoNames
@@ -48,4 +62,19 @@ func WithEmitDefaults(emitDefaults bool) JSONPbOption {
 // Deprecated: Use WithUseProtoNames instead.
 func WithOrigName(origName bool) JSONPbOption {
 	return WithUseProtoNames(origName)
+}
+
+// WithUnmarshalAllowPartial If AllowPartial is set, input for messages that will result in missing
+// required fields will not return an error.
+func WithUnmarshalAllowPartial(allowPartial bool) JSONPbOption {
+	return JSONPbOptionFunc(func(pb *JSONPb) {
+		pb.JSONPb.UnmarshalOptions.AllowPartial = allowPartial
+	})
+}
+
+// WithDiscardUnknown If DiscardUnknown is set, unknown fields are ignored.
+func WithDiscardUnknown(discardUnknown bool) JSONPbOption {
+	return JSONPbOptionFunc(func(pb *JSONPb) {
+		pb.JSONPb.DiscardUnknown = discardUnknown
+	})
 }
