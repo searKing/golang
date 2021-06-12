@@ -64,7 +64,7 @@ func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error 
 	opt.MuteDirectlyOutput = true
 	opt.ApplyOptions(options...)
 
-	file := os_.NewRotateFileWithStrftime(opt.FilePathRotateLayout)
+	file := os_.NewRotateFile(opt.FilePathRotateLayout)
 	file.FilePathPrefix = path
 	file.FileLinkPath = opt.FileLinkPath
 	file.RotateInterval = opt.RotateInterval
