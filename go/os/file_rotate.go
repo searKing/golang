@@ -21,16 +21,16 @@ import (
 type RotateMode int
 
 const (
-	// create new rotate file directly
+	// RotateModeNew create new rotate file directly
 	RotateModeNew RotateMode = iota
 
-	// Make a copy of the log file, but don't change the original at all. This option can be
+	// RotateModeCopyRename Make a copy of the log file, but don't change the original at all. This option can be
 	// used, for instance, to make a snapshot of the current log file, or when some other
 	// utility needs to truncate or parse the file. When this option is used, the create
 	// option will have no effect, as the old log file stays in place.
 	RotateModeCopyRename RotateMode = iota
 
-	// Truncate the original log file in place after creating a copy, instead of moving the
+	// RotateModeCopyTruncate Truncate the original log file in place after creating a copy, instead of moving the
 	// old log file and optionally creating a new one. It can be used when some program can‐
 	// not be told to close its rotatefile and thus might continue writing (appending) to the
 	// previous log file forever. Note that there is a very small time slice between copying
@@ -39,7 +39,7 @@ const (
 	RotateModeCopyTruncate RotateMode = iota
 )
 
-// logrotate reads everything about the log files it should be handling from the series of con‐
+// RotateFile logrotate reads everything about the log files it should be handling from the series of con‐
 // figuration files specified on the command line.  Each configuration file can set global
 // options (local definitions override global ones, and later definitions override earlier ones)
 // and specify rotatefiles to rotate. A simple configuration file looks like this:
@@ -89,11 +89,7 @@ type RotateFile struct {
 }
 
 func NewRotateFile(layout string) *RotateFile {
-	return &RotateFile{
-		FilePathRotateLayout: layout,
-		RotateFileGlob:       fileGlobFromStrftimeLayout(time_.LayoutTimeToSimilarStrftime(layout)),
-		RotateInterval:       24 * time.Hour,
-	}
+	return NewRotateFileWithStrftime(time_.LayoutTimeToSimilarStrftime(layout))
 }
 
 func NewRotateFileWithStrftime(strftimeLayout string) *RotateFile {
@@ -309,7 +305,7 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 
 	// find old files
 	var filesNotExpired []string
-	filesExpired, err := filepath_.GlobFunc(f.RotateFileGlob, func(name string) bool {
+	filesExpired, err := filepath_.GlobFunc(f.FilePathPrefix+f.RotateFileGlob, func(name string) bool {
 		fi, err := os.Stat(name)
 		if err != nil {
 			return false
