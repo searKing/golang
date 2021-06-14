@@ -12,9 +12,11 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	sync_ "github.com/searKing/golang/go/sync"
 )
+
+type expectKeyType struct{}
+
+var expectTokensKey expectKeyType
 
 // A BurstLimiter controls how frequently events are allowed to happen.
 // It implements a "token bucket" of size b, initially full and refilled
@@ -42,10 +44,9 @@ import (
 //
 // The methods AllowN, ReserveN, and WaitN consume n tokens.
 type BurstLimiter struct {
-	notifier sync_.Subject
-
-	mu    sync.Mutex
-	burst int // 桶的大小，且必须归还
+	mu                     sync.Mutex
+	burst                  int // bucket size, Put Must be called after Get
+	tokensChangedListeners []context.Context
 
 	tokens int // unconsumed tokens
 }
@@ -105,7 +106,7 @@ type Reservation struct {
 	lim    *BurstLimiter
 	tokens int // tokens number to consumed(reserved) this time
 	//timeToAct time.Time       // now + wait, wait if bucket is not enough
-	tokensGot <-chan interface{} // chan to notify tokens is put, check if enough
+	tokensGot context.Context // chan to notify tokens is put, check if enough
 	cancelFn  context.CancelFunc
 }
 
@@ -128,7 +129,7 @@ func (r *Reservation) Wait(ctx context.Context) error {
 			}
 		}
 		select {
-		case <-r.tokensGot:
+		case <-r.tokensGot.Done():
 			// We can proceed.
 			if r.lim.GetTokenN(r.tokens) {
 				return nil
@@ -153,8 +154,19 @@ func (r *Reservation) Cancel() {
 	r.lim.mu.Lock()
 	defer r.lim.mu.Unlock()
 
-	if r.cancelFn != nil {
-		r.cancelFn()
+	if r.tokens == 0 {
+		return
+	}
+
+	for i, tokensGot := range r.lim.tokensChangedListeners {
+		if r == tokensGot.Value(expectTokensKey).(*Reservation) {
+			if i == len(r.lim.tokensChangedListeners)-1 {
+				r.lim.tokensChangedListeners = r.lim.tokensChangedListeners[:i]
+				return
+			}
+			r.lim.tokensChangedListeners = append(r.lim.tokensChangedListeners[:i], r.lim.tokensChangedListeners[i+1:]...)
+			return
+		}
 	}
 	return
 }
@@ -233,10 +245,18 @@ func (lim *BurstLimiter) PutTokenN(n int) {
 	if lim.tokens > lim.burst {
 		lim.tokens = lim.burst
 	}
-	go func() {
-		// trigger listener to consume
-		_ = lim.notifier.PublishBroadcast(context.Background(), n)
-	}()
+
+	for i := 0; i < len(lim.tokensChangedListeners); i++ {
+		tokensGot := lim.tokensChangedListeners[i]
+		r := tokensGot.Value(expectTokensKey).(*Reservation)
+		if (r.tokens) > lim.tokens {
+			break
+		}
+		// remove notified
+		lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
+		lim.tokens -= r.tokens
+		r.cancelFn()
+	}
 }
 
 // GetToken is shorthand for GetTokenN(ctx, 1).
@@ -256,10 +276,6 @@ func (lim *BurstLimiter) SetBurst(newBurst int) {
 	lim.mu.Lock()
 	defer lim.mu.Unlock()
 	lim.burst = newBurst
-	// drop if overflowed
-	if lim.tokens > lim.burst {
-		lim.tokens = lim.burst
-	}
 }
 
 // reserveN is a helper method for AllowN, ReserveN, and WaitN.
@@ -270,12 +286,14 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) Reserva
 	defer lim.mu.Unlock()
 
 	// tokens are enough
-	// get n tokens from lim
-	if lim.getTokenNLocked(n) {
-		return Reservation{
-			ok:     true,
-			lim:    lim,
-			tokens: 0, // tokens if consumed already,don't wait
+	if lim.tokens >= n && len(lim.tokensChangedListeners) == 0 {
+		// get n tokens from lim
+		if lim.getTokenNLocked(n) {
+			return Reservation{
+				ok:     true,
+				lim:    lim,
+				tokens: 0, // tokens if consumed already,don't wait
+			}
 		}
 	}
 
@@ -296,7 +314,8 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) Reserva
 		tokens: n,
 	}
 	if ok {
-		r.tokensGot, r.cancelFn = lim.notifier.Subscribe()
+		r.tokensGot, r.cancelFn = context.WithCancel(context.WithValue(ctx, expectTokensKey, &r))
+		lim.tokensChangedListeners = append(lim.tokensChangedListeners, r.tokensGot)
 	}
 
 	return r
