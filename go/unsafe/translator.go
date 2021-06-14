@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-// You can write as this directly.
+// CStringArray You can write as this directly.
 //	// []string -> [](*C.char)
 // 	var strs []string
 //	cCharArray := make([]*C.char, 0, len(strs))
@@ -42,7 +42,7 @@ func CStringArray(strs ...string) (**C.char, C.int) {
 	return (**C.char)(unsafe.Pointer(cCharArrayBuf)), C.int(len(strs))
 }
 
-// char** -> []string
+// GoStringArray char** -> []string
 func GoStringArray(strArray unsafe.Pointer, n int) []string {
 	// char** -> [](C.*char)
 	cCharArray := make([]*C.char, n)
