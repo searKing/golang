@@ -14,7 +14,9 @@ import (
 	"sync"
 	"time"
 
+	errors_ "github.com/searKing/golang/go/errors"
 	filepath_ "github.com/searKing/golang/go/path/filepath"
+	"github.com/searKing/golang/go/sync/atomic"
 	time_ "github.com/searKing/golang/go/time"
 )
 
@@ -82,6 +84,7 @@ type RotateFile struct {
 	// name means file path rotated
 	PostRotateHandler func(name string)
 
+	cleaning      atomic.Bool
 	mu            sync.Mutex
 	usingSeq      int // file rotated by size limit meet
 	usingFilePath string
@@ -300,6 +303,20 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 			return nil, err
 		}
 	}
+	// unlink files on a separate goroutine
+	go f.serializedClean()
+
+	return file, nil
+}
+
+// unlink files
+// expect run on a separate goroutine
+func (f *RotateFile) serializedClean() error {
+	// running already, ignore duplicate clean
+	if !f.cleaning.CAS(false, true) {
+		return nil
+	}
+	defer f.cleaning.Store(false)
 
 	now := time.Now()
 
@@ -331,7 +348,7 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 		return true
 	})
 	if err != nil {
-		return file, err
+		return err
 	}
 
 	var filesExceedMaxCount []string
@@ -343,18 +360,20 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 		sort.Sort(rotateFileSlice(filesNotExpired))
 		filesExceedMaxCount = filesNotExpired[:removeCount]
 	}
-
-	go func() {
-		// unlink files on a separate goroutine
-		for _, path := range filesExpired {
-			os.Remove(path)
+	var errs []error
+	for _, path := range filesExpired {
+		err = os.Remove(path)
+		if err != nil {
+			errs = append(errs, err)
 		}
-		for _, path := range filesExceedMaxCount {
-			os.Remove(path)
+	}
+	for _, path := range filesExceedMaxCount {
+		err = os.Remove(path)
+		if err != nil {
+			errs = append(errs, err)
 		}
-	}()
-
-	return file, nil
+	}
+	return errors_.Multi(errs...)
 }
 
 // foo.txt, 0 -> foo.txt
