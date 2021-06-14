@@ -85,6 +85,13 @@ func NewEmptyBurstLimiter(b int) *BurstLimiter {
 	}
 }
 
+// SetBurst sets a new burst size for the limiter.
+func (lim *BurstLimiter) SetBurst(newBurst int) {
+	lim.mu.Lock()
+	defer lim.mu.Unlock()
+	lim.burst = newBurst
+}
+
 // Allow is shorthand for AllowN(time.Now(), 1).
 // 当没有可用或足够的事件时，返回false
 func (lim *BurstLimiter) Allow() bool {
@@ -97,78 +104,6 @@ func (lim *BurstLimiter) Allow() bool {
 // 当没有可用或足够的事件时，返回false
 func (lim *BurstLimiter) AllowN(n int) bool {
 	return lim.reserveN(context.Background(), n, false).ok
-}
-
-// A Reservation holds information about events that are permitted by a BurstLimiter to happen after a delay.
-// A Reservation may be canceled, which may enable the BurstLimiter to permit additional events.
-type Reservation struct {
-	ok     bool
-	lim    *BurstLimiter
-	tokens int // tokens number to consumed(reserved) this time
-	//timeToAct time.Time       // now + wait, wait if bucket is not enough
-	tokensGot context.Context // chan to notify tokens is put, check if enough
-	cancelFn  context.CancelFunc
-}
-
-// OK returns whether the limiter can provide the requested number of tokens
-// within the maximum wait time.  If OK is false, Delay returns InfDuration, and
-// Cancel does nothing.
-func (r *Reservation) OK() bool {
-	return r.ok
-}
-
-// Wait blocks before taking the reserved action
-// Wait 当没有可用或足够的事件时，将阻塞等待
-func (r *Reservation) Wait(ctx context.Context) error {
-	for {
-		// Wait if necessary
-		if r.tokensGot == nil {
-			// We can proceed.
-			if r.lim.GetTokenN(r.tokens) {
-				return nil
-			}
-		}
-		select {
-		case <-r.tokensGot.Done():
-			// We can proceed.
-			if r.lim.GetTokenN(r.tokens) {
-				return nil
-			}
-		case <-ctx.Done():
-			// Context was canceled before we could proceed.  Cancel the
-			// reservation, which may permit other events to proceed sooner.
-			r.Cancel()
-			return ctx.Err()
-		}
-	}
-}
-
-// Cancel indicates that the reservation holder will not perform the reserved action
-// and reverses the effects of this Reservation on the rate limit as much as possible,
-// considering that other reservations may have already been made.
-func (r *Reservation) Cancel() {
-	if !r.ok {
-		return
-	}
-
-	r.lim.mu.Lock()
-	defer r.lim.mu.Unlock()
-
-	if r.tokens == 0 {
-		return
-	}
-
-	for i, tokensGot := range r.lim.tokensChangedListeners {
-		if r == tokensGot.Value(expectTokensKey).(*Reservation) {
-			if i == len(r.lim.tokensChangedListeners)-1 {
-				r.lim.tokensChangedListeners = r.lim.tokensChangedListeners[:i]
-				return
-			}
-			r.lim.tokensChangedListeners = append(r.lim.tokensChangedListeners[:i], r.lim.tokensChangedListeners[i+1:]...)
-			return
-		}
-	}
-	return
 }
 
 // Reserve is shorthand for ReserveN(1).
@@ -253,7 +188,11 @@ func (lim *BurstLimiter) PutTokenN(n int) {
 			break
 		}
 		// remove notified
-		lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
+		if i == len(lim.tokensChangedListeners)-1 {
+			lim.tokensChangedListeners = lim.tokensChangedListeners[:i]
+		} else {
+			lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
+		}
 		lim.tokens -= r.tokens
 		r.cancelFn()
 	}
@@ -271,11 +210,19 @@ func (lim *BurstLimiter) GetTokenN(n int) (ok bool) {
 	return lim.getTokenNLocked(n)
 }
 
-// SetBurst sets a new burst size for the limiter.
-func (lim *BurstLimiter) SetBurst(newBurst int) {
-	lim.mu.Lock()
-	defer lim.mu.Unlock()
-	lim.burst = newBurst
+// getTokenNLocked returns true if token is got
+// advance calculates and returns an updated state for lim resulting from the passage of time.
+// lim is not changed.
+// getTokenNLocked requires that lim.mu is held.
+func (lim *BurstLimiter) getTokenNLocked(n int) (ok bool) {
+	if n <= 0 {
+		return true
+	}
+	if lim.tokens >= n {
+		lim.tokens -= n
+		return true
+	}
+	return false
 }
 
 // reserveN is a helper method for AllowN, ReserveN, and WaitN.
@@ -321,17 +268,76 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) Reserva
 	return r
 }
 
-// getTokenNLocked returns true if token is got
-// advance calculates and returns an updated state for lim resulting from the passage of time.
-// lim is not changed.
-// getTokenNLocked requires that lim.mu is held.
-func (lim *BurstLimiter) getTokenNLocked(n int) (ok bool) {
-	if n <= 0 {
-		return true
+func (lim *BurstLimiter) trackReservationRemove(r *Reservation) {
+	lim.mu.Lock()
+	defer lim.mu.Unlock()
+
+	for i, tokensGot := range lim.tokensChangedListeners {
+		if r == tokensGot.Value(expectTokensKey).(*Reservation) {
+			if i == len(lim.tokensChangedListeners)-1 {
+				lim.tokensChangedListeners = lim.tokensChangedListeners[:i]
+				return
+			}
+			lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
+			return
+		}
 	}
-	if lim.tokens >= n {
-		lim.tokens -= n
-		return true
+	return
+}
+
+// A Reservation holds information about events that are permitted by a BurstLimiter to happen after a delay.
+// A Reservation may be canceled, which may enable the BurstLimiter to permit additional events.
+type Reservation struct {
+	ok     bool
+	lim    *BurstLimiter
+	tokens int // tokens number to consumed(reserved) this time
+	//timeToAct time.Time       // now + wait, wait if bucket is not enough
+	tokensGot context.Context // chan to notify tokens is put, check if enough
+	cancelFn  context.CancelFunc
+}
+
+// OK returns whether the limiter can provide the requested number of tokens
+// within the maximum wait time.  If OK is false, Delay returns InfDuration, and
+// Cancel does nothing.
+func (r *Reservation) OK() bool {
+	return r.ok
+}
+
+// Wait blocks before taking the reserved action
+// Wait 当没有可用或足够的事件时，将阻塞等待
+func (r *Reservation) Wait(ctx context.Context) error {
+	for {
+		// Wait if necessary
+		if r.tokensGot == nil {
+			// We can proceed.
+			if r.lim.GetTokenN(r.tokens) {
+				return nil
+			}
+		}
+		select {
+		case <-r.tokensGot.Done():
+			// We can proceed.
+			return nil
+		case <-ctx.Done():
+			// Context was canceled before we could proceed.  Cancel the
+			// reservation, which may permit other events to proceed sooner.
+			r.Cancel()
+			return ctx.Err()
+		}
 	}
-	return false
+}
+
+// Cancel indicates that the reservation holder will not perform the reserved action
+// and reverses the effects of this Reservation on the rate limit as much as possible,
+// considering that other reservations may have already been made.
+func (r *Reservation) Cancel() {
+	if !r.ok {
+		return
+	}
+
+	if r.tokens == 0 {
+		return
+	}
+	r.lim.trackReservationRemove(r)
+	return
 }

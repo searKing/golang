@@ -78,34 +78,41 @@ func ExampleNewEmptyBurstLimiter() {
 	}
 	fmt.Printf("tokens: %d\n", limiter.Tokens())
 
+	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
-		i := i
 		go func() {
 			defer wg.Done()
 			//fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
-			fmt.Printf("Wait %03d\n", i)
+			mu.Lock()
+			fmt.Printf("Wait 1 Token, tokens %d\n", limiter.Tokens())
+			mu.Unlock()
 			err := limiter.Wait(ctx)
 			if err != nil {
+				mu.Lock()
 				fmt.Printf("err: %s\n", err.Error())
+				mu.Unlock()
 				return
 			}
 
-			fmt.Printf("Got %03d\n", i)
-			if i == 0 {
-				// refill one token
-				limiter.PutToken()
-			}
+			mu.Lock()
+			fmt.Printf("Got 1 Token, tokens %d\n", limiter.Tokens())
+			mu.Unlock()
 		}()
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for i := 0; i < concurrency; i++ {
 		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
 		fmt.Printf("PutToken #%d: before tokens: %d\n", i, limiter.Tokens())
+		mu.Unlock()
 		// fill one token
 		limiter.PutToken()
+		mu.Lock()
 		fmt.Printf("PutToken #%d: after tokens: %d\n", i, limiter.Tokens())
+		mu.Unlock()
 	}
 	wg.Wait()
 	fmt.Printf("tokens: %d\n", limiter.Tokens())
@@ -130,16 +137,16 @@ func ExampleNewEmptyBurstLimiter() {
 	// tokens: 1
 	// allow passed
 	// tokens: 0
-	// Wait 001
-	// Wait 000
+	// Wait 1 Token, tokens 0
+	// Wait 1 Token, tokens 0
 	// PutToken #0: before tokens: 0
-	// PutToken #0: after tokens: 1
-	// Got 000
-	// Got 001
+	// PutToken #0: after tokens: 0
+	// Got 1 Token, tokens 0
 	// PutToken #1: before tokens: 0
-	// PutToken #1: after tokens: 1
-	// tokens: 1
-	// allow passed
+	// PutToken #1: after tokens: 0
+	// Got 1 Token, tokens 0
+	// tokens: 0
+	// allow refused
 	// tokens: 0
 	// allow refused
 }
