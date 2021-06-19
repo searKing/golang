@@ -1,16 +1,17 @@
 [![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=go-validator)](https://travis-ci.org/searKing/travis-ci)
 [![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/go-validator?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/go-validator)
-[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-validator)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-validator) 
+[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/go-validator)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/go-validator)
 [![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@go-validator?badge)
+
 # go-validator
+
 Generates Go code using a package as a generic template that implements validator.
 
-go-validator Generates Go code using a package as a generic template that implements validator.
-Given the StructName of a Struct type T
-go-validator will create a new self-contained Go source file and rewrite T's "db" tag of struct field
+go-validator Generates Go code using a package as a generic template that implements validator. Given the StructName of
+a Struct type T go-validator will create a new self-contained Go source file and rewrite T's "db" tag of struct field
 
-The file is created in the same package and directory as the package that defines T.
-It has helpful defaults designed for use with go generate.
+The file is created in the same package and directory as the package that defines T. It has helpful defaults designed
+for use with go generate.
 
 For example, given this snippet,
 
@@ -38,18 +39,19 @@ type Pill struct {
 ```
 
 running this command
+
 ```
 go-validator -type=Pill
 ```
 
-in the same directory will create the file pill_validator.go, in package painkiller,
-containing a definition of
+in the same directory will create the file pill_validator.go, in package painkiller, containing a definition of
 
 ```
 func (m *Pill) Validate(validate *validator.Validate) error
 ```
 
 Typically this process would be run using go generate, like this:
+
 ```
 //go:generate go-validator --all-type
 //go:generate go-validator -type "Pill"
@@ -57,22 +59,22 @@ Typically this process would be run using go generate, like this:
 //go:generate go-validator -type "Pill" --linecomment --with-dao
 ```
 
-If multiple constants have the same value, the lexically first matching name will
-be used (in the example, Acetaminophen will print as "Paracetamol").
+If multiple constants have the same value, the lexically first matching name will be used (in the example, Acetaminophen
+will print as "Paracetamol").
 
-With no arguments, it processes the package in the current directory.
-Otherwise, the arguments must name a single directory holding a Go package
-or a set of Go source files that represent a single Go package.
+With no arguments, it processes the package in the current directory. Otherwise, the arguments must name a single
+directory holding a Go package or a set of Go source files that represent a single Go package.
 
-The -type flag accepts a comma-separated list of types so a single run can
-generate methods for multiple types. The default output file is t_validator.go,
-where t is the lower-cased name of the first type listed. It can be overridden
+The -type flag accepts a comma-separated list of types so a single run can generate methods for multiple types. The
+default output file is t_validator.go, where t is the lower-cased name of the first type listed. It can be overridden
 with the -output flag.
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/cmd/go-validator`. You can
-also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-validator`.
+The easiest way to install is to
+run `go get -u github.com/searKing/golang/tools/cmd/go-validator@v1.0.175;go get -u github.com/searKing/golang/tools/cmd/go-validator`
+. You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/cmd/go-validator`.
 
 ## Inspiring projects
+
 * [stringer](https://godoc.org/golang.org/x/tools/cmd/stringer)
