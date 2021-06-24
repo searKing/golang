@@ -26,10 +26,10 @@ func WithShutdownSignal(parent context.Context, sig ...os.Signal) context.Contex
 	var shutdownSignalC chan os.Signal
 	shutdownSignalC = make(chan os.Signal, 2)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(parent)
 	signal.Notify(shutdownSignalC, sig...)
 	go func() {
-		defer close(shutdownSignalC)
+		defer signal.Stop(shutdownSignalC)
 		select {
 		case <-shutdownSignalC:
 			cancel()
@@ -49,8 +49,7 @@ func WithShutdownSignal(parent context.Context, sig ...os.Signal) context.Contex
 
 // WithSignal registered for signals. A context.Context is returned.
 // which is done on one of these incoming signals.
-// signals can be stoped by stopSignal, context will never be Done() if stoped.
-
+// signals can be stopped by stopSignal, context will never be Done() if stopped.
 // WithSignal returns a copy of the parent context registered for signals.
 // If the parent's context is already done than d, WithSignal(parent, sig...) is semantically
 // equivalent to parent. The returned context's Done channel is closed when one of these
@@ -58,6 +57,7 @@ func WithShutdownSignal(parent context.Context, sig ...os.Signal) context.Contex
 // Done channel is closed, whichever happens first.
 // Canceling this context releases resources associated with it, so code should
 // call cancel as soon as the operations running in this Context complete.
+// Deprecated: Use signal.NotifyContext instead since go1.16.
 func WithSignal(parent context.Context, sig ...os.Signal) (ctx context.Context, cancel context.CancelFunc) {
 	var c chan os.Signal
 	c = make(chan os.Signal, 1)
