@@ -460,6 +460,31 @@ func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *s
 	return dest, nil
 }
 
+func (arg {{.StructType}}) Get{{.StructType}}sWithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) ([]{{.StructType}}, error) {
+	// Check that invalid preparations fail
+	ns, err := tx.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	var dest []{{.StructType}}
+	err = ns.SelectContext(ctx, &dest, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return  nil, err
+{{- end}}
+	}
+	return dest, nil
+}
+
 func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB, cols []string, conds []string, likeConds []string, orderByCols []string) ([]{{.StructType}}, error) {
 	query := sqlx_.SimpleStatements{
 		TableName:  arg.TableName(),
@@ -488,6 +513,33 @@ func (arg {{.StructType}}) Get{{.StructType}}s(ctx context.Context, db *sqlx.DB,
 	return dest, nil
 }
 
+func (arg {{.StructType}}) Get{{.StructType}}sWithTx(ctx context.Context, tx *sqlx.Tx, cols []string, conds []string, likeConds []string, orderByCols []string) ([]{{.StructType}}, error) {
+	query := sqlx_.SimpleStatements{
+		TableName:  arg.TableName(),
+		Columns:    cols,
+		Conditions: conds,
+		Compare:    sqlx_.SqlCompareEqual,
+		Operator:   sqlx_.SqlOperatorAnd,
+	}.NamedSelectStatement()
+	if len(likeConds) > 0 {
+		query += " AND "
+		query += sqlx_.NamedWhereArguments(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd, likeConds...)
+	}
+	if len(orderByCols) > 0 {
+		query += fmt.Sprintf(" ORDER BY %s", sqlx_.JoinTableColumns(arg.TableName(), orderByCols...))
+	}
+
+	dest, err := arg.Get{{.StructType}}sWithTxByQuery(ctx, tx, query)
+
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
+	}
+	return dest, nil
+}
 
 func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *sqlx.DB, limit, offset int) ([]{{.StructType}}, error) {
 	query := fmt.Sprintf("SELECT %s FROM %s"+
@@ -510,7 +562,7 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 			return strings.Join(cols, " , ")
 		}(),                        // WHERE
 		arg.TableName(), // FROM
-		// <other table's name'>,      // JOIN
+		// other table's name',      // JOIN
 		func() string { // WHERE
 			cols := sqlx_.ShrinkEmptyColumns(
 				// =
@@ -560,6 +612,127 @@ func (arg {{.StructType}}) Get{{.StructType}}sTemplate(ctx context.Context, db *
 
 	// Check that invalid preparations fail
 	ns, err := db.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	rows, err := ns.QueryxContext(ctx, arg.MarshalTableMap(nil))
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
+	}
+
+	var resps []{{.StructType}}
+	for rows.Next() {
+		row := make(map[string]interface{})
+		err := rows.MapScan(row)
+		if err != nil {
+{{- if .WithQueryInfo }}
+			return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+			return nil, err
+{{- end}}
+		}
+		for k, v := range row {
+			if b, ok := v.([]byte); ok {
+				row[k] = string(b)
+			}
+		}
+
+		resp := {{.StructType}}{}
+		err = resp.UnmarshalTableMap(row)
+		if err != nil {
+{{- if .WithQueryInfo }}
+			return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+			return nil, err
+{{- end}}
+		}
+		resps = append(resps, resp)
+	}
+	return resps, nil
+}
+
+func (arg {{.StructType}}) Get{{.StructType}}sTemplateWithTx(ctx context.Context, tx *sqlx.Tx, limit, offset int) ([]{{.StructType}}, error) {
+	query := fmt.Sprintf("SELECT %s FROM %s"+
+		//" JOIN %s ON %s"+
+		" %s"+ // WHERE
+		" %s"+ // GROUP BY
+		" %s"+ // ORDER BY
+		" %s", // LIMIT
+		func() string { // SELECT
+			cols := sqlx_.ShrinkEmptyColumns(
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName(), 
+{{- range .Fields}}
+					arg.Column{{.FieldName}}(),
+{{- end}}
+			))
+
+			if len(cols) == 0 {
+				return "*"
+			}
+			return strings.Join(cols, " , ")
+		}(),                        // WHERE
+		arg.TableName(), // FROM
+		// other table's name',      // JOIN
+		func() string { // WHERE
+			cols := sqlx_.ShrinkEmptyColumns(
+				// =
+				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareEqual, sqlx_.SqlOperatorAnd,
+					arg.TableName(),
+{{- range .Fields}}
+					arg.Column{{.FieldName}}(),
+{{- end}}
+					//arg.NonzeroColumnsIn(arg.Columns()...)...,
+					//arg.NonzeroColumns()...,
+				),
+				// <>
+				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareNotEqual, sqlx_.SqlOperatorAnd,
+					arg.TableName()),
+				// LIKE
+				sqlx_.JoinNamedTableCondition(sqlx_.SqlCompareLike, sqlx_.SqlOperatorAnd,
+					arg.TableName()),
+			)
+
+			if len(cols) == 0 {
+				return ""
+			}
+
+			return "WHERE " + strings.Join(cols, " "+sqlx_.SqlOperatorAnd.String()+" ")
+		}(), // WHERE
+		func() string { // GROUP BY
+			cols := sqlx_.ShrinkEmptyColumns(
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName()))
+
+			if len(cols) == 0 {
+				return ""
+			}
+			return "GROUP BY " + strings.Join(cols, " , ")
+		}(),  
+		func() string { // ORDER BY
+			cols := sqlx_.ShrinkEmptyColumns(
+				sqlx_.JoinNamedTableColumnsWithAs(arg.TableName()))
+
+			if len(cols) == 0 {
+				return ""
+			}
+			return "ORDER BY " + strings.Join(cols, " , ")
+		}(),  
+		// LIMIT
+		sqlx_.Pagination(limit, offset))
+
+
+	// Check that invalid preparations fail
+	ns, err := tx.PrepareNamedContext(ctx, query)
 	if err != nil {
 {{- if .WithQueryInfo }}
 		return nil, fmt.Errorf("%w, sql %q", err, query)
