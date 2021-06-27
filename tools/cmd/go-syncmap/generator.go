@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	strings_ "github.com/searKing/golang/tools/common/strings"
+	strings_ "github.com/searKing/golang/tools/pkg/strings"
 	"golang.org/x/tools/imports"
 )
 

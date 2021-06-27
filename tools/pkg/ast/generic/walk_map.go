@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/searKing/golang/tools/common/ast"
+	"github.com/searKing/golang/tools/pkg/ast"
 )
 
 // map[[]string]map[]int

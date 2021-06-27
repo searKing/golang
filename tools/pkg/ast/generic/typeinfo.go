@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/searKing/golang/tools/common/ast"
+	"github.com/searKing/golang/tools/pkg/ast"
 )
 
 type TemplateType struct {

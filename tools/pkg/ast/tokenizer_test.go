@@ -7,7 +7,7 @@ package ast_test
 import (
 	"testing"
 
-	"github.com/searKing/golang/tools/common/ast"
+	"github.com/searKing/golang/tools/pkg/ast"
 )
 
 type TokenizerTest struct {

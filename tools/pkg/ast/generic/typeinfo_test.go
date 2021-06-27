@@ -9,8 +9,8 @@ package generic_test
 import (
 	"testing"
 
-	"github.com/searKing/golang/tools/common/ast"
-	"github.com/searKing/golang/tools/common/ast/generic"
+	"github.com/searKing/golang/tools/pkg/ast"
+	"github.com/searKing/golang/tools/pkg/ast/generic"
 )
 
 type NewTest struct {

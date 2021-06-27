@@ -10,7 +10,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/searKing/golang/tools/common/ast/generic"
+	"github.com/searKing/golang/tools/pkg/ast/generic"
 )
 
 type tokenType int
