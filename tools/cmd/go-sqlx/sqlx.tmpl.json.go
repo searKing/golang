@@ -435,6 +435,40 @@ func (arg {{.StructType}}) Get{{.StructType}}(ctx context.Context, db *sqlx.DB, 
 	return dest, nil
 }
 
+func (arg {{.StructType}}) Get{{.StructType}}WithTx(ctx context.Context, tx *sqlx.Tx, cols []string, conds []string) ({{.StructType}}, error) {
+	query := sqlx_.SimpleStatements{
+		TableName:  arg.TableName(),
+		Columns:    cols,
+		Conditions: conds,
+	}.NamedSelectStatement()
+
+	// Check that invalid preparations fail
+	ns, err := tx.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	var dest {{.StructType}}
+	err = ns.GetContext(ctx, &dest, arg)
+	if err != nil {
+		//if errors.Cause(err) == sql.ErrNoRows {
+		//	return dest, nil
+		//}
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
+	}
+	return dest, nil
+}
+
 func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sqlx.DB, query string) ([]{{.StructType}}, error) {
 	// Check that invalid preparations fail
 	ns, err := db.PrepareNamedContext(ctx, query)
