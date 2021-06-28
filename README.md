@@ -20,7 +20,7 @@ Useful libs or tools for Golang
         - ```NullDuration represents an interface that may be null. NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
     - NullJson
         - ```NullJson represents an interface that may be null. NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString. Deprecate, use go-nulljson instead. For more information, see:
-      https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-nulljson```
+      https://pkg.go.dev/github.com/searKing/golang/tools/go-nulljson```
 * [ternary_search_tree](https://pkg.go.dev/github.com/searKing/golang/go/container/trie_tree/ternary_search_tree) — A
   type of trie (sometimes called a prefix tree) where nodes are arranged in a manner similar to a binary search tree,
   but with up to three children rather than the binary tree's limit of two.
@@ -52,22 +52,22 @@ Useful libs or tools for Golang
 
 # GoGenerateTools
 
-[`go generate`](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete
-list of useful tools that generate code.
+* [go generate](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete
+  list of useful tools that generate code.
 
-* [go-syncmap](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-syncmap) — Generates Go code using a package
-  as a generic template for sync.Map.
-* [go-syncpool](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-syncpool) — Generates Go code using a package
-  as a generic template for sync.Pool.
-* [go-atomicvalue](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-atomicvalue) — Generates Go code using a
+* [go-syncmap](https://pkg.go.dev/github.com/searKing/golang/tools/go-syncmap) — Generates Go code using a package as a
+  generic template for sync.Map.
+* [go-syncpool](https://pkg.go.dev/github.com/searKing/golang/tools/go-syncpool) — Generates Go code using a package as
+  a generic template for sync.Pool.
+* [go-atomicvalue](https://pkg.go.dev/github.com/searKing/golang/tools/go-atomicvalue) — Generates Go code using a
   package as a generic template for atomic.Value.
-* [go-option](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-option) — Generates Go code using a package as
-  a graceful option.
-* [go-nulljson](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-nulljson) — Generates Go code using a package
-  as a generic template that implements sql.Scanner and sql.Valuer.
-* [go-enum](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-enum) — Generates Go code using a package as a
+* [go-option](https://pkg.go.dev/github.com/searKing/golang/tools/go-option) — Generates Go code using a package as a
+  graceful option.
+* [go-nulljson](https://pkg.go.dev/github.com/searKing/golang/tools/go-nulljson) — Generates Go code using a package as
+  a generic template that implements sql.Scanner and sql.Valuer.
+* [go-enum](https://pkg.go.dev/github.com/searKing/golang/tools/go-enum) — Generates Go code using a package as a
   generic template, which implements interface fmt.Stringer | binary | json | text | sql | yaml for enums.
-* [go-import](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-import) — Performs auto import of non go files.
-* [go-sqlx](https://pkg.go.dev/github.com/searKing/golang/tools/cmd/go-sqlx) — Generates Go code using a package as a
+* [go-import](https://pkg.go.dev/github.com/searKing/golang/tools/go-import) — Performs auto import of non go files.
+* [go-sqlx](https://pkg.go.dev/github.com/searKing/golang/tools/go-sqlx) — Generates Go code using a package as a
   generic template that implements sqlx.
                                                                                
