@@ -36,6 +36,136 @@ import (
 // {{.StructType}} implements the Scanner interface so
 // it can be used as a scan destination, similar to sql.NullString.
 
+func (arg JobNode) Exec{{.StructType}}ByQuery(ctx context.Context, db *sqlx.DB, query string) error {
+	_, err := db.NamedExecContext(ctx, query, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
+	}
+	return nil
+}
+
+func (arg JobNode) Exec{{.StructType}}WithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) error {
+	_, err := tx.NamedExecContext(ctx, query, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return err
+{{- end}}
+	}
+	return nil
+}
+
+func (arg {{.StructType}}) Get{{.StructType}}ByQuery(ctx context.Context, db *sqlx.DB, query string) ({{.StructType}}, error) {
+	// Check that invalid preparations fail
+	ns, err := db.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	var dest {{.StructType}}
+	err = ns.GetContext(ctx, &dest, arg)
+	if err != nil {
+		//if errors.Cause(err) == sql.ErrNoRows {
+		//	return dest, nil
+		//}
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
+	}
+	return dest, nil
+}
+
+func (arg {{.StructType}}) Get{{.StructType}}WithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) ({{.StructType}}, error) {
+	// Check that invalid preparations fail
+	ns, err := tx.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	var dest {{.StructType}}
+	err = ns.GetContext(ctx, &dest, arg)
+	if err != nil {
+		//if errors.Cause(err) == sql.ErrNoRows {
+		//	return dest, nil
+		//}
+{{- if .WithQueryInfo }}
+		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return {{.StructType}}{}, err
+{{- end}}
+	}
+	return dest, nil
+}
+
+func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sqlx.DB, query string) ([]{{.StructType}}, error) {
+	// Check that invalid preparations fail
+	ns, err := db.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	var dest []{{.StructType}}
+	err = ns.SelectContext(ctx, &dest, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return  nil, err
+{{- end}}
+	}
+	return dest, nil
+}
+
+func (arg {{.StructType}}) Get{{.StructType}}sWithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) ([]{{.StructType}}, error) {
+	// Check that invalid preparations fail
+	ns, err := tx.PrepareNamedContext(ctx, query)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return nil, err
+{{- end}}
+	}
+
+	defer ns.Close()
+
+	var dest []{{.StructType}}
+	err = ns.SelectContext(ctx, &dest, arg)
+	if err != nil {
+{{- if .WithQueryInfo }}
+		return nil, fmt.Errorf("%w, sql %q", err, query)
+{{- else }}
+		return  nil, err
+{{- end}}
+	}
+	return dest, nil
+}
+
 // TableName returns table's name
 func (_ {{.StructType}}) TableName() string {
 	return "{{.TableName}}"
@@ -464,56 +594,6 @@ func (arg {{.StructType}}) Get{{.StructType}}WithTx(ctx context.Context, tx *sql
 		return {{.StructType}}{}, fmt.Errorf("%w, sql %q", err, query)
 {{- else }}
 		return {{.StructType}}{}, err
-{{- end}}
-	}
-	return dest, nil
-}
-
-func (arg {{.StructType}}) Get{{.StructType}}sByQuery(ctx context.Context, db *sqlx.DB, query string) ([]{{.StructType}}, error) {
-	// Check that invalid preparations fail
-	ns, err := db.PrepareNamedContext(ctx, query)
-	if err != nil {
-{{- if .WithQueryInfo }}
-		return nil, fmt.Errorf("%w, sql %q", err, query)
-{{- else }}
-		return nil, err
-{{- end}}
-	}
-
-	defer ns.Close()
-
-	var dest []{{.StructType}}
-	err = ns.SelectContext(ctx, &dest, arg)
-	if err != nil {
-{{- if .WithQueryInfo }}
-		return nil, fmt.Errorf("%w, sql %q", err, query)
-{{- else }}
-		return  nil, err
-{{- end}}
-	}
-	return dest, nil
-}
-
-func (arg {{.StructType}}) Get{{.StructType}}sWithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) ([]{{.StructType}}, error) {
-	// Check that invalid preparations fail
-	ns, err := tx.PrepareNamedContext(ctx, query)
-	if err != nil {
-{{- if .WithQueryInfo }}
-		return nil, fmt.Errorf("%w, sql %q", err, query)
-{{- else }}
-		return nil, err
-{{- end}}
-	}
-
-	defer ns.Close()
-
-	var dest []{{.StructType}}
-	err = ns.SelectContext(ctx, &dest, arg)
-	if err != nil {
-{{- if .WithQueryInfo }}
-		return nil, fmt.Errorf("%w, sql %q", err, query)
-{{- else }}
-		return  nil, err
 {{- end}}
 	}
 	return dest, nil
