@@ -42,6 +42,5 @@ The -tag flag accepts a build tag string.
 
 ## Download/Install
 
-The easiest way to install is to
-run `go get -u github.com/searKing/golang/tools/go-import@v1.0.175;go get -u github.com/searKing/golang/tools/go-import`
+The easiest way to install is to run `go get -u github.com/searKing/golang/tools/go-import`
 . You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/go-import`.
