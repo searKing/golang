@@ -36,7 +36,7 @@ import (
 // {{.StructType}} implements the Scanner interface so
 // it can be used as a scan destination, similar to sql.NullString.
 
-func (arg JobNode) Exec{{.StructType}}ByQuery(ctx context.Context, db *sqlx.DB, query string) error {
+func (arg {{.StructType}}) Exec{{.StructType}}ByQuery(ctx context.Context, db *sqlx.DB, query string) error {
 	_, err := db.NamedExecContext(ctx, query, arg)
 	if err != nil {
 {{- if .WithQueryInfo }}
@@ -48,7 +48,7 @@ func (arg JobNode) Exec{{.StructType}}ByQuery(ctx context.Context, db *sqlx.DB, 
 	return nil
 }
 
-func (arg JobNode) Exec{{.StructType}}WithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) error {
+func (arg {{.StructType}}) Exec{{.StructType}}WithTxByQuery(ctx context.Context, tx *sqlx.Tx, query string) error {
 	_, err := tx.NamedExecContext(ctx, query, arg)
 	if err != nil {
 {{- if .WithQueryInfo }}
