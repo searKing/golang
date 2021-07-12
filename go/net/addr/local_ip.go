@@ -15,8 +15,6 @@ import (
 
 // This code is borrowed from https://github.com/uber/tchannel-go/blob/dev/localip.go
 
-// This code is borrowed from https://github.com/uber/tchannel-go/blob/dev/localip.go
-
 // ScoreAddr scores how likely the given addr is to be a remote address and returns the
 // IP to use when listening. Any address which receives a negative score should not be used.
 // Scores are calculated as:
@@ -56,12 +54,13 @@ func ScoreAddr(iface net.Interface, addr net.Addr) (int, net.IP) {
 }
 
 // filter is a interface filter which returns false if the interface is _not_ to listen on
-func listenIP(interfaces []net.Interface, filter func(iface net.Interface) bool) (net.IP, error) {
+func listenAddr(interfaces []net.Interface, filter func(iface net.Interface) bool) (net.HardwareAddr, net.IP, error) {
 	if filter == nil {
 		filter = func(iface net.Interface) bool { return true }
 	}
 	bestScore := -1
 	var bestIP net.IP
+	var bestMac net.HardwareAddr
 	// Select the highest scoring IP as the best IP.
 	for _, iface := range interfaces {
 		if !filter(iface) {
@@ -78,15 +77,16 @@ func listenIP(interfaces []net.Interface, filter func(iface net.Interface) bool)
 			if score > bestScore {
 				bestScore = score
 				bestIP = ip
+				bestMac = iface.HardwareAddr
 			}
 		}
 	}
 
 	if bestScore == -1 {
-		return nil, errors.New("no addresses to listen on")
+		return nil, nil, errors.New("no addresses to listen on")
 	}
 
-	return bestIP, nil
+	return bestMac, bestIP, nil
 }
 
 // ExpectInterfaceNameFilter
@@ -130,11 +130,27 @@ func RoutedInterfaceNameFilter() func(iface net.Interface) bool {
 // by other machines to reach this machine.
 // filters is interface filters any return false if the interface is _not_ to listen on
 func ListenIP(filters ...func(iface net.Interface) bool) (net.IP, error) {
+	_, ip, err := ListenAddr(filters...)
+	return ip, err
+}
+
+// ListenMac returns the Mac to bind to in Listen. It tries to find an Mac that can be used
+// by other machines to reach this machine.
+// filters is interface filters any return false if the interface is _not_ to listen on
+func ListenMac(filters ...func(iface net.Interface) bool) (net.HardwareAddr, error) {
+	mac, _, err := ListenAddr(filters...)
+	return mac, err
+}
+
+// ListenAddr returns the Mac and IP to bind to in Listen. It tries to find an Mac and IP that can be used
+// by other machines to reach this machine.
+// filters is interface filters any return false if the interface is _not_ to listen on
+func ListenAddr(filters ...func(iface net.Interface) bool) (net.HardwareAddr, net.IP, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return listenIP(interfaces, func(iface net.Interface) bool {
+	return listenAddr(interfaces, func(iface net.Interface) bool {
 		for _, filter := range filters {
 			if filter != nil && !filter(iface) {
 				return false

@@ -26,14 +26,14 @@ func TestScoreAddr(t *testing.T) {
 			msg:       "non-local up ipv4 IPNet address",
 			iface:     net.Interface{Flags: net.FlagUp},
 			addr:      &net.IPNet{IP: ipv4},
-			wantScore: 500,
+			wantScore: 475,
 			wantIP:    ipv4,
 		},
 		{
 			msg:       "non-local up ipv4 IPAddr address",
 			iface:     net.Interface{Flags: net.FlagUp},
 			addr:      &net.IPAddr{IP: ipv4},
-			wantScore: 500,
+			wantScore: 475,
 			wantIP:    ipv4,
 		},
 		{
@@ -43,7 +43,7 @@ func TestScoreAddr(t *testing.T) {
 				HardwareAddr: mustParseMAC("02:42:ac:11:56:af"),
 			},
 			addr:      &net.IPNet{IP: ipv4},
-			wantScore: 450,
+			wantScore: 425,
 			wantIP:    ipv4,
 		},
 		{
@@ -53,21 +53,21 @@ func TestScoreAddr(t *testing.T) {
 				HardwareAddr: mustParseMAC("02:42:9c:52:fc:86"),
 			},
 			addr:      &net.IPNet{IP: ipv4},
-			wantScore: 450,
+			wantScore: 425,
 			wantIP:    ipv4,
 		},
 		{
 			msg:       "non-local down ipv4 address",
 			iface:     net.Interface{},
 			addr:      &net.IPNet{IP: ipv4},
-			wantScore: 400,
+			wantScore: 375,
 			wantIP:    ipv4,
 		},
 		{
 			msg:       "non-local down ipv6 address",
 			iface:     net.Interface{},
 			addr:      &net.IPAddr{IP: ipv6},
-			wantScore: 100,
+			wantScore: 75,
 			wantIP:    ipv6,
 		},
 		{
@@ -78,13 +78,13 @@ func TestScoreAddr(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for i, tt := range tests {
 		gotScore, gotIP := addr.ScoreAddr(tt.iface, tt.addr)
 		if tt.wantScore != gotScore {
-			t.Errorf("%s: expected %q got %q", tt.msg, tt.wantScore, gotScore)
+			t.Errorf("#%d, %s: expected %d got %d", i, tt.msg, tt.wantScore, gotScore)
 		}
 		if tt.wantIP.String() != gotIP.String() {
-			t.Errorf("%s: expected %q got %q", tt.msg, tt.wantIP, gotIP)
+			t.Errorf("#%d, %s: expected %q got %q", i, tt.msg, tt.wantIP, gotIP)
 		}
 	}
 }

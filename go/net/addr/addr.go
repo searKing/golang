@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// http://:80
+// BaseUrl http://:80
 func BaseUrl(rawurl string) (addr string, err error) {
 	return rawurl, nil
 }
