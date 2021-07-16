@@ -75,13 +75,14 @@ const (
 	DefaultMaxElapsedCount = -1
 )
 
+// BackOff
 // Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
 // src/main/java/com/google/api/client/util/BackOff.java
 type BackOff interface {
 	// Reset to initial state.
 	Reset()
 
-	// Gets duration to wait before retrying the operation to
+	// NextBackOff Gets duration to wait before retrying the operation to
 	// indicate that no retries should be made.
 	// ok indicates that no more retries should be made, max duration is returned also.
 	// Example usage:
@@ -94,11 +95,11 @@ type BackOff interface {
 	NextBackOff() (backoff time.Duration, ok bool)
 }
 
-//  Fixed back-off policy whose back-off time is always zero, meaning that the operation is retried
+// ZeroBackOff Fixed back-off policy whose back-off time is always zero, meaning that the operation is retried
 //  immediately without waiting.
 const ZeroBackOff = NonSlidingBackOff(0)
 
-// Fixed back-off policy that always returns {@code #STOP} for {@link #NextBackOff()},
+// StopBackOff Fixed back-off policy that always returns {@code #STOP} for {@link #NextBackOff()},
 // meaning that the operation should not be retried.
 type StopBackOff struct{}
 
@@ -107,8 +108,8 @@ func (o *StopBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	return 0, false
 }
 
-//  Fixed back-off policy whose back-off time is always const, meaning that the operation is retried
-//  after waiting every duration.
+// NonSlidingBackOff Fixed back-off policy whose back-off time is always const, meaning that the operation is retried
+// after waiting every duration.
 type NonSlidingBackOff time.Duration
 
 func (o *NonSlidingBackOff) Reset() {}
@@ -191,7 +192,7 @@ func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff
 	return o
 }
 
-// NewExponentialBackOff returns a backoff with default limit
+// NewDefaultExponentialBackOff returns a backoff with default limit
 func NewDefaultExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
 	o := &ExponentialBackOff{
 		initialInterval:     DefaultInitialInterval,
@@ -206,21 +207,17 @@ func NewDefaultExponentialBackOff(opts ...ExponentialBackOffOption) *Exponential
 	return o
 }
 
-// Sets the interval back to the initial retry interval and restarts the timer.
+// Reset Sets the interval back to the initial retry interval and restarts the timer.
 func (o *ExponentialBackOff) Reset() {
 	o.currentInterval = o.initialInterval
 	o.currentCount = 0
 	o.startTime = time.Now()
 }
 
-/**
- * {@inheritDoc}
- *
- * <p>This method calculates the next back off interval using the formula: randomized_interval =
- * retry_interval +/- (randomization_factor * retry_interval)
- *
- * <p>Subclasses may override if a different algorithm is required.
- */
+
+// This method calculates the next back off interval using the formula: randomized_interval =
+// retry_interval +/- (randomization_factor * retry_interval)
+// Subclasses may override if a different algorithm is required.
 func (o *ExponentialBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	// Make sure we have not gone over the maximum elapsed count.
 	if o.maxElapsedCount > 0 && o.GetElapsedCount() >= o.maxElapsedCount {
@@ -238,44 +235,42 @@ func (o *ExponentialBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	return randomizedInterval, true
 }
 
-/**
- * Returns a random value from the interval [randomizationFactor * currentInterval,
- * randomizationFactor * currentInterval].
- */
+// GetRandomValueFromInterval Returns a random value from the interval
+// [randomizationFactor * currentInterval, randomizationFactor * currentInterval].
 func (o *ExponentialBackOff) GetRandomValueFromInterval(
 	randomizationFactor float64, currentInterval time.Duration) time.Duration {
 	return Jitter(currentInterval, randomizationFactor)
 }
 
-// Returns the initial retry interval.
+// GetInitialInterval Returns the initial retry interval.
 func (o *ExponentialBackOff) GetInitialInterval() time.Duration {
 	return o.initialInterval
 }
 
-// Returns the randomization factor to use for creating a range around the retry interval.
+// GetRandomizationFactor Returns the randomization factor to use for creating a range around the retry interval.
 // A randomization factor of 0.5 results in a random period ranging between 50% below and 50%
 // above the retry interval.
 func (o *ExponentialBackOff) GetRandomizationFactor() float64 {
 	return o.randomizationFactor
 }
 
-// Returns the current retry interval.
+// GetCurrentInterval Returns the current retry interval.
 func (o *ExponentialBackOff) GetCurrentInterval() time.Duration {
 	return o.currentInterval
 }
 
-// Returns the value to multiply the current interval with for each retry attempt.
+// GetMultiplier Returns the value to multiply the current interval with for each retry attempt.
 func (o *ExponentialBackOff) GetMultiplier() float64 {
 	return o.multiplier
 }
 
-// Returns the maximum value of the back off period. Once the current interval
+// GetMaxInterval Returns the maximum value of the back off period. Once the current interval
 // reaches this value it stops increasing.
 func (o *ExponentialBackOff) GetMaxInterval() time.Duration {
 	return o.maxInterval
 }
 
-// Returns the maximum elapsed time.
+// GetMaxElapsedDuration Returns the maximum elapsed time.
 // If the time elapsed since an {@link ExponentialBackOff} instance is created goes past the
 // max_elapsed_time then the method {@link #NextBackOff()} starts returning STOP.
 // The elapsed time can be reset by calling
@@ -283,14 +278,14 @@ func (o *ExponentialBackOff) GetMaxElapsedDuration() time.Duration {
 	return o.maxElapsedDuration
 }
 
-// Returns the elapsed time since an {@link ExponentialBackOff} instance is
+// GetElapsedDuration Returns the elapsed time since an {@link ExponentialBackOff} instance is
 // created and is reset when {@link #reset()} is called.
 // The elapsed time is computed using {@link System#nanoTime()}.
 func (o *ExponentialBackOff) GetElapsedDuration() time.Duration {
 	return time.Now().Sub(o.startTime)
 }
 
-// Returns the elapsed count since an {@link ExponentialBackOff} instance is
+// GetElapsedCount Returns the elapsed count since an {@link ExponentialBackOff} instance is
 // created and is reset when {@link #reset()} is called.
 func (o *ExponentialBackOff) GetElapsedCount() int {
 	return o.currentCount
