@@ -13,7 +13,7 @@ import (
 
 // Forever calls f every period for ever.
 //
-// Forever is syntactic sugar on top of Until.
+// Forever is syntactic sugar on top of Forever, without resetCh.
 // Example: time.Second
 // 2021/04/09 12:45:08 Apr  9 12:45:08
 // 2021/04/09 12:45:09 Apr  9 12:45:09
@@ -26,9 +26,31 @@ func Forever(f func(), period time.Duration) {
 	Until(context.Background(), func(ctx context.Context) { f() }, period)
 }
 
+// ForeverWithReset calls f every period for ever.
+//
+// ForeverWithReset is syntactic sugar on top of UntilWithReset.
+// Example: time.Second
+// 2021/04/09 12:45:08 Apr  9 12:45:08
+// 2021/04/09 12:45:09 Apr  9 12:45:09
+// 2021/04/09 12:45:10 Apr  9 12:45:10
+// 2021/04/09 12:45:11 Apr  9 12:45:11
+// 2021/04/09 12:45:12 Apr  9 12:45:12
+// 2021/04/09 12:45:13 Apr  9 12:45:13
+// 2021/04/09 12:45:14 Apr  9 12:45:14
+func ForeverWithReset(f func(), resetCh chan struct{}, period time.Duration) {
+	UntilWithReset(context.Background(), func(ctx context.Context) { f() }, resetCh, period)
+}
+
 // Until loops until context is done, running f every period.
 //
-// Until is syntactic sugar on top of JitterUntil with zero jitter factor and
+// Until is syntactic sugar on top of UntilWithReset, without resetCh.
+func Until(ctx context.Context, f func(ctx context.Context), period time.Duration) {
+	UntilWithReset(ctx, f, nil, period)
+}
+
+// UntilWithReset loops until context is done, running f every period.
+//
+// UntilWithReset is syntactic sugar on top of JitterUntilWithReset with zero jitter factor and
 // with sliding = true (which means the timer for period starts after the f
 // completes).
 // Example: time.Second for period and sleep in f
@@ -38,8 +60,8 @@ func Forever(f func(), period time.Duration) {
 // 2021/04/09 12:48:09 Apr  9 12:48:09
 // 2021/04/09 12:48:11 Apr  9 12:48:11
 // 2021/04/09 12:48:13 Apr  9 12:48:13
-func Until(ctx context.Context, f func(ctx context.Context), period time.Duration) {
-	JitterUntil(ctx, f, true,
+func UntilWithReset(ctx context.Context, f func(ctx context.Context), resetCh chan struct{}, period time.Duration) {
+	JitterUntilWithReset(ctx, f, resetCh, true,
 		WithExponentialBackOffOptionRandomizationFactor(0),
 		WithExponentialBackOffOptionMultiplier(1),
 		WithExponentialBackOffOptionInitialInterval(period),
@@ -49,7 +71,15 @@ func Until(ctx context.Context, f func(ctx context.Context), period time.Duratio
 // NonSlidingUntil loops until context is done, running f every
 // period.
 //
-// NonSlidingUntil is syntactic sugar on top of JitterUntil with zero jitter
+// NonSlidingUntil is syntactic sugar on top of NonSlidingUntilWithReset, without resetCh.
+func NonSlidingUntil(ctx context.Context, f func(ctx context.Context), period time.Duration) {
+	NonSlidingUntilWithReset(ctx, f, nil, period)
+}
+
+// NonSlidingUntilWithReset loops until context is done, running f every
+// period.
+//
+// NonSlidingUntilWithReset is syntactic sugar on top of JitterUntilWithReset with zero jitter
 // factor, with sliding = false (meaning the timer for period starts at the same
 // time as the function starts).
 // Example: time.Second for period and sleep in f
@@ -60,8 +90,8 @@ func Until(ctx context.Context, f func(ctx context.Context), period time.Duratio
 // 2021/04/09 12:45:12 Apr  9 12:45:12
 // 2021/04/09 12:45:13 Apr  9 12:45:13
 // 2021/04/09 12:45:14 Apr  9 12:45:14
-func NonSlidingUntil(ctx context.Context, f func(ctx context.Context), period time.Duration) {
-	JitterUntil(ctx, f, false,
+func NonSlidingUntilWithReset(ctx context.Context, f func(ctx context.Context), resetCh chan struct{}, period time.Duration) {
+	JitterUntilWithReset(ctx, f, resetCh, false,
 		WithExponentialBackOffOptionRandomizationFactor(0),
 		WithExponentialBackOffOptionMultiplier(1),
 		WithExponentialBackOffOptionInitialInterval(period),
@@ -69,6 +99,12 @@ func NonSlidingUntil(ctx context.Context, f func(ctx context.Context), period ti
 }
 
 // JitterUntil loops until context is done, running f every period.
+// JitterUntil is syntactic sugar on top of JitterUntilWithReset, without resetCh.
+func JitterUntil(ctx context.Context, f func(ctx context.Context), sliding bool, opts ...ExponentialBackOffOption) {
+	JitterUntilWithReset(ctx, f, nil, sliding, opts...)
+}
+
+// JitterUntilWithReset loops until context is done, running f every period.
 //
 // period set by WithExponentialBackOffOptionInitialInterval
 // jitterFactor set by WithExponentialBackOffOptionRandomizationFactor
@@ -77,23 +113,47 @@ func NonSlidingUntil(ctx context.Context, f func(ctx context.Context), period ti
 //
 // If sliding is true, the period is computed after f runs. If it is false then
 // period includes the runtime for f.
+// backoff is reset if resetCh has data
 //
 // Cancel context to stop. f may not be invoked if context is already expired.
-func JitterUntil(ctx context.Context, f func(ctx context.Context), sliding bool, opts ...ExponentialBackOffOption) {
-	BackoffUntil(ctx, f, NewExponentialBackOff(opts...), sliding)
+func JitterUntilWithReset(ctx context.Context, f func(ctx context.Context), resetCh chan struct{}, sliding bool, opts ...ExponentialBackOffOption) {
+	BackoffUntilWithReset(ctx, f, resetCh, NewExponentialBackOff(opts...), sliding)
 }
 
 // BackoffUntil loops until context is done, run f every duration given by BackoffManager.
+// BackoffUntil is syntactic sugar on top of BackoffUntilWithReset, without resetCh.
+func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff BackOff, sliding bool) {
+	BackoffUntilWithReset(ctx, f, nil, backoff, sliding)
+}
+
+// BackoffUntilWithReset loops until context is done, run f every duration given by BackoffManager.
 //
 // If sliding is true, the period is computed after f runs. If it is false then
 // period includes the runtime for f.
-func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff BackOff, sliding bool) {
+// backoff is reset if resetCh has data
+func BackoffUntilWithReset(ctx context.Context,
+	f func(ctx context.Context), resetCh chan struct{}, backoff BackOff, sliding bool) {
 	var elapsed time.Duration
 	var ok bool
+
+	var drainResetCh = func() {
+		// To ensure the channel is empty, check the
+		// return value and drain the channel.
+		for {
+			select {
+			case <-resetCh:
+			default:
+				return
+			}
+		}
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case <-resetCh:
+			backoff.Reset()
+			drainResetCh()
 		default:
 		}
 
@@ -134,6 +194,9 @@ func BackoffUntil(ctx context.Context, f func(ctx context.Context), backoff Back
 			case <-ctx.Done():
 				return
 			case <-timer.C:
+			case <-resetCh:
+				backoff.Reset()
+				drainResetCh()
 			}
 		}()
 	}
