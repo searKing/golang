@@ -4,12 +4,4 @@
 
 package context
 
-import "fmt"
-
-type key string
-
-func (k key) String() string { return fmt.Sprintf("context key(%s-%p)", string(k), &k) }
-
-func Key(name string) *key {
-	return (*key)(&name)
-}
+type Key struct{}
