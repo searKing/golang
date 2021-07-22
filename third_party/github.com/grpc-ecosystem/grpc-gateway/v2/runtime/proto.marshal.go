@@ -9,7 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
-// []byte -> proto|interface{}
+// ProtoMarshaller []byte -> proto|interface{}
 type ProtoMarshaller struct {
 	runtime.ProtoMarshaller
 }

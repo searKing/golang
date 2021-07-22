@@ -46,6 +46,9 @@ type rotate struct {
 
 	// mute writer of logrus.Output if level is InfoLevel、DebugLevel、TraceLevel...
 	MuteDirectlyOutput bool
+
+	// mute writer of logrus.Output if level is InfoLevel、DebugLevel、TraceLevel...
+	MuteDirectlyOutputLogLevel logrus.Level
 }
 
 // WithRotate enhances logrus log to be written to local filesystem, with file rotation
@@ -62,6 +65,7 @@ func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error 
 	opt.FilePathRotateLayout = time_.LayoutStrftimeToSimilarTime(".%Y%m%d%H%M%S.log")
 	opt.FileLinkPath = filepath.Base(path) + ".log"
 	opt.MuteDirectlyOutput = true
+	opt.MuteDirectlyOutputLogLevel = logrus.WarnLevel
 	opt.ApplyOptions(options...)
 
 	file := os_.NewRotateFile(opt.FilePathRotateLayout)
@@ -102,7 +106,7 @@ func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error 
 			return err
 		}
 
-		if opt.MuteDirectlyOutput && entry.Level <= logrus.WarnLevel {
+		if opt.MuteDirectlyOutput && entry.Level <= opt.MuteDirectlyOutputLogLevel {
 			if out != nil {
 				_, _ = out.Write(msg)
 			}

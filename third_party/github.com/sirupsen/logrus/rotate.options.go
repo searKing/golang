@@ -8,6 +8,7 @@ import (
 	"time"
 
 	time_ "github.com/searKing/golang/go/time"
+	"github.com/sirupsen/logrus"
 )
 
 // WithRotateLayout sets time layout to format rotate file.
@@ -65,16 +66,23 @@ func WithMaxCount(maxCount int) RotateOption {
 	})
 }
 
-// WithMaxCount force rotates files directly when start up
+// WithForceNewFileOnStartup force rotates files directly when start up
 func WithForceNewFileOnStartup(force bool) RotateOption {
 	return RotateOptionFunc(func(r *rotate) {
 		r.ForceNewFileOnStartup = force
 	})
 }
 
-// WithForceNewFileOnStartup mutes writer of logrus.Output if level is InfoLevel、DebugLevel、TraceLevel...
+// WithMuteDirectlyOutput mutes writer of logrus.Output if level is less or equal than WithMuteDirectlyOutputLogLevel
 func WithMuteDirectlyOutput(mute bool) RotateOption {
 	return RotateOptionFunc(func(r *rotate) {
 		r.MuteDirectlyOutput = mute
+	})
+}
+
+// WithMuteDirectlyOutputLogLevel Warn if not set
+func WithMuteDirectlyOutputLogLevel(level logrus.Level) RotateOption {
+	return RotateOptionFunc(func(r *rotate) {
+		r.MuteDirectlyOutputLogLevel = level
 	})
 }
