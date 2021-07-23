@@ -44,10 +44,12 @@ type rotate struct {
 	// Force File Rotate when start up
 	ForceNewFileOnStartup bool
 
-	// mute writer of logrus.Output if level is InfoLevel、DebugLevel、TraceLevel...
+	// mute writer of logrus.Output if level is less or equal than MuteDirectlyOutputLogLevel
+	// default is true
 	MuteDirectlyOutput bool
 
-	// mute writer of logrus.Output if level is InfoLevel、DebugLevel、TraceLevel...
+	// sets the logger level of directly output.
+	// default is warn
 	MuteDirectlyOutputLogLevel logrus.Level
 }
 
