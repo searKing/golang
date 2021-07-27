@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// https://github.com/golang/go/issues/27169
 // Timer to fix time: Timer.Stop documentation example easily leads to deadlocks
+// https://github.com/golang/go/issues/27169
 type Timer struct {
 	*time.Timer
 }
