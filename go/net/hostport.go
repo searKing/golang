@@ -5,6 +5,15 @@ import (
 	"net"
 )
 
+// HostportOrDefault takes the user input target string and default port, returns formatted host and port info.
+// If target doesn't specify a port, set the port to be the defaultPort.
+// If target is in IPv6 format and host-name is enclosed in square brackets, brackets
+// are stripped when setting the host.
+// examples:
+// target: "www.google.com" defaultPort: "443" returns host: "www.google.com", port: "443"
+// target: "ipv4-host:80" defaultPort: "443" returns host: "ipv4-host", port: "80"
+// target: "[ipv6-host]" defaultPort: "443" returns host: "ipv6-host", port: "443"
+// target: ":80" defaultPort: "443" returns host: "localhost", port: "80"
 func HostportOrDefault(hostport string, defHostport string) string {
 	host, port, _ := SplitHostPort(hostport)
 	defHost, defPort, _ := SplitHostPort(defHostport)
@@ -38,6 +47,7 @@ func SplitHostPort(hostport string) (host, port string, err error) {
 	return host, portStr, err
 }
 
+// RandomPort returns a random port by a temporary listen on :0
 func RandomPort(host string) (int, error) {
 	if host == "" {
 		host = "localhost"
