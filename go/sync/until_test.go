@@ -18,11 +18,11 @@ import (
 
 const goroutineCount = 5
 
-func TestBlockingPickTimeout(t *testing.T) {
+func TestUntil_DoTimeout(t *testing.T) {
 	var until sync_.Until
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
-	if _, err := until.Do(ctx, func() (interface{}, error) { return "bar", nil }); !errors.Is(err, context.DeadlineExceeded) {
+	if _, err := until.Do(ctx, func() (interface{}, error) { return "bar", fmt.Errorf("must error") }); !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("until.Do returned error %v, want DeadlineExceeded", err)
 	}
 }
@@ -33,8 +33,8 @@ func TestUntil_DoBlocking(t *testing.T) {
 	var finishedCount uint64
 	for i := goroutineCount; i > 0; i-- {
 		go func() {
-			if tr, err := until.Do(context.Background(), nil); err != nil || tr != "bar" {
-				t.Errorf("until.Do returned non-nil error: %v", err)
+			if _, err := until.Do(context.Background(), nil); err == nil {
+				t.Errorf("until.Do returned nil error")
 			}
 			atomic.AddUint64(&finishedCount, 1)
 		}()

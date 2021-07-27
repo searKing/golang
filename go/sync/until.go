@@ -40,7 +40,7 @@ func (u *Until) Retry() {
 // Do executes and returns the results of the given function.
 // It may block in the following cases:
 // - the current fn is nil
-// - the subConn returned by the current picker is not READY
+// - the err returned by the current fn is not nil
 // When one of these situations happens, Do blocks until the Retry is called.
 func (u *Until) Do(ctx context.Context, fn func() (interface{}, error)) (val interface{}, err error) {
 	u.mu.Lock()
@@ -87,7 +87,7 @@ func (u *Until) Do(ctx context.Context, fn func() (interface{}, error)) (val int
 			// continue back to the beginning of the for loop to redo.
 			continue
 		}
-		return val, err
+		return val, nil
 	}
 }
 
