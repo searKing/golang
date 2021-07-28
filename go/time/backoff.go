@@ -55,23 +55,23 @@ import (
 
 const (
 
-	// The default initial interval value (0.5 seconds).
+	// DefaultInitialInterval The default initial interval value (0.5 seconds).
 	DefaultInitialInterval = 500 * time.Millisecond
 
-	// The default randomization factor (0.5 which results in a random period ranging between 50%
+	// DefaultRandomizationFactor The default randomization factor (0.5 which results in a random period ranging between 50%
 	// below and 50% above the retry interval).
 	DefaultRandomizationFactor = 0.5
 
-	// The default multiplier value (1.5 which is 50% increase per back off).
+	// DefaultMultiplier The default multiplier value (1.5 which is 50% increase per back off).
 	DefaultMultiplier = 1.5
 
-	// The default maximum back off time (1 minute).
+	// DefaultMaxInterval The default maximum back off time (1 minute).
 	DefaultMaxInterval = time.Minute
 
-	// The default maximum elapsed time (15 minutes).
+	// DefaultMaxElapsedDuration The default maximum elapsed time (15 minutes).
 	DefaultMaxElapsedDuration = 15 * time.Minute
 
-	// The default maximum elapsed count (-1).
+	// DefaultMaxElapsedCount The default maximum elapsed count (-1).
 	DefaultMaxElapsedCount = -1
 )
 
@@ -138,7 +138,7 @@ func (o *jitterBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	return Jitter(o.duration, o.maxFactor), false
 }
 
-// Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
+// ExponentialBackOff Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
 // src/main/java/com/google/api/client/util/ExponentialBackOff.java
 //go:generate go-option -type "ExponentialBackOff"
 type ExponentialBackOff struct {
@@ -207,6 +207,25 @@ func NewDefaultExponentialBackOff(opts ...ExponentialBackOffOption) *Exponential
 	return o
 }
 
+// NewGrpcExponentialBackOff is a backoff from configuration with the default values specified
+// at https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md.
+//
+// This should be useful for callers who want to configure backoff with
+// non-default values only for a subset of the options.
+func NewGrpcExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
+	o := &ExponentialBackOff{
+		initialInterval:     1.0 * time.Second,
+		randomizationFactor: 0.2,
+		multiplier:          1.6,
+		maxInterval:         120 * time.Second,
+		maxElapsedDuration:  -1,
+		maxElapsedCount:     -1,
+	}
+	o.ApplyOptions(opts...)
+	o.Reset()
+	return o
+}
+
 // Reset Sets the interval back to the initial retry interval and restarts the timer.
 func (o *ExponentialBackOff) Reset() {
 	o.currentInterval = o.initialInterval
@@ -214,8 +233,7 @@ func (o *ExponentialBackOff) Reset() {
 	o.startTime = time.Now()
 }
 
-
-// This method calculates the next back off interval using the formula: randomized_interval =
+// NextBackOff This method calculates the next back off interval using the formula: randomized_interval =
 // retry_interval +/- (randomization_factor * retry_interval)
 // Subclasses may override if a different algorithm is required.
 func (o *ExponentialBackOff) NextBackOff() (backoff time.Duration, ok bool) {
