@@ -177,16 +177,20 @@ type ExponentialBackOff struct {
 	maxElapsedCount int
 }
 
+func (o *ExponentialBackOff) SetDefault() {
+	o.initialInterval = DefaultInitialInterval
+	o.randomizationFactor = DefaultRandomizationFactor
+	o.multiplier = DefaultMultiplier
+	o.maxInterval = DefaultMaxInterval
+	o.maxElapsedDuration = DefaultMaxElapsedDuration
+	o.maxElapsedCount = DefaultMaxElapsedCount
+}
+
 // NewExponentialBackOff returns a no limit backoff
 func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
-	o := &ExponentialBackOff{
-		initialInterval:     DefaultInitialInterval,
-		randomizationFactor: DefaultRandomizationFactor,
-		multiplier:          DefaultMultiplier,
-		maxInterval:         -1,
-		maxElapsedDuration:  -1,
-		maxElapsedCount:     -1,
-	}
+	opts = append([]ExponentialBackOffOption{WithExponentialBackOffOptionNoLimit()}, opts...)
+	o := &ExponentialBackOff{}
+	o.SetDefault()
 	o.ApplyOptions(opts...)
 	o.Reset()
 	return o
@@ -194,14 +198,8 @@ func NewExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff
 
 // NewDefaultExponentialBackOff returns a backoff with default limit
 func NewDefaultExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
-	o := &ExponentialBackOff{
-		initialInterval:     DefaultInitialInterval,
-		randomizationFactor: DefaultRandomizationFactor,
-		multiplier:          DefaultMultiplier,
-		maxInterval:         DefaultMaxInterval,
-		maxElapsedDuration:  DefaultMaxElapsedDuration,
-		maxElapsedCount:     DefaultMaxElapsedCount,
-	}
+	o := &ExponentialBackOff{}
+	o.SetDefault()
 	o.ApplyOptions(opts...)
 	o.Reset()
 	return o
@@ -213,14 +211,9 @@ func NewDefaultExponentialBackOff(opts ...ExponentialBackOffOption) *Exponential
 // This should be useful for callers who want to configure backoff with
 // non-default values only for a subset of the options.
 func NewGrpcExponentialBackOff(opts ...ExponentialBackOffOption) *ExponentialBackOff {
-	o := &ExponentialBackOff{
-		initialInterval:     1.0 * time.Second,
-		randomizationFactor: 0.2,
-		multiplier:          1.6,
-		maxInterval:         120 * time.Second,
-		maxElapsedDuration:  -1,
-		maxElapsedCount:     -1,
-	}
+	opts = append([]ExponentialBackOffOption{WithExponentialBackOffOptionGRPC()}, opts...)
+	o := &ExponentialBackOff{}
+	o.SetDefault()
 	o.ApplyOptions(opts...)
 	o.Reset()
 	return o

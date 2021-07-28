@@ -41,3 +41,25 @@ func WithExponentialBackOffOptionMaxElapsedCount(count int) ExponentialBackOffOp
 		o.maxElapsedCount = count
 	})
 }
+
+func WithExponentialBackOffOptionNoLimit() ExponentialBackOffOption {
+	return ExponentialBackOffOptionFunc(func(o *ExponentialBackOff) {
+		o.initialInterval = DefaultInitialInterval
+		o.randomizationFactor = DefaultRandomizationFactor
+		o.multiplier = DefaultMultiplier
+		o.maxInterval = -1
+		o.maxElapsedDuration = -1
+		o.maxElapsedCount = -1
+	})
+}
+
+func WithExponentialBackOffOptionGRPC() ExponentialBackOffOption {
+	return ExponentialBackOffOptionFunc(func(o *ExponentialBackOff) {
+		o.initialInterval = 1.0 * time.Second
+		o.randomizationFactor = 0.2
+		o.multiplier = 1.6
+		o.maxInterval = 120 * time.Second
+		o.maxElapsedDuration = -1
+		o.maxElapsedCount = -1
+	})
+}
