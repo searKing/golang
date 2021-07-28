@@ -35,7 +35,7 @@ func BodyRewindableWithFilePosition(name string, offset int64, whence int) (body
 	return BodyRewindableWithFile(file)
 }
 
-// RequestRewindableWithFile returns a Request suitable for use with Redirect, like 307 redirect for PUT or POST.
+// BodyRewindableWithFile returns a Request suitable for use with Redirect, like 307 redirect for PUT or POST.
 // Only a nil GetBody in Request may be replace with a rewindable GetBody, which is a Body *os.File.
 // See: https://github.com/golang/go/issues/7912
 // See also: https://go-review.googlesource.com/c/go/+/29852/13/src/net/http/client.go#391
