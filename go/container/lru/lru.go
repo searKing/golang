@@ -59,7 +59,7 @@ func (lru *LRU) AddPair(pair Pair) error {
 	return lru.Add(pair.Key, pair.Value)
 }
 
-// add adds Key to the head of the linked list.
+// Add adds Key to the head of the linked list.
 func (lru *LRU) Add(key interface{}, value interface{}) error {
 	lru.lazyInit()
 	ele := lru.ll.PushFront(Pair{
