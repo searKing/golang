@@ -38,9 +38,9 @@ func TestLruPool_New(t *testing.T) {
 
 	i := 0
 	p := LruPool{
-		New: func(ctx context.Context) interface{} {
+		New: func(ctx context.Context, req interface{}) (resp interface{}, err error) {
 			i++
-			return i
+			return i, nil
 		},
 	}
 	a, puta := p.Get(context.Background(), "")

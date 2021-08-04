@@ -45,7 +45,7 @@ type LruPool struct {
 	// New optionally specifies a function to generate
 	// a value when Get would otherwise return nil.
 	// It may not be changed concurrently with calls to Get.
-	New func(ctx context.Context) interface{}
+	New func(ctx context.Context, req interface{}) (resp interface{}, err error)
 
 	idleMu           sync.Mutex
 	closeIdle        bool                             // user has requested to close all idle conns
@@ -88,11 +88,12 @@ type LruPool struct {
 	IdleResourceTimeout time.Duration
 }
 
-// GetOrError creates a new PersistResource to the target as specified in the key.
+// GetByKeyOrError creates a new PersistResource to the target as specified in the key.
 // If this doesn't return an error, the PersistResource is ready to write requests to.
-func (t *LruPool) GetOrError(ctx context.Context, key interface{}) (pc *PersistResource, err error) {
+func (t *LruPool) GetByKeyOrError(ctx context.Context, key interface{}, req interface{}) (pc *PersistResource, err error) {
 
 	w := &wantResource{
+		req:   req,
 		key:   key,
 		ctx:   ctx,
 		ready: make(chan struct{}, 1),
@@ -150,14 +151,20 @@ func (t *LruPool) GetOrError(ctx context.Context, key interface{}) (pc *PersistR
 	}
 }
 
-// Get creates a new PersistResource to the target as specified in the key.
-//  If this doesn't return an error, the PersistResource is ready to write requests to.
-func (t *LruPool) Get(ctx context.Context, key interface{}) (v interface{}, put context.CancelFunc) {
-	pc, _ := t.GetOrError(ctx, key)
+// GetByKey creates a new PersistResource to the target as specified in the key.
+// If this doesn't return an error, the PersistResource is ready to write requests to.
+func (t *LruPool) GetByKey(ctx context.Context, key interface{}, req interface{}) (v interface{}, put context.CancelFunc) {
+	pc, _ := t.GetByKeyOrError(ctx, key, req)
 	put = func() {
 		pc.Put()
 	}
 	return pc.Get(), put
+}
+
+// Get creates a new PersistResource to the target as specified in the key.
+// If this doesn't return an error, the PersistResource is ready to write requests to.
+func (t *LruPool) Get(ctx context.Context, req interface{}) (v interface{}, put context.CancelFunc) {
+	return t.GetByKey(ctx, req, req)
 }
 
 func (t *LruPool) Put(presource *PersistResource) {
@@ -418,7 +425,8 @@ func (t *LruPool) queueForDial(w *wantResource) {
 // If the dial is cancelled or unsuccessful, dialResourceFor decrements t.connCount[w.cm.key()].
 func (t *LruPool) dialResourceFor(w *wantResource) {
 
-	pc, err := t.buildResource(w.ctx, w.key)
+	pc, err := t.buildResource(w.ctx, w.key, w.req)
+	w.err = err
 	delivered := w.tryDeliver(pc, err)
 	if err == nil && (!delivered) {
 		// presource was not passed to w,
@@ -481,16 +489,16 @@ func (t *LruPool) decResourcesPerHost(key targetKey) {
 	}
 }
 
-func (t *LruPool) buildResource(ctx context.Context, key interface{}) (presource *PersistResource, err error) {
+func (t *LruPool) buildResource(ctx context.Context, key interface{}, req interface{}) (presource *PersistResource, err error) {
 	presource = &PersistResource{
 		t:        t,
 		cacheKey: key,
 	}
 
 	if t.New != nil {
-		presource.object = t.New(ctx)
+		presource.object, err = t.New(ctx, req)
 	}
-	return presource, nil
+	return presource, err
 }
 func (t *LruPool) setReqCanceler(key cancelKey, fn func(error)) {
 	t.reqMu.Lock()

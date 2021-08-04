@@ -15,8 +15,8 @@ import (
 // These three options are racing against each other and use
 // wantResource to coordinate and agree about the winning outcome.
 type wantResource struct {
-	cm    interface{}
-	key   interface{}     // cm.key()
+	req interface{}
+	key interface{}     // cm.key()
 	ctx   context.Context // context for New
 	ready chan struct{}   // closed when pr, err pair is delivered
 
