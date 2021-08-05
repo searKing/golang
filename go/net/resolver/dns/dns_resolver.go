@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	rand_ "github.com/searKing/golang/go/math/rand"
 	"github.com/searKing/golang/go/net/resolver"
 	time_ "github.com/searKing/golang/go/time"
 )
@@ -79,16 +80,21 @@ func NewBuilder() resolver.Builder {
 type dnsBuilder struct{}
 
 // Build creates and starts a DNS resolver that watches the name resolution of the target.
-func (b *dnsBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+func (b *dnsBuilder) Build(target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+	var opt resolver.Build
+	opt.ApplyOptions(opts...)
 	host, port, err := parseTarget(target.Endpoint, defaultPort)
 	if err != nil {
 		return nil, err
 	}
+	cc := opt.ClientConn
 
 	// IP address.
 	if ipAddr, ok := formatIP(host); ok {
 		addr := []resolver.Address{{Addr: ipAddr + ":" + port}}
-		_ = cc.UpdateState(resolver.State{Addresses: addr})
+		if cc != nil {
+			_ = cc.UpdateState(resolver.State{Addresses: addr})
+		}
 		return deadResolver{
 			addrs: addr,
 		}, nil
@@ -132,9 +138,16 @@ type netResolver interface {
 
 // deadResolver is a resolver that does nothing.
 type deadResolver struct {
-	addrs []resolver.Address
+	picker resolver.Picker
+	addrs  []resolver.Address
 }
 
+func (d deadResolver) ResolveOneAddr(ctx context.Context, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error) {
+	if len(d.addrs) == 0 {
+		return resolver.Address{}, fmt.Errorf("resolve target, but no addr")
+	}
+	return d.addrs[rand_.Intn(len(d.addrs))], nil
+}
 func (d deadResolver) ResolveAddr(ctx context.Context, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) {
 	return d.addrs, nil
 }
@@ -159,6 +172,18 @@ type dnsResolver struct {
 	// will warns lookup (READ the lookup function pointers) inside watcher() goroutine
 	// has data race with replaceNetFunc (WRITE the lookup function pointers).
 	wg sync.WaitGroup
+}
+
+func (d *dnsResolver) ResolveOneAddr(ctx context.Context, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error) {
+	d.ResolveNow(ctx)
+	addrs, err := d.lookupHost()
+	if err != nil {
+		return resolver.Address{}, err
+	}
+	if len(addrs) == 0 {
+		return resolver.Address{}, fmt.Errorf("resolve target, but no addr")
+	}
+	return addrs[rand_.Intn(len(addrs))], nil
 }
 
 func (d *dnsResolver) ResolveAddr(ctx context.Context, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) {
@@ -186,11 +211,13 @@ func (d *dnsResolver) watcher() {
 	backoff := time_.NewGrpcExponentialBackOff()
 	for {
 		addrs, err := d.lookupHost()
-		if err != nil {
-			// Report error to the underlying grpc.ClientConn.
-			d.cc.ReportError(err)
-		} else {
-			err = d.cc.UpdateState(resolver.State{Addresses: addrs})
+		if d.cc != nil {
+			if err != nil {
+				// Report error to the underlying grpc.ClientConn.
+				d.cc.ReportError(err)
+			} else {
+				err = d.cc.UpdateState(resolver.State{Addresses: addrs})
+			}
 		}
 
 		var timer *time.Timer

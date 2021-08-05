@@ -13,33 +13,12 @@ import (
 // problem with the provided name resolver data.
 var ErrBadResolverState = errors.New("bad resolver state")
 
-// Target represents a target for gRPC, as specified in:
-// https://github.com/grpc/grpc/blob/master/doc/naming.md.
-// It is parsed from the target string that gets passed into Dial or DialContext by the user. And
-// grpc passes it to the resolver and the balancer.
-//
-// If the target follows the naming spec, and the parsed scheme is registered with grpc, we will
-// parse the target string according to the spec. e.g. "dns://some_authority/foo.bar" will be parsed
-// into &Target{Scheme: "dns", Authority: "some_authority", Endpoint: "foo.bar"}
-//
-// If the target does not contain a scheme, we will apply the default scheme, and set the Target to
-// be the full target string. e.g. "foo.bar" will be parsed into
-// &Target{Scheme: resolver.GetDefaultScheme(), Endpoint: "foo.bar"}.
-//
-// If the parsed scheme is not registered (i.e. no corresponding resolver available to resolve the
-// endpoint), we set the Scheme to be the default scheme, and set the Endpoint to be the full target
-// string. e.g. target string "unknown_scheme://authority/endpoint" will be parsed into
-// &Target{Scheme: resolver.GetDefaultScheme(), Endpoint: "unknown_scheme://authority/endpoint"}.
-type Target struct {
-	Scheme    string
-	Authority string
-	Endpoint  string
-}
-
 // Build includes additional information for the builder to create
 // the resolver.
 //go:generate go-option -type "Build"
-type Build struct{}
+type Build struct {
+	ClientConn ClientConn
+}
 
 // Builder is the interface that must be implemented by a database
 // driver.
@@ -52,29 +31,44 @@ type Builder interface {
 	//
 	// gRPC dial calls Build synchronously, and fails if the returned error is
 	// not nil.
-	Build(target Target, cc ClientConn, opts ...BuildOption) (Resolver, error)
+	Build(target Target, opts ...BuildOption) (Resolver, error)
 
 	// Scheme returns the scheme supported by this resolver.
 	// Scheme is defined at https://github.com/grpc/grpc/blob/master/doc/naming.md.
 	Scheme() string
 }
 
-// ResolveAddr includes additional information for ResolveAddr.
-//go:generate go-option -type "ResolveAddr"
-type ResolveAddr struct{}
+// resolveOneAddr includes additional information for ResolveOneAddr.
+//go:generate go-option -type "resolveOneAddr"
+type resolveOneAddr struct {
+	Picker []PickOption
+}
 
-// ResolveNow includes additional information for ResolveNow.
-//go:generate go-option -type "ResolveNow"
-type ResolveNow struct{}
+// resolveAddr includes additional information for ResolveAddr.
+//go:generate go-option -type "resolveAddr"
+type resolveAddr struct{}
+
+// resolveNow includes additional information for ResolveNow.
+//go:generate go-option -type "resolveNow"
+type resolveNow struct{}
 
 // Resolver watches for the updates on the specified target.
 // Updates include address updates and service config updates.
 type Resolver interface {
+	// ResolveOneAddr will be called to try to resolve the target name directly.
+	// resolver can not ignore this if it's not necessary.
+	// ResolveOneAddr may trigger and wait for ResolveNow if no addr in resolver cache
+	ResolveOneAddr(ctx context.Context, opts ...ResolveOneAddrOption) (Address, error)
+	// ResolveAddr will be called to try to resolve the target name directly.
+	// resolver can not ignore this if it's not necessary.
+	// ResolveAddr may trigger and wait for ResolveNow if no addr in resolver cache
 	ResolveAddr(ctx context.Context, opts ...ResolveAddrOption) ([]Address, error)
 	// ResolveNow will be called to try to resolve the target name
 	// again. It's just a hint, resolver can ignore this if it's not necessary.
 	//
 	// It could be called multiple times concurrently.
+	// It may trigger ClientConn to UpdateState or ReportError if failed.
+	// It may update cache used by ResolveOneAddr or ResolveAddr.
 	ResolveNow(ctx context.Context, opts ...ResolveNowOption)
 	// Close closes the resolver.
 	Close()

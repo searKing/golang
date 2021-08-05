@@ -18,10 +18,12 @@ func init() {
 
 type passthroughBuilder struct{}
 
-func (*passthroughBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+func (*passthroughBuilder) Build(target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+	var opt resolver.Build
+	opt.ApplyOptions(opts...)
 	r := &passthroughResolver{
 		target: target,
-		cc:     cc,
+		cc:     opt.ClientConn,
 	}
 	r.start()
 	return r, nil
@@ -36,6 +38,10 @@ type passthroughResolver struct {
 	cc     resolver.ClientConn
 }
 
+func (r *passthroughResolver) ResolveOneAddr(ctx context.Context, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error) {
+	return resolver.Address{Addr: r.target.Endpoint}, nil
+}
+
 func (r *passthroughResolver) ResolveAddr(ctx context.Context, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) {
 	return []resolver.Address{{Addr: r.target.Endpoint}}, nil
 }
@@ -43,7 +49,9 @@ func (r *passthroughResolver) ResolveAddr(ctx context.Context, opts ...resolver.
 func (r *passthroughResolver) ResolveNow(ctx context.Context, opts ...resolver.ResolveNowOption) {}
 
 func (r *passthroughResolver) start() {
-	_ = r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint}}})
+	if r.cc != nil {
+		_ = r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint}}})
+	}
 }
 
 func (*passthroughResolver) Close() {}

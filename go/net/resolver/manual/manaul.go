@@ -16,7 +16,10 @@ func NewBuilderWithScheme(scheme string) *Resolver {
 		ResolveNowCallback: func(ctx context.Context, opts ...resolver.ResolveNowOption) {},
 		scheme:             scheme,
 	}
-	r.ResolveAddrCallback = func(ctx context.Context, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) { return r.Addresses, nil }
+	r.ResolveOneAddrCallback = func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error) {
+		return resolver.PickFirst(ctx, addrs)
+	}
+	r.ResolveAddrCallback = func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) { return addrs, nil }
 
 	return r
 }
@@ -24,7 +27,8 @@ func NewBuilderWithScheme(scheme string) *Resolver {
 // Resolver is also a resolver builder.
 // It's build() function always returns itself.
 type Resolver struct {
-	ResolveAddrCallback func(ctx context.Context, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error)
+	ResolveOneAddrCallback func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error)
+	ResolveAddrCallback    func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error)
 	// ResolveNowCallback is called when the ResolveNow method is called on the
 	// resolver.  Must not be nil.  Must not be changed after the resolver may
 	// be built.
@@ -57,6 +61,11 @@ func (r *Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts ..
 // Scheme returns the test scheme.
 func (r *Resolver) Scheme() string {
 	return r.scheme
+}
+
+// ResolveOneAddr is a noop for Resolver.
+func (r *Resolver) ResolveOneAddr(ctx context.Context, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error) {
+	return r.Addresses[0], nil
 }
 
 // ResolveAddr is a noop for Resolver.
