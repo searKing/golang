@@ -1,6 +1,7 @@
 // Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+// borrowed from https://github.com/golang/go/blob/master/src/net/http/transport.go
 
 package sync
 
@@ -69,7 +70,7 @@ type LruPool struct {
 	MaxIdleResourcesPerBucket int
 
 	// MaxResourcesPerBucket optionally limits the total number of
-	// resources per bucket, including resources in the dialing,
+	// resources per bucket, including resources in the newResource,
 	// active, and idle states. On limit violation, news will block.
 	//
 	// Zero means no limit.
@@ -181,7 +182,7 @@ func (t *LruPool) tryPutIdleResource(presource *PersistResource) error {
 	defer t.idleMu.Unlock()
 
 	// Deliver presource to goroutine waiting for idle resource, if any.
-	// (They may be actively dialing, but this resource is ready first.
+	// (They may be actively newResource, but this resource is ready first.
 	// Chrome calls this socket late binding.
 	// See syncs://www.chromium.org/developers/design-documents/network-stack#TOC-Resourceection-Management.)
 	key := presource.cacheKey
@@ -365,7 +366,7 @@ func (t *LruPool) removeIdleResourceLocked(presource *PersistResource) bool {
 	return removed
 }
 
-// queueForNewResource queues w to wait for permission to begin dialing.
+// queueForNewResource queues w to wait for permission to begin newResource.
 // Once w receives permission to dial, it will do so in a separate goroutine.
 func (t *LruPool) queueForNewResource(w *wantResource) {
 	if t.MaxResourcesPerBucket <= 0 {
