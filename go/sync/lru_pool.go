@@ -12,35 +12,34 @@ import (
 	"time"
 )
 
-var errRequestCanceledResource = errors.New("sync: request canceled while waiting for resource")
-
-// errRequestCanceled is a copy of sync's errRequestCanceled because it's not
-// exported. At least they'll be DeepEqual for h1-vs-h2 comparisons tests.
-var errRequestCanceled = errors.New("sync: request canceled")
-
 var (
 	errKeepAlivesDisabled  = errors.New("sync: putIdleResource: keep alives disabled")
 	errResourceBroken      = errors.New("sync: putIdleResource: resource is in bad state")
 	errCloseIdle           = errors.New("sync: putIdleResource: CloseIdleResources was called")
 	errTooManyIdle         = errors.New("sync: putIdleResource: too many idle resources")
-	errTooManyIdleResource = errors.New("sync: putIdleResource: too many idle resources for host")
+	errTooManyIdleResource = errors.New("sync: putIdleResource: too many idle resources for bucket")
+	errCloseIdleResources  = errors.New("sync: CloseIdleResources called")
 
 	errIdleResourceTimeout = errors.New("sync: idle resource timeout")
 )
 
-// DefaultMaxIdleResourcesPerHost is the default value of LruPool's
-// MaxIdleResourcesPerHost.
-const DefaultMaxIdleResourcesPerHost = 2
-
-// A cancelKey is the key of the reqCanceler map.
-// We wrap the *Request in this type since we want to use the original request,
-// not any transient one created by roundTrip.
-type cancelKey struct {
-	req interface{}
-}
+// DefaultMaxIdleResourcesPerBucket is the default value of LruPool's
+// MaxIdleResourcesPerBucket.
+const DefaultMaxIdleResourcesPerBucket = 2
 
 type targetKey interface{}
 
+// LruPool is an implementation of sync.Pool with LRU.
+//
+// By default, LruPool caches resources for future re-use.
+// This may leave many open resources when accessing many buckets.
+// This behavior can be managed using LruPool's CloseIdleResources method
+// and the MaxIdleResourcesPerBucket and DisableKeepAlives fields.
+//
+// LruPools should be reused instead of created as needed.
+// LruPools are safe for concurrent use by multiple goroutines.
+//
+// A LruPool is a low-level primitive for making resources.
 type LruPool struct {
 	// New optionally specifies a function to generate
 	// a value when Get would otherwise return nil.
@@ -48,38 +47,33 @@ type LruPool struct {
 	New func(ctx context.Context, req interface{}) (resp interface{}, err error)
 
 	idleMu           sync.Mutex
-	closeIdle        bool                             // user has requested to close all idle conns
+	closeIdle        bool                             // user has requested to close all idle resources
 	idleResource     map[targetKey][]*PersistResource // most recently used at end
 	idleResourceWait map[targetKey]wantResourceQueue  // waiting getResources
-	idleLRU          connLRU
-	reqMu            sync.Mutex
-	reqCanceler      map[cancelKey]func(error)
+	idleLRU          resourceLRU
 
-	connsPerHostMu   sync.Mutex
-	connsPerHost     map[targetKey]int
-	connsPerHostWait map[targetKey]wantResourceQueue // waiting getResources
-	// DisableKeepAlives, if true, disables HTTP keep-alives and
-	// will only use the resource to the server for a single
-	// HTTP request.
-	//
-	// This is unrelated to the similarly named TCP keep-alives.
+	resourcesPerBucketMu   sync.Mutex
+	resourcesPerBucket     map[targetKey]int
+	resourcesPerBucketWait map[targetKey]wantResourceQueue // waiting getResources
+	// DisableKeepAlives, if true, disables keep-alives and
+	// will only use the resource to the server for a single request.
 	DisableKeepAlives bool
 
 	// MaxIdleResources controls the maximum number of idle (keep-alive)
-	// resources across all hosts. Zero means no limit.
+	// resources across all buckets. Zero means no limit.
 	MaxIdleResources int
 
-	// MaxIdleResourcesPerHost, if non-zero, controls the maximum idle
-	// (keep-alive) resources to keep per-host. If zero,
-	// DefaultMaxIdleResourcesPerHost is used.
-	MaxIdleResourcesPerHost int
+	// MaxIdleResourcesPerBucket, if non-zero, controls the maximum idle
+	// (keep-alive) resources to keep per-bucket. If zero,
+	// DefaultMaxIdleResourcesPerBucket is used.
+	MaxIdleResourcesPerBucket int
 
-	// MaxResourcesPerHost optionally limits the total number of
-	// resources per host, including resources in the dialing,
-	// active, and idle states. On limit violation, dials will block.
+	// MaxResourcesPerBucket optionally limits the total number of
+	// resources per bucket, including resources in the dialing,
+	// active, and idle states. On limit violation, news will block.
 	//
 	// Zero means no limit.
-	MaxResourcesPerHost int
+	MaxResourcesPerBucket int
 
 	// IdleResourceTimeout is the maximum amount of time an idle
 	// (keep-alive) resource will remain idle before closing
@@ -103,23 +97,15 @@ func (t *LruPool) GetByKeyOrError(ctx context.Context, key interface{}, req inte
 			w.cancel(t, err)
 		}
 	}()
-	cancelKey := cancelKey{req: key}
 
 	// Queue for idle resource.
 	if delivered := t.queueForIdleResource(w); delivered {
 		pc := w.pr
-		// set request canceler to some non-nil function, so we
-		// can detect whether it was cleared between now and when
-		// we enter resolving
-		t.setReqCanceler(cancelKey, func(error) {})
 		return pc, nil
 	}
 
-	cancelc := make(chan error, 1)
-	t.setReqCanceler(cancelKey, func(err error) { cancelc <- err })
-
-	// Queue for permission to dial.
-	t.queueForDial(w)
+	// Queue for permission to new resource.
+	t.queueForNewResource(w)
 
 	// Wait for completion or cancellation.
 	select {
@@ -131,11 +117,6 @@ func (t *LruPool) GetByKeyOrError(ctx context.Context, key interface{}, req inte
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
-			case err := <-cancelc:
-				if err == errRequestCanceled {
-					err = errRequestCanceledResource
-				}
-				return nil, err
 			default:
 				// return below
 			}
@@ -143,11 +124,6 @@ func (t *LruPool) GetByKeyOrError(ctx context.Context, key interface{}, req inte
 		return w.pr, w.err
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case err := <-cancelc:
-		if err == errRequestCanceled {
-			err = errRequestCanceledResource
-		}
-		return nil, err
 	}
 }
 
@@ -180,11 +156,11 @@ func (t *LruPool) putOrCloseIdleResource(presource *PersistResource) {
 	}
 }
 
-func (t *LruPool) maxIdleResourcesPerKey() int {
-	if v := t.MaxIdleResourcesPerHost; v != 0 {
+func (t *LruPool) maxIdleResourcesPerBucket() int {
+	if v := t.MaxIdleResourcesPerBucket; v != 0 {
 		return v
 	}
-	return DefaultMaxIdleResourcesPerHost
+	return DefaultMaxIdleResourcesPerBucket
 }
 
 // tryPutIdleResource adds presource to the list of idle persistent resources awaiting
@@ -193,7 +169,7 @@ func (t *LruPool) maxIdleResourcesPerKey() int {
 // an error explaining why it wasn't registered.
 // tryPutIdleResource does not close presource. Use putOrCloseIdleResource instead for that.
 func (t *LruPool) tryPutIdleResource(presource *PersistResource) error {
-	if t.DisableKeepAlives || t.MaxIdleResourcesPerHost < 0 {
+	if t.DisableKeepAlives || t.MaxIdleResourcesPerBucket < 0 {
 		return errKeepAlivesDisabled
 	}
 	if presource.isBroken() {
@@ -205,13 +181,12 @@ func (t *LruPool) tryPutIdleResource(presource *PersistResource) error {
 	defer t.idleMu.Unlock()
 
 	// Deliver presource to goroutine waiting for idle resource, if any.
-	// (They may be actively dialing, but this conn is ready first.
+	// (They may be actively dialing, but this resource is ready first.
 	// Chrome calls this socket late binding.
 	// See syncs://www.chromium.org/developers/design-documents/network-stack#TOC-Resourceection-Management.)
 	key := presource.cacheKey
 	if q, ok := t.idleResourceWait[key]; ok {
 		done := false
-		// HTTP/1.
 		// Loop over the waiting list until we find a w that isn't done already, and hand it presource.
 		for q.len() > 0 {
 			w := q.popFront()
@@ -237,7 +212,7 @@ func (t *LruPool) tryPutIdleResource(presource *PersistResource) error {
 		t.idleResource = make(map[targetKey][]*PersistResource)
 	}
 	idles := t.idleResource[key]
-	if len(idles) >= t.maxIdleResourcesPerKey() {
+	if len(idles) >= t.maxIdleResourcesPerBucket() {
 		return errTooManyIdleResource
 	}
 	for _, exist := range idles {
@@ -289,7 +264,7 @@ func (t *LruPool) queueForIdleResource(w *wantResource) (delivered bool) {
 
 	// If IdleResourceTimeout is set, calculate the oldest
 	// PersistResource.idleAt time we're willing to use a cached idle
-	// conn.
+	// resource.
 	var oldTime time.Time
 	if t.IdleResourceTimeout > 0 {
 		oldTime = time.Now().Add(-t.IdleResourceTimeout)
@@ -314,7 +289,7 @@ func (t *LruPool) queueForIdleResource(w *wantResource) (delivered bool) {
 			}
 			if presource.isBroken() || tooOld {
 				// If either PersistResource.readLoop has marked the resource
-				// broken, but LruPool.removeIdleResource has not yet removed it
+				// broken, but LruPool.RemoveIdleResource has not yet removed it
 				// from the idle list, or if this PersistResource is too old (it was
 				// idle too long), then ignore it and look for another. In both
 				// cases it's already in the process of being closed.
@@ -323,7 +298,7 @@ func (t *LruPool) queueForIdleResource(w *wantResource) (delivered bool) {
 			}
 			delivered = w.tryDeliver(presource, nil)
 			if delivered {
-				// HTTP/1: only one client can use presource.
+				// only one client can use presource.
 				// Remove it from the list.
 				t.idleLRU.remove(presource)
 				list = list[:len(list)-1]
@@ -351,8 +326,8 @@ func (t *LruPool) queueForIdleResource(w *wantResource) (delivered bool) {
 	return false
 }
 
-// removeIdleResource marks presource as dead.
-func (t *LruPool) removeIdleResource(presource *PersistResource) bool {
+// RemoveIdleResource marks presource as dead.
+func (t *LruPool) RemoveIdleResource(presource *PersistResource) bool {
 	t.idleMu.Lock()
 	defer t.idleMu.Unlock()
 	return t.removeIdleResourceLocked(presource)
@@ -380,8 +355,7 @@ func (t *LruPool) removeIdleResourceLocked(presource *PersistResource) bool {
 			if v != presource {
 				continue
 			}
-			// Slide down, keeping most recently-used
-			// conns at the end.
+			// Slide down, keeping most recently-used resources at the end.
 			copy(presources[i:], presources[i+1:])
 			t.idleResource[key] = presources[:len(presources)-1]
 			removed = true
@@ -391,90 +365,89 @@ func (t *LruPool) removeIdleResourceLocked(presource *PersistResource) bool {
 	return removed
 }
 
-// queueForDial queues w to wait for permission to begin dialing.
+// queueForNewResource queues w to wait for permission to begin dialing.
 // Once w receives permission to dial, it will do so in a separate goroutine.
-func (t *LruPool) queueForDial(w *wantResource) {
-	if t.MaxResourcesPerHost <= 0 {
-		go t.dialResourceFor(w)
+func (t *LruPool) queueForNewResource(w *wantResource) {
+	if t.MaxResourcesPerBucket <= 0 {
+		go t.newResourceFor(w)
 		return
 	}
 
-	t.connsPerHostMu.Lock()
-	defer t.connsPerHostMu.Unlock()
+	t.resourcesPerBucketMu.Lock()
+	defer t.resourcesPerBucketMu.Unlock()
 
-	if n := t.connsPerHost[w.key]; n < t.MaxResourcesPerHost {
-		if t.connsPerHost == nil {
-			t.connsPerHost = make(map[targetKey]int)
+	if n := t.resourcesPerBucket[w.key]; n < t.MaxResourcesPerBucket {
+		if t.resourcesPerBucket == nil {
+			t.resourcesPerBucket = make(map[targetKey]int)
 		}
-		t.connsPerHost[w.key] = n + 1
-		go t.dialResourceFor(w)
+		t.resourcesPerBucket[w.key] = n + 1
+		go t.newResourceFor(w)
 		return
 	}
 
-	if t.connsPerHostWait == nil {
-		t.connsPerHostWait = make(map[targetKey]wantResourceQueue)
+	if t.resourcesPerBucketWait == nil {
+		t.resourcesPerBucketWait = make(map[targetKey]wantResourceQueue)
 	}
-	q := t.connsPerHostWait[w.key]
+	q := t.resourcesPerBucketWait[w.key]
 	q.cleanFront()
 	q.pushBack(w)
-	t.connsPerHostWait[w.key] = q
+	t.resourcesPerBucketWait[w.key] = q
 }
 
-// dialResourceFor dials on behalf of w and delivers the result to w.
-// dialResourceFor has received permission to dial w.cm and is counted in t.connCount[w.cm.key()].
-// If the dial is cancelled or unsuccessful, dialResourceFor decrements t.connCount[w.cm.key()].
-func (t *LruPool) dialResourceFor(w *wantResource) {
-
+// newResourceFor news on behalf of w and delivers the result to w.
+// newResourceFor has received permission to dial w.cm and is counted in t.resourceCount[w.cm.key()].
+// If the dial is cancelled or unsuccessful, newResourceFor decrements t.resourceCount[w.cm.key()].
+func (t *LruPool) newResourceFor(w *wantResource) {
 	pc, err := t.buildResource(w.ctx, w.key, w.req)
 	w.err = err
 	delivered := w.tryDeliver(pc, err)
 	if err == nil && (!delivered) {
 		// presource was not passed to w,
-		// or it is HTTP/2 and can be shared.
+		// or it can be shared.
 		// Add to the idle resource pool.
 		t.putOrCloseIdleResource(pc)
 	}
 	if err != nil {
-		t.decResourcesPerHost(w.key)
+		t.decResourcesPerBucket(w.key)
 	}
 }
 
-// decResourcesPerHost decrements the per-host resource count for key,
+// decResourcesPerBucket decrements the per-bucket resource count for key,
 // which may in turn give a different waiting goroutine permission to dial.
-func (t *LruPool) decResourcesPerHost(key targetKey) {
-	if t.MaxResourcesPerHost <= 0 {
+func (t *LruPool) decResourcesPerBucket(key targetKey) {
+	if t.MaxResourcesPerBucket <= 0 {
 		return
 	}
 
-	t.connsPerHostMu.Lock()
-	defer t.connsPerHostMu.Unlock()
-	n := t.connsPerHost[key]
+	t.resourcesPerBucketMu.Lock()
+	defer t.resourcesPerBucketMu.Unlock()
+	n := t.resourcesPerBucket[key]
 	if n == 0 {
 		// Shouldn't happen, but if it does, the counting is buggy and could
 		// easily lead to a silent deadlock, so report the problem loudly.
-		panic("sync: internal error: connCount underflow")
+		panic("sync: internal error: resourceCount underflow")
 	}
 
 	// Can we hand this count to a goroutine still waiting to dial?
 	// (Some goroutines on the wait list may have timed out or
 	// gotten a resource another way. If they're all gone,
 	// we don't want to kick off any spurious dial operations.)
-	if q := t.connsPerHostWait[key]; q.len() > 0 {
+	if q := t.resourcesPerBucketWait[key]; q.len() > 0 {
 		done := false
 		for q.len() > 0 {
 			w := q.popFront()
 			if w.waiting() {
-				go t.dialResourceFor(w)
+				go t.newResourceFor(w)
 				done = true
 				break
 			}
 		}
 		if q.len() == 0 {
-			delete(t.connsPerHostWait, key)
+			delete(t.resourcesPerBucketWait, key)
 		} else {
 			// q is a value (like a slice), so we have to store
 			// the updated q back into the map.
-			t.connsPerHostWait[key] = q
+			t.resourcesPerBucketWait[key] = q
 		}
 		if done {
 			return
@@ -483,9 +456,9 @@ func (t *LruPool) decResourcesPerHost(key targetKey) {
 
 	// Otherwise, decrement the recorded count.
 	if n--; n == 0 {
-		delete(t.connsPerHost, key)
+		delete(t.resourcesPerBucket, key)
 	} else {
-		t.connsPerHost[key] = n
+		t.resourcesPerBucket[key] = n
 	}
 }
 
@@ -500,36 +473,23 @@ func (t *LruPool) buildResource(ctx context.Context, key interface{}, req interf
 	}
 	return presource, err
 }
-func (t *LruPool) setReqCanceler(key cancelKey, fn func(error)) {
-	t.reqMu.Lock()
-	defer t.reqMu.Unlock()
-	if t.reqCanceler == nil {
-		t.reqCanceler = make(map[cancelKey]func(error))
-	}
-	if fn != nil {
-		t.reqCanceler[key] = fn
-	} else {
-		delete(t.reqCanceler, key)
-	}
-}
 
-// replaceReqCanceler replaces an existing cancel function. If there is no cancel function
-// for the request, we don't set the function and return false.
-// Since CancelRequest will clear the canceler, we can use the return value to detect if
-// the request was canceled since the last setReqCancel call.
-func (t *LruPool) replaceReqCanceler(key cancelKey, fn func(error)) bool {
-	t.reqMu.Lock()
-	defer t.reqMu.Unlock()
-	_, ok := t.reqCanceler[key]
-	if !ok {
-		return false
+// CloseIdleResources closes any connections which were previously
+// connected from previous requests but are now sitting idle in
+// a "keep-alive" state. It does not interrupt any connections currently
+// in use.
+func (t *LruPool) CloseIdleResources() {
+	t.idleMu.Lock()
+	m := t.idleResource
+	t.idleResource = nil
+	t.closeIdle = true // close newly idle connections
+	t.idleLRU = resourceLRU{}
+	t.idleMu.Unlock()
+	for _, conns := range m {
+		for _, pconn := range conns {
+			pconn.close(errCloseIdleResources)
+		}
 	}
-	if fn != nil {
-		t.reqCanceler[key] = fn
-	} else {
-		delete(t.reqCanceler, key)
-	}
-	return true
 }
 
 // PersistResource wraps a resource, usually a persistent one
@@ -544,9 +504,9 @@ type PersistResource struct {
 	idleTimer *time.Timer // holding an AfterFunc to close it
 
 	mu     sync.Mutex // guards following fields
-	closed error      // set non-nil when conn is closed, before closech is closed
+	closed error      // set non-nil when resource is closed, before closech is closed
 	broken bool       // an error has happened on this resource; marked broken so it's not reused.
-	reused bool       // whether conn has had successful request/response and is being reused.
+	reused bool       // whether resource has had successful request/response and is being reused.
 } // isBroken reports whether this resource is in a known broken state.
 
 func (pc *PersistResource) Get() interface{} {
@@ -578,7 +538,7 @@ func (pc *PersistResource) markReused() {
 	pc.mu.Unlock()
 }
 
-// close closes the underlying TCP resource and closes
+// close closes the underlying resource and closes
 // the pc.closech channel.
 //
 // The provided err is only for testing and debugging; in normal
@@ -596,7 +556,7 @@ func (pc *PersistResource) closeLocked(err error) {
 	pc.broken = true
 	if pc.closed == nil {
 		pc.closed = err
-		pc.t.decResourcesPerHost(pc.cacheKey)
+		pc.t.decResourcesPerBucket(pc.cacheKey)
 	}
 }
 
