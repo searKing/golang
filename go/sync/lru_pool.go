@@ -144,6 +144,16 @@ func (t *LruPool) GetByKey(ctx context.Context, key interface{}, req interface{}
 	return pc.Get(), put
 }
 
+// GetOrError creates a new PersistResource to the target as specified in the key.
+// If this doesn't return an error, the PersistResource is ready to write requests to.
+func (t *LruPool) GetOrError(ctx context.Context, req interface{}) (v interface{}, put context.CancelFunc, err error) {
+	pc, err := t.GetByKeyOrError(ctx, req, req)
+	put = func() {
+		pc.Put()
+	}
+	return pc.Get(), put, err
+}
+
 // Get creates a new PersistResource to the target as specified in the key.
 // If this doesn't return an error, the PersistResource is ready to write requests to.
 func (t *LruPool) Get(ctx context.Context, req interface{}) (v interface{}, put context.CancelFunc) {
