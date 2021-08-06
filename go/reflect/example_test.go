@@ -32,3 +32,22 @@ func TestGetppid(t *testing.T) {
 		t.Fatalf("Child process reports parent process id '%v', expected '%v'", childPpid, ourPid)
 	}
 }
+
+func TestTruncated(t *testing.T) {
+	var info =struct {
+		Name         string
+		Desc []byte
+	}{
+		Name:         "ALPHA",
+		Desc: []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+	}
+	Truncate(&info, 3)
+	fmt.Printf("info truncated\n")
+	fmt.Printf("info.Name: %s\n", info.Name)
+	fmt.Printf("info.Desc: %s\n", info.Desc)
+	// Output:
+	// info truncated
+	// info.Name: size: 5, string: ALP
+	// info.Desc: size: 26, bytes: ABC
+
+}
