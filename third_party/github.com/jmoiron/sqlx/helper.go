@@ -71,7 +71,7 @@ func JoinNamedValues(cols ...string) string {
 	return JoinNamedTableValues("", cols...)
 }
 
-// JoinNamedColumnsAndValues concatenates the elements of values to value1=:value1, value2=:value2 ...
+// JoinNamedColumnsValues concatenates the elements of values to value1=:value1, value2=:value2 ...
 // Deprecated: Use NamedUpdateArguments instead.
 func JoinNamedColumnsValues(cols ...string) string {
 	return JoinNamedTableColumnsValues("", cols...)

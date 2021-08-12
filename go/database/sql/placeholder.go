@@ -67,7 +67,7 @@ func TableValues(cols ...string) []string {
 	return namedCols
 }
 
-// ColumnsValues returns the []string{table.value1=:value1, table.value2=:value2 ...}
+// TableColumnsValues returns the []string{table.value1=:value1, table.value2=:value2 ...}
 // query := ColumnsValues("table", "foo", "bar")
 // // []string{"table.foo=?", "table.bar=?"}
 func TableColumnsValues(cmp string, table string, cols ...string) []string {
