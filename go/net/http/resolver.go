@@ -25,9 +25,9 @@ func RequestWithTarget(req *http.Request, target string) error {
 // ProxyFuncWithTargetOrDefault builds a proxy function from the given string, which should
 // represent a target that can be used as a proxy. It performs basic
 // sanitization of the Target and returns any error encountered.
-func ProxyFuncWithTargetOrDefault(target string, def func(req *http.Request) (*url.URL, error)) (func(req *http.Request) (*url.URL, error), error) {
+func ProxyFuncWithTargetOrDefault(target string, def func(req *http.Request) (*url.URL, error)) func(req *http.Request) (*url.URL, error) {
 	if target == "" {
-		return def, nil
+		return def
 	}
 	return func(req *http.Request) (*url.URL, error) {
 		reqURL := req.URL
@@ -38,17 +38,15 @@ func ProxyFuncWithTargetOrDefault(target string, def func(req *http.Request) (*u
 		if err != nil {
 			return nil, err
 		}
-		var proxy url.URL
-		if reqURL.Scheme == "https" {
-			proxy.Scheme = "https"
-			proxy.Host = address.Addr
-		} else if reqURL.Scheme == "http" {
-			proxy.Scheme = "http"
-			proxy.Host = address.Addr
-		} else {
-			return nil, nil
-		}
+		tgt := resolver.ParseTarget(target, false)
 
+		var proxy url.URL
+		if tgt.Scheme == "http" || tgt.Scheme == "https" {
+			proxy.Scheme = tgt.Scheme
+		} else {
+			proxy.Scheme = reqURL.Scheme
+		}
+		proxy.Host = address.Addr
 		return &proxy, nil
-	}, nil
+	}
 }

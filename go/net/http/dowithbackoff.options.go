@@ -8,14 +8,6 @@ import (
 	time_ "github.com/searKing/golang/go/time"
 )
 
-// WithDoWithBackoffOptionClientInterceptor returns a DoWithBackoffOption that specifies the interceptor for
-// http clients.
-func WithDoWithBackoffOptionClientInterceptor(f ClientInterceptor) DoWithBackoffOption {
-	return DoWithBackoffOptionFunc(func(o *doWithBackoff) {
-		o.ClientInterceptor = f
-	})
-}
-
 // WithDoWithBackoffOptionChainUnaryInterceptor returns a DoWithBackoffOption that specifies the chained
 // interceptor for http clients. The first interceptor will be the outer most,
 // while the last interceptor will be the inner most wrapper around the real call.

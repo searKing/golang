@@ -11,11 +11,13 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type Client struct {
 	http.Client
-	Target string // resolver.Target, will replace Host in url.Url
+	target        string // resolver.Target, will replace Host in url.Url
+	targetAsProxy bool   // resolve target to proxy
 }
 
 // Use adds middleware handlers to the transport.
@@ -36,8 +38,22 @@ func (c *Client) Use(h ...RoundTripHandler) *Client {
 // in places where url is shadowed for godoc. See https://golang.org/cl/49930.
 var parseURL = url.Parse
 
-func NewClient(u, target string) (*Client, error) {
-	tr := http.DefaultTransport
+func NewClient(u, target string, targetProxy bool) (*Client, error) {
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	if len(target) > 0 && targetProxy {
+		tr.Proxy = ProxyFuncWithTargetOrDefault(target, http.ProxyFromEnvironment)
+	}
 	if len(u) > 0 {
 		urlParsed, err := parseURL(u)
 		if err != nil {
@@ -56,23 +72,25 @@ func NewClient(u, target string) (*Client, error) {
 	client := http.Client{Transport: tr}
 	return &Client{
 		Client: client,
-		Target: target,
+		target: target,
 	}, nil
 }
 
 // NewClientWithTarget returns a Client with http.Client and resolver.Target
-func NewClientWithTarget(target string) (*Client, error) {
-	return NewClient("", target)
+func NewClientWithTarget(target string, targetAsProxy bool) (*Client, error) {
+	return NewClient("", target, targetAsProxy)
 }
 
 func NewClientWithUnixDisableCompression(u string) (*Client, error) {
-	return NewClient(u, "")
+	return NewClient(u, "", false)
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	err := RequestWithTarget(req, c.Target)
-	if err != nil {
-		return nil, err
+	if !c.targetAsProxy {
+		err := RequestWithTarget(req, c.target)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return c.Client.Do(req)
 }

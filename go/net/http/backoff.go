@@ -34,7 +34,7 @@ var (
 )
 
 // RetryAfter tries to parse Retry-After response header when a http.StatusTooManyRequests
-// (HTTP Code 429) is found in the resp parameter. Hence it will return the number of
+// (HTTP Code 429) is found in the resp parameter. Hence, it will return the number of
 // seconds the server states it may be ready to process more requests from this client.
 // Don't retry if the error was due to too many redirects.
 // Don't retry if the error was due to an invalid protocol scheme.
@@ -161,22 +161,26 @@ type ClientInterceptor func(req *http.Request, retry int, invoker ClientInvoker,
 
 type RetryAfterHandler func(resp *http.Response, err error, defaultBackoff time.Duration) (backoff time.Duration, retry bool)
 
-// Do sends an HTTP request and returns an HTTP response, following
+// DoRetryHandler send an HTTP request with retry seq and returns an HTTP response, following
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
-func Do(req *http.Request) (*http.Response, error) {
+type DoRetryHandler = ClientInvoker
+
+var DefaultDoRetryHandler = func(req *http.Request, retry int) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
 //go:generate go-option -type "doWithBackoff"
 type doWithBackoff struct {
-	ClientInterceptor        ClientInterceptor
+	DoHandler                DoRetryHandler
+	clientInterceptor        ClientInterceptor
 	ChainClientInterceptors  []ClientInterceptor
 	RetryAfter               RetryAfterHandler
 	ExponentialBackOffOption []time_.ExponentialBackOffOption
 }
 
 func (o *doWithBackoff) SetDefault() {
+	o.DoHandler = DefaultDoRetryHandler
 	o.RetryAfter = RetryAfter
 }
 
@@ -191,12 +195,15 @@ func getClientInvoker(interceptors []ClientInterceptor, curr int, finalInvoker C
 }
 
 func (o *doWithBackoff) Complete() {
+	if o.DoHandler == nil {
+		o.DoHandler = DefaultDoRetryHandler
+	}
 	interceptors := o.ChainClientInterceptors
 	o.ChainClientInterceptors = nil
 	// Prepend o.ClientInterceptor to the chaining interceptors if it exists, since ClientInterceptor will
 	// be executed before any other chained interceptors.
-	if o.ClientInterceptor != nil {
-		interceptors = append([]ClientInterceptor{o.ClientInterceptor}, interceptors...)
+	if o.clientInterceptor != nil {
+		interceptors = append([]ClientInterceptor{o.clientInterceptor}, interceptors...)
 	}
 	var chainedInt ClientInterceptor
 	if len(interceptors) == 0 {
@@ -208,7 +215,7 @@ func (o *doWithBackoff) Complete() {
 			return interceptors[0](req, retry, getClientInvoker(interceptors, 0, invoker), opts...)
 		}
 	}
-	o.ClientInterceptor = chainedInt
+	o.clientInterceptor = chainedInt
 }
 
 // DoWithBackoff will retry by exponential backoff if failed.
@@ -236,13 +243,11 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 			}
 			httpReq.Body = newBody
 		}
-		var do = func(req *http.Request, retry int) (*http.Response, error) {
-			return Do(req)
-		}
+		var do = opt.DoHandler
 		httpDo := do
-		if opt.ClientInterceptor != nil {
+		if opt.clientInterceptor != nil {
 			httpDo = func(req *http.Request, retry int) (*http.Response, error) {
-				return opt.ClientInterceptor(req, retry, do, opts...)
+				return opt.clientInterceptor(req, retry, do, opts...)
 			}
 		}
 		resp, err := httpDo(httpReq, retries)
@@ -289,6 +294,35 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 	}
 }
 
+func HeadWithBackoff(url string, opts ...DoWithBackoffOption) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodHead, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return DoWithBackoff(req, opts...)
+}
+
+func GetWithBackoff(url string, opts ...DoWithBackoffOption) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return DoWithBackoff(req, opts...)
+}
+
+func PostWithBackoff(url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return DoWithBackoff(req, opts...)
+}
+
+func PostFormWithBackoff(url string, data url.Values, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
+	return PostWithBackoff(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()), opts...)
+}
+
 // DoJson the same as HttpDo, but bind with json
 func DoJson(httpReq *http.Request, req, resp interface{}) error {
 	if req != nil {
@@ -301,7 +335,7 @@ func DoJson(httpReq *http.Request, req, resp interface{}) error {
 		ReplaceHttpRequestBody(httpReq, reqBody)
 	}
 
-	httpResp, err := Do(httpReq)
+	httpResp, err := DefaultDoRetryHandler(httpReq, 0)
 	if err != nil {
 		return err
 	}
