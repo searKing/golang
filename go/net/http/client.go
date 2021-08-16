@@ -15,9 +15,10 @@ import (
 
 type Client struct {
 	http.Client
-	Target string
+	Target string // resolver.Target, will replace Host in url.Url
 }
 
+// Use adds middleware handlers to the transport.
 func (c *Client) Use(h ...RoundTripHandler) *Client {
 	_, ok := c.Transport.(*Transport)
 	if !ok {
@@ -35,23 +36,37 @@ func (c *Client) Use(h ...RoundTripHandler) *Client {
 // in places where url is shadowed for godoc. See https://golang.org/cl/49930.
 var parseURL = url.Parse
 
-func NewClient(u string) (*Client, error) {
-	urlParsed, err := parseURL(u)
-	if err != nil {
-		return nil, err
-	}
-	hostname := urlParsed.Hostname()
+func NewClient(u, target string) (*Client, error) {
 	tr := http.DefaultTransport
-	if strings.Index(hostname, "unix:") == 0 {
-		tr = &http.Transport{
-			DisableCompression: true,
-			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
-				return net.Dial("unix", urlParsed.Host)
-			},
+	if len(u) > 0 {
+		urlParsed, err := parseURL(u)
+		if err != nil {
+			return nil, err
+		}
+		hostname := urlParsed.Hostname()
+		if strings.Index(hostname, "unix:") == 0 {
+			tr = &http.Transport{
+				DisableCompression: true,
+				DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
+					return net.Dial("unix", urlParsed.Host)
+				},
+			}
 		}
 	}
 	client := http.Client{Transport: tr}
-	return &Client{Client: client}, nil
+	return &Client{
+		Client: client,
+		Target: target,
+	}, nil
+}
+
+// NewClientWithTarget returns a Client with http.Client and resolver.Target
+func NewClientWithTarget(target string) (*Client, error) {
+	return NewClient("", target)
+}
+
+func NewClientWithUnixDisableCompression(u string) (*Client, error) {
+	return NewClient(u, "")
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
@@ -92,7 +107,7 @@ func (c *Client) PostForm(url string, data url.Values) (resp *http.Response, err
 }
 
 func Head(url string) (resp *http.Response, err error) {
-	client, err := NewClient(url)
+	client, err := NewClientWithUnixDisableCompression(url)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +116,7 @@ func Head(url string) (resp *http.Response, err error) {
 }
 
 func Get(url string) (resp *http.Response, err error) {
-	client, err := NewClient(url)
+	client, err := NewClientWithUnixDisableCompression(url)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +124,7 @@ func Get(url string) (resp *http.Response, err error) {
 }
 
 func Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
-	client, err := NewClient(url)
+	client, err := NewClientWithUnixDisableCompression(url)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +132,7 @@ func Post(url, contentType string, body io.Reader) (resp *http.Response, err err
 }
 
 func PostForm(url string, data url.Values) (resp *http.Response, err error) {
-	client, err := NewClient(url)
+	client, err := NewClientWithUnixDisableCompression(url)
 	if err != nil {
 		return nil, err
 	}
