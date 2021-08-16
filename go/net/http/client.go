@@ -15,6 +15,7 @@ import (
 
 type Client struct {
 	http.Client
+	Target string
 }
 
 func (c *Client) Use(h ...RoundTripHandler) *Client {
@@ -34,23 +35,60 @@ func (c *Client) Use(h ...RoundTripHandler) *Client {
 // in places where url is shadowed for godoc. See https://golang.org/cl/49930.
 var parseURL = url.Parse
 
-func NewClient(u string) (*http.Client, error) {
-	url, err := parseURL(u)
+func NewClient(u string) (*Client, error) {
+	urlParsed, err := parseURL(u)
 	if err != nil {
 		return nil, err
 	}
-	hostname := url.Hostname()
-	if strings.Index(hostname, "unix:") != 0 {
-		return http.DefaultClient, nil
+	hostname := urlParsed.Hostname()
+	tr := http.DefaultTransport
+	if strings.Index(hostname, "unix:") == 0 {
+		tr = &http.Transport{
+			DisableCompression: true,
+			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
+				return net.Dial("unix", urlParsed.Host)
+			},
+		}
 	}
-	tr := &http.Transport{
-		DisableCompression: true,
-		DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
-			return net.Dial("unix", url.Host)
-		},
+	client := http.Client{Transport: tr}
+	return &Client{Client: client}, nil
+}
+
+func (c *Client) Do(req *http.Request) (*http.Response, error) {
+	err := RequestWithTarget(req, c.Target)
+	if err != nil {
+		return nil, err
 	}
-	client := &http.Client{Transport: tr}
-	return client, nil
+	return c.Client.Do(req)
+}
+
+func (c *Client) Head(url string) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodHead, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.Do(req)
+}
+
+func (c *Client) Get(url string) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.Do(req)
+}
+
+func (c *Client) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return c.Do(req)
+}
+
+func (c *Client) PostForm(url string, data url.Values) (resp *http.Response, err error) {
+	return c.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 }
 
 func Head(url string) (resp *http.Response, err error) {

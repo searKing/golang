@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-// Transport is an http.RoundTripper that makes OAuth 2.0 HTTP requests,
+// Transport is a http.RoundTripper that makes OAuth 2.0 HTTP requests,
 // wrapping a base RoundTripper and adding an Authorization header
 // with a token from the supplied Sources.
 //

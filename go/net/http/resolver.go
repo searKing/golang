@@ -11,6 +11,11 @@ import (
 )
 
 // RequestWithTarget reset Host in url.Url by resolver.Target
-func RequestWithTarget(req *http.Request, target string) {
-	url_.ResolveWithTarget(req.Context(), req.URL, target)
+func RequestWithTarget(req *http.Request, target string) error {
+	u2, err := url_.ResolveWithTarget(req.Context(), req.URL, target)
+	if err != nil {
+		return err
+	}
+	req.URL = u2
+	return nil
 }

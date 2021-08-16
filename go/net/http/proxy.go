@@ -56,12 +56,18 @@ func GetProxySchemeAndHost(r *http.Request, allowForwarded bool) (scheme, host s
 	return
 }
 
+// ResolveProxyUrl resolves a URI reference to a URI from
+// a URI u and origin [scheme,host] forwarded behind proxy in r.
+// ResolveProxyUrl always returns a new URL instance,
+// even if the returned URL is identical to either the
+// base or reference.
 func ResolveProxyUrl(u *url.URL, r *http.Request, allowForwarded bool) *url.URL {
 	if u == nil {
 		return nil
 	}
+	u2 := *u
 	scheme, host := GetProxySchemeAndHost(r, allowForwarded)
-	u.Scheme = scheme
-	u.Host = host
-	return u
+	u2.Scheme = scheme
+	u2.Host = host
+	return &u2
 }
