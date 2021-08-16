@@ -25,6 +25,12 @@ func WithDoWithBackoffOptionRetryAfter(f RetryAfterHandler) DoWithBackoffOption 
 	})
 }
 
+func WithDoWithBackoffOptionDoRetryHandler(f DoRetryHandler) DoWithBackoffOption {
+	return DoWithBackoffOptionFunc(func(o *doWithBackoff) {
+		o.DoRetryHandler = f
+	})
+}
+
 func WithDoWithBackoffOptionExponentialBackOffOption(opts ...time_.ExponentialBackOffOption) DoWithBackoffOption {
 	return DoWithBackoffOptionFunc(func(o *doWithBackoff) {
 		o.ExponentialBackOffOption = append(o.ExponentialBackOffOption, opts...)

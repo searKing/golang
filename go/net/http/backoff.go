@@ -172,15 +172,15 @@ var DefaultDoRetryHandler = func(req *http.Request, retry int) (*http.Response, 
 
 //go:generate go-option -type "doWithBackoff"
 type doWithBackoff struct {
-	DoHandler                DoRetryHandler
-	clientInterceptor        ClientInterceptor
+	DoRetryHandler    DoRetryHandler
+	clientInterceptor ClientInterceptor
 	ChainClientInterceptors  []ClientInterceptor
 	RetryAfter               RetryAfterHandler
 	ExponentialBackOffOption []time_.ExponentialBackOffOption
 }
 
 func (o *doWithBackoff) SetDefault() {
-	o.DoHandler = DefaultDoRetryHandler
+	o.DoRetryHandler = DefaultDoRetryHandler
 	o.RetryAfter = RetryAfter
 }
 
@@ -195,8 +195,8 @@ func getClientInvoker(interceptors []ClientInterceptor, curr int, finalInvoker C
 }
 
 func (o *doWithBackoff) Complete() {
-	if o.DoHandler == nil {
-		o.DoHandler = DefaultDoRetryHandler
+	if o.DoRetryHandler == nil {
+		o.DoRetryHandler = DefaultDoRetryHandler
 	}
 	interceptors := o.ChainClientInterceptors
 	o.ChainClientInterceptors = nil
@@ -243,7 +243,7 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 			}
 			httpReq.Body = newBody
 		}
-		var do = opt.DoHandler
+		var do = opt.DoRetryHandler
 		httpDo := do
 		if opt.clientInterceptor != nil {
 			httpDo = func(req *http.Request, retry int) (*http.Response, error) {

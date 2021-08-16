@@ -77,8 +77,9 @@ func NewClient(u, target string, targetProxy bool) (*Client, error) {
 }
 
 // NewClientWithTarget returns a Client with http.Client and resolver.Target
-func NewClientWithTarget(target string, targetAsProxy bool) (*Client, error) {
-	return NewClient("", target, targetAsProxy)
+func NewClientWithTarget(target string, targetAsProxy bool) *Client {
+	cli, _ := NewClient("", target, targetAsProxy)
+	return cli
 }
 
 func NewClientWithUnixDisableCompression(u string) (*Client, error) {
