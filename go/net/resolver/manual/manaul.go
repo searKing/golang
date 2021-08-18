@@ -19,7 +19,9 @@ func NewBuilderWithScheme(scheme string) *Resolver {
 	r.ResolveOneAddrCallback = func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveOneAddrOption) (resolver.Address, error) {
 		return resolver.PickFirst(ctx, addrs)
 	}
-	r.ResolveAddrCallback = func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) { return addrs, nil }
+	r.ResolveAddrCallback = func(ctx context.Context, addrs []resolver.Address, opts ...resolver.ResolveAddrOption) ([]resolver.Address, error) {
+		return addrs, nil
+	}
 
 	return r
 }
@@ -50,7 +52,7 @@ func (r *Resolver) InitialState(s resolver.State) {
 }
 
 // Build returns itself for Resolver, because it's both a builder and a resolver.
-func (r *Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts ...resolver.ResolveNowOption) (resolver.Resolver, error) {
+func (r *Resolver) Build(ctx context.Context, target resolver.Target, cc resolver.ClientConn, opts ...resolver.ResolveNowOption) (resolver.Resolver, error) {
 	r.CC = cc
 	if r.bootstrapState != nil {
 		r.UpdateState(*r.bootstrapState)

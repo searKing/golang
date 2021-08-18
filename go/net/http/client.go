@@ -38,7 +38,11 @@ func (c *Client) Use(h ...RoundTripHandler) *Client {
 // in places where url is shadowed for godoc. See https://golang.org/cl/49930.
 var parseURL = url.Parse
 
-func NewClient(u, target string, targetProxy bool) (*Client, error) {
+// NewClient returns a http client wrapper behaves like http.Client
+// u is the original url to send HTTP request
+// target is the resolver to resolve Host or proxy
+// targetAsProxy set true to use target as a proxy or false to replace host in url(NOT HOST in http header) by address resolved by target
+func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -51,7 +55,7 @@ func NewClient(u, target string, targetProxy bool) (*Client, error) {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	if len(target) > 0 && targetProxy {
+	if len(target) > 0 && targetAsProxy {
 		tr.Proxy = ProxyFuncWithTargetOrDefault(target, http.ProxyFromEnvironment)
 	}
 	if len(u) > 0 {
@@ -71,8 +75,9 @@ func NewClient(u, target string, targetProxy bool) (*Client, error) {
 	}
 	client := http.Client{Transport: tr}
 	return &Client{
-		Client: client,
-		target: target,
+		Client:        client,
+		target:        target,
+		targetAsProxy: targetAsProxy,
 	}, nil
 }
 
@@ -88,7 +93,7 @@ func NewClientWithUnixDisableCompression(u string) (*Client, error) {
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	if !c.targetAsProxy {
-		err := RequestWithTarget(req, c.target)
+		err := RequestWithTarget(req, c.target, true)
 		if err != nil {
 			return nil, err
 		}

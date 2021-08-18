@@ -31,7 +31,7 @@ type Builder interface {
 	//
 	// gRPC dial calls Build synchronously, and fails if the returned error is
 	// not nil.
-	Build(target Target, opts ...BuildOption) (Resolver, error)
+	Build(ctx context.Context, target Target, opts ...BuildOption) (Resolver, error)
 
 	// Scheme returns the scheme supported by this resolver.
 	// Scheme is defined at https://github.com/grpc/grpc/blob/master/doc/naming.md.
@@ -41,7 +41,7 @@ type Builder interface {
 // resolveOneAddr includes additional information for ResolveOneAddr.
 //go:generate go-option -type "resolveOneAddr"
 type resolveOneAddr struct {
-	Picker []PickOption
+	Picker        []PickOption
 }
 
 // resolveAddr includes additional information for ResolveAddr.

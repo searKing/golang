@@ -80,7 +80,7 @@ func NewBuilder() resolver.Builder {
 type dnsBuilder struct{}
 
 // Build creates and starts a DNS resolver that watches the name resolution of the target.
-func (b *dnsBuilder) Build(target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+func (b *dnsBuilder) Build(ctx context.Context, target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
 	var opt resolver.Build
 	opt.ApplyOptions(opts...)
 	host, port, err := parseTarget(target.Endpoint, defaultPort)

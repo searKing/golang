@@ -18,7 +18,7 @@ func init() {
 
 type passthroughBuilder struct{}
 
-func (*passthroughBuilder) Build(target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+func (*passthroughBuilder) Build(ctx context.Context, target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
 	var opt resolver.Build
 	opt.ApplyOptions(opts...)
 	r := &passthroughResolver{

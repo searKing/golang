@@ -105,5 +105,5 @@ func NewResolver(ctx context.Context, target string, opts ...BuildOption) (Resol
 			return nil, fmt.Errorf("could not get resolver for default scheme: %q", tgt.Scheme)
 		}
 	}
-	return builder.Build(tgt, opts...)
+	return builder.Build(ctx, tgt, opts...)
 }
