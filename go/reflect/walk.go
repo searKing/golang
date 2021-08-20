@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-// walks down v
+// Walk walks down v
 func Walk(t reflect.Type, visitedOnce bool, do func(s reflect.Type, sf reflect.StructField) (stop bool)) {
 	// Anonymous fields to explore at the current level and the next.
 	var current []reflect.Type
