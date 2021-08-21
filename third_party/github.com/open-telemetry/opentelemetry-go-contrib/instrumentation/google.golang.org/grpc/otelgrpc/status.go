@@ -34,7 +34,7 @@ func unwrapPkgErrorsGRPCStatus(err error) (*status.Status, bool) {
 	return nil, false
 }
 
-// Since error can be wrapped and the `FromError` function only checks for `GRPCStatus` function
+// FromError Since error can be wrapped and the `FromError` function only checks for `GRPCStatus` function
 // and as a fallback uses the `Unknown` gRPC status we need to unwrap the error if possible to get the original status.
 // pkg/errors and Go native errors packages have two different approaches so we try to unwrap both types.
 // Eventually should be implemented in the go-grpc status function `FromError`. See https://github.com/grpc/grpc-go/issues/2934
