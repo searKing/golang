@@ -6,6 +6,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
@@ -172,8 +173,8 @@ var DefaultDoRetryHandler = func(req *http.Request, retry int) (*http.Response, 
 
 //go:generate go-option -type "doWithBackoff"
 type doWithBackoff struct {
-	DoRetryHandler    DoRetryHandler
-	clientInterceptor ClientInterceptor
+	DoRetryHandler           DoRetryHandler
+	clientInterceptor        ClientInterceptor
 	ChainClientInterceptors  []ClientInterceptor
 	RetryAfter               RetryAfterHandler
 	ExponentialBackOffOption []time_.ExponentialBackOffOption
@@ -294,24 +295,27 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 	}
 }
 
-func HeadWithBackoff(url string, opts ...DoWithBackoffOption) (*http.Response, error) {
+func HeadWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodHead, url, nil)
+	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return DoWithBackoff(req, opts...)
 }
 
-func GetWithBackoff(url string, opts ...DoWithBackoffOption) (*http.Response, error) {
+func GetWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return DoWithBackoff(req, opts...)
 }
 
-func PostWithBackoff(url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
+func PostWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
 	req, err := http.NewRequest("POST", url, body)
+	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -319,8 +323,8 @@ func PostWithBackoff(url, contentType string, body io.Reader, opts ...DoWithBack
 	return DoWithBackoff(req, opts...)
 }
 
-func PostFormWithBackoff(url string, data url.Values, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
-	return PostWithBackoff(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()), opts...)
+func PostFormWithBackoff(ctx context.Context, url string, data url.Values, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
+	return PostWithBackoff(ctx, url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()), opts...)
 }
 
 // DoJson the same as HttpDo, but bind with json
