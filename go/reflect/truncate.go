@@ -14,13 +14,32 @@ import (
 	strings_ "github.com/searKing/golang/go/strings"
 )
 
-// Truncate reset bytes and string, useful for dump into log if some field is huge
-func Truncate(v interface{}, n int) {
+// TruncateString reset string, useful for dump into log if some field is huge
+func TruncateString(v interface{}, n int) {
+	Truncate(v, func(v interface{}) bool {
+		_, ok := v.(string)
+		return ok
+	}, n)
+}
+
+// TruncateBytes reset bytes, useful for dump into log if some field is huge
+func TruncateBytes(v interface{}, n int) {
+	Truncate(v, func(v interface{}) bool {
+		_, ok := v.([]byte)
+		return ok
+	}, n)
+}
+
+// Truncate reset bytes and string at each run of value c satisfying f(c), useful for dump into log if some field is huge
+func Truncate(v interface{}, f func(v interface{}) bool, n int) {
 	WalkValueBFS(reflect.ValueOf(v), FieldValueInfoHandlerFunc(func(info FieldValueInfo) (goon bool) {
 		if !info.Value().CanSet() || !info.Value().CanInterface() || !info.Value().CanSet() {
 			return true
 		}
 		vv := info.Value().Interface()
+		if !f(vv) {
+			return true
+		}
 
 		switch vv := vv.(type) {
 		case []byte:
