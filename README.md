@@ -6,7 +6,7 @@
 Useful libs or tools for Golang
 
 # GoLibs
-
+* [webhdfs](https://github.com/searKing/webhdfs) - Hadoop WebHDFS REST API client library for Golang with fs module like (asynchronous) interface.
 * [BurstLimiter](https://pkg.go.dev/github.com/searKing/golang/go/time/rate) — BurstLimiter behaves like Limiter
   in `time`, BurstLimiter controls how frequently events are allowed to happen. It implements a "token bucket" of size
   b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
