@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-// Thread should be used for such as  calling OS services or
+// Thread should be used for such as calling OS services or
 // non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
 type Thread struct {
 	once sync.Once
@@ -25,16 +25,11 @@ type Thread struct {
 }
 
 func (th *Thread) Shutdown() {
-	th.mu.Lock()
-	defer th.mu.Unlock()
-	if th.cancel != nil {
-		th.cancel()
-	}
+	th.initOnce()
+	th.cancel()
 }
 
-// Do will calls the function f in the same thread
-// return true if f is enqueued to call
-func (th *Thread) Do(f func()) {
+func (th *Thread) initOnce() {
 	th.once.Do(func() {
 		th.mu.Lock()
 		defer th.mu.Unlock()
@@ -42,6 +37,20 @@ func (th *Thread) Do(f func()) {
 		th.fCh = make(chan func())
 		go th.lockOSThreadForever()
 	})
+}
+
+// Do will call the function f in the same thread
+// f is enqueued only if ctx is not canceled and Thread is not Shutdown
+func (th *Thread) Do(ctx context.Context, f func()) error {
+	th.initOnce()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-th.ctx.Done():
+		return th.ctx.Err()
+	default:
+		break
+	}
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -61,8 +70,13 @@ func (th *Thread) Do(f func()) {
 	}
 	select {
 	case th.fCh <- monitor:
+		return nil
+	case <-ctx.Done():
+		wg.Done()
+		return ctx.Err()
 	case <-th.ctx.Done():
 		wg.Done()
+		return th.ctx.Err()
 	}
 }
 

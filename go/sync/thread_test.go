@@ -5,6 +5,8 @@
 package sync_test
 
 import (
+	"context"
+	"sync"
 	"testing"
 
 	sync_ "github.com/searKing/golang/go/sync"
@@ -17,7 +19,7 @@ func (o *one) Increment() {
 }
 
 func run(thread *sync_.Thread, o *one, c chan bool) {
-	thread.Do(func() { o.Increment() })
+	_ = thread.Do(context.Background(), func() { o.Increment() })
 	c <- true
 }
 
@@ -46,14 +48,14 @@ func TestThreadPanic(t *testing.T) {
 				t.Fatalf("Thread.Do did not panic")
 			}
 		}()
-		thread.Do(func() {
+		_ = thread.Do(context.Background(), func() {
 			panic("failed")
 		})
 	}()
 
 	{
 		var do bool
-		thread.Do(func() {
+		_ = thread.Do(context.Background(), func() {
 			do = true
 		})
 		if !do {
@@ -64,11 +66,63 @@ func TestThreadPanic(t *testing.T) {
 
 	{
 		var do bool
-		thread.Do(func() {
+		_ = thread.Do(context.Background(), func() {
 			do = true
 		})
 		if do {
 			t.Fatalf("Thread.Do called after Thread.Shutdown")
+		}
+	}
+}
+
+func TestThreadCancel(t *testing.T) {
+	var thread sync_.Thread
+	{
+		var wg sync.WaitGroup
+		wg.Add(1)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		go func() {
+			defer wg.Done()
+			// Block until canceled
+			err := thread.Do(ctx, func() {
+				select {}
+			})
+			if err == nil {
+				t.Errorf("Thread.Do did not return error")
+				return
+			}
+		}()
+		cancel()
+		wg.Wait()
+	}
+
+	{
+		go func() {
+			// Block until canceled
+			err := thread.Do(context.Background(), func() {
+				select {}
+			})
+			if err == nil {
+				t.Errorf("Thread.Do did not return error")
+				return
+			}
+		}()
+	}
+
+	thread.Shutdown()
+
+	{
+		var do bool
+		err := thread.Do(context.Background(), func() {
+			do = true
+		})
+		if do {
+			t.Fatalf("Thread.Do called after Thread.Shutdown")
+		}
+		if err == nil {
+			t.Errorf("Thread.Do did not return error")
+			return
 		}
 	}
 }
@@ -79,7 +133,7 @@ func BenchmarkThread(b *testing.B) {
 	f := func() {}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			thread.Do(f)
+			_ = thread.Do(context.Background(), f)
 		}
 	})
 }
