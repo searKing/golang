@@ -23,8 +23,7 @@ Useful libs or tools for Golang
     - NullDuration
         - ```NullDuration represents an interface that may be null. NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
     - NullJson
-        - ```NullJson represents an interface that may be null. NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString. Deprecate, use go-nulljson instead. For more information, see:
-      https://pkg.go.dev/github.com/searKing/golang@v1.1.18/tools/go-nulljson```
+        - ```NullJson represents an interface that may be null. NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString. Deprecate, use go-nulljson instead. For more information, see: https://pkg.go.dev/github.com/searKing/golang@v1.1.18/tools/go-nulljson```
 * [ternary_search_tree](https://pkg.go.dev/github.com/searKing/golang@v1.1.18/go/container/trie_tree/ternary_search_tree#TernarySearchTree)
   — A type of trie (sometimes called a prefix tree) where nodes are arranged in a manner similar to a binary search
   tree, but with up to three children rather than the binary tree's limit of two.
