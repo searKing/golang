@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/http2/hpack"
 )
 
-// HTTP2 parses the frame header of the first frame to detect whether the
+// GRPC parses the frame header of the first frame to detect whether the
 // connection is an HTTP2 connection.
 func GRPC() MatcherFunc {
 	return HTTP2HeaderFieldValue(false, strings.EqualFold, hpack.HeaderField{
