@@ -1,7 +1,9 @@
 package ioutil
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	os_ "github.com/searKing/golang/go/os"
 )
@@ -53,4 +55,35 @@ func AppendFileAll(filename string, data []byte, dirperm, fileperm os.FileMode) 
 		err = err1
 	}
 	return err
+}
+
+// WriteRenameAll writes data to a temp file and rename to the new file named by filename.
+// If the file does not exist, WriteRenameAll creates it with mode 0666 (before umask)
+// If the dir does not exist, WriteRenameAll creates it with 0755 (before umask)
+// (before umask); otherwise WriteRenameAll truncates it before writing, without changing permissions.
+func WriteRenameAll(filename string, data []byte) error {
+	return WriteRenameFileAll(filename, data, 0755)
+}
+
+// WriteRenameFileAll is the generalized open call; most users will use WriteRenameAll instead.
+// WriteRenameFileAll is safer than WriteFileAll as before Write finished, nobody can find the unfinished file.
+// It writes data to a temp file and rename to the new file named by filename.
+// If the file does not exist, WriteRenameFileAll creates it with permissions fileperm
+// If the dir does not exist, WriteRenameFileAll creates it with permissions dirperm
+// (before umask); otherwise WriteRenameFileAll truncates it before writing, without changing permissions.
+func WriteRenameFileAll(filename string, data []byte, dirperm os.FileMode) error {
+	tempDir := filepath.Dir(filename)
+	tempFile, err := ioutil.TempFile(tempDir, "")
+	if err != nil {
+		return err
+	}
+	defer tempFile.Close()
+
+	tempFilePath := filepath.Join(tempDir, tempFile.Name())
+	defer os.Remove(tempFilePath)
+	_, err = tempFile.Write(data)
+	if err != nil {
+		return err
+	}
+	return os_.RenameFileAll(tempFilePath, filename, dirperm)
 }
