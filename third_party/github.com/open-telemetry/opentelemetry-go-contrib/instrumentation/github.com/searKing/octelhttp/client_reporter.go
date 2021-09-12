@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/semconv"
 	"google.golang.org/grpc/codes"
 )
 
@@ -44,7 +44,7 @@ func (r *clientReporter) Attrs(attrs ...attribute.KeyValue) []attribute.KeyValue
 }
 
 func (r *clientReporter) ReceivedResponse(ctx context.Context, resp *http.Response) {
-	attrs := r.Attrs(semconv.RPCMessageTypeReceived)
+	attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
 	r.metrics.clientStreamRequestReceived.Add(ctx, 1, attrs...)
 	if r.metrics.clientStreamReceiveSizeHistogramEnabled {
 		if resp != nil {
@@ -56,7 +56,7 @@ func (r *clientReporter) ReceivedResponse(ctx context.Context, resp *http.Respon
 }
 
 func (r *clientReporter) SentRequest(ctx context.Context, req *http.Request) {
-	attrs := r.Attrs(semconv.RPCMessageTypeSent)
+	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
 	r.metrics.clientStreamRequestSent.Add(ctx, 1, attrs...)
 	if r.metrics.clientStreamSendSizeHistogramEnabled {
 		if req != nil {

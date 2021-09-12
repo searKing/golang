@@ -27,13 +27,13 @@ type ClientMetrics struct {
 
 	// "grpc_type", "grpc_service", "grpc_method"
 	clientHandledTimeHistogramEnabled bool
-	clientHandledTimeHistogram        metric.Float64ValueRecorder
+	clientHandledTimeHistogram        metric.Float64Histogram
 
 	clientStreamReceiveSizeHistogramEnabled bool
-	clientStreamReceiveSizeHistogram        metric.Int64ValueRecorder
+	clientStreamReceiveSizeHistogram        metric.Int64Histogram
 
 	clientStreamSendSizeHistogramEnabled bool
-	clientStreamSendSizeHistogram        metric.Int64ValueRecorder
+	clientStreamSendSizeHistogram        metric.Int64Histogram
 }
 
 func Meter() metric.Meter {
@@ -105,7 +105,7 @@ func (m *ClientMetrics) EnableClientHandledTimeHistogram(opts ...metric.Instrume
 	options = append(options, opts...)
 	if !m.clientHandledTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientHandledTimeHistogram = metric.Must(Meter()).NewFloat64ValueRecorder("grpc_client_handling_seconds", options...)
+		m.clientHandledTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_client_handling_seconds", options...)
 	}
 	m.clientHandledTimeHistogramEnabled = true
 }
@@ -120,7 +120,7 @@ func (m *ClientMetrics) EnableClientStreamReceiveSizeHistogram(opts ...metric.In
 	options = append(options, opts...)
 	if !m.clientStreamReceiveSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientStreamReceiveSizeHistogram = metric.Must(Meter()).NewInt64ValueRecorder("grpc_client_msg_recv_handling_bytes", options...)
+		m.clientStreamReceiveSizeHistogram = metric.Must(Meter()).NewInt64Histogram("grpc_client_msg_recv_handling_bytes", options...)
 	}
 	m.clientStreamReceiveSizeHistogramEnabled = true
 }
@@ -135,7 +135,7 @@ func (m *ClientMetrics) EnableClientStreamSendSizeHistogram(opts ...metric.Instr
 	options = append(options, opts...)
 	if !m.clientStreamSendSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientStreamSendSizeHistogram = metric.Must(Meter()).NewInt64ValueRecorder("grpc_client_msg_send_handling_bytes", options...)
+		m.clientStreamSendSizeHistogram = metric.Must(Meter()).NewInt64Histogram("grpc_client_msg_send_handling_bytes", options...)
 	}
 	m.clientStreamSendSizeHistogramEnabled = true
 }

@@ -29,16 +29,17 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/urfave/negroni v1.0.0
-	go.opentelemetry.io/contrib v0.19.0
-	go.opentelemetry.io/otel v0.19.0
-	go.opentelemetry.io/otel/metric v0.19.0
+	go.opentelemetry.io/contrib v0.23.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.23.0
+	go.opentelemetry.io/otel v1.0.0-RC3
+	go.opentelemetry.io/otel/metric v0.23.0
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/net v0.0.0-20210716203947-853a461950ff
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/tools v0.1.5
 	google.golang.org/genproto v0.0.0-20210721163202-f1cecdd8b78a
-	google.golang.org/grpc v1.39.0
+	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	vitess.io/vitess v0.7.0

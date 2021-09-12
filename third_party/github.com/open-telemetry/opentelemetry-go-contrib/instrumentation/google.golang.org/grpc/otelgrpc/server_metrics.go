@@ -9,9 +9,9 @@ import (
 	"time"
 
 	net_ "github.com/searKing/golang/go/net"
+	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/semconv"
 	"google.golang.org/grpc"
 )
 
@@ -26,19 +26,19 @@ type ServerMetrics struct {
 	serverStreamMsgSent     metric.Int64Counter
 
 	serverHandledTimeHistogramEnabled bool
-	serverHandledTimeHistogram        metric.Float64ValueRecorder
+	serverHandledTimeHistogram        metric.Float64Histogram
 
 	serverStreamReceiveTimeHistogramEnabled bool
-	serverStreamReceiveTimeHistogram        metric.Float64ValueRecorder
+	serverStreamReceiveTimeHistogram        metric.Float64Histogram
 
 	serverStreamReceiveSizeHistogramEnabled bool
-	serverStreamReceiveSizeHistogram        metric.Int64ValueRecorder
+	serverStreamReceiveSizeHistogram        metric.Int64Histogram
 
 	serverStreamSendTimeHistogramEnabled bool
-	serverStreamSendTimeHistogram        metric.Float64ValueRecorder
+	serverStreamSendTimeHistogram        metric.Float64Histogram
 
 	serverStreamSendSizeHistogramEnabled bool
-	serverStreamSendSizeHistogram        metric.Int64ValueRecorder
+	serverStreamSendSizeHistogram        metric.Int64Histogram
 }
 
 // NewServerMetrics returns a ServerMetrics object. Use a new instance of
@@ -107,7 +107,7 @@ func (m *ServerMetrics) EnableServerHandledTimeHistogram(opts ...metric.Instrume
 	options = append(options, opts...)
 	if !m.serverHandledTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverHandledTimeHistogram = metric.Must(Meter()).NewFloat64ValueRecorder("grpc_server_handling_seconds", options...)
+		m.serverHandledTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_server_handling_seconds", options...)
 	}
 	m.serverHandledTimeHistogramEnabled = true
 }
@@ -122,7 +122,7 @@ func (m *ServerMetrics) EnableServerStreamReceiveTimeHistogram(opts ...metric.In
 	options = append(options, opts...)
 	if !m.serverStreamReceiveTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamReceiveTimeHistogram = metric.Must(Meter()).NewFloat64ValueRecorder("grpc_server_msg_recv_handling_seconds", options...)
+		m.serverStreamReceiveTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_server_msg_recv_handling_seconds", options...)
 	}
 	m.serverStreamReceiveTimeHistogramEnabled = true
 }
@@ -137,7 +137,7 @@ func (m *ServerMetrics) EnableServerStreamReceiveSizeHistogram(opts ...metric.In
 	options = append(options, opts...)
 	if !m.serverStreamReceiveSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamReceiveSizeHistogram = metric.Must(Meter()).NewInt64ValueRecorder("grpc_server_msg_recv_handling_bytes", options...)
+		m.serverStreamReceiveSizeHistogram = metric.Must(Meter()).NewInt64Histogram("grpc_server_msg_recv_handling_bytes", options...)
 	}
 	m.serverStreamReceiveSizeHistogramEnabled = true
 }
@@ -152,7 +152,7 @@ func (m *ServerMetrics) EnableServerStreamSendTimeHistogram(opts ...metric.Instr
 	options = append(options, opts...)
 	if !m.serverStreamSendTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamSendTimeHistogram = metric.Must(Meter()).NewFloat64ValueRecorder("grpc_server_msg_send_handling_seconds", options...)
+		m.serverStreamSendTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_server_msg_send_handling_seconds", options...)
 	}
 	m.serverStreamSendTimeHistogramEnabled = true
 }
@@ -167,7 +167,7 @@ func (m *ServerMetrics) EnableServerStreamSendSizeHistogram(opts ...metric.Instr
 	options = append(options, opts...)
 	if !m.serverStreamSendSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamSendSizeHistogram = metric.Must(Meter()).NewInt64ValueRecorder("grpc_server_msg_send_handling_bytes", options...)
+		m.serverStreamSendSizeHistogram = metric.Must(Meter()).NewInt64Histogram("grpc_server_msg_send_handling_bytes", options...)
 	}
 	m.serverStreamSendSizeHistogramEnabled = true
 }
@@ -254,8 +254,8 @@ func preRegisterMethod(ctx context.Context, metrics *ServerMetrics, serviceName 
 	// These are just references (no increments), as just referencing will create the labels but not set values.
 	_, attrs := spanInfo(mInfo.Name, ":0", metrics.ServerHostport, typeFromMethodInfo(mInfo))
 	metrics.serverStartedCounter.Add(ctx, 0, filter(attrs...)...)
-	metrics.serverStreamMsgReceived.Add(ctx, 0, filter(append(attrs, semconv.RPCMessageTypeReceived)...)...)
-	metrics.serverStreamMsgSent.Add(ctx, 0, filter(append(attrs, semconv.RPCMessageTypeSent)...)...)
+	metrics.serverStreamMsgReceived.Add(ctx, 0, filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...)
+	metrics.serverStreamMsgSent.Add(ctx, 0, filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...)
 
 	for _, code := range allCodes {
 		metrics.serverHandledCounter.Add(ctx, 0, filter(append(attrs, statusCodeAttr(code))...)...)
@@ -264,16 +264,16 @@ func preRegisterMethod(ctx context.Context, metrics *ServerMetrics, serviceName 
 		}
 	}
 	if metrics.serverStreamReceiveTimeHistogramEnabled {
-		metrics.serverStreamReceiveTimeHistogram.Record(ctx, -1, filter(append(attrs, semconv.RPCMessageTypeReceived)...)...)
+		metrics.serverStreamReceiveTimeHistogram.Record(ctx, -1, filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...)
 	}
 	if metrics.serverStreamReceiveSizeHistogramEnabled {
-		metrics.serverStreamReceiveSizeHistogram.Record(ctx, -1, filter(append(attrs, semconv.RPCMessageTypeReceived)...)...)
+		metrics.serverStreamReceiveSizeHistogram.Record(ctx, -1, filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...)
 	}
 
 	if metrics.serverStreamSendTimeHistogramEnabled {
-		metrics.serverStreamSendTimeHistogram.Record(ctx, -1, filter(append(attrs, semconv.RPCMessageTypeSent)...)...)
+		metrics.serverStreamSendTimeHistogram.Record(ctx, -1, filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...)
 	}
 	if metrics.serverStreamSendSizeHistogramEnabled {
-		metrics.serverStreamSendSizeHistogram.Record(ctx, -1, filter(append(attrs, semconv.RPCMessageTypeSent)...)...)
+		metrics.serverStreamSendSizeHistogram.Record(ctx, -1, filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...)
 	}
 }

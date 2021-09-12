@@ -14,14 +14,14 @@ import (
 
 	"github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	grpccodes "google.golang.org/grpc/codes"
 )
 
 // spanInfo returns a span name and all appropriate attributes from the gRPC
 // method and peer address.
 func spanInfo(fullMethod, peerAddress, localAddress string, grpcType grpcType) (string, []attribute.KeyValue) {
-	attrs := []attribute.KeyValue{semconv.RPCSystemGRPC}
+	attrs := []attribute.KeyValue{semconv.RPCSystemKey.String("grpc")}
 	name, mAttrs := parseFullMethod(fullMethod)
 	attrs = append(attrs, mAttrs...)
 	attrs = append(attrs, peerAttr(peerAddress)...)

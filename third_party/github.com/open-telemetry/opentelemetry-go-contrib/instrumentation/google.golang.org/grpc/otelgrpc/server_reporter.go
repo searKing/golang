@@ -8,8 +8,8 @@ import (
 	"context"
 	"time"
 
+	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/semconv"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
@@ -44,7 +44,7 @@ func (r *serverReporter) Attrs(attrs ...attribute.KeyValue) []attribute.KeyValue
 
 func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time.Time) {
 	if r.metrics.serverStreamReceiveTimeHistogramEnabled {
-		attrs := r.Attrs(semconv.RPCMessageTypeReceived)
+		attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
 		r.metrics.serverStreamReceiveTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), attrs...)
 		return
 	}
@@ -52,7 +52,7 @@ func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time
 }
 
 func (r *serverReporter) ReceivedMessage(ctx context.Context, message interface{}) {
-	attrs := r.Attrs(semconv.RPCMessageTypeReceived)
+	attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
 	r.metrics.serverStreamMsgReceived.Add(ctx, 1, attrs...)
 	if r.metrics.serverStreamReceiveSizeHistogramEnabled {
 		if p, ok := message.(proto.Message); ok {
@@ -65,7 +65,7 @@ func (r *serverReporter) ReceivedMessage(ctx context.Context, message interface{
 
 func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Time) {
 	if r.metrics.serverStreamSendTimeHistogramEnabled {
-		attrs := r.Attrs(semconv.RPCMessageTypeSent)
+		attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
 		r.metrics.serverStreamSendTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), attrs...)
 		return
 	}
@@ -73,7 +73,7 @@ func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Ti
 }
 
 func (r *serverReporter) SentMessage(ctx context.Context, message interface{}) {
-	attrs := r.Attrs(semconv.RPCMessageTypeSent)
+	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
 	r.metrics.serverStreamMsgSent.Add(ctx, 1, attrs...)
 	if r.metrics.serverStreamSendSizeHistogramEnabled {
 		if p, ok := message.(proto.Message); ok {
