@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// []byte -> proto|interface{}
+// YamlMarshaller []byte -> proto|interface{}
 type YamlMarshaller struct {
 	runtime.ProtoMarshaller
 }
@@ -23,7 +23,7 @@ func (*YamlMarshaller) Marshal(v interface{}) ([]byte, error) {
 	return yaml.Marshal(v)
 }
 
-// Unmarshal unmarshals "data" into "v".
+// Unmarshal unmarshal "data" into "v".
 // "v" must be a pointer value.
 func (y *YamlMarshaller) Unmarshal(data []byte, v interface{}) error {
 	return y.NewDecoder(bytes.NewReader(data)).Decode(v)
@@ -44,7 +44,7 @@ func (*YamlMarshaller) ContentType(_ interface{}) string {
 	return binding.MIMEYAML
 }
 
-// DecoderWrapper is a wrapper around a *json.Decoder that adds
+// YamlDecoderWrapper is a wrapper around a *json.Decoder that adds
 // support for proto and json to the Decode method.
 type YamlDecoderWrapper struct {
 	decoderYaml *yaml.Decoder // json -> interface{}

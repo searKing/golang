@@ -5,8 +5,8 @@
 package viper
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/spf13/viper"
+	"google.golang.org/protobuf/proto"
 )
 
 // DefaultLoad load config from file and protos into v, and save to a using file

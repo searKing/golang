@@ -9,19 +9,22 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/golang/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 //go:generate go-option -type=JSONPb
-// json -> proto|interface{}
+// JSONPb json -> proto|interface{}
 type JSONPb struct {
 	runtime.JSONPb
 }
 
 func (j *JSONPb) Marshal(v interface{}) ([]byte, error) {
 	// proto -> json
-	if _, ok := v.(proto.Message); ok {
+
+	if _, ok := v.(protov1.Message); ok {
 		return j.JSONPb.Marshal(v)
 	}
 
@@ -54,8 +57,11 @@ func (j *JSONPb) NewEncoder(w io.Writer) runtime.Encoder {
 // interface{} -> json
 func (j *JSONPb) marshalTo(w io.Writer, v interface{}) error {
 	marshal := func() ([]byte, error) {
-		if _, ok := v.(proto.Message); ok {
+		if _, ok := v.(protov1.Message); ok {
 			return j.JSONPb.Marshal(v)
+		}
+		if vv, ok := v.(proto.Message); ok {
+			return protojson.Marshal(vv)
 		}
 
 		return json.Marshal(v)
@@ -71,14 +77,14 @@ func (j *JSONPb) marshalTo(w io.Writer, v interface{}) error {
 // DecoderWrapper is a wrapper around a *json.Decoder that adds
 // support for proto and json to the Decode method.
 type DecoderWrapper struct {
-	decoderProto runtime.Decoder // json -> proto
+	decoderProto runtime.Decoder // json -> protov1
 	decoderJson  *json.Decoder   // json -> interface{}
 }
 
 // Decode wraps the embedded decoder's Decode method to support
 // protos using a jsonpb.Unmarshaler.
 func (d DecoderWrapper) Decode(v interface{}) error {
-	if _, ok := v.(proto.Message); ok {
+	if _, ok := v.(protov1.Message); ok {
 		return d.decoderProto.Decode(v)
 	}
 	return d.decoderJson.Decode(v)

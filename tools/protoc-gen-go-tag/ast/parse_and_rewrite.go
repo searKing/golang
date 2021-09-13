@@ -7,9 +7,9 @@ package ast
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/searKing/golang/go/reflect"
 	strings_ "github.com/searKing/golang/go/strings"
@@ -44,7 +44,7 @@ func (si *StructInfo) FindField(name string) (FieldInfo, bool) {
 }
 
 // WalkDescriptorProto returns all struct infos of dp， which contains FieldTag.
-func WalkDescriptorProto(g *protogen.Plugin, dp *descriptor.DescriptorProto, typeNames []string) []StructInfo {
+func WalkDescriptorProto(g *protogen.Plugin, dp *descriptorpb.DescriptorProto, typeNames []string) []StructInfo {
 	var ss []StructInfo
 
 	s := StructInfo{}
@@ -57,10 +57,7 @@ func WalkDescriptorProto(g *protogen.Plugin, dp *descriptor.DescriptorProto, typ
 			continue
 		}
 
-		v, err := proto.GetExtension(field.Options, pb.E_FieldTag)
-		if err != nil {
-			continue
-		}
+		v := proto.GetExtension(field.Options, pb.E_FieldTag)
 		switch v := v.(type) {
 		case *pb.FieldTag:
 			tag := v.GetStructTag()

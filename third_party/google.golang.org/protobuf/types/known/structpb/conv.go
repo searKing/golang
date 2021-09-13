@@ -5,18 +5,16 @@
 package structpb
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // ToProtoStruct converts v, which must marshal into a JSON object,
 // into a Google Struct proto.
-// Deprecated: use structpb.ToProtoStruct instead.
 func ToProtoStruct(v interface{}) (*structpb.Struct, error) {
 	if v == nil {
 		return &structpb.Struct{}, nil
@@ -42,12 +40,12 @@ func ToProtoStruct(v interface{}) (*structpb.Struct, error) {
 		// protobuf. Some day we may have a more direct way to get there, but right
 		// now the only way is to marshal the Go struct to JSON, unmarshal into a
 		// map, and then build the Struct proto from the map.
-		m := jsonpb.Marshaler{EmitDefaults: true}
-		dataStr, err := m.MarshalToString(v.(proto.Message))
+		m := protojson.MarshalOptions{EmitUnpopulated: true}
+		dataStr, err := m.Marshal(v.(proto.Message))
 		if err != nil {
 			return nil, fmt.Errorf("jsonpb.Marshal: %v", err)
 		}
-		jb = []byte(dataStr)
+		jb = dataStr
 	default:
 		var err error
 		jb, err = json.Marshal(v)
@@ -58,7 +56,7 @@ func ToProtoStruct(v interface{}) (*structpb.Struct, error) {
 
 	var dataStructpb structpb.Struct
 
-	if err := jsonpb.Unmarshal(bytes.NewReader(jb), &dataStructpb); err != nil {
+	if err := protojson.Unmarshal(jb, &dataStructpb); err != nil {
 		return nil, err
 	}
 	return &dataStructpb, nil

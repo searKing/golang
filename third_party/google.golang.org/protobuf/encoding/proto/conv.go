@@ -7,25 +7,22 @@ package proto
 import (
 	"encoding/json"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // ToGolangMap converts v into a Golang map proto.
-// Deprecated: use proto.ToGolangMap
-// in github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/proto instead.
-func ToGolangMap(pb proto.Message) (map[string]interface{}, error) {
+func ToGolangMap(pb proto.Message, options ...protojson.MarshalerOption) (map[string]interface{}, error) {
 	if pb == nil {
 		return nil, nil
 	}
 
-	m := jsonpb.Marshaler{EmitDefaults: false, Indent: "\t", OrigName: true}
-	pbStr, err := m.MarshalToString(pb)
+	data, err := protojson.Marshal(pb, options...)
 	if err != nil {
 		return nil, err
 	}
 	var anyJson map[string]interface{}
-	err = json.Unmarshal([]byte(pbStr), &anyJson)
+	err = json.Unmarshal(data, &anyJson)
 	if err != nil {
 		return nil, err
 	}

@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	proto_ "github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/proto"
 	"github.com/spf13/viper"
+	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
 
 	errors_ "github.com/searKing/golang/go/errors"
-	proto_ "github.com/searKing/golang/third_party/github.com/golang/protobuf/proto"
 )
 
-// merge sequence: protos..., file, env, replace if member has been set
+// MergeAll merge sequence: protos..., file, env, replace if member has been set
 func MergeAll(v *viper.Viper, cfgFile string, envPrefix string, protos ...proto.Message) error {
 	// read default config from protobuf
 	if err := MergeConfigFromProtoMessages(v, "", protos...); err != nil {
@@ -29,7 +29,7 @@ func MergeAll(v *viper.Viper, cfgFile string, envPrefix string, protos ...proto.
 	return nil
 }
 
-// read from file
+// MergeConfigFromFile read from file
 func MergeConfigFromFile(v *viper.Viper, cfgFile string) error {
 	if cfgFile == "" {
 		return nil
@@ -40,7 +40,7 @@ func MergeConfigFromFile(v *viper.Viper, cfgFile string) error {
 	return v.MergeInConfig()
 }
 
-// read from env
+// MergeConfigFromENV read from env
 func MergeConfigFromENV(v *viper.Viper, envPrefix string) {
 	// read in environment variables that match
 	v.AutomaticEnv()          // read in environment variables that match
@@ -48,7 +48,7 @@ func MergeConfigFromENV(v *viper.Viper, envPrefix string) {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 }
 
-// read from protobuf
+// MergeConfigFromProtoMessages read from protobuf
 // merge protos into viper one by one, replace if member has been set
 // that is, later proto appeared, higher priority proto has
 func MergeConfigFromProtoMessages(v *viper.Viper, configType string, protos ...proto.Message) error {

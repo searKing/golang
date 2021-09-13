@@ -1,8 +1,9 @@
 syntax = "proto3";
 
 package render_test;
+option go_package = "github.com/searKing/golang/third_party/github.com/gin-gonic/gin/binding/internal;internal";
 
 message Data {
-    string foo = 1;
-    string html = 2;
+  string foo = 1;
+  string html = 2;
 }
