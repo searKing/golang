@@ -9,11 +9,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/golang/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto"
 	"github.com/searKing/golang/third_party/github.com/golang/protobuf/jsonpb"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
-// json to proto.Message
+// JSONPB encode json to proto.Message
 var JSONPB = jsonpbBinding{}
 
 type jsonpbBinding struct{}
@@ -31,8 +33,11 @@ func (b jsonpbBinding) Bind(req *http.Request, obj interface{}) error {
 }
 
 func (jsonpbBinding) BindBody(body []byte, obj interface{}) error {
-
 	if msg, ok := obj.(proto.Message); ok {
+		if err := protojson.Unmarshal(body, msg); err != nil {
+			return err
+		}
+	} else if msg, ok := obj.(protov1.Message); ok {
 		if err := jsonpb.Unmarshal(body, msg); err != nil {
 			return err
 		}

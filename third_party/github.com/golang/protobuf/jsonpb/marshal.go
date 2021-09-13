@@ -16,11 +16,13 @@ import (
 
 // Marshaler is a configurable object for converting between
 // protocol buffer objects and a JSON representation for them.
+// Deprecated: use protojson.Marshaler instead.
 type Marshaler struct {
 	jsonpb.Marshaler
 }
 
 // Whether to render enum values as integers, as opposed to string values.
+// Deprecated: use protojson.WithMarshalUseEnumNumbers instead.
 func WithMarshalEnumsAsInts(enumsAsInts bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.EnumsAsInts = enumsAsInts
@@ -28,6 +30,7 @@ func WithMarshalEnumsAsInts(enumsAsInts bool) MarshalerOption {
 }
 
 // Whether to render fields with zero values.
+// Deprecated: use protojson.WithMarshalEmitUnpopulated instead.
 func WithMarshalEmitDefaults(emitDefaults bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.EmitDefaults = emitDefaults
@@ -38,6 +41,7 @@ func WithMarshalEmitDefaults(emitDefaults bool) MarshalerOption {
 // also cause a space to appear between the field separator and
 // value, and for newlines to be appear between fields and array
 // elements.
+// Deprecated: use protojson.WithMarshalIndent instead.
 func WithMarshalIndent(indent string) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.Indent = indent
@@ -45,6 +49,7 @@ func WithMarshalIndent(indent string) MarshalerOption {
 }
 
 // Whether to use the original (.proto) name for fields.
+// Deprecated: use protojson.WithMarshalUseProtoNames instead.
 func WithMarshalOrigName(origName bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.OrigName = origName
@@ -55,6 +60,7 @@ func WithMarshalOrigName(origName bool) MarshalerOption {
 // If unset, the default resolution strategy is to extract the
 // fully-qualified type name from the type URL and pass that to
 // proto.MessageType(string).
+// Deprecated: use protojson.WithMarshalResolver instead.
 func WithMarshalAnyResolver(anyResolver jsonpb.AnyResolver) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.AnyResolver = anyResolver
@@ -62,6 +68,7 @@ func WithMarshalAnyResolver(anyResolver jsonpb.AnyResolver) MarshalerOption {
 }
 
 // Marshal returns the JSON encoding of v.
+// Deprecated: use protojson.Marshal instead.
 func Marshal(pb proto.Message, options ...MarshalerOption) ([]byte, error) {
 	var buf bytes.Buffer
 	m := Marshaler{
@@ -78,6 +85,7 @@ func Marshal(pb proto.Message, options ...MarshalerOption) ([]byte, error) {
 // MarshalIndent is like Marshal but applies Indent to format the output.
 // Each JSON element in the output will begin on a new line beginning with prefix
 // followed by one or more copies of indent according to the indentation nesting.
+// Deprecated: use protojson.MarshalIndent instead.
 func MarshalIndent(pb proto.Message, prefix, indent string, options ...MarshalerOption) ([]byte, error) {
 	b, err := Marshal(pb, options...)
 	if err != nil {

@@ -7,15 +7,15 @@ package viper
 import (
 	"reflect"
 
-	"github.com/searKing/golang/third_party/github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
 	"github.com/spf13/viper"
+	"google.golang.org/protobuf/proto"
 
 	json_ "github.com/searKing/golang/go/encoding/json"
 )
 
-// Unmarshal returns the latest config viper proto
+// UnmarshalProtoMessageByJsonpb returns the latest config viper proto
 func UnmarshalProtoMessageByJsonpb(viper_ *viper.Viper, v proto.Message, opts ...viper.DecoderConfigOption) error {
 	if viper_ == nil { // nop for nil source
 		return nil
@@ -43,7 +43,7 @@ func UnmarshalProtoMessageByJsonpbHookFunc(v proto.Message) mapstructure.DecodeH
 		}
 
 		// apply protobuf check
-		err = jsonpb.Unmarshal(dataBytes, v, jsonpb.WithUnmarshalAllowUnknownFields(true))
+		err = protojson.Unmarshal(dataBytes, v)
 		if err != nil {
 			return data, err
 		}

@@ -8,8 +8,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/golang/protobuf/proto"
+	protov1 "github.com/golang/protobuf/proto"
 	"github.com/searKing/golang/third_party/github.com/golang/protobuf/jsonpb"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // JSONPB contains the given interface object.
@@ -38,6 +40,8 @@ func WriteJSONPB(w http.ResponseWriter, obj interface{}) error {
 	var jsonBytes []byte
 	var err error
 	if msg, ok := obj.(proto.Message); ok {
+		jsonBytes, err = protojson.Marshal(msg)
+	} else if msg, ok := obj.(protov1.Message); ok {
 		jsonBytes, err = jsonpb.Marshal(msg)
 	} else {
 		jsonBytes, err = json.Marshal(obj)
