@@ -32,7 +32,7 @@ func Join(bufa []byte, bufbs ...[]byte) ([]byte, error) {
 	return bufa, nil
 }
 
-// Marshal returns the JSON encoding of va, vbs...,
+// MarshalConcat returns the JSON encoding of va, vbs...,
 // ignore conflict keys of json if meet later.
 func MarshalConcat(va interface{}, vbs ...interface{}) ([]byte, error) {
 	unique, err := marshalConcat(nil, va, vbs...)

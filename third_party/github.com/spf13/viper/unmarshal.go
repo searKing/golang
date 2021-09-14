@@ -5,14 +5,14 @@
 package viper
 
 import (
+	"bytes"
+	"encoding/json"
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
 	"github.com/spf13/viper"
 	"google.golang.org/protobuf/proto"
-
-	json_ "github.com/searKing/golang/go/encoding/json"
 )
 
 // UnmarshalProtoMessageByJsonpb returns the latest config viper proto
@@ -34,19 +34,40 @@ func UnmarshalProtoMessageByJsonpb(viper_ *viper.Viper, v proto.Message, opts ..
 // UnmarshalProtoMessageByJsonpbHookFunc returns a DecodeHookFunc that converts
 // root struct to config.ViperProto.
 // Trick of protobuf, which generates json tag only
-func UnmarshalProtoMessageByJsonpbHookFunc(v proto.Message) mapstructure.DecodeHookFunc {
+func UnmarshalProtoMessageByJsonpbHookFunc(def proto.Message) mapstructure.DecodeHookFunc {
 	return func(src reflect.Type, dst reflect.Type, data interface{}) (interface{}, error) {
-		// Convert it by parsing
-		dataBytes, err := json_.Marshal(data)
+		protoBytes, err := protojson.Marshal(def,
+			protojson.WithMarshalUseProtoNames(true),   // compatible with TextName
+			protojson.WithMarshalEmitUnpopulated(true), // compatible with json omitted
+		)
+		if err != nil {
+			return nil, err
+		}
+		dataBytes, err := json.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
 
-		// apply protobuf check
-		err = protojson.Unmarshal(dataBytes, v)
+		v := viper.New()
+		v.SetConfigType("json")
+		err = v.MergeConfig(bytes.NewReader(protoBytes))
 		if err != nil {
-			return data, err
+			return nil, err
 		}
-		return v, nil
+		err = v.MergeConfig(bytes.NewReader(dataBytes))
+		if err != nil {
+			return nil, err
+		}
+
+		allBytes, err := json.Marshal(v.AllSettings())
+		if err != nil {
+			return nil, err
+		}
+
+		err = protojson.Unmarshal(allBytes, def)
+		if err != nil {
+			return nil, err
+		}
+		return def, nil
 	}
 }
