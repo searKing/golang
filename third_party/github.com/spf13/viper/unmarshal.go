@@ -37,8 +37,7 @@ func UnmarshalProtoMessageByJsonpb(viper_ *viper.Viper, v proto.Message, opts ..
 func UnmarshalProtoMessageByJsonpbHookFunc(def proto.Message) mapstructure.DecodeHookFunc {
 	return func(src reflect.Type, dst reflect.Type, data interface{}) (interface{}, error) {
 		protoBytes, err := protojson.Marshal(def,
-			protojson.WithMarshalUseProtoNames(true),   // compatible with TextName
-			protojson.WithMarshalEmitUnpopulated(true), // compatible with json omitted
+			protojson.WithMarshalUseProtoNames(true), // compatible with TextName
 		)
 		if err != nil {
 			return nil, err
@@ -46,6 +45,20 @@ func UnmarshalProtoMessageByJsonpbHookFunc(def proto.Message) mapstructure.Decod
 		dataBytes, err := json.Marshal(data)
 		if err != nil {
 			return nil, err
+		}
+
+		{ // trick: transfer data to the same format as def, that is proto.Message
+			dataProto := proto.Clone(def)
+			err = protojson.Unmarshal(dataBytes, dataProto)
+			if err != nil {
+				return nil, err
+			}
+			dataBytes, err = protojson.Marshal(dataProto,
+				protojson.WithMarshalUseProtoNames(true),   // compatible with TextName
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		v := viper.New()
