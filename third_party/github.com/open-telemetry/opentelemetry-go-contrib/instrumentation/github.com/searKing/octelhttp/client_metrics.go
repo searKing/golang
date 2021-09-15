@@ -12,7 +12,6 @@ import (
 	http_ "github.com/searKing/golang/go/net/http"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
-	"google.golang.org/grpc/codes"
 )
 
 // ClientMetrics represents a collection of metrics to be registered on a
@@ -144,14 +143,14 @@ func (m *ClientMetrics) EnableClientStreamSendSizeHistogram(opts ...metric.Instr
 func (m *ClientMetrics) UnaryClientInterceptor() func(req *http.Request, retry int, invoker http_.ClientInvoker, opts ...http_.DoWithBackoffOption) (resp *http.Response, err error) {
 	return func(req *http.Request, retry int, invoker http_.ClientInvoker, opts ...http_.DoWithBackoffOption) (resp *http.Response, err error) {
 		ctx := req.Context()
-		monitor := newClientReporter(ctx, m, Http, fullMethodFromHttpRequest(req), req.Host, m.ClientHostport)
+		monitor := newClientReporter(ctx, m, req)
 		monitor.SentRequest(ctx, req)
 		resp, err = invoker(req, retry)
 		if err == nil {
 			monitor.ReceivedResponse(ctx, resp)
-			monitor.Handled(ctx, codes.Code(resp.StatusCode))
+			monitor.Handled(ctx, resp)
 		} else {
-			monitor.Handled(ctx, codes.Aborted)
+			monitor.Handled(ctx, resp)
 		}
 		return resp, err
 	}

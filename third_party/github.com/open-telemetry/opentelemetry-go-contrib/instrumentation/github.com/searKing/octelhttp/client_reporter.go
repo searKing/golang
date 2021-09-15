@@ -6,12 +6,13 @@ package otelgrpc
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"time"
 
+	net_ "github.com/searKing/golang/go/net"
 	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc/codes"
 )
 
 type clientReporter struct {
@@ -20,7 +21,15 @@ type clientReporter struct {
 	startTime time.Time
 }
 
-func newClientReporter(ctx context.Context, m *ClientMetrics, rpcType grpcType, fullMethod string, target string, source string) *clientReporter {
+func newClientReporter(ctx context.Context, m *ClientMetrics, req *http.Request) *clientReporter {
+	if m.ClientHostport == "" {
+		var addr string
+		if ip, err := net_.ListenIP(); err == nil {
+			addr = ip.String()
+		}
+		m.ClientHostport = net.JoinHostPort(addr, "0")
+	}
+
 	r := &clientReporter{
 		metrics: m,
 	}
@@ -28,7 +37,7 @@ func newClientReporter(ctx context.Context, m *ClientMetrics, rpcType grpcType, 
 		r.startTime = time.Now()
 	}
 
-	_, attrs := spanInfo(fullMethod, target, source, rpcType)
+	attrs := AttrsFromRequest(req, m.ClientHostport)
 	r.attrs = attrs
 	r.metrics.clientStartedCounter.Add(ctx, 1, r.Attrs()...)
 	return r
@@ -57,6 +66,7 @@ func (r *clientReporter) ReceivedResponse(ctx context.Context, resp *http.Respon
 
 func (r *clientReporter) SentRequest(ctx context.Context, req *http.Request) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
+
 	r.metrics.clientStreamRequestSent.Add(ctx, 1, attrs...)
 	if r.metrics.clientStreamSendSizeHistogramEnabled {
 		if req != nil {
@@ -67,8 +77,8 @@ func (r *clientReporter) SentRequest(ctx context.Context, req *http.Request) {
 	}
 }
 
-func (r *clientReporter) Handled(ctx context.Context, code codes.Code) {
-	attrs := r.Attrs(statusCodeAttr(code))
+func (r *clientReporter) Handled(ctx context.Context, resp *http.Response) {
+	attrs := r.Attrs(AttrsFromResponse(resp)...)
 	r.metrics.clientHandledCounter.Add(ctx, 1, attrs...)
 
 	if r.metrics.clientHandledTimeHistogramEnabled {

@@ -96,7 +96,7 @@ func parseFullMethod(fullMethod string) (string, []attribute.KeyValue) {
 
 // statusCodeAttr returns status code attribute based on given gRPC code
 func statusCodeAttr(c grpccodes.Code) attribute.KeyValue {
-	return GRPCStatusCodeKey.Int64(int64(c))
+	return semconv.RPCGRPCStatusCodeKey.Int64(int64(c))
 }
 
 // grpcTypeAttr returns gRPC type attribute based on given gRPC type

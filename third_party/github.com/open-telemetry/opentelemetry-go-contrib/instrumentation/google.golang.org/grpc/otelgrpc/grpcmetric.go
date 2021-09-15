@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	// GRPCStatusCodeKey is convention for numeric status code of a gRPC request.
-	GRPCStatusCodeKey = attribute.Key("rpc.grpc.status_code")
 	// GRPCTypeKey is convention for grpc type of a gRPC connection.
 	GRPCTypeKey = attribute.Key("rpc.grpc.type")
 )
