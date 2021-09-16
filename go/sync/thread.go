@@ -13,6 +13,8 @@ import (
 // Thread should be used for such as calling OS services or
 // non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
 type Thread struct {
+	GoRoutine bool // Use thread as goroutine, that is without runtime.LockOSThread()
+
 	once sync.Once
 	// fCh optionally specifies a function to generate
 	// a value when Get would otherwise return nil.
@@ -81,8 +83,10 @@ func (th *Thread) Do(ctx context.Context, f func()) error {
 }
 
 func (th *Thread) lockOSThreadForever() {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+	if th.GoRoutine {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+	}
 	for {
 		select {
 		case handler, ok := <-th.fCh:
