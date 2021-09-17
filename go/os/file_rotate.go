@@ -189,9 +189,8 @@ func (f *RotateFile) filePathByRotateSize() (name string, seq int) {
 }
 
 func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, byTime, bySize bool) {
+	// name using the regular time layout, without seq
 	name = f.filePathByRotateTime()
-	fi, err := os.Stat(name)
-
 	// startup
 	if f.usingFilePath == "" {
 		if f.ForceNewFileOnStartup {
@@ -205,7 +204,9 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, byTime, by
 	}
 
 	// rotate by time
+	// compare expect time with current using file
 	if name != trimSeqFromNextFileName(f.usingFilePath, f.usingSeq) {
+		_, err := os.Stat(name)
 		if os.IsNotExist(err) {
 			// rotate by time, reset part seq of rotate by size
 			name_, seq := maxSeqFileName(name)
@@ -217,8 +218,16 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, byTime, by
 		name, f.usingSeq = nextSeqFileName(name, f.usingSeq+1)
 		return name, false, true
 	}
+
+	// using file not exist, recreate file as rotated by time
+	usingFileInfo, err := os.Stat(f.usingFilePath)
+	if os.IsNotExist(err) {
+		return f.usingFilePath, false, true
+	}
+
 	// rotate by size
-	if forceRotate || (err == nil && (f.RotateSize > 0 && fi.Size() > f.RotateSize)) {
+	// compare rotate size with current using file
+	if forceRotate || (err == nil && (f.RotateSize > 0 && usingFileInfo.Size() > f.RotateSize)) {
 		// instead of just using the regular time layout,
 		// we create a new file name using names such as "foo.1", "foo.2", "foo.3", etc
 		name, f.usingSeq = nextSeqFileName(name, f.usingSeq+1)
@@ -403,7 +412,7 @@ func trimSeqFromNextFileName(name string, seq int) string {
 	return strings.TrimSuffix(name, fmt.Sprintf(".%d", seq))
 }
 
-// foo.txt.* -> foo.txt.[1,2,...], which is exist and seq is max
+// foo.txt.* -> foo.txt.[1,2,...], which exists and seq is max
 func maxSeqFileName(name string) (string, int) {
 	prefix, seq, suffix := MaxSeq(name + ".*")
 	if seq == 0 {
