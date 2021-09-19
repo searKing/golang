@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tags
+package timeoutlimit
 
 import (
 	"context"
 	"time"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 )
 
@@ -21,5 +22,20 @@ func UnaryServerInterceptor(timeout time.Duration) grpc.UnaryServerInterceptor {
 			defer cancel()
 		}
 		return handler(ctx, req)
+	}
+}
+
+// StreamServerInterceptor returns a new stream server interceptors with timeout limit of handle.
+// take effect if timeout > 0
+func StreamServerInterceptor(timeout time.Duration) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if timeout > 0 {
+			ctx, cancel := context.WithTimeout(ss.Context(), timeout)
+			defer cancel()
+			wrapped := grpc_middleware.WrapServerStream(ss)
+			wrapped.WrappedContext = ctx
+			ss = wrapped
+		}
+		return handler(srv, ss)
 	}
 }
