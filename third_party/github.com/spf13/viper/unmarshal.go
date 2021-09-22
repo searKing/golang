@@ -6,10 +6,10 @@ package viper
 
 import (
 	"bytes"
-	"encoding/json"
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
+	json_ "github.com/searKing/golang/go/encoding/json"
 	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
 	"github.com/spf13/viper"
 	"google.golang.org/protobuf/proto"
@@ -42,7 +42,9 @@ func UnmarshalProtoMessageByJsonpbHookFunc(def proto.Message) mapstructure.Decod
 		if err != nil {
 			return nil, err
 		}
-		dataBytes, err := json.Marshal(data)
+
+		// fix(json): error decoding '': json: unsupported type: map[interface {}]interface {}
+		dataBytes, err := json_.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +56,7 @@ func UnmarshalProtoMessageByJsonpbHookFunc(def proto.Message) mapstructure.Decod
 				return nil, err
 			}
 			dataBytes, err = protojson.Marshal(dataProto,
-				protojson.WithMarshalUseProtoNames(true),   // compatible with TextName
+				protojson.WithMarshalUseProtoNames(true), // compatible with TextName
 			)
 			if err != nil {
 				return nil, err
@@ -72,7 +74,8 @@ func UnmarshalProtoMessageByJsonpbHookFunc(def proto.Message) mapstructure.Decod
 			return nil, err
 		}
 
-		allBytes, err := json.Marshal(v.AllSettings())
+		// fix(json): error decoding '': json: unsupported type: map[interface {}]interface {}
+		allBytes, err := json_.Marshal(v.AllSettings())
 		if err != nil {
 			return nil, err
 		}
