@@ -151,7 +151,7 @@ func LockAll(path string) (*os.File, error) {
 // or CreateAll instead. It opens the named file or directory with specified flag
 // (O_RDONLY etc.).
 // If the file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask).
-// If the directory does not exist,, it is created with mode dirperm (before umask).
+// If the directory does not exist, it is created with mode dirperm (before umask).
 // If successful, methods on the returned File can be used for I/O.
 // If there is an error, it will be of type *PathError.
 func OpenFileAll(path string, flag int, dirperm, fileperm os.FileMode) (*os.File, error) {
