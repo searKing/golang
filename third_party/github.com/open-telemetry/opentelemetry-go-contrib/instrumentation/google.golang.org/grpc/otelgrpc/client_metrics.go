@@ -13,6 +13,7 @@ import (
 	net_ "github.com/searKing/golang/go/net"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
+	"go.opentelemetry.io/otel/metric/unit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -139,7 +140,7 @@ func (m *ClientMetrics) EnableClientStreamReceiveSizeHistogram(opts ...metric.In
 	var options []metric.InstrumentOption
 	options = append(options,
 		metric.WithDescription("Histogram of message size (bytes) of the gRPC single message receive."),
-		metric.WithUnit("s"))
+		metric.WithUnit(unit.Bytes))
 	options = append(options, opts...)
 	if !m.clientStreamReceiveSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
@@ -169,7 +170,7 @@ func (m *ClientMetrics) EnableClientStreamSendSizeHistogram(opts ...metric.Instr
 	var options []metric.InstrumentOption
 	options = append(options,
 		metric.WithDescription("Histogram of message size (bytes) of the gRPC single message send."),
-		metric.WithUnit("s"))
+		metric.WithUnit(unit.Bytes))
 	options = append(options, opts...)
 	if !m.clientStreamSendSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
