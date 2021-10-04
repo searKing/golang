@@ -15,23 +15,29 @@ import (
 )
 
 // TruncateString reset string, useful for dump into log if some field is huge
-func TruncateString(v interface{}, n int) {
-	Truncate(v, func(v interface{}) bool {
+// v is truncated in place
+// return interface{} same as truncated v for stream-like api
+func TruncateString(v interface{}, n int) interface{} {
+	return Truncate(v, func(v interface{}) bool {
 		_, ok := v.(string)
 		return ok
 	}, n)
 }
 
 // TruncateBytes reset bytes, useful for dump into log if some field is huge
-func TruncateBytes(v interface{}, n int) {
-	Truncate(v, func(v interface{}) bool {
+// v is truncated in place
+// return interface{} same as truncated v for stream-like api
+func TruncateBytes(v interface{}, n int) interface{} {
+	return Truncate(v, func(v interface{}) bool {
 		_, ok := v.([]byte)
 		return ok
 	}, n)
 }
 
 // Truncate reset bytes and string at each run of value c satisfying f(c), useful for dump into log if some field is huge
-func Truncate(v interface{}, f func(v interface{}) bool, n int) {
+// v is truncated in place
+// return interface{} same as truncated v for stream-like api
+func Truncate(v interface{}, f func(v interface{}) bool, n int) interface{} {
 	WalkValueBFS(reflect.ValueOf(v), FieldValueInfoHandlerFunc(func(info FieldValueInfo) (goon bool) {
 		if !info.Value().CanSet() || !info.Value().CanInterface() || !info.Value().CanSet() {
 			return true
@@ -63,5 +69,5 @@ func Truncate(v interface{}, f func(v interface{}) bool, n int) {
 		}
 		return true
 	}))
-
+	return v
 }

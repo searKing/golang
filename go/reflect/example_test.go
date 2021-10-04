@@ -34,14 +34,15 @@ func TestGetppid(t *testing.T) {
 }
 
 func TestTruncated(t *testing.T) {
-	var info =struct {
-		Name         string
+	var info = struct {
+		Name string
 		Desc []byte
 	}{
-		Name:         "ALPHA",
+		Name: "ALPHA",
 		Desc: []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
 	}
-	Truncate(&info, 3)
+	TruncateBytes(&info, 3)
+	TruncateString(&info, 3)
 	fmt.Printf("info truncated\n")
 	fmt.Printf("info.Name: %s\n", info.Name)
 	fmt.Printf("info.Desc: %s\n", info.Desc)
