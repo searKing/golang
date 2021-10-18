@@ -132,7 +132,7 @@ func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 // 当没有可用或足够的事件时，返回 Reservation，和要等待多久才能获得足够的事件。
 func (lim *BurstLimiter) ReserveN(ctx context.Context, n int) *Reservation {
 	r := lim.reserveN(ctx, n, true)
-	return &r
+	return r
 }
 
 // Wait is shorthand for WaitN(ctx, 1).
@@ -228,7 +228,7 @@ func (lim *BurstLimiter) getTokenNLocked(n int) (ok bool) {
 // reserveN is a helper method for AllowN, ReserveN, and WaitN.
 // maxFutureReserve specifies the maximum reservation wait duration allowed.
 // reserveN returns Reservation, not *Reservation, to avoid allocation in AllowN and WaitN.
-func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) Reservation {
+func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reservation {
 	lim.mu.Lock()
 	defer lim.mu.Unlock()
 
@@ -236,7 +236,7 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) Reserva
 	if lim.tokens >= n && len(lim.tokensChangedListeners) == 0 {
 		// get n tokens from lim
 		if lim.getTokenNLocked(n) {
-			return Reservation{
+			return &Reservation{
 				ok:     true,
 				lim:    lim,
 				tokens: 0, // tokens if consumed already,don't wait
@@ -265,7 +265,7 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) Reserva
 		lim.tokensChangedListeners = append(lim.tokensChangedListeners, r.tokensGot)
 	}
 
-	return r
+	return &r
 }
 
 func (lim *BurstLimiter) trackReservationRemove(r *Reservation) {

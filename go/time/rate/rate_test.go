@@ -154,7 +154,7 @@ func runReserveMax(t *testing.T, lim *BurstLimiter, req request, maxReserve time
 		t.Errorf("lim.reserveN(%v, %v) = (%v) want (%v)",
 			req.n, maxReserve, r.ok, req.ok)
 	}
-	return &r
+	return r
 }
 
 func TestSimpleReserve(t *testing.T) {
@@ -321,5 +321,55 @@ func BenchmarkWaitNNoDelay(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		lim.WaitN(ctx, 1)
+	}
+}
+
+func TestSimultaneousLongRequests(t *testing.T) {
+	const (
+		burst       = 5
+		numRequests = 15
+	)
+	var (
+		timeout = 1 * time.Millisecond
+	)
+	var (
+		wg    sync.WaitGroup
+		numOK = uint32(0)
+	)
+
+	// Very slow replenishing bucket.
+	lim := NewFullBurstLimiter(burst)
+
+	// Tries to take a token, atomically updates the counter and decreases the wait
+	// group counter.
+	f := func(i int) {
+		if i < numRequests {
+			defer wg.Done()
+		}
+		var limiterCtx = context.Background()
+		var cancel context.CancelFunc
+		if timeout > 0 {
+			limiterCtx, cancel = context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+		}
+		if err := lim.Wait(limiterCtx); err != nil {
+			t.Logf("#%d wait expect ok, got err %s", i, err)
+		} else {
+			atomic.AddUint32(&numOK, 1)
+			defer lim.PutToken()
+			t.Logf("#%d got token", i)
+			time.Sleep(time.Second)
+			t.Logf("#%d put token", i)
+		}
+	}
+
+	wg.Add(numRequests)
+	for i := 0; i < numRequests; i++ {
+		go f(i)
+	}
+	wg.Wait()
+	f(numRequests)
+	if numOK != burst+1 {
+		t.Errorf("numOK = %d, want %d", numOK, numRequests)
 	}
 }

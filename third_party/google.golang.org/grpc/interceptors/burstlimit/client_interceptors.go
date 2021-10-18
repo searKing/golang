@@ -8,7 +8,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/searKing/golang/go/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,7 +17,10 @@ import (
 // b bucket size, take effect if b > 0
 // timeout ResourceExhausted if cost more than timeout to get a token, take effect if timeout > 0
 func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterceptor {
-	limiter := rate.NewFullBurstLimiter(b)
+	limiter := make(chan struct{}, b)
+	for i := 0; i < b; i++ {
+		limiter <- struct{}{}
+	}
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if b > 0 {
 			var limiterCtx = ctx
@@ -27,12 +29,15 @@ func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterc
 				limiterCtx, cancel = context.WithTimeout(ctx, timeout)
 				defer cancel()
 			}
-			err := limiter.Wait(limiterCtx)
-			if err != nil {
+			select {
+			case <-limiter:
+				defer func() {
+					limiter <- struct{}{}
+				}()
+			case <-limiterCtx.Done():
 				return status.Errorf(codes.ResourceExhausted,
-					"%s is rejected by burstlimit unary client middleware, please retry later: %w", method, err)
+					"%s is rejected by burstlimit unary client middleware, please retry later: %s", method, limiterCtx.Err())
 			}
-			defer limiter.PutToken()
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
@@ -42,7 +47,10 @@ func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterc
 // b bucket size, take effect if b > 0
 // timeout ResourceExhausted if cost more than timeout to get a token, take effect if timeout > 0
 func StreamClientInterceptor(b int, timeout time.Duration) grpc.StreamClientInterceptor {
-	limiter := rate.NewFullBurstLimiter(b)
+	limiter := make(chan struct{}, b)
+	for i := 0; i < b; i++ {
+		limiter <- struct{}{}
+	}
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		if b > 0 {
 			var limiterCtx = ctx
@@ -51,12 +59,15 @@ func StreamClientInterceptor(b int, timeout time.Duration) grpc.StreamClientInte
 				limiterCtx, cancel = context.WithTimeout(ctx, timeout)
 				defer cancel()
 			}
-			err := limiter.Wait(limiterCtx)
-			if err != nil {
+			select {
+			case <-limiter:
+				defer func() {
+					limiter <- struct{}{}
+				}()
+			case <-limiterCtx.Done():
 				return nil, status.Errorf(codes.ResourceExhausted,
-					"%s is rejected by burstlimit stream client middleware, please retry later: %w", method, err)
+					"%s is rejected by burstlimit stream client middleware, please retry later: %s", method, limiterCtx.Err())
 			}
-			defer limiter.PutToken()
 		}
 		return streamer(ctx, desc, cc, method, opts...)
 	}
