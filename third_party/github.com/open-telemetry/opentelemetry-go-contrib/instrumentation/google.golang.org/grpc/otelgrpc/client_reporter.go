@@ -20,7 +20,7 @@ type clientReporter struct {
 	startTime time.Time
 }
 
-func newClientReporter(ctx context.Context, m *ClientMetrics, rpcType grpcType, fullMethod string, target string, source string) *clientReporter {
+func newClientReporter(ctx context.Context, m *ClientMetrics, rpcType grpcType, fullMethod string, peerAddress string, localAddress string) *clientReporter {
 	r := &clientReporter{
 		metrics: m,
 	}
@@ -28,7 +28,7 @@ func newClientReporter(ctx context.Context, m *ClientMetrics, rpcType grpcType, 
 		r.startTime = time.Now()
 	}
 
-	_, attrs := spanInfo(fullMethod, target, source, rpcType)
+	_, attrs := spanInfo(fullMethod, peerAddress, localAddress, rpcType, true)
 	r.attrs = attrs
 	r.metrics.clientStartedCounter.Add(ctx, 1, r.Attrs()...)
 	return r

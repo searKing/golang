@@ -20,48 +20,47 @@ import (
 
 // spanInfo returns a span name and all appropriate attributes from the gRPC
 // method and peer address.
-func spanInfo(fullMethod, peerAddress, localAddress string, grpcType grpcType) (string, []attribute.KeyValue) {
+func spanInfo(fullMethod, peerAddress, localAddress string, grpcType grpcType, client bool) (string, []attribute.KeyValue) {
 	attrs := []attribute.KeyValue{otelgrpc_.RPCSystemGRPC}
 	name, mAttrs := parseFullMethod(fullMethod)
 	attrs = append(attrs, mAttrs...)
-	attrs = append(attrs, peerAttr(peerAddress)...)
-	attrs = append(attrs, localAttr(localAddress)...)
+	attrs = append(attrs, peerAttr(peerAddress, client)...)
+	attrs = append(attrs, localAttr(localAddress, client)...)
 	attrs = append(attrs, grpcTypeAttr(grpcType))
 	return name, attrs
 }
 
 // peerAttr returns attributes about the peer address.
-func peerAttr(addr string) []attribute.KeyValue {
+func peerAttr(addr string, client bool) []attribute.KeyValue {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return []attribute.KeyValue(nil)
 	}
 
-	if host == "" {
-		host = "127.0.0.1"
+	var attrs []attribute.KeyValue
+	if host != "" {
+		attrs = append(attrs, semconv.NetPeerIPKey.String(host))
 	}
-
-	return []attribute.KeyValue{
-		semconv.NetPeerIPKey.String(host),
-		semconv.NetPeerPortKey.String(port),
+	if port != "" && port != "0" && client { // avoid bombs of various client's peer port
+		attrs = append(attrs, semconv.NetPeerPortKey.String(port))
 	}
+	return attrs
 }
 
 // localAttr returns attributes about the local address.
-func localAttr(addr string) []attribute.KeyValue {
+func localAttr(addr string, client bool) []attribute.KeyValue {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return []attribute.KeyValue(nil)
 	}
-
-	if host == "" {
-		host = "127.0.0.1"
+	var attrs []attribute.KeyValue
+	if host != "" {
+		attrs = append(attrs, semconv.NetHostIPKey.String(host))
 	}
-
-	return []attribute.KeyValue{
-		semconv.NetHostIPKey.String(host),
-		semconv.NetHostPortKey.String(port),
+	if port != "" && port != "0" && !client { // avoid bombs of various server's local port
+		attrs = append(attrs, semconv.NetHostPortKey.String(port))
 	}
+	return attrs
 }
 
 // peerFromCtx returns a peer address from a context, if one exists.

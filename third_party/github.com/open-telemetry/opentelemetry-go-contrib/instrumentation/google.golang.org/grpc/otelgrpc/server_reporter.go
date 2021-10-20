@@ -20,14 +20,14 @@ type serverReporter struct {
 	startTime time.Time
 }
 
-func newServerReporter(ctx context.Context, m *ServerMetrics, rpcType grpcType, fullMethod string, target string, source string) *serverReporter {
+func newServerReporter(ctx context.Context, m *ServerMetrics, rpcType grpcType, fullMethod string, peerAddress string, localAddress string) *serverReporter {
 	r := &serverReporter{
 		metrics: m,
 	}
 	if r.metrics.serverHandledTimeHistogramEnabled {
 		r.startTime = time.Now()
 	}
-	_, attrs := spanInfo(fullMethod, target, source, rpcType)
+	_, attrs := spanInfo(fullMethod, peerAddress, localAddress, rpcType, true)
 	r.attrs = attrs
 	r.metrics.serverStartedCounter.Add(ctx, 1, r.Attrs()...)
 	return r
