@@ -27,7 +27,7 @@ func newServerReporter(ctx context.Context, m *ServerMetrics, rpcType grpcType, 
 	if r.metrics.serverHandledTimeHistogramEnabled {
 		r.startTime = time.Now()
 	}
-	_, attrs := spanInfo(fullMethod, peerAddress, localAddress, rpcType, true)
+	_, attrs := spanInfo(fullMethod, peerAddress, localAddress, rpcType, false)
 	r.attrs = attrs
 	r.metrics.serverStartedCounter.Add(ctx, 1, r.Attrs()...)
 	return r

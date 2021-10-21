@@ -253,7 +253,7 @@ func preRegisterMethod(ctx context.Context, metrics *ServerMetrics, serviceName 
 		filter = func(attrs ...attribute.KeyValue) []attribute.KeyValue { return attrs }
 	}
 	// These are just references (no increments), as just referencing will create the labels but not set values.
-	_, attrs := spanInfo(mInfo.Name, ":0", metrics.ServerHostport, typeFromMethodInfo(mInfo), true)
+	_, attrs := spanInfo(mInfo.Name, ":0", metrics.ServerHostport, typeFromMethodInfo(mInfo), false)
 	metrics.serverStartedCounter.Add(ctx, 0, filter(attrs...)...)
 	metrics.serverStreamMsgReceived.Add(ctx, 0, filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...)
 	metrics.serverStreamMsgSent.Add(ctx, 0, filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...)
