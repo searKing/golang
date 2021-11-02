@@ -35,9 +35,13 @@ func (nj *{{.SqlJsonType}}) Scan(src interface{}) error {
 	var err error
 	switch src := src.(type) {
 	case string:
-		err = json.Unmarshal([]byte(src), nj)
+		if len(src) > 0 {
+			err = json.Unmarshal([]byte(src), nj)
+		}
 	case []byte:
-		err = json.Unmarshal(src, nj)
+		if len(src) > 0 {
+			err = json.Unmarshal(src, nj)
+		}
 	case time.Time:
 		srcBytes, _ := json.Marshal(src)
 		err = json.Unmarshal(srcBytes, nj)

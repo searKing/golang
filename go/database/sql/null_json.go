@@ -33,9 +33,13 @@ func (nj *NullJson) Scan(src interface{}) error {
 	var err error
 	switch src := src.(type) {
 	case string:
-		err = json.Unmarshal([]byte(src), &nj.Data)
+		if len(src) > 0 {
+			err = json.Unmarshal([]byte(src), &nj.Data)
+		}
 	case []byte:
-		err = json.Unmarshal(src, &nj.Data)
+		if len(src) > 0 {
+			err = json.Unmarshal(src, &nj.Data)
+		}
 	case time.Time:
 		srcBytes, _ := json.Marshal(src)
 		err = json.Unmarshal(srcBytes, &nj.Data)
