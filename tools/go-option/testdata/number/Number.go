@@ -21,12 +21,6 @@ func NewNumber(options ...NumberOption) *Number {
 	return (&Number{}).ApplyOptions()
 }
 
-func WithName(name string) NumberOption {
-	return NumberOptionFunc(func(num *Number) {
-		num.name = name
-	})
-}
-
 type Value string
 
 func main() {

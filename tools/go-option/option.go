@@ -79,7 +79,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
-	"go/token"
 	"go/types"
 	"io/ioutil"
 	"log"
@@ -93,16 +92,18 @@ import (
 )
 
 var (
-	typeInfos   = flag.String("type", "", "comma-separated list of type names; must be set")
-	output      = flag.String("output", "", "output file name; default srcdir/<type>_option.go")
-	trimPrefix  = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
-	trim        = flag.Bool("trim", false, "trim type names as prefix from the generated constant names")
-	lineComment = flag.Bool("linecomment", false, "use line comment text as printed text when present")
-	buildTags   = flag.String("tags", "", "comma-separated list of build tags to apply")
-	option      = flag.Bool("option", true, "generate options for type names")
-	config      = flag.Bool("config", false, "generate completed config for type names")
-	optionOnly  = flag.Bool("optiononly", false, "generate option, mute config; overwrite flags --config and --option; --optionOnly and --configOnly can not both be set")
-	configOnly  = flag.Bool("configonly", false, "generate config, mute option; overwrite flags --config and --option; --optionOnly and --configOnly can not both be set")
+	typeInfos               = flag.String("type", "", "comma-separated list of type names; must be set")
+	output                  = flag.String("output", "", "output file name; default srcdir/<type>_option.go")
+	flagSkipPrivateFields   = flag.Bool("skip-unexported", false, "skip unexported Fields")
+	flagSkipAnonymousFields = flag.Bool("skip-anonymous", false, "skip anonymous Fields")
+	trimPrefix              = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
+	trim                    = flag.Bool("trim", false, "trim type names as prefix from the generated constant names")
+	lineComment             = flag.Bool("linecomment", false, "use line comment text as printed text when present")
+	buildTags               = flag.String("tags", "", "comma-separated list of build tags to apply")
+	option                  = flag.Bool("option", true, "generate options for type names")
+	config                  = flag.Bool("config", false, "generate completed config for type names")
+	optionOnly              = flag.Bool("optiononly", false, "generate option, mute config; overwrite flags --config and --option; --optionOnly and --configOnly can not both be set")
+	configOnly              = flag.Bool("configonly", false, "generate config, mute option; overwrite flags --config and --option; --optionOnly and --configOnly can not both be set")
 )
 
 // Usage is a replacement usage function for the flags package.
@@ -190,18 +191,18 @@ func main() {
 	//	g.generateConfig(dir, types...)
 	//}
 
-	var values []Value
+	var structs []Struct
 	// Run inspect for each type.
 	for _, typeInfo := range types {
-		values = append(values, g.inspect(typeInfo))
+		structs = append(structs, g.inspect(typeInfo))
 	}
 
 	// Run render for each type.
 	if *option {
-		g.generateOption(dir, values...)
+		g.generateOption(dir, structs...)
 	}
 	if *config {
-		g.generateConfig(dir, values...)
+		g.generateConfig(dir, structs...)
 	}
 }
 
@@ -249,7 +250,7 @@ type File struct {
 	file *ast.File // Parsed AST.
 	// These fields are reset for each type being generated.
 	typeInfo typeInfo
-	values   []Value // Accumulator for constant values of that type.
+	structs  []Struct // Accumulator for constant structs of that type.
 
 	trimPrefix  string
 	lineComment bool
@@ -314,23 +315,23 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 }
 
 // inspect scans files for the named type.
-func (g *Generator) inspect(typeInfo typeInfo) Value {
+func (g *Generator) inspect(typeInfo typeInfo) Struct {
 	// <key, value>
-	var values []Value
+	structs := make([]Struct, 0, 100)
 	for _, file := range g.pkg.files {
 		// Set the state for this run of the walker.
 		file.typeInfo = typeInfo
-		file.values = nil
+		file.structs = nil
 		if file.file != nil {
 			ast.Inspect(file.file, file.genDecl)
-			values = append(values, file.values...)
+			structs = append(structs, file.structs...)
 		}
 	}
 
-	if len(values) == 0 {
+	if len(structs) == 0 {
 		log.Fatalf("no values defined for type %+v", typeInfo)
 	}
-	return values[0]
+	return structs[0]
 }
 
 // format returns the gofmt-ed contents of the Generator's buffer.
@@ -375,44 +376,6 @@ func (v *Value) String() string {
 	return v.str
 }
 
-// genDecl processes one declaration clause.
-func (f *File) genDecl(node ast.Node) bool {
-	decl, ok := node.(*ast.GenDecl)
-	// Token must be in IMPORT, CONST, TYPE, VAR
-	if !ok || decl.Tok != token.TYPE {
-		// We only care about const declarations.
-		return true
-	}
-	// The name of the type of the constants we are declaring.
-	// Can change if this is a multi-element declaration.
-	typ := ""
-	// Loop over the elements of the declaration. Each element is a ValueSpec:
-	// a list of names possibly followed by a type, possibly followed by values.
-	// If the type and value are both missing, we carry down the type (and value,
-	// but the "go/types" package takes care of that).
-	for _, spec := range decl.Specs {
-		tspec := spec.(*ast.TypeSpec) // Guaranteed to succeed as this is TYPE.
-		typ = tspec.Name.Name
-
-		if typ != f.typeInfo.Name {
-			// This is not the type we're looking for.
-			continue
-		}
-		v := Value{
-			typName: typ,
-			str:     typ,
-		}
-		if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
-			v.trimmedTypName = strings.TrimSpace(c.Text())
-		} else {
-			v.trimmedTypName = strings.TrimPrefix(v.typName, f.trimPrefix)
-		}
-		v.typImport = f.typeInfo.Import
-		f.values = append(f.values, v)
-	}
-	return false
-}
-
 // Helpers
 
 // createValAndNameDecl returns the pair of declarations for the run. The caller will add "var".
@@ -423,22 +386,23 @@ func createValAndNameDecl(typ string) (string, string) {
 	return defaultValName, defaultValDecl
 }
 
-func (g *Generator) generateOption(dir string, values ...Value) {
-	for _, val := range values {
+func (g *Generator) generateOption(dir string, structs ...Struct) {
+	for _, val := range structs {
 		g.generateOptionOneRun(dir, val)
 	}
 }
 
 // generateOptionOneRun produces the Option method for the named type.
-func (g *Generator) generateOptionOneRun(dir string, value Value) {
+func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 	//The generated code is simple enough to write as a Printf format.
 	tmplRender := TmplOptionRender{
 		GoOptionToolName:             goOptionsToolName,
 		GoOptionToolArgs:             os.Args[1:],
 		PackageName:                  g.pkg.name,
-		TargetTypeName:               value.typName,
-		TargetTypeImport:             value.typImport,
-		TrimmedTypeName:              value.trimmedTypName,
+		TargetTypeName:               value.StructTypeName,
+		TargetTypeImport:             value.StructTypeImport,
+		TrimmedTypeName:              value.trimmedStructTypeName,
+		Fields:                       value.Fields,
 		ApplyOptionsAsMemberFunction: false,
 	}
 
@@ -454,7 +418,7 @@ func (g *Generator) generateOptionOneRun(dir string, value Value) {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_options.go", value.typName)
+		baseName := fmt.Sprintf("%s_options.go", value.StructTypeName)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	err := ioutil.WriteFile(outputName, target, 0644)
@@ -463,22 +427,22 @@ func (g *Generator) generateOptionOneRun(dir string, value Value) {
 	}
 }
 
-func (g *Generator) generateConfig(dir string, values ...Value) {
-	for _, val := range values {
+func (g *Generator) generateConfig(dir string, structs ...Struct) {
+	for _, val := range structs {
 		g.generateConfigOneRun(dir, val)
 	}
 }
 
 // generateOptionOneRun produces the Option method for the named type.
-func (g *Generator) generateConfigOneRun(dir string, value Value) {
+func (g *Generator) generateConfigOneRun(dir string, value Struct) {
 	//The generated code is simple enough to write as a Printf format.
 	tmplRender := TmplConfigRender{
 		GoOptionToolName:             goOptionsToolName,
 		GoOptionToolArgs:             os.Args[1:],
 		PackageName:                  g.pkg.name,
-		TargetTypeName:               value.typName,
-		TargetTypeImport:             value.typImport,
-		TrimmedTypeName:              value.trimmedTypName,
+		TargetTypeName:               value.StructTypeName,
+		TargetTypeImport:             value.StructTypeImport,
+		TrimmedTypeName:              value.trimmedStructTypeName,
 		ApplyOptionsAsMemberFunction: false,
 	}
 
@@ -494,7 +458,7 @@ func (g *Generator) generateConfigOneRun(dir string, value Value) {
 	// Write to file.
 	outputName := *output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s.config.go", value.typName)
+		baseName := fmt.Sprintf("%s.config.go", value.StructTypeName)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	if _, err := os.Stat(outputName); !os.IsNotExist(err) {
