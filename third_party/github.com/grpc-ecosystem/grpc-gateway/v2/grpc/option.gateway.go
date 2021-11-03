@@ -5,20 +5,22 @@
 package grpc
 
 import (
+	"context"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin/binding"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpcctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 )
 
 type gatewayOption struct {
@@ -40,38 +42,30 @@ type gatewayOption struct {
 
 func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
 	var streamInterceptors []grpc.StreamServerInterceptor
-	streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(),
-		grpc_opentracing.StreamServerInterceptor(),
-		grpc_prometheus.StreamServerInterceptor,
-		grpc_recovery.StreamServerInterceptor())
+	streamInterceptors = append(streamInterceptors, grpcctxtags.StreamServerInterceptor(),
+		grpcrecovery.StreamServerInterceptor())
 	streamInterceptors = append(streamInterceptors, opt.grpcServerOpts.streamInterceptors...)
 
 	var unaryInterceptors []grpc.UnaryServerInterceptor
-	unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(),
-		grpc_opentracing.UnaryServerInterceptor(),
-		grpc_prometheus.UnaryServerInterceptor,
-		grpc_recovery.UnaryServerInterceptor())
+	unaryInterceptors = append(unaryInterceptors, grpcctxtags.UnaryServerInterceptor(),
+		grpcrecovery.UnaryServerInterceptor())
 	unaryInterceptors = append(unaryInterceptors, opt.grpcServerOpts.unaryInterceptors...)
 
 	return append(opt.grpcServerOpts.opts,
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(streamInterceptors...)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(unaryInterceptors...)))
+		grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(streamInterceptors...)),
+		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(unaryInterceptors...)))
 }
 
 func (opt *gatewayOption) ClientDialOpts() []grpc.DialOption {
-	var clientInterceptors []grpc.StreamClientInterceptor
-	clientInterceptors = append(clientInterceptors,
-		grpc_opentracing.StreamClientInterceptor(),
-		grpc_prometheus.StreamClientInterceptor)
+	var streamInterceptors []grpc.StreamClientInterceptor
+	streamInterceptors = append(streamInterceptors)
 
 	var unaryInterceptors []grpc.UnaryClientInterceptor
-	unaryInterceptors = append(unaryInterceptors,
-		grpc_opentracing.UnaryClientInterceptor(),
-		grpc_prometheus.UnaryClientInterceptor)
+	unaryInterceptors = append(unaryInterceptors)
 
 	return append(opt.grpcClientDialOpts,
-		grpc.WithChainStreamInterceptor(grpc_middleware.ChainStreamClient(clientInterceptors...)),
-		grpc.WithChainUnaryInterceptor(grpc_middleware.ChainUnaryClient(unaryInterceptors...)))
+		grpc.WithChainStreamInterceptor(grpcmiddleware.ChainStreamClient(streamInterceptors...)),
+		grpc.WithChainUnaryInterceptor(grpcmiddleware.ChainUnaryClient(unaryInterceptors...)))
 }
 
 func WithGrpcUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) GatewayOption {
@@ -124,11 +118,36 @@ func WithGrpcDialOption(opts ...grpc.DialOption) GatewayOption {
 
 // helper below
 
+// MessageProducerWithForward fill "X-Forwarded-For" and "X-Forwarded-Host" to record http callers
+func MessageProducerWithForward(ctx context.Context, format string, level logrus.Level, code codes.Code, err error, fields logrus.Fields) {
+	const xForwardedFor = "X-Forwarded-For"
+	const xForwardedHost = "X-Forwarded-Host"
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		{
+			fwd := md.Get(xForwardedFor)
+			if len(fwd) > 0 {
+				fields[strings.ToLower(xForwardedFor)] = md.Get(xForwardedFor)
+			}
+		}
+		{
+			fwd := md.Get(xForwardedHost)
+			if len(fwd) > 0 {
+				fields[strings.ToLower(xForwardedHost)] = md.Get(xForwardedHost)
+			}
+		}
+	}
+
+	// peer.address
+	grpclogrus.DefaultMessageProducer(ctx, format, level, code, err, fields)
+}
+
 func WithLogrusLogger(logger *logrus.Logger) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		l := logrus.NewEntry(logger)
-		WithGrpcStreamServerChain(grpc_logrus.StreamServerInterceptor(l)).apply(gateway)
-		WithGrpcUnaryServerChain(grpc_logrus.UnaryServerInterceptor(l)).apply(gateway)
+		WithGrpcStreamServerChain(grpclogrus.StreamServerInterceptor(l, grpclogrus.WithMessageProducer(MessageProducerWithForward))).apply(gateway)
+		WithGrpcUnaryServerChain(grpclogrus.UnaryServerInterceptor(l, grpclogrus.WithMessageProducer(MessageProducerWithForward))).apply(gateway)
 	})
 }
 
