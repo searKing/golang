@@ -97,16 +97,12 @@ func MessageProducerWithForward(ctx context.Context, format string, level logrus
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
-		{
-			fwd := md.Get(xForwardedFor)
+		for _, key := range []string{strings.ToLower(xForwardedFor), strings.ToLower(xForwardedHost)} {
+			fwd := md.Get(key)
 			if len(fwd) > 0 {
-				fields[strings.ToLower(xForwardedFor)] = md.Get(xForwardedFor)
-			}
-		}
-		{
-			fwd := md.Get(xForwardedHost)
-			if len(fwd) > 0 {
-				fields[strings.ToLower(xForwardedHost)] = md.Get(xForwardedHost)
+				if _, has := fields[strings.ToLower(key)]; !has {
+					fields[strings.ToLower(key)] = fwd
+				}
 			}
 		}
 	}
