@@ -131,7 +131,7 @@ func _{{.OptionInterfaceName}}WithDefault() {{.OptionInterfaceName}} {
 }
 {{- end}}
 {{- range .Fields}}
-{{- if $package_scope.WithTargetTypeNameAsPrefix }}
+{{- if $package_scope.WithTargetTypeNameAsPrefix }} in {{$package_scope.TargetTypeName}}.
 // {{$package_scope.OptionInterfaceName}}With{{.FieldName}} sets {{.FieldName}}.
 func {{$package_scope.OptionInterfaceName}}With{{.FieldName}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
 	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
@@ -139,7 +139,7 @@ func {{$package_scope.OptionInterfaceName}}With{{.FieldName}}(v {{.FieldType}}) 
 	})
 }
 {{- else}}
-// With{{.FormatFieldName}} sets {{.FieldName}}.
+// With{{.FormatFieldName}} sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
 func With{{.FormatFieldName}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
 	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
 		o.{{.FieldName}} = v
