@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -190,7 +191,8 @@ func dsnForSqlOpen(dsn_ string) (string, error) {
 	scheme, connect, query := dsn.Split(dsn_)
 
 	query = cleanURLQuery(query)
-	if scheme == "mysql" {
+	// special case, remove scheme for mysql*
+	if strings.HasPrefix(scheme, "mysql") {
 		query.Set("parseTime", "true")
 		scheme = ""
 	}
