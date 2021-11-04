@@ -10,6 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -137,7 +138,7 @@ func (c otlpConn) ExecContext(ctx context.Context, query string, args []driver.N
 			span.End()
 		}()
 		if c.options.Query {
-			attrs = append(attrs, attribute.String("sql.query", query))
+			attrs = append(attrs, semconv.DBStatementKey.String(query))
 			if c.options.QueryParams {
 				attrs = append(attrs, namedParamsAttr(args)...)
 			}
@@ -182,7 +183,7 @@ func (c otlpConn) Query(query string, args []driver.Value) (rows driver.Rows, er
 			attribute.String("sql.deprecated", "driver does not support QueryerContext"),
 		)
 		if c.options.Query {
-			attrs = append(attrs, attribute.String("sql.query", query))
+			attrs = append(attrs, semconv.DBStatementKey.String(query))
 			if c.options.QueryParams {
 				attrs = append(attrs, paramsAttr(args)...)
 			}
@@ -222,7 +223,7 @@ func (c otlpConn) QueryContext(ctx context.Context, query string, args []driver.
 			span.End()
 		}()
 		if c.options.Query {
-			attrs = append(attrs, attribute.String("sql.query", query))
+			attrs = append(attrs, semconv.DBStatementKey.String(query))
 			if c.options.QueryParams {
 				attrs = append(attrs, namedParamsAttr(args)...)
 			}
@@ -263,7 +264,7 @@ func (c otlpConn) Prepare(query string) (stmt driver.Stmt, err error) {
 			attrMissingContext,
 		)
 		if c.options.Query {
-			attrs = append(attrs, attribute.String("sql.query", query))
+			attrs = append(attrs, semconv.DBStatementKey.String(query))
 		}
 	}
 
@@ -303,7 +304,7 @@ func (c *otlpConn) PrepareContext(ctx context.Context, query string) (stmt drive
 			span.End()
 		}()
 		if c.options.Query {
-			attrs = append(attrs, attribute.String("sql.query", query))
+			attrs = append(attrs, semconv.DBStatementKey.String(query))
 		}
 	}
 

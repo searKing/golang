@@ -10,6 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -64,7 +65,7 @@ func (s otlpStmt) Exec(args []driver.Value) (res driver.Result, err error) {
 	)
 
 	if s.options.Query {
-		attrs = append(attrs, attribute.String("sql.query", s.query))
+		attrs = append(attrs, semconv.DBStatementKey.String(s.query))
 		if s.options.QueryParams {
 			attrs = append(attrs, paramsAttr(args)...)
 		}
@@ -115,7 +116,7 @@ func (s otlpStmt) Query(args []driver.Value) (rows driver.Rows, err error) {
 	)
 
 	if s.options.Query {
-		attrs = append(attrs, attribute.String("sql.query", s.query))
+		attrs = append(attrs, semconv.DBStatementKey.String(s.query))
 		if s.options.QueryParams {
 			attrs = append(attrs, paramsAttr(args)...)
 		}
@@ -151,7 +152,7 @@ func (s otlpStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (re
 		span.End()
 	}()
 	if s.options.Query {
-		attrs = append(attrs, attribute.String("sql.query", s.query))
+		attrs = append(attrs, semconv.DBStatementKey.String(s.query))
 		if s.options.QueryParams {
 			attrs = append(attrs, namedParamsAttr(args)...)
 		}
@@ -190,7 +191,7 @@ func (s otlpStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (r
 	}()
 
 	if s.options.Query {
-		attrs = append(attrs, attribute.String("sql.query", s.query))
+		attrs = append(attrs, semconv.DBStatementKey.String(s.query))
 		if s.options.QueryParams {
 			attrs = append(attrs, namedParamsAttr(args)...)
 		}
