@@ -76,7 +76,8 @@ func RegisterWithSource(driverName string, source string, options ...WrapperOpti
 
 // Wrap takes an SQL driver and wraps it with OpenCensus instrumentation.
 func Wrap(d driver.Driver, options ...WrapperOption) driver.Driver {
-	o := wrapper{}
+	var o wrapper
+	o.SetDefaults()
 	o.ApplyOptions(options...)
 	if o.InstanceName == "" {
 		o.InstanceName = defaultInstanceName

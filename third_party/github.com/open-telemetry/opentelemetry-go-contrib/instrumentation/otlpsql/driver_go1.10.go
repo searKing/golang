@@ -23,9 +23,10 @@ var (
 )
 
 // WrapConnector allows wrapping a database driver.Connector which eliminates
-// the need to register ocsql as an available driver.Driver.
+// the need to register otlpsql as an available driver.Driver.
 func WrapConnector(dc driver.Connector, options ...WrapperOption) driver.Connector {
-	o := wrapper{}
+	var o wrapper
+	o.SetDefaults()
 	o.ApplyOptions(options...)
 	if o.InstanceName == "" {
 		o.InstanceName = defaultInstanceName

@@ -33,7 +33,8 @@ var (
 
 // WrapConn allows an existing driver.Conn to be wrapped by sql.
 func WrapConn(c driver.Conn, options ...WrapperOption) driver.Conn {
-	o := wrapper{}
+	var o wrapper
+	o.SetDefaults()
 	o.ApplyOptions(options...)
 	if o.InstanceName == "" {
 		o.InstanceName = defaultInstanceName

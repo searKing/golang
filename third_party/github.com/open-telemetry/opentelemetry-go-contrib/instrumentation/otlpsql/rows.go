@@ -31,7 +31,7 @@ var (
 
 // withRowsColumnTypeScanType is the same as the driver.RowsColumnTypeScanType
 // interface except it omits the driver.Rows embedded interface.
-// If the original driver.Rows implementation wrapped by ocsql supports
+// If the original driver.Rows implementation wrapped by otlpsql supports
 // RowsColumnTypeScanType we enable the original method implementation in the
 // returned driver.Rows from wrapRows by doing a composition with otlpRows.
 type withRowsColumnTypeScanType interface {

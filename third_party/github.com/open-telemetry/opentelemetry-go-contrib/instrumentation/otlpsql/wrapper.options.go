@@ -16,9 +16,9 @@ const defaultInstanceName = "default"
 // security in mind.
 //go:generate go-option -type=wrapper
 type wrapper struct {
-	// AllowRoot, if set to true, will allow ocsql to create root spans in
+	// AllowRoot, if set to true, will allow otlpsql to create root spans in
 	// absence of existing spans or even context.
-	// Default is to not trace ocsql calls if no existing parent span is found
+	// Default is to not trace otlpsql calls if no existing parent span is found
 	// in context or when using methods not taking context.
 	AllowRoot bool
 
@@ -62,6 +62,13 @@ type wrapper struct {
 	DisableErrSkip bool
 }
 
+func (w *wrapper) SetDefaults() {
+	// https://opentracing.io/specification/conventions/
+	// db.type	string	Database type.
+	// For any SQL database, "sql". For others, the lower-case database category, e.g. "cassandra", "hbase", or "redis".
+	w.DefaultAttributes = append(w.DefaultAttributes, attribute.String("db.type", "sql"))
+}
+
 // WithAllWrapperOptions enables all available trace options.
 func WithAllWrapperOptions() WrapperOption {
 	return WrapperOptionFunc(func(o *wrapper) {
@@ -71,23 +78,24 @@ func WithAllWrapperOptions() WrapperOption {
 
 // AllWrapperOptions has all tracing options enabled.
 var AllWrapperOptions = wrapper{
-	AllowRoot:    true,
-	Ping:         true,
-	RowsNext:     true,
-	RowsClose:    true,
-	RowsAffected: true,
-	LastInsertID: true,
-	Query:        true,
-	QueryParams:  true,
+	AllowRoot:         true,
+	Ping:              true,
+	RowsNext:          true,
+	RowsClose:         true,
+	RowsAffected:      true,
+	LastInsertID:      true,
+	Query:             true,
+	QueryParams:       true,
+	DefaultAttributes: []attribute.KeyValue{attribute.String("db.type", "sql")},
 }
 
-// WithOptions sets our ocsql tracing middleware options through a single
+// WithOptions sets our otlpsql tracing middleware options through a single
 // WrapperOptions object.
 func WithOptions(options wrapper) WrapperOption {
 	return WrapperOptionFunc(func(o *wrapper) {
 		*o = options
 		o.DefaultAttributes = append(
-			[]attribute.KeyValue{}, options.DefaultAttributes...,
+			[]attribute.KeyValue{attribute.String("db.type", "sql")}, options.DefaultAttributes...,
 		)
 	})
 }
