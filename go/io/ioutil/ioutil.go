@@ -86,7 +86,7 @@ func WriteRenameFileAll(filename string, data []byte, dirperm os.FileMode) error
 	}
 	defer tempFile.Close()
 
-	tempFilePath := filepath.Join(tempDir, tempFile.Name())
+	tempFilePath := tempFile.Name()
 	defer os.Remove(tempFilePath)
 	_, err = tempFile.Write(data)
 	if err != nil {
