@@ -104,6 +104,9 @@ func (f *File) genDecl(node ast.Node) bool {
 					if t.Params == nil || t.Results == nil {
 						continue
 					}
+					if len(t.Params.List) == 0 || len(t.Results.List) == 0 {
+						continue
+					}
 					fieldType = "func()"
 				case *ast.InterfaceType:
 					if t.Methods == nil {
