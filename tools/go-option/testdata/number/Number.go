@@ -27,7 +27,7 @@ func main() {
 	var num *Number
 	num = &Number{}
 	ck(num, "")
-	num = NewNumber(WithName("Name"))
+	num = NewNumber(WithNumberName("Name"))
 	ck(num, "")
 }
 

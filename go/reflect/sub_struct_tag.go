@@ -7,7 +7,7 @@ import (
 
 // SubStructTag defines a single struct's string literal tag
 type SubStructTag struct {
-	// Key is the tag key, such as json, xml, etc..
+	// Key is the tag key, such as json, xml, etc.
 	// i.e: `json:"foo,omitempty". Here key is: "json"
 	Key string
 
