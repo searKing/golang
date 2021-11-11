@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"strings"
@@ -63,14 +64,55 @@ func (f *File) genDecl(node ast.Node) bool {
 		}
 
 		for _, field := range sExpr.Fields.List {
-			fieldName := ""
-			fieldType := ""
+			var fieldName string
+			var fieldType string
+			var filedIsMap bool
+			var fieldIsSlice bool
+			var fieldSliceElt string
 			{
-				ident, ok := field.Type.(*ast.Ident)
-				if !ok {
+				switch t := field.Type.(type) {
+				case *ast.Ident:
+					fieldType = t.String()
+				case *ast.ArrayType:
+					ident, ok := t.Elt.(*ast.Ident)
+					if !ok {
+						continue
+					}
+					if t.Len != nil {
+						l, ok := t.Len.(*ast.BasicLit)
+						if !ok {
+							continue
+						}
+						fieldType = fmt.Sprintf("[%s]%s", l.Value, ident.String())
+					} else {
+						fieldType = fmt.Sprintf("[]%s", ident.String())
+						fieldIsSlice = true
+						fieldSliceElt = ident.String()
+					}
+				case *ast.MapType:
+					k, ok := t.Key.(*ast.Ident)
+					if !ok {
+						continue
+					}
+					v, ok := t.Value.(*ast.Ident)
+					if !ok {
+						continue
+					}
+					fieldType = fmt.Sprintf("map[%s]%s", k.String(), v.String())
+					filedIsMap = true
+				case *ast.FuncType:
+					if t.Params == nil || t.Results == nil {
+						continue
+					}
+					fieldType = "func()"
+				case *ast.InterfaceType:
+					if t.Methods == nil {
+						continue
+					}
+					fieldType = "interface{}"
+				default:
 					continue
 				}
-				fieldType = ident.String()
 			}
 			if len(field.Names) != 0 { // pick first exported Name
 				for _, field := range field.Names {
@@ -114,6 +156,9 @@ func (f *File) genDecl(node ast.Node) bool {
 				FieldDocComment:  field.Doc,
 				FieldLineComment: field.Comment,
 				OptionTag:        tagOption,
+				FieldIsSlice:     fieldIsSlice,
+				FieldSliceElt:    fieldSliceElt,
+				FieldIsMap:       filedIsMap,
 			})
 		}
 		f.structs = append(f.structs, v)

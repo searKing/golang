@@ -45,6 +45,9 @@ type StructField struct {
 	FieldDocComment  *ast.CommentGroup     // The doc comment of the struct field.
 	FieldLineComment *ast.CommentGroup     // The line comment of the struct field.
 	OptionTag        reflect_.SubStructTag // The OptionTag of the struct field.
+	FieldIsSlice     bool                  // The FieldType of the struct field is a slice.
+	FieldSliceElt    string                // slice elt type name
+	FieldIsMap       bool                  // The FieldType of the struct field is a map.
 
 	FormatFieldName     string   // The format FieldName of the struct field.
 	FormatFieldComments []string // The format comment of the struct field.
@@ -157,6 +160,51 @@ func {{$package_scope.OptionInterfaceName}}With{{.FieldName}}(v {{.FieldType}}) 
 	})
 }
 {{- else}}
+{{- if .FieldIsSlice }}
+// With{{.FormatFieldName}} appends {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+{{- range .FormatFieldComments}}
+{{.}}
+{{- end}}
+func With{{.FormatFieldName}}(v ...{{.FieldSliceElt}}) {{$package_scope.OptionInterfaceName}} {
+	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+		o.{{.FieldName}} = append(o.{{.FieldName}}, v...)
+	})
+}
+// With{{.FormatFieldName}}Replace sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+{{- range .FormatFieldComments}}
+{{.}}
+{{- end}}
+func With{{.FormatFieldName}}Replace(v ...{{.FieldSliceElt}}) {{$package_scope.OptionInterfaceName}} {
+	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+		o.{{.FieldName}} = v
+	})
+}
+{{- else if .FieldIsMap}}
+// With{{.FormatFieldName}} appends {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+{{- range .FormatFieldComments}}
+{{.}}
+{{- end}}
+func With{{.FormatFieldName}}(m {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
+	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+		if o.{{.FieldName}} == nil {
+			o.{{.FieldName}} = m
+			return
+		}
+		for k,v := range m {
+			o.{{.FieldName}}[k] = v
+		}
+	})
+}
+// With{{.FormatFieldName}}Replace sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+{{- range .FormatFieldComments}}
+{{.}}
+{{- end}}
+func With{{.FormatFieldName}}Replace(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
+	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+		o.{{.FieldName}} = v
+	})
+}
+{{- else}}
 // With{{.FormatFieldName}} sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
 {{- range .FormatFieldComments}}
 {{.}}
@@ -166,6 +214,7 @@ func With{{.FormatFieldName}}(v {{.FieldType}}) {{$package_scope.OptionInterface
 		o.{{.FieldName}} = v
 	})
 }
+{{- end}}
 {{- end}}
 {{- end}}
 `

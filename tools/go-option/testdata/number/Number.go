@@ -14,7 +14,12 @@ import (
 
 //go:generate go-option -type "Number"
 type Number struct {
-	name string
+	arrayType     [5]int64
+	funcType      func()
+	interfaceType interface{}
+	mapType       map[string]int64
+	sliceType     []int64
+	name          string
 }
 
 func NewNumber(options ...NumberOption) *Number {
