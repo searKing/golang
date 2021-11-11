@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// 错误码
+package github.com.searKing.golang.third_party.github.com.spf13.viper.testdata;
+import "google/protobuf/descriptor.proto";
+
+
+option go_package = "github.com/searKing/golang/third_party/github.com/spf13/viper/testdata;testdata";
+
+message Config{
+  map<int64, string> credentials = 1[json_name = "Credentials"];
+}
