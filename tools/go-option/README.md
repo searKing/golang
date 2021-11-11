@@ -7,8 +7,8 @@
 
 Generates Go code using a package as a graceful option.
 
-go-option Generates Go code using a package as a graceful options Given the name of a atomic.Value type T go-option will
-create a new self-contained Go source file implementing
+go-option Generates Go code using a package as a graceful options Given the name of an atomic.Value type T go-option
+will create a new self-contained Go source file implementing
 
 ```
 // type TOption interface{
@@ -26,7 +26,13 @@ For example, given this snippet,
 ```go
 package painkiller
 
-type Pill struct{}
+type Pill struct {
+	// This is Name doc comment
+	Name      string // This is Name line comment
+	Age       string `option:",short"`
+	Address   string `option:"-"`
+	NameAlias string `option:"Title,"`
+}
 ```
 
 running this command
@@ -70,9 +76,33 @@ func (o *Pill) ApplyOptions(options ...PillOption) *Pill {
 	}
 	return o
 }
+
+// WithPillName sets Name in Pill.
+// This is Name doc comment
+// This is Name line comment
+func WithPillName(v string) PillOption {
+	return PillOptionFunc(func( o *Pill) {
+		o.Name = v
+	})
+}
+
+// WithAge sets Age in Pill.
+func WithAge(v string) PillOption {
+	return PillOptionFunc(func( o *Pill) {
+		o.Age = v
+	})
+}
+
+// WithPillTitle sets Name in Pill.
+func WithPillTitle(v string) PillOption {
+	return PillOptionFunc(func( o *Pill) {
+		o.NameAlias = v
+	})
+}
+
 ```
 
-Typically this process would be run using go generate, like this:
+Typically, this process would be run using go generate, like this:
 
 ```bash
 //go:generate go-option -type "Pill"

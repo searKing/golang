@@ -1,8 +1,10 @@
 package main
 
 import (
+	"go/ast"
 	"strings"
 
+	reflect_ "github.com/searKing/golang/go/reflect"
 	strings_ "github.com/searKing/golang/go/strings"
 )
 
@@ -38,11 +40,14 @@ type Struct struct {
 }
 
 type StructField struct {
-	FieldName string // The FieldName of the struct field.
-	FieldType string // The FieldType of the struct field.
-	TagName   string // The TagName of the struct field.
+	FieldName        string                // The FieldName of the struct field.
+	FieldType        string                // The FieldType of the struct field.
+	FieldDocComment  *ast.CommentGroup     // The doc comment of the struct field.
+	FieldLineComment *ast.CommentGroup     // The line comment of the struct field.
+	OptionTag        reflect_.SubStructTag // The OptionTag of the struct field.
 
-	FormatFieldName string // The format FieldName of the struct field.
+	FormatFieldName     string   // The format FieldName of the struct field.
+	FormatFieldComments []string // The format comment of the struct field.
 }
 
 func (t *TmplOptionRender) Complete() {
@@ -67,7 +72,20 @@ func (t *TmplOptionRender) Complete() {
 	}
 
 	for i, field := range t.Fields {
-		t.Fields[i].FormatFieldName = strings_.UpperCamelCaseSlice(strings_.ValueOrDefault(field.TagName, field.FieldName))
+		t.Fields[i].FormatFieldName = strings_.UpperCamelCaseSlice(strings_.ValueOrDefault(field.OptionTag.Name, field.FieldName))
+		if !field.OptionTag.HasOption(TagOptionFlagShort) {
+			t.Fields[i].FormatFieldName = t.TrimmedTypeName + t.Fields[i].FormatFieldName
+		}
+		if field.FieldDocComment != nil {
+			for _, c := range field.FieldDocComment.List {
+				t.Fields[i].FormatFieldComments = append(t.Fields[i].FormatFieldComments, c.Text)
+			}
+		}
+		if field.FieldLineComment != nil {
+			for _, c := range field.FieldLineComment.List {
+				t.Fields[i].FormatFieldComments = append(t.Fields[i].FormatFieldComments, c.Text)
+			}
+		}
 	}
 }
 
@@ -140,6 +158,9 @@ func {{$package_scope.OptionInterfaceName}}With{{.FieldName}}(v {{.FieldType}}) 
 }
 {{- else}}
 // With{{.FormatFieldName}} sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+{{- range .FormatFieldComments}}
+{{.}}
+{{- end}}
 func With{{.FormatFieldName}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
 	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
 		o.{{.FieldName}} = v

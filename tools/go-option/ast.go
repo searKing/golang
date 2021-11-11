@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	TagOption = "option"
+	TagOption          = "option"
+	TagOptionFlagShort = "short" // `option:",short"`
 )
 
 func isPublicName(name string) bool {
@@ -106,10 +107,13 @@ func (f *File) genDecl(node ast.Node) bool {
 				// ignore this field
 				continue
 			}
+
 			v.Fields = append(v.Fields, StructField{
-				FieldName: fieldName,
-				FieldType: fieldType,
-				TagName:   tagOption.Name,
+				FieldName:        fieldName,
+				FieldType:        fieldType,
+				FieldDocComment:  field.Doc,
+				FieldLineComment: field.Comment,
+				OptionTag:        tagOption,
 			})
 		}
 		f.structs = append(f.structs, v)
