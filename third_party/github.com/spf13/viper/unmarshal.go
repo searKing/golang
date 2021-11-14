@@ -6,9 +6,11 @@ package viper
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	json_ "github.com/searKing/golang/go/encoding/json"
+	strings_ "github.com/searKing/golang/go/strings"
 	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
 	"github.com/spf13/viper"
 	"google.golang.org/protobuf/proto"
@@ -43,6 +45,9 @@ func UnmarshalKey(key string, rawVal interface{}, opts ...viper.DecoderConfigOpt
 }
 
 func UnmarshalKeyViper(v *viper.Viper, key string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+	if v == nil {
+		return UnmarshalKey(key, rawVal, opts...)
+	}
 	if key == "" {
 		return UnmarshalViper(v, rawVal, opts...)
 	}
@@ -50,6 +55,14 @@ func UnmarshalKeyViper(v *viper.Viper, key string, rawVal interface{}, opts ...v
 		opts = append([]viper.DecoderConfigOption{DecodeProtoJsonHook(val)}, opts...)
 	}
 	return v.UnmarshalKey(key, rawVal, opts...)
+}
+
+func UnmarshalKeys(keys []string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+	return UnmarshalKey(strings.Join(strings_.SliceTrimEmpty(keys...), "."), rawVal, opts...)
+}
+
+func UnmarshalKeysViper(v *viper.Viper, keys []string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+	return UnmarshalKeyViper(v, strings.Join(strings_.SliceTrimEmpty(keys...), "."), rawVal, opts...)
 }
 
 // Unmarshal unmarshalls the config into a Struct. Make sure that the tags
@@ -63,6 +76,9 @@ func Unmarshal(rawVal interface{}, opts ...viper.DecoderConfigOption) error {
 }
 
 func UnmarshalViper(v *viper.Viper, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+	if v == nil {
+		return Unmarshal(rawVal, opts...)
+	}
 	if val, ok := rawVal.(proto.Message); ok {
 		opts = append([]viper.DecoderConfigOption{DecodeProtoJsonHook(val)}, opts...)
 	}
@@ -80,6 +96,9 @@ func UnmarshalExact(rawVal interface{}, opts ...viper.DecoderConfigOption) error
 }
 
 func UnmarshalExactViper(v *viper.Viper, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+	if v == nil {
+		return UnmarshalExact(rawVal, opts...)
+	}
 	if val, ok := rawVal.(proto.Message); ok {
 		opts = append([]viper.DecoderConfigOption{DecodeProtoJsonHook(val)}, opts...)
 	}
