@@ -265,6 +265,10 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (io.Wri
 		}
 	}
 	if newFile == nil {
+		// no file can be written, it's an error explicitly
+		if f.usingFile == nil {
+			return nil, err
+		}
 		return f.usingFile, nil
 	}
 
