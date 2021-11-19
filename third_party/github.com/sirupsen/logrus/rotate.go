@@ -78,6 +78,9 @@ func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error 
 	file.MaxAge = opt.MaxAge
 	file.MaxCount = opt.MaxCount
 	file.ForceNewFileOnStartup = opt.ForceNewFileOnStartup
+	if _, ok := log.Formatter.(*GlogFormatter); ok {
+		file.PreRotateHandler = GlogPreRotate
+	}
 
 	var out = ioutil.Discard
 	if opt.MuteDirectlyOutput {

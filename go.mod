@@ -29,6 +29,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.0
+	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/urfave/negroni v1.0.0
 	go.opentelemetry.io/contrib v0.23.0
