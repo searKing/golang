@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -87,9 +88,13 @@ type GlogFormatter struct {
 	// The keys sorting function, when uninitialized it uses sort.Strings.
 	SortingFunc func([]string)
 
+	// replace level.String()
+	LevelStringFunc func(level logrus.Level) string
+
 	// Set the truncation of the level text to n characters.
 	// >0, truncate the level text to n characters at most.
-	// <=0, truncate the level text to 1 characters at most.
+	// =0, truncate the level text to 1 characters at most.
+	// <0, don't truncate
 	LevelTruncationLimit int
 
 	// Disables the glog style ：[IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg msg...
@@ -139,11 +144,18 @@ func NewGlogFormatter() *GlogFormatter {
 func NewGlogEnhancedFormatter() *GlogFormatter {
 	return &GlogFormatter{
 		DisableQuote:         true,
-		ForceGoroutineId:     false,
 		LevelTruncationLimit: 5,
+		PadLevelText:         true,
 		HumanReadable:        true,
 		WithFuncName:         true,
 		QuoteEmptyFields:     true,
+		DisableSorting:       true,
+		LevelStringFunc: func(level logrus.Level) string {
+			if level == logrus.WarnLevel {
+				return "WARN"
+			}
+			return strings.ToUpper(level.String())
+		},
 	}
 }
 
@@ -153,12 +165,19 @@ func (f *GlogFormatter) init(entry *logrus.Entry) {
 	}
 	// Get the max length of the level text
 	for _, level := range logrus.AllLevels {
-		levelTextLength := utf8.RuneCount([]byte(level.String()))
+		levelTextLength := utf8.RuneCount([]byte(f.levelString(level)))
 		if levelTextLength > f.levelTextMaxLength {
 			f.levelTextMaxLength = levelTextLength
 		}
 	}
 	f.pid = getPid()
+}
+
+func (f *GlogFormatter) levelString(level logrus.Level) string {
+	if f.LevelStringFunc != nil {
+		return f.LevelStringFunc(level)
+	}
+	return strings.ToUpper(level.String())
 }
 
 func (f *GlogFormatter) isColored() bool {
@@ -365,6 +384,14 @@ func (f *GlogFormatter) header(entry *logrus.Entry, depth int, levelColor int, l
 			if line < 0 {
 				line = 0 // not a real line number, but acceptable to someDigits
 			}
+			slash := strings.LastIndex(function, ".")
+			if slash >= 0 {
+				function = function[slash+1:]
+			}
+			slash = strings.LastIndex(file, "/")
+			if slash >= 0 {
+				file = file[slash+1:]
+			}
 			fileline = fmt.Sprintf("%s:%d", file, line)
 		}
 	}
@@ -388,14 +415,29 @@ func (f *GlogFormatter) level(level logrus.Level) (levelColor int, levelText str
 		}
 	}
 
-	levelText = strings.ToUpper(level.String())
-	if !f.PadLevelText {
+	levelText = f.levelString(level)
+	{
 		limit := f.LevelTruncationLimit
-		if limit <= 0 {
+		if limit > f.levelTextMaxLength {
+			limit = f.levelTextMaxLength
+		}
+		if limit == 0 {
 			limit = 1
+		}
+		if limit < 0 {
+			limit = f.levelTextMaxLength
 		}
 		if limit > 0 && limit < len(levelText) {
 			levelText = levelText[0:limit]
+		}
+		if f.PadLevelText {
+			// Generates the format string used in the next line, for example "%-6s" or "%-7s".
+			// Based on the max level text length.
+			formatString := "%-" + strconv.Itoa(limit) + "s"
+			// Formats the level text by appending spaces up to the max length, for example:
+			// 	- "INFO   "
+			//	- "WARNING"
+			levelText = fmt.Sprintf(formatString, levelText)
 		}
 	}
 	return levelColor, levelText
@@ -433,13 +475,15 @@ func (f *GlogFormatter) formatHeader(entry *logrus.Entry, levelColor int, levelT
 				buf.WriteString(fmt.Sprintf("%s%04d", levelText, int(entry.Time.Sub(baseTimestamp)/time.Second)))
 			}
 		default:
+			layout := strings_.ValueOrDefault(f.TimestampFormat, time_.GLogDate)
+			var formatString string
 			if f.HumanReadable {
-				buf.WriteString(fmt.Sprintf("[%s] [%s]", levelText,
-					entry.Time.Format(strings_.ValueOrDefault(f.TimestampFormat, time_.GLogDate))))
+				formatString = "[%s] [%s]"
 			} else {
-				buf.WriteString(fmt.Sprintf("%s%s", levelText,
-					entry.Time.Format(strings_.ValueOrDefault(f.TimestampFormat, time_.GLogDate))))
+				formatString = "%s%s"
 			}
+			buf.WriteString(fmt.Sprintf(formatString, levelText, entry.Time.Format(layout)))
+
 		}
 	}
 

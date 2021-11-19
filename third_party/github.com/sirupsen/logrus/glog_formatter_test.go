@@ -34,7 +34,7 @@ func ExampleNewGlogFormatter() {
 	fmt.Printf("%s", string(b))
 
 	// Output:
-	// P00010101 00:00:00 0 run_example.go:64] Hello World, error="opps, an error occured", foo=bar
+	// P00010101 00:00:00.000000 0 run_example.go:64] Hello World, error="opps, an error occured", foo=bar
 }
 
 func ExampleNewGlogEnhancedFormatter() {
@@ -49,7 +49,7 @@ func ExampleNewGlogEnhancedFormatter() {
 	fmt.Printf("%s", string(b))
 
 	// Output:
-	// [PANIC] [00010101 00:00:00] [0] [run_example.go:64] Hello World, error=opps, an error occured, foo=bar
+	// [PANIC] [00010101 00:00:00.000000] [0] [run_example.go:64] Hello World, error=opps, an error occured, foo=bar
 }
 
 func TestFormatting(t *testing.T) {
@@ -65,7 +65,7 @@ func TestFormatting(t *testing.T) {
 		value    string
 		expected string
 	}{
-		{`foo`, "P00010101 00:00:00 0 testing.go:1259] , test=foo\n"},
+		{`foo`, "P00010101 00:00:00.000000 0 testing.go:1259] , test=foo\n"},
 	}
 
 	for i, tc := range testCases {
@@ -197,7 +197,7 @@ func TestTimestampFormat(t *testing.T) {
 		if format == "" {
 			format = time_.GLogDate
 		}
-		_, e := time.Parse(format, (string)(timeStr))
+		_, e := time.Parse(format, strings.TrimSpace(string(timeStr)))
 		if e != nil {
 			t.Errorf("time string %q did not match provided time format %q: %s", timeStr, format, e)
 		}
@@ -298,8 +298,8 @@ func TestPadLevelText(t *testing.T) {
 
 	// We create a "default" GlogFormatter to do a control test.
 	// We also create a GlogFormatter with PadLevelText, which is the parameter we want to do our most relevant assertions against.
-	tfDefault := GlogFormatter{HumanReadable: true}
-	tfWithPadding := GlogFormatter{HumanReadable: true, PadLevelText: true}
+	tfDefault := GlogFormatter{}
+	tfWithPadding := GlogFormatter{HumanReadable: true, PadLevelText: true, LevelTruncationLimit: -1}
 
 	for _, val := range params {
 		t.Run(val.name, func(t *testing.T) {
@@ -399,7 +399,7 @@ func TestGlogFormatterFieldMap(t *testing.T) {
 	}
 
 	assert.Equal(t,
-		`W19810224 04:28:03 0 testing.go:1259] `+
+		`W19810224 04:28:03.000000 0 testing.go:1259] `+
 			`oh hi, `+
 			`field1=f1, `+
 			`fields.message=messagefield, `+
