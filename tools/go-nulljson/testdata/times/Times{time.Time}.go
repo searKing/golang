@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//go:generate go-nulljson -type "Times<time.Time>"
+//go:generate go-nulljson -type "Times<time.Time>" --protojson
 
 func main() {
 	var times Times
