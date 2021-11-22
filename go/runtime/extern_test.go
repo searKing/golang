@@ -9,6 +9,15 @@ import (
 	"github.com/searKing/golang/go/runtime"
 )
 
+func TestGetCallerFrame(t *testing.T) {
+	// Example:
+	// github.com/searKing/golang/go/runtime_test.TestGetCallerFrame
+	frame := runtime.GetCallerFrame(1)
+	if match, _ := regexp.MatchString(`TestGetCaller(.*)`, frame.Function); !match {
+		t.Errorf("mismatch symbolized function name: %s",  frame.Function)
+	}
+}
+
 func TestGetCaller(t *testing.T) {
 	// Example:
 	// github.com/searKing/golang/go/runtime_test.TestGetCaller

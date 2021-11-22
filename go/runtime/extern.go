@@ -6,6 +6,20 @@ import (
 	"strings"
 )
 
+// GetCallerFrame returns the caller frame of the function that calls it.
+// The argument skip is the number of stack frames
+// to skip before recording in pc, with 0 identifying the frame for Callers itself and
+// 1 identifying the caller of Callers.
+func GetCallerFrame(skip int) *runtime.Frame {
+	pc := make([]uintptr, 1)
+	n := runtime.Callers(skip+1, pc[:])
+	if n < 1 {
+		return nil
+	}
+	frame, _ := runtime.CallersFrames(pc).Next()
+	return &frame
+}
+
 // GetCaller returns the caller of the function that calls it.
 // The argument skip is the number of stack frames
 // to skip before recording in pc, with 0 identifying the frame for Callers itself and
