@@ -15,6 +15,8 @@ type SqlRender struct {
 	ValueType   string // value type name
 	NilValue    string // nil value of map type
 
+	ProtoJson bool // generate codec of proto by protojson, instead of json
+
 	CanAlias bool // use type {{.SqlJsonType}} = {{.ValueType}} instead of type {{.SqlJsonType}} {{.ValueType}}
 }
 

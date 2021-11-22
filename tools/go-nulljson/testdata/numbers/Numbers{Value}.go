@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-//go:generate go-nulljson -type "Numbers<Value>"
+//go:generate go-nulljson -type "Numbers<Value>" -nullable -protojson
 type Value string
 
 func main() {

@@ -27,21 +27,65 @@ func (nj *{{.SqlJsonType}}) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case string:
 		if len(src) > 0 {
-			err = json.Unmarshal([]byte(src), &nj.Data)
+			var v interface{} = &nj.Data
+			switch v := v.(type) {
+{{- if .ProtoJson }}
+			case proto.Message:
+				err = protojson.UnmarshalOptions{
+					AllowPartial:   true,
+					DiscardUnknown: true,
+				}.Unmarshal([]byte(src), v)
+{{- end}}
+			default:
+				err = json.Unmarshal([]byte(src), v)
+			}
 		}
 	case []byte:
 		if len(src) > 0 {
-			err = json.Unmarshal(src, &nj.Data)
+			var v interface{} = &nj.Data
+			switch v := v.(type) {
+{{- if .ProtoJson }}
+			case proto.Message:
+				err = protojson.UnmarshalOptions{
+					AllowPartial:   true,
+					DiscardUnknown: true,
+				}.Unmarshal(src, v)
+{{- end}}
+			default:
+				err = json.Unmarshal(src, v)
+			}
 		}
 	case time.Time:
 		srcBytes, _ := json.Marshal(src)
-		err = json.Unmarshal(srcBytes, &nj.Data)
+		var v interface{} = &nj.Data
+		switch v := v.(type) {
+		case proto.Message:
+{{- if .ProtoJson }}
+			err = protojson.UnmarshalOptions{
+				AllowPartial:   true,
+				DiscardUnknown: true,
+			}.Unmarshal(srcBytes, v)
+{{- end}}
+		default:
+			err = json.Unmarshal(srcBytes, v)
+		}
 	case nil:
 		nj.Data = {{.NilValue}}
 		err = nil
 	default:
 		srcBytes, _ := json.Marshal(src)
-		err = json.Unmarshal(srcBytes, &nj.Data)
+		var v interface{} = &nj.Data
+		switch v := v.(type) {
+{{- if .ProtoJson }}
+		case proto.Message:
+			err = protojson.UnmarshalOptions{
+				AllowPartial:   true,
+				DiscardUnknown: true,
+			}.Unmarshal(srcBytes, v)
+{{- end}}
+		default:
+			err = json.Unmarshal(srcBytes, v)
+		}
 	}
 	if err == nil {
 		return nil
@@ -55,6 +99,16 @@ func (nj {{.SqlJsonType}}) Value() (driver.Value, error) {
 	if !nj.Valid {
 		return nil, nil
 	}
-	return json.Marshal(nj.Data)
+	var v interface{} = &nj.Data
+	switch v := v.(type) {
+{{- if .ProtoJson }}
+	case proto.Message:
+		return protojson.MarshalOptions{
+			AllowPartial:      true,
+		}.Marshal(v)
+{{- end}}
+	default:
+		return json.Marshal(v)
+	}
 }
 `
