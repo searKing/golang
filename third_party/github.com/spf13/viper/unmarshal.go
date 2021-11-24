@@ -5,6 +5,7 @@
 package viper
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 
@@ -28,7 +29,12 @@ func DecodeProtoJsonHook(v proto.Message) viper.DecoderConfigOption {
 		c.WeaklyTypedInput = true
 		c.ZeroFields = false
 		c.Result = v
-		c.DecodeHook = UnmarshalProtoMessageHookFunc()
+		if c.ZeroFields {
+			c.DecodeHook = UnmarshalProtoMessageHookFunc(nil)
+		} else {
+			// v as default
+			c.DecodeHook = UnmarshalProtoMessageHookFunc(v)
+		}
 	}
 }
 
@@ -108,7 +114,8 @@ func UnmarshalExactViper(v *viper.Viper, rawVal interface{}, opts ...viper.Decod
 // UnmarshalProtoMessageHookFunc returns a DecodeHookFunc that converts
 // root struct to config.ViperProto.
 // Trick of protobuf, which generates json tag only
-func UnmarshalProtoMessageHookFunc() mapstructure.DecodeHookFunc {
+// def is the default value of dst
+func UnmarshalProtoMessageHookFunc(def proto.Message) mapstructure.DecodeHookFunc {
 	return func(src reflect.Type, dst reflect.Type, data interface{}) (interface{}, error) {
 		dataProto, ok := reflect.New(dst).Interface().(proto.Message)
 		if !ok {
@@ -122,10 +129,44 @@ func UnmarshalProtoMessageHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		// trick: transfer data to the same format as def, that is proto.Message
-		err = protojson.Unmarshal(dataBytes, dataProto)
+		if def == nil {
+			err = protojson.Unmarshal(dataBytes, dataProto)
+			if err != nil {
+				return nil, err
+			}
+			return dataProto, nil
+		}
+
+		// trick: transfer data to the same format as def, that is proto.Message
+		// TODO replace merge trick below of merge option for protojson.Unmarshal
+		// See https://github.com/protocolbuffers/protobuf/issues/8263
+		defBytes, err := protojson.Marshal(def,
+			protojson.WithMarshalUseProtoNames(true), // compatible with TextName
+		)
 		if err != nil {
 			return nil, err
 		}
-		return dataProto, err
+
+		v := viper.New()
+		v.SetConfigType("json")
+		err = v.MergeConfig(bytes.NewReader(defBytes))
+		if err != nil {
+			return nil, err
+		}
+		err = v.MergeConfig(bytes.NewReader(dataBytes))
+		if err != nil {
+			return nil, err
+		}
+
+		// fix(json): error decoding '': json: unsupported type: map[interface {}]interface {}
+		allBytes, err := json_.Marshal(v.AllSettings())
+		if err != nil {
+			return nil, err
+		}
+		err = protojson.Unmarshal(allBytes, dataProto)
+		if err != nil {
+			return nil, err
+		}
+		return dataProto, nil
 	}
 }
