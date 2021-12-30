@@ -10,6 +10,8 @@ import (
 	"io"
 )
 
+var _ error = multiError{} // verify that Error implements error
+
 // Multi returns an error with the supplied errors.
 // If no error contained, return nil.
 func Multi(errs ...error) error {
@@ -61,7 +63,7 @@ func (e multiError) Format(s fmt.State, verb rune) {
 	}
 }
 
-// clean removes all none nil elem in all of the errors
+// clean removes all none nil elem in all the errors
 func (e multiError) clean() multiError {
 	var errs []error
 	for _, err := range e {
@@ -72,7 +74,7 @@ func (e multiError) clean() multiError {
 	return errs
 }
 
-// Is reports whether any error in multiError and it's chain chain matches target.
+// Is reports whether any error in multiError matches target.
 func (e multiError) Is(target error) bool {
 	if target == nil {
 		errs := e.clean()
