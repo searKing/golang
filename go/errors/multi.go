@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -90,4 +90,16 @@ func (e multiError) Is(target error) bool {
 		}
 	}
 	return false
+}
+
+// Unwrap returns the error in e, if there is exactly one. If there is more than one
+// error, Unwrap returns nil, since there is no way to determine which should be
+// returned.
+func (e multiError) Unwrap() error {
+	if len(e) == 1 {
+		return e[0]
+	}
+	// Return nil when e is nil, or has more than one error.
+	// When there are multiple errors, it doesn't make sense to return any of them.
+	return nil
 }
