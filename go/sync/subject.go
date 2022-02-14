@@ -1,3 +1,7 @@
+// Copyright 2022 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package sync
 
 import (
@@ -42,7 +46,7 @@ type subscriber struct {
 	msgC chan interface{}
 
 	once  sync.Once
-	doneC chan struct{} // closed when when subscriber is in shutdown, like removed.
+	doneC chan struct{} // closed when subscriber is in shutdown, like removed.
 }
 
 func (s *subscriber) Shutdown() {
