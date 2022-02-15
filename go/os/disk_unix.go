@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build !windows && (android || darwin || dragonfly || freebsd || ios)
+//go:build !windows && (android || darwin || dragonfly || freebsd || linux || ios)
 // +build !windows
-// +build android darwin dragonfly freebsd ios
-
-// !windows && !aix && !hurd && !illumos && !js && !nacl && !netbsd && !openbsd && !solaris && !plan9
+// +build android darwin dragonfly freebsd linux ios
 
 package os
 
