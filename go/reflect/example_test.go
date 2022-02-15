@@ -47,8 +47,8 @@ func TestTruncate(t *testing.T) {
 		Friends:    []Human{{Name: "BETA", Desc: []byte("abcdefghijklmnopqrstuvwxyz")}},
 		FriendById: map[string][]Human{"quick brown fox": {{Name: "GRAMMAR", Desc: []byte("The quick brown fox jumps over the lazy dog")}}},
 	}
-	TruncateBytes(&info, 3)
-	TruncateString(&info, 3)
+	TruncateBytes(info, 3)
+	TruncateString(info, 3)
 	fmt.Printf("info truncated\n")
 	fmt.Printf("info.Name: %s\n", info.Name)
 	fmt.Printf("info.Desc: %s\n", info.Desc)
