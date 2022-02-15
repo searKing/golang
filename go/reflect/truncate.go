@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -38,36 +38,67 @@ func TruncateBytes(v interface{}, n int) interface{} {
 // v is truncated in place
 // return interface{} same as truncated v for stream-like api
 func Truncate(v interface{}, f func(v interface{}) bool, n int) interface{} {
-	WalkValueBFS(reflect.ValueOf(v), FieldValueInfoHandlerFunc(func(info FieldValueInfo) (goon bool) {
-		if !info.Value().CanSet() || !info.Value().CanInterface() || !info.Value().CanSet() {
-			return true
-		}
-		vv := info.Value().Interface()
-		if !f(vv) {
-			return true
-		}
-
-		switch vv := vv.(type) {
-		case []byte:
-			if len(vv) <= n {
-				break
-			}
-			var buf bytes.Buffer
-			buf.WriteString(fmt.Sprintf("size: %d, bytes: ", len(vv)))
-			buf.Write(bytes_.Truncate(vv, n))
-			info.Value().SetBytes(buf.Bytes())
-			return true
-		case string:
-			if len(vv) <= n {
-				break
-			}
-			var buf strings.Builder
-			buf.WriteString(fmt.Sprintf("size: %d, string: ", len(vv)))
-			buf.WriteString(strings_.Truncate(vv, n))
-			info.Value().SetString(buf.String())
-			return true
-		}
-		return true
-	}))
+	truncate(reflect.ValueOf(v), f, n)
 	return v
+}
+
+func truncate(v reflect.Value, f func(v interface{}) bool, n int) {
+	if !v.IsValid() {
+		return
+	}
+	if IsNilType(v.Type()) {
+		return
+	}
+
+	if v.CanInterface() {
+		vv := v.Interface()
+		if f(vv) {
+			// handle v in place, stop visit sons
+			if v.CanSet() {
+				switch vv := vv.(type) {
+				case []byte:
+					if len(vv) <= n {
+						break
+					}
+					var buf bytes.Buffer
+					buf.WriteString(fmt.Sprintf("size: %d, bytes: ", len(vv)))
+					buf.Write(bytes_.Truncate(vv, n))
+					v.SetBytes(buf.Bytes())
+					return
+				case string:
+					if len(vv) <= n {
+						break
+					}
+					var buf strings.Builder
+					buf.WriteString(fmt.Sprintf("size: %d, string: ", len(vv)))
+					buf.WriteString(strings_.Truncate(vv, n))
+					v.SetString(buf.String())
+					return
+				}
+			}
+			return
+		}
+	}
+
+	// handle v's sons
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			truncate(v.Index(i), f, n)
+		}
+	case reflect.Struct:
+		// Scan typ for fields to include.
+		for i := 0; i < v.NumField(); i++ {
+			truncate(v.Field(i), f, n)
+		}
+	case reflect.Map:
+		iter := v.MapRange()
+		for iter.Next() {
+			//truncate(iter.Key(), f, n) // Key of Map is not addressable
+			truncate(iter.Value(), f, n)
+		}
+	case reflect.Ptr:
+		truncate(reflect.Indirect(v), f, n)
+	}
+	return
 }

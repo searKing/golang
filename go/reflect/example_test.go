@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -33,22 +33,43 @@ func TestGetppid(t *testing.T) {
 	}
 }
 
-func TestTruncated(t *testing.T) {
-	var info = struct {
-		Name string
-		Desc []byte
-	}{
-		Name: "ALPHA",
-		Desc: []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+func TestTruncate(t *testing.T) {
+	type Human struct {
+		Name       string
+		Desc       []byte
+		Friends    []Human
+		FriendById map[string][]Human
+	}
+
+	var info = Human{
+		Name:       "ALPHA",
+		Desc:       []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+		Friends:    []Human{{Name: "BETA", Desc: []byte("abcdefghijklmnopqrstuvwxyz")}},
+		FriendById: map[string][]Human{"quick brown fox": {{Name: "GRAMMAR", Desc: []byte("The quick brown fox jumps over the lazy dog")}}},
 	}
 	TruncateBytes(&info, 3)
 	TruncateString(&info, 3)
 	fmt.Printf("info truncated\n")
 	fmt.Printf("info.Name: %s\n", info.Name)
 	fmt.Printf("info.Desc: %s\n", info.Desc)
+
+	for i, friend := range info.Friends {
+		fmt.Printf("info.Friends[%d].Name: %s\n", i, friend.Name)
+		fmt.Printf("info.Friends[%d].Desc: %s\n", i, friend.Desc)
+	}
+	for id, friends := range info.FriendById {
+		for i, friend := range friends {
+			fmt.Printf("info.FriendById[%s][%d].Name: %s\n", id, i, friend.Name)
+			fmt.Printf("info.FriendById[%s][%d].Desc: %s\n", id, i, friend.Desc)
+		}
+	}
 	// Output:
 	// info truncated
 	// info.Name: size: 5, string: ALP
 	// info.Desc: size: 26, bytes: ABC
+	// info.Friends[0].Name: size: 4, string: BET
+	// info.Friends[0].Desc: size: 26, bytes: abc
+	// info.FriendById[quick brown fox][0].Name: size: 7, string: GRA
+	// info.FriendById[quick brown fox][0].Desc: size: 43, bytes: The
 
 }
