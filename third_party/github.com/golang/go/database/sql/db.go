@@ -1,8 +1,13 @@
+// Copyright 2022 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package sql
 
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/url"
 	"runtime"
@@ -15,7 +20,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/luna-duclos/instrumentedsql"
 	"github.com/luna-duclos/instrumentedsql/opentracing"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/searKing/golang/go/database/dsn"
@@ -127,13 +131,13 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 	db_, err := sql.Open(driverName, dsn_)
 	if err != nil {
 		db.fieldLogger().WithError(err).WithField("dsn", classifiedDSN).Error("Unable to open SQL connection")
-		return nil, errors.Wrapf(err, "could not open SQL connection")
+		return nil, fmt.Errorf("could not open SQL connection: %w", err)
 	}
 
 	db.db = sqlx.NewDb(db_, driverPackage) // This must be clean.Scheme otherwise things like `Rebind()` won't work
 	if err := db.db.Ping(); err != nil {
 		db.fieldLogger().WithError(err).WithField("dsn", classifiedDSN).Error("Unable to ping SQL database backend")
-		return nil, errors.Wrapf(err, "could not ping SQL connection")
+		return nil, fmt.Errorf("could not ping SQL connection: %w", err)
 	}
 
 	db.fieldLogger().WithField("dsn", classifiedDSN).Info("Successfully connected to SQL database backend")

@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,9 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-
-	"github.com/pkg/errors"
+	"os"
 )
 
 // LoadX509CertificatePool returns loads a TLS x509.CertPool or update a TLS x509.CertPool if nil.
@@ -29,7 +27,7 @@ func LoadX509CertificatePool(
 	var tlsCertBytes []byte
 	var err error
 	if certString == "" && certFile == "" && len(certs) == 0 {
-		return nil, errors.WithStack(ErrNoCertificatesConfigured)
+		return nil, ErrNoCertificatesConfigured
 	}
 	if certString != "" {
 		tlsCertBytes, err = base64.StdEncoding.DecodeString(certString)
@@ -37,7 +35,7 @@ func LoadX509CertificatePool(
 			return nil, fmt.Errorf("unable to base64 decode the TLS certificate: %v", err)
 		}
 	} else if certFile != "" {
-		tlsCertBytes, err = ioutil.ReadFile(certFile)
+		tlsCertBytes, err = os.ReadFile(certFile)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +83,7 @@ func LoadX509CertificatePool(
 	}
 
 	if len(tlsCertBytes) == 0 {
-		return nil, errors.WithStack(ErrInvalidCertificateConfiguration)
+		return nil, ErrInvalidCertificateConfiguration
 	}
 	if certPool == nil {
 		certPool = x509.NewCertPool()

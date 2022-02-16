@@ -12,10 +12,10 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
+	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // PublicKey returns the public key for a given key or nul.
@@ -59,7 +59,7 @@ func CreateSelfSignedCertificate(key interface{}, organizations []string, common
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return cert, errors.Errorf("failed to generate serial number: %s", err)
+		return cert, fmt.Errorf("failed to generate serial number: %s", err)
 	}
 
 	certificate := &x509.Certificate{
@@ -84,12 +84,12 @@ func CreateSelfSignedCertificate(key interface{}, organizations []string, common
 	certificate.DNSNames = append(certificate.DNSNames, "localhost")
 	der, err := x509.CreateCertificate(rand.Reader, certificate, certificate, PublicKey(key), key)
 	if err != nil {
-		return cert, errors.Errorf("failed to create certificate: %s", err)
+		return cert, fmt.Errorf("failed to create certificate: %s", err)
 	}
 
 	cert, err = x509.ParseCertificate(der)
 	if err != nil {
-		return cert, errors.Errorf("failed to encode private key: %s", err)
+		return cert, fmt.Errorf("failed to encode private key: %s", err)
 	}
 	return cert, nil
 }
@@ -103,10 +103,10 @@ func PEMBlockForKey(key interface{}) (*pem.Block, error) {
 	case *ecdsa.PrivateKey:
 		b, err := x509.MarshalECPrivateKey(k)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
 		return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}, nil
 	default:
-		return nil, errors.New("Invalid key type")
+		return nil, errors.New("invalid key type")
 	}
 }

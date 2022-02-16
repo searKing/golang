@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,9 +8,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 // This code is borrowed from https://github.com/ory/x/blob/master/tlsx/cert.go
@@ -18,7 +17,7 @@ import (
 // ErrNoCertificatesConfigured is returned when no TLS configuration was found.
 var ErrNoCertificatesConfigured = errors.New("no tls configuration was found")
 
-// ErrInvalidCertificateConfiguration is returned when an invaloid TLS configuration was found.
+// ErrInvalidCertificateConfiguration is returned when an invalid TLS configuration was found.
 var ErrInvalidCertificateConfiguration = errors.New("tls configuration is invalid")
 
 // LoadCertificates returns loads a TLS LoadCertificates.
@@ -37,7 +36,7 @@ func LoadCertificates(
 	certs ...interface{},
 ) ([]tls.Certificate, error) {
 	if certString == "" && keyString == "" && certFile == "" && keyFile == "" && len(certs) == 0 {
-		return nil, errors.WithStack(ErrNoCertificatesConfigured)
+		return nil, ErrNoCertificatesConfigured
 	}
 	if certString != "" && keyString != "" {
 		tlsCertBytes, err := base64.StdEncoding.DecodeString(certString)
@@ -77,7 +76,7 @@ func LoadCertificates(
 		}
 	}
 
-	return nil, errors.WithStack(ErrInvalidCertificateConfiguration)
+	return nil, ErrInvalidCertificateConfiguration
 }
 
 // LoadX509Certificates returns loads a TLS LoadCertificates of x509.

@@ -5,9 +5,9 @@
 package cause_test
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/searKing/golang/go/error/cause"
 )
 

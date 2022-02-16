@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,9 +6,9 @@ package cryptopasta
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	"github.com/gtank/cryptopasta"
-	"github.com/pkg/errors"
 )
 
 // copy & paste-friendly golang crypto
@@ -20,7 +20,7 @@ func fixedKey(key []byte) *[32]byte {
 
 func Encrypt(plaintext []byte, keys ...[]byte) (ciphertext string, err error) {
 	if len(keys) == 0 {
-		return "", errors.Errorf("at least one encryption key must be defined but none were")
+		return "", fmt.Errorf("at least one encryption key must be defined but none were")
 	}
 	for _, key := range keys {
 		if ciphertext, err = encrypt(plaintext, key); err == nil {
@@ -33,7 +33,7 @@ func Encrypt(plaintext []byte, keys ...[]byte) (ciphertext string, err error) {
 
 func Decrypt(ciphertext string, keys ...[]byte) (p []byte, err error) {
 	if len(keys) == 0 {
-		return nil, errors.Errorf("at least one decryption key must be defined but none were")
+		return nil, fmt.Errorf("at least one decryption key must be defined but none were")
 	}
 
 	for _, key := range keys {
@@ -47,7 +47,7 @@ func Decrypt(ciphertext string, keys ...[]byte) (p []byte, err error) {
 
 func encrypt(plaintext []byte, key []byte) (string, error) {
 	if len(key) != 32 {
-		return "", errors.Errorf("key must be exactly 32 long bytes, got %d bytes", len(key))
+		return "", fmt.Errorf("key must be exactly 32 long bytes, got %d bytes", len(key))
 	}
 
 	ciphertext, err := cryptopasta.Encrypt(plaintext, fixedKey(key))
@@ -60,7 +60,7 @@ func encrypt(plaintext []byte, key []byte) (string, error) {
 
 func decrypt(ciphertext string, key []byte) ([]byte, error) {
 	if len(key) != 32 {
-		return nil, errors.Errorf("key must be exactly 32 long bytes, got %d bytes", len(key))
+		return nil, fmt.Errorf("key must be exactly 32 long bytes, got %d bytes", len(key))
 	}
 
 	raw, err := base64.URLEncoding.DecodeString(ciphertext)

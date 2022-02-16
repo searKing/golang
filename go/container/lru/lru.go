@@ -6,9 +6,8 @@ package lru
 
 import (
 	"container/list"
+	"errors"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 // LRU takes advantage of list's sequence and map's efficient locate
