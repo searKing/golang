@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,7 +6,6 @@ package gopathload_test
 
 import (
 	"go/build"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +15,7 @@ import (
 )
 
 func getFakeFS(t *testing.T, files ...string) string {
-	tempDir, err := ioutil.TempDir("", "go_test")
+	tempDir, err := os.MkdirTemp("", "go_test")
 	if err != nil {
 		t.Fatalf("tempdir: %v", err)
 	}
@@ -25,7 +24,7 @@ func getFakeFS(t *testing.T, files ...string) string {
 		if err := os.MkdirAll(filepath.Join(tempDir, filepath.Dir(f)), 0770); err != nil {
 			t.Fatalf("Failed to create directory structure for %v", f)
 		}
-		if err := ioutil.WriteFile(filepath.Join(tempDir, f), nil, 0660); err != nil {
+		if err := os.WriteFile(filepath.Join(tempDir, f), nil, 0660); err != nil {
 			t.Fatalf("Failed to create dummy file")
 		}
 	}

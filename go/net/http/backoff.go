@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -100,7 +99,7 @@ func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
 	}
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
-		rc = ioutil.NopCloser(body)
+		rc = io.NopCloser(body)
 	}
 	req.Body = rc
 	req.ContentLength = 0
@@ -111,21 +110,21 @@ func ReplaceHttpRequestBody(req *http.Request, body io.Reader) {
 			buf := v.Bytes()
 			req.GetBody = func() (io.ReadCloser, error) {
 				r := bytes.NewReader(buf)
-				return ioutil.NopCloser(r), nil
+				return io.NopCloser(r), nil
 			}
 		case *bytes.Reader:
 			req.ContentLength = int64(v.Len())
 			snapshot := *v
 			req.GetBody = func() (io.ReadCloser, error) {
 				r := snapshot
-				return ioutil.NopCloser(&r), nil
+				return io.NopCloser(&r), nil
 			}
 		case *strings.Reader:
 			req.ContentLength = int64(v.Len())
 			snapshot := *v
 			req.GetBody = func() (io.ReadCloser, error) {
 				r := snapshot
-				return ioutil.NopCloser(&r), nil
+				return io.NopCloser(&r), nil
 			}
 		default:
 			// This is where we'd set it to -1 (at least
@@ -348,7 +347,7 @@ func DoJson(httpReq *http.Request, req, resp interface{}) error {
 		return nil
 	}
 
-	body, err := ioutil.ReadAll(httpResp.Body)
+	body, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return err
 	}
@@ -377,7 +376,7 @@ func DoJsonWithBackoff(httpReq *http.Request, req, resp interface{}, opts ...DoW
 		return nil
 	}
 
-	body, err := ioutil.ReadAll(httpResp.Body)
+	body, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return err
 	}

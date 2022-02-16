@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -7,13 +7,12 @@ package io_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/searKing/golang/go/io"
+	io_ "github.com/searKing/golang/go/io"
 )
 
 func TestCopy(t *testing.T) {
@@ -29,19 +28,19 @@ func TestCopyWithoutRange(t *testing.T) {
 }
 
 func TestCopyDir(t *testing.T) {
-	srcDir, err := ioutil.TempDir("", "srcDir")
+	srcDir, err := os.MkdirTemp("", "srcDir")
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
 	populateSrcDir(t, srcDir, 3)
 
-	dstDir, err := ioutil.TempDir("", "testdst")
+	dstDir, err := os.MkdirTemp("", "testdst")
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
 	defer os.RemoveAll(dstDir)
 
-	err = io.CopyDir(srcDir, dstDir, io.Content)
+	err = io_.CopyDir(srcDir, dstDir, io_.Content)
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
@@ -104,7 +103,7 @@ func populateSrcDir(t *testing.T, srcDir string, remainingDepth int) {
 	for i := 0; i < 10; i++ {
 		fileName := filepath.Join(srcDir, fmt.Sprintf("srcfile-%d", i))
 		// Owner read bit set
-		err := ioutil.WriteFile(fileName, []byte{}, randomMode(0400))
+		err := os.WriteFile(fileName, []byte{}, randomMode(0400))
 		if err != nil {
 			t.Errorf("expect nil, got %v", err)
 		}
@@ -112,7 +111,7 @@ func populateSrcDir(t *testing.T, srcDir string, remainingDepth int) {
 }
 
 func doCopyTest(t *testing.T, copyWithFileRange, copyWithFileClone *bool) {
-	dir, err := ioutil.TempDir("", "docker-copy-check")
+	dir, err := os.MkdirTemp("", "docker-copy-check")
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
@@ -126,7 +125,7 @@ func doCopyTest(t *testing.T, copyWithFileRange, copyWithFileClone *bool) {
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
-	err = ioutil.WriteFile(srcFilename, buf, 0777)
+	err = os.WriteFile(srcFilename, buf, 0777)
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
@@ -135,11 +134,11 @@ func doCopyTest(t *testing.T, copyWithFileRange, copyWithFileClone *bool) {
 		t.Errorf("expect nil, got %v", err)
 	}
 
-	err = io.CopyRegular(srcFilename, dstFilename, fileinfo)
+	err = io_.CopyRegular(srcFilename, dstFilename, fileinfo)
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
-	readBuf, err := ioutil.ReadFile(dstFilename)
+	readBuf, err := os.ReadFile(dstFilename)
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
@@ -152,13 +151,13 @@ func doCopyTest(t *testing.T, copyWithFileRange, copyWithFileClone *bool) {
 func TestCopyHardlink(t *testing.T) {
 	var srcFile1FileInfo, srcFile2FileInfo, dstFile1FileInfo, dstFile2FileInfo os.FileInfo
 
-	srcDir, err := ioutil.TempDir("", "srcDir")
+	srcDir, err := os.MkdirTemp("", "srcDir")
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
 	defer os.RemoveAll(srcDir)
 
-	dstDir, err := ioutil.TempDir("", "dstDir")
+	dstDir, err := os.MkdirTemp("", "dstDir")
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
@@ -168,7 +167,7 @@ func TestCopyHardlink(t *testing.T) {
 	srcFile2 := filepath.Join(srcDir, "file2")
 	dstFile1 := filepath.Join(dstDir, "file1")
 	dstFile2 := filepath.Join(dstDir, "file2")
-	err = ioutil.WriteFile(srcFile1, []byte{}, 0777)
+	err = os.WriteFile(srcFile1, []byte{}, 0777)
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
@@ -177,7 +176,7 @@ func TestCopyHardlink(t *testing.T) {
 		t.Errorf("expect nil, got %v", err)
 	}
 
-	err = io.CopyDir(srcDir, dstDir, io.Content)
+	err = io_.CopyDir(srcDir, dstDir, io_.Content)
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}

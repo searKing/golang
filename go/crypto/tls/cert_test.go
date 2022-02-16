@@ -1,11 +1,10 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package tls_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -109,16 +108,16 @@ RHMZNMoDTRhmhQhj8M7N+FMtZAUOMddZ/1cvREtFW7+66w+XZvj9CQ/uectp/qb+
 )
 
 func TestHTTPSCertificate(t *testing.T) {
-	tmpCertFile, _ := ioutil.TempFile("", "test-cert")
+	tmpCertFile, _ := os.CreateTemp("", "test-cert")
 	tmpCert := tmpCertFile.Name()
-	tmpKeyFile, _ := ioutil.TempFile("", "test-key")
+	tmpKeyFile, _ := os.CreateTemp("", "test-key")
 	tmpKey := tmpKeyFile.Name()
 	defer func() {
 		_ = os.Remove(tmpCert)
 		_ = os.Remove(tmpKey)
 	}()
-	_ = ioutil.WriteFile(tmpCert, []byte(certFileContent), 0600)
-	_ = ioutil.WriteFile(tmpKey, []byte(keyFileContent), 0600)
+	_ = os.WriteFile(tmpCert, []byte(certFileContent), 0600)
+	_ = os.WriteFile(tmpKey, []byte(keyFileContent), 0600)
 
 	// 1. no TLS
 	cert, err := tls.LoadCertificates("", "", "", "")

@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,7 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -37,7 +37,7 @@ func LoadX509CertificatePool(
 			return nil, fmt.Errorf("unable to base64 decode the TLS certificate: %v", err)
 		}
 	} else if certFile != "" {
-		tlsCertBytes, err = ioutil.ReadFile(certFile)
+		tlsCertBytes, err = os.ReadFile(certFile)
 		if err != nil {
 			return nil, err
 		}

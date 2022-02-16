@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -15,38 +15,45 @@ import (
 	"path/filepath"
 	"time"
 
-	io2 "github.com/searKing/golang/go/io"
+	io_ "github.com/searKing/golang/go/io"
 )
 
 // The algorithm uses at most sniffLen bytes to make its decision.
 const sniffLen = 512
 
-func ContentType(content io.Reader, name string) (ctype string, bufferedContent io.Reader, err error) {
+// ContentType implements the algorithm described
+// at https://mimesniff.spec.whatwg.org/ to determine the
+// Content-Type of the given data. It considers at most the
+// first 512 bytes of data from r. ContentType always returns
+// a valid MIME type: if it cannot determine a more specific one, it
+// returns "application/octet-stream".
+// ContentType is based on http.DetectContentType.
+func ContentType(r io.Reader, name string) (ctype string, bufferedContent io.Reader, err error) {
 	ctype = mime.TypeByExtension(filepath.Ext(name))
-	if ctype == "" && content != nil {
+	if ctype == "" && r != nil {
 		// read a chunk to decide between utf-8 text and binary
 		var buf [sniffLen]byte
 		var n int
-		if readSeeker, ok := content.(io.Seeker); ok {
-			n, _ = io.ReadFull(content, buf[:])
+		if readSeeker, ok := r.(io.Seeker); ok {
+			n, _ = io.ReadFull(r, buf[:])
 			_, err = readSeeker.Seek(0, io.SeekStart) // rewind to output whole file
 			if err != nil {
 				err = errors.New("seeker can't seek")
-				return "", content, err
+				return "", r, err
 			}
 		} else {
-			contentBuffer := bufio.NewReader(content)
+			contentBuffer := bufio.NewReader(r)
 			sniffed, err := contentBuffer.Peek(sniffLen)
 			if err != nil {
 				err = errors.New("reader can't read")
 				return "", contentBuffer, err
 			}
 			n = copy(buf[:], sniffed)
-			content = contentBuffer
+			r = contentBuffer
 		}
 		ctype = http.DetectContentType(buf[:n])
 	}
-	return ctype, content, nil
+	return ctype, r, nil
 }
 
 // ServeContent replies to the request using the content in the
@@ -136,10 +143,10 @@ func ServeContent(w http.ResponseWriter, r *http.Request, name string, modtime t
 	}
 
 	if size >= 0 {
-		readseeker = io2.LimitReadSeeker(readseeker, size)
+		readseeker = io_.LimitReadSeeker(readseeker, size)
 	}
 
-	if stater, ok := content.(io2.Stater); ok {
+	if stater, ok := content.(io_.Stater); ok {
 		if fi, err := stater.Stat(); err == nil {
 			modtime = fi.ModTime()
 		}

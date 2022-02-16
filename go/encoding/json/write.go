@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,7 +6,7 @@ package json
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 const permissions = 0666
@@ -16,5 +16,5 @@ func WriteConfigFile(name string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(name, data, permissions)
+	return os.WriteFile(name, data, permissions)
 }

@@ -1,11 +1,10 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package tls_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -14,12 +13,12 @@ import (
 )
 
 func TestLoadX509CertificatePool(t *testing.T) {
-	tmpCertFile, _ := ioutil.TempFile("", "test-cert")
+	tmpCertFile, _ := os.CreateTemp("", "test-cert")
 	tmpCertPath := tmpCertFile.Name()
 	defer func() {
 		_ = os.Remove(tmpCertPath)
 	}()
-	_ = ioutil.WriteFile(tmpCertPath, []byte(certFileContent), 0600)
+	_ = os.WriteFile(tmpCertPath, []byte(certFileContent), 0600)
 	tmpCert, err := tls.LoadCertificates(certFixture, keyFixture, "", "")
 	if ok, msg := testing_.NonNil(tmpCert); !ok {
 		t.Error(msg)
