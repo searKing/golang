@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -379,7 +378,7 @@ func SameFile(fi1, fi2 string) bool {
 // ReLink creates or replaces newname as a hard link to the oldname file.
 // If there is an error, it will be of type *LinkError.
 func ReLink(oldname, newname string) error {
-	tempLink, err := ioutil.TempFile(filepath.Dir(newname), filepath.Base(newname))
+	tempLink, err := os.CreateTemp(filepath.Dir(newname), filepath.Base(newname))
 	if err != nil {
 		return err
 	}
@@ -409,7 +408,7 @@ func ReLink(oldname, newname string) error {
 // ReSymlink creates or replace newname as a symbolic link to oldname.
 // If there is an error, it will be of type *LinkError.
 func ReSymlink(oldname, newname string) error {
-	tempLink, err := ioutil.TempFile(filepath.Dir(newname), filepath.Base(newname))
+	tempLink, err := os.CreateTemp(filepath.Dir(newname), filepath.Base(newname))
 	if err != nil {
 		return err
 	}
@@ -619,7 +618,7 @@ func WriteRenameFileAllFrom(filename string, r io.Reader, dirperm os.FileMode) e
 		}
 	}
 
-	tempFile, err := ioutil.TempFile(tempDir, "")
+	tempFile, err := os.CreateTemp(tempDir, "")
 	if err != nil {
 		return err
 	}
@@ -652,5 +651,5 @@ func TempFileAll(dir, pattern string, dirperm os.FileMode) (f *os.File, err erro
 			return nil, err
 		}
 	}
-	return ioutil.TempFile(dir, pattern)
+	return os.CreateTemp(dir, pattern)
 }
