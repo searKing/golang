@@ -69,8 +69,8 @@ func (chain HandlerInterceptorChain) InjectHttpHandler(next http.Handler) http.H
 			it = i
 		}
 
-		for _, filter := range chain.interceptors {
-			next = filter.WrapHandle(next)
+		for i := range chain.interceptors {
+			next = chain.interceptors[len(chain.interceptors)-1-i].WrapHandle(next)
 		}
 
 		next.ServeHTTP(w, r)
