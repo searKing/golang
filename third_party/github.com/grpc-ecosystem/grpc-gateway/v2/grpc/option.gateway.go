@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -144,6 +145,14 @@ func WithLogrusLogger(logger *logrus.Logger) GatewayOption {
 		l := logrus.NewEntry(logger)
 		WithGrpcStreamServerChain(grpclogrus.StreamServerInterceptor(l, grpclogrus.WithMessageProducer(MessageProducerWithForward))).apply(gateway)
 		WithGrpcUnaryServerChain(grpclogrus.UnaryServerInterceptor(l, grpclogrus.WithMessageProducer(MessageProducerWithForward))).apply(gateway)
+		WithHttpWrapper(func(handler http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				g := gin.New()
+				g.Use(gin.LoggerWithWriter(l.Writer()))
+				g.Any("/*path", gin.WrapH(handler))
+				g.ServeHTTP(w, r)
+			})
+		}).apply(gateway)
 	})
 }
 
