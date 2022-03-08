@@ -6,8 +6,10 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -19,6 +21,7 @@ import (
 	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -141,19 +144,59 @@ func MessageProducerWithForward(ctx context.Context, format string, level logrus
 }
 
 func WithLogrusLogger(logger *logrus.Logger) GatewayOption {
+	return WithLogrusLoggerConfig(logger, gin.LoggerConfig{})
+}
+
+func WithLogrusLoggerConfig(logger *logrus.Logger, conf gin.LoggerConfig) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		l := logrus.NewEntry(logger)
+		if conf.Formatter == nil {
+			conf.Formatter = GinLogFormatter
+		}
+		if conf.Output == nil {
+			conf.Output = l.Writer()
+		}
 		WithGrpcStreamServerChain(grpclogrus.StreamServerInterceptor(l, grpclogrus.WithMessageProducer(MessageProducerWithForward))).apply(gateway)
 		WithGrpcUnaryServerChain(grpclogrus.UnaryServerInterceptor(l, grpclogrus.WithMessageProducer(MessageProducerWithForward))).apply(gateway)
 		WithHttpWrapper(func(handler http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				g := gin.New()
-				g.Use(gin.LoggerWithWriter(l.Writer()))
+				g.Use(gin.LoggerWithConfig(conf))
 				g.Any("/*path", gin.WrapH(handler))
 				g.ServeHTTP(w, r)
 			})
 		}).apply(gateway)
 	})
+}
+
+var GinLogFormatter = func(param gin.LogFormatterParams) string {
+	var statusColor, methodColor, resetColor string
+	if param.IsOutputColor() {
+		statusColor = param.StatusCodeColor()
+		methodColor = param.MethodColor()
+		resetColor = param.ResetColor()
+	}
+
+	if param.Latency > time.Minute {
+		// Truncate in a golang < 1.8 safe way
+		param.Latency = param.Latency - param.Latency%time.Second
+	}
+	span := trace.SpanFromContext(param.Request.Context())
+
+	var traceId string
+	if span.SpanContext().HasTraceID() {
+		traceId = span.SpanContext().TraceID().String()
+	}
+
+	return fmt.Sprintf("[gRPC-Gateway] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+		traceId,
+		statusColor, param.StatusCode, resetColor,
+		param.Latency,
+		param.ClientIP,
+		methodColor, param.Method, resetColor,
+		param.Path,
+		param.ErrorMessage,
+	)
 }
 
 func WithStreamErrorHandler(fn runtime.StreamErrorHandlerFunc) GatewayOption {
