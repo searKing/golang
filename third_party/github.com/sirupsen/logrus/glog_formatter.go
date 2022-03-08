@@ -94,8 +94,8 @@ type GlogFormatter struct {
 	// replace message.String()
 	MessageStringFunc func(value interface{}) string
 
-	// replace key.String()
-	KeyStringFunc func(key interface{}) string
+	// replace key
+	KeyStringFunc func(key string) string
 
 	// replace value.String()
 	ValueStringFunc func(value interface{}) string
