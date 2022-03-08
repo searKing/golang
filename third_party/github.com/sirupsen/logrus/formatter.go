@@ -1,23 +1,20 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package logrus
 
 import (
-	"time"
-
 	"github.com/sirupsen/logrus"
 )
 
 // Default key names for the default fields
 const (
-	defaultTimestampFormat = time.RFC3339
-	FieldKeyMsg            = "msg"
-	FieldKeyLevel          = "level"
-	FieldKeyTime           = "time"
-	FieldKeyFunc           = "func"
-	FieldKeyFile           = "file"
+	FieldKeyMsg   = "msg"
+	FieldKeyLevel = "level"
+	FieldKeyTime  = "time"
+	FieldKeyFunc  = "func"
+	FieldKeyFile  = "file"
 )
 
 type fieldKey string

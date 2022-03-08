@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -91,6 +91,15 @@ type GlogFormatter struct {
 	// replace level.String()
 	LevelStringFunc func(level logrus.Level) string
 
+	// replace message.String()
+	MessageStringFunc func(value interface{}) string
+
+	// replace key.String()
+	KeyStringFunc func(key interface{}) string
+
+	// replace value.String()
+	ValueStringFunc func(value interface{}) string
+
 	// Set the truncation of the level text to n characters.
 	// >0, truncate the level text to n characters at most.
 	// =0, truncate the level text to 1 characters at most.
@@ -180,6 +189,35 @@ func (f *GlogFormatter) levelString(level logrus.Level) string {
 	return strings.ToUpper(level.String())
 }
 
+func (f *GlogFormatter) messageString(value interface{}) string {
+	if f.MessageStringFunc != nil {
+		return f.MessageStringFunc(value)
+	}
+	stringVal, ok := value.(string)
+	if !ok {
+		stringVal = fmt.Sprint(value)
+	}
+	return stringVal
+}
+
+func (f *GlogFormatter) keyString(key string) string {
+	if f.KeyStringFunc != nil {
+		return f.KeyStringFunc(key)
+	}
+	return key
+}
+
+func (f *GlogFormatter) valueString(value interface{}) string {
+	if f.ValueStringFunc != nil {
+		return f.ValueStringFunc(value)
+	}
+	stringVal, ok := value.(string)
+	if !ok {
+		stringVal = fmt.Sprint(value)
+	}
+	return stringVal
+}
+
 func (f *GlogFormatter) isColored() bool {
 	isColored := f.ForceColors || (f.isTerminal && (runtime.GOOS != "windows"))
 
@@ -266,10 +304,9 @@ func (f *GlogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 			value = data[key]
 		}
 		if levelColor > 0 {
-			fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m=", levelColor, key)
+			_, _ = fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m=", levelColor, f.keyString(key))
 			f.appendValue(b, value)
 		} else {
-			key = fmt.Sprintf("%s", key)
 			f.appendKeyValue(b, key, value)
 		}
 	}
@@ -310,16 +347,13 @@ func (f *GlogFormatter) appendKeyValue(b *bytes.Buffer, key string, value interf
 	if b.Len() > 0 {
 		b.WriteString(", ")
 	}
-	b.WriteString(key)
+	b.WriteString(f.keyString(key))
 	b.WriteByte('=')
 	f.appendValue(b, value)
 }
 
 func (f *GlogFormatter) appendValue(b *bytes.Buffer, value interface{}) {
-	stringVal, ok := value.(string)
-	if !ok {
-		stringVal = fmt.Sprint(value)
-	}
+	stringVal := f.valueString(value)
 
 	if !f.needsQuoting(stringVal, false) {
 		b.WriteString(stringVal)
@@ -329,10 +363,7 @@ func (f *GlogFormatter) appendValue(b *bytes.Buffer, value interface{}) {
 }
 
 func (f *GlogFormatter) appendMessage(b *bytes.Buffer, value interface{}) {
-	stringVal, ok := value.(string)
-	if !ok {
-		stringVal = fmt.Sprint(value)
-	}
+	stringVal := f.messageString(value)
 
 	if !f.needsQuoting(stringVal, true) {
 		b.WriteString(stringVal)
