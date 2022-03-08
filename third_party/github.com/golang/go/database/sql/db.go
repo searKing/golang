@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	ErrRegister = errors.New("")
+	ErrRegister = errors.New("register db driver")
 )
 
 // DB represents a connection to a SQL database.
