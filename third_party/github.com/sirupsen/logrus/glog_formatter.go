@@ -158,7 +158,7 @@ func NewGlogEnhancedFormatter() *GlogFormatter {
 		HumanReadable:        true,
 		WithFuncName:         true,
 		QuoteEmptyFields:     true,
-		DisableSorting:       true,
+		DisableSorting:       false,
 		LevelStringFunc: func(level logrus.Level) string {
 			if level == logrus.WarnLevel {
 				return "WARN"
