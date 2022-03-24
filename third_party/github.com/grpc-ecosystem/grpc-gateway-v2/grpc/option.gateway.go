@@ -19,7 +19,7 @@ import (
 	grpcctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/go/net/http"
-	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/runtime"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"

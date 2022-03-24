@@ -1,4 +1,4 @@
-module github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway/v2
+module github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2
 
 go 1.16
 
