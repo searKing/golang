@@ -35,11 +35,10 @@ require (
 	go.opentelemetry.io/otel/metric v0.23.0
 	go.opentelemetry.io/otel/trace v1.1.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.1.7
+	golang.org/x/tools v0.1.10
 	google.golang.org/genproto v0.0.0-20220216160803-4663080d8bc8
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
