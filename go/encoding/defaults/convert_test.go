@@ -1,15 +1,14 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package defaults_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/searKing/golang/go/encoding/defaults"
 )
@@ -19,7 +18,7 @@ type inputType struct {
 	Age         int               `default:"10"`
 	IntArray    []int             `default:"[1,2,3]"`
 	StringArray []string          `default:"[\"stdout\",\"./logs\"]"`
-	Map         map[string]string `default:"{\"name\": \"Alice\", \"age\": 18}"`
+	Map         map[string]string `default:"{\"name\": \"Alice\", \"age\": \"18\"}"`
 }
 type Name string
 
@@ -44,7 +43,7 @@ func TestConvert(t *testing.T) {
 		StringArray: []string{"stdout", "./logs"},
 		Map:         map[string]string{"name": "Alice", "age": "18"},
 	}
-	err := defaults.Convert(i, yaml.Unmarshal)
+	err := defaults.Convert(i, json.Unmarshal)
 	if err != nil {
 		t.Error(err)
 	}

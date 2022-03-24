@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -33,8 +33,8 @@ func Convert(val interface{}, unmarshal func(data []byte, v interface{}) error) 
 	})
 }
 
-// Marshaler is the interface implemented by types that
-// can marshal themselves into valid JSON.
+// Converter is the interface implemented by types that
+// can set themselves with default value by struct tag `default`.
 type Converter interface {
 	ConvertDefault(val reflect.Value, tag reflect.StructTag) error
 }

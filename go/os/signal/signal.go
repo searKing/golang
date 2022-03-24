@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,13 +6,13 @@ package signal
 
 import "C"
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
-
-	"github.com/google/uuid"
+	"time"
 )
 
 // enhance signal.Notify with stacktrace of cgo.
@@ -26,7 +26,7 @@ func init() {
 	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {
 		dumpfile = f.Name()
 	} else {
-		dumpfile = filepath.Join(os.TempDir(), uuid.New().String()+".stacktrace.dump")
+		dumpfile = filepath.Join(os.TempDir(), fmt.Sprintf("stacktrace.%d.dump", time.Now().UnixNano()))
 	}
 
 	DumpStacktraceTo(dumpfile)

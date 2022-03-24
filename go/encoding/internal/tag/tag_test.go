@@ -1,14 +1,13 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package tag_test
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/searKing/golang/go/encoding/internal/tag"
 )
@@ -18,7 +17,7 @@ type inputType struct {
 	Age         int               `default:"10"`
 	IntArray    []int             `default:"[1,2,3]"`
 	StringArray []string          `default:"[\"stdout\",\"./logs\"]"`
-	Map         map[string]string `default:"{\"name\": \"Alice\", \"age\": 18}"`
+	Map         map[string]string `default:"{\"name\": \"Alice\", \"age\": \"18\"}"`
 }
 type Name string
 
@@ -38,7 +37,7 @@ func TestTag(t *testing.T) {
 		Map:         map[string]string{"name": "Alice", "age": "18"},
 	}
 	err := tag.Tag(i, func(val reflect.Value, tag reflect.StructTag) error {
-		return yaml.Unmarshal([]byte(tag.Get("default")), val.Addr().Interface())
+		return json.Unmarshal([]byte(tag.Get("default")), val.Addr().Interface())
 	})
 	if err != nil {
 		t.Error(err)
