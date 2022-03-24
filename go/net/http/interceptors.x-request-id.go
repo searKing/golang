@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -12,9 +12,9 @@ import (
 // DefaultXRequestIDKey is metadata key name for request ID
 var DefaultXRequestIDKey = "X-Request-ID"
 
-// setInOutMetadata injects requestIDs in req|resp's Header and context
+// SetInOutMetadata injects requestIDs in req|resp's Header and context
 // 将request-id追加注入请求|响应头及context中
-func setInOutMetadata(ctx context.Context, w http.ResponseWriter, r *http.Request, requestID string) context.Context {
+func SetInOutMetadata(ctx context.Context, w http.ResponseWriter, r *http.Request, requestID string) context.Context {
 	if r != nil {
 		r.Header.Set(DefaultXRequestIDKey, requestID)
 	}
@@ -24,10 +24,10 @@ func setInOutMetadata(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	return context.WithValue(ctx, DefaultXRequestIDKey, requestID)
 }
 
-// parse request id from gin.Context
+// FromHTTPContext parse request id from gin.Context
 // query | header | post form | context
 // 从请求中提取request-id
-func fromHTTPContext(r *http.Request, keys ...interface{}) string {
+func FromHTTPContext(r *http.Request, keys ...interface{}) string {
 	key := DefaultXRequestIDKey
 	if requestID := r.Header.Get(key); requestID != "" {
 		return requestID
