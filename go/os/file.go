@@ -42,6 +42,17 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
+// RemoveIfExist removes the named file or (empty) directory.
+// If the path does not exist, RemoveIfExist returns nil (no error).
+// If there is an error, it will be of type *PathError.
+func RemoveIfExist(name string) error {
+	err := os.Remove(name)
+	if err == nil || os.IsNotExist(err) {
+		return nil
+	}
+	return err
+}
+
 // ChtimesNow changes the access and modification times of the named
 // file with Now, similar to the Unix utime() or utimes() functions.
 //
