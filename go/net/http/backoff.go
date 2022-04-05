@@ -313,17 +313,31 @@ func GetWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption
 }
 
 func PostWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
-	req, err := http.NewRequest("POST", url, body)
+	req, err := http.NewRequest(http.MethodPost, url, body)
 	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", contentType)
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
 	return DoWithBackoff(req, opts...)
 }
 
 func PostFormWithBackoff(ctx context.Context, url string, data url.Values, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
 	return PostWithBackoff(ctx, url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()), opts...)
+}
+
+func PutWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodPut, url, body)
+	req = req.WithContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	return DoWithBackoff(req, opts...)
 }
 
 // DoJson the same as HttpDo, but bind with json
