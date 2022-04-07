@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -15,6 +15,9 @@ import (
 // RequestWithTarget reset Host in url.Url by resolver.Target
 // reset Host in req if replaceHostInRequest is true
 func RequestWithTarget(req *http.Request, target string, replaceHostInRequest bool) error {
+	if target == "" {
+		return nil
+	}
 	u2, err := url_.ResolveWithTarget(req.Context(), req.URL, target)
 	if err != nil {
 		return err

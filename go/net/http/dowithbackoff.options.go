@@ -1,10 +1,12 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package http
 
 import (
+	"net/http"
+
 	time_ "github.com/searKing/golang/go/time"
 )
 
@@ -47,4 +49,16 @@ func WithDoWithBackoffOptionGrpcBackOff(retries int) DoWithBackoffOption {
 	return DoWithBackoffOptionFunc(func(o *doWithBackoff) {
 		o.ExponentialBackOffOption = append(o.ExponentialBackOffOption, time_.WithExponentialBackOffOptionGRPC())
 	})
+}
+
+// WithDoWithBackoffOptionProxy returns a DoWithBackoffOption.
+func WithDoWithBackoffOptionProxy(proxyUsed string, targetAsProxy bool) DoWithBackoffOption {
+	if proxyUsed == "" {
+		return EmptyDoWithBackoffOption{}
+	}
+	cli := NewClientWithTarget(proxyUsed, targetAsProxy)
+	return WithDoWithBackoffOptionDoRetryHandler(
+		func(req *http.Request, retry int) (*http.Response, error) {
+			return cli.Do(req)
+		})
 }

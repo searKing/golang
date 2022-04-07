@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,7 +6,7 @@ package http
 
 import "net/http"
 
-// The HandlerFunc type is an adapter to allow the use of
+// RoundTripFunc is an adapter to allow the use of
 // ordinary functions as HTTP handlers. If f is a function
 // with the appropriate signature, HandlerFunc(f) is a
 // Handler that calls f.
@@ -16,9 +16,7 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (resp *http.Response, err er
 	return f(req)
 }
 
-type RoundTripHandler interface {
-	RoundTrip(req *http.Request) (resp *http.Response, err error)
-}
+type RoundTripHandler = http.RoundTripper
 
 // handlersChain defines a HandlerFunc array.
 type handlersChain []RoundTripHandler
