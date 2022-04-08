@@ -166,8 +166,12 @@ type RetryAfterHandler func(resp *http.Response, err error, defaultBackoff time.
 // client.
 type DoRetryHandler = ClientInvoker
 
-var DefaultDoRetryHandler = func(req *http.Request, retry int) (*http.Response, error) {
+var DefaultClientDoRetryHandler = func(req *http.Request, retry int) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
+}
+
+var DefaultTransportDoRetryHandler = func(req *http.Request, retry int) (*http.Response, error) {
+	return http.DefaultTransport.RoundTrip(req)
 }
 
 //go:generate go-option -type "doWithBackoff"
@@ -180,7 +184,7 @@ type doWithBackoff struct {
 }
 
 func (o *doWithBackoff) SetDefault() {
-	o.DoRetryHandler = DefaultDoRetryHandler
+	o.DoRetryHandler = DefaultClientDoRetryHandler
 	o.RetryAfter = RetryAfter
 }
 
@@ -196,7 +200,7 @@ func getClientInvoker(interceptors []ClientInterceptor, curr int, finalInvoker C
 
 func (o *doWithBackoff) Complete() {
 	if o.DoRetryHandler == nil {
-		o.DoRetryHandler = DefaultDoRetryHandler
+		o.DoRetryHandler = DefaultClientDoRetryHandler
 	}
 	interceptors := o.ChainClientInterceptors
 	o.ChainClientInterceptors = nil
@@ -352,7 +356,7 @@ func DoJson(httpReq *http.Request, req, resp interface{}) error {
 		ReplaceHttpRequestBody(httpReq, reqBody)
 	}
 
-	httpResp, err := DefaultDoRetryHandler(httpReq, 0)
+	httpResp, err := DefaultClientDoRetryHandler(httpReq, 0)
 	if err != nil {
 		return err
 	}

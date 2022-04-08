@@ -57,3 +57,25 @@ func ProxyFuncWithTargetOrDefault(target string, def func(req *http.Request) (*u
 		return &proxy, nil
 	}
 }
+
+// RoundTripperWithTarget wraps http.RoundTripper with request url replaced by target resolved by resolver.
+// target is as like gRPC Naming for service discovery.
+func RoundTripperWithTarget(rt http.RoundTripper, target string, replaceHostInRequest bool) http.RoundTripper {
+	if target == "" {
+		return rt
+	}
+	return RoundTripFunc(func(req *http.Request) (resp *http.Response, err error) {
+		err = RequestWithTarget(req, target, replaceHostInRequest)
+		if err != nil {
+			return nil, err
+		}
+		return rt.RoundTrip(req)
+	})
+}
+
+// TransportWithProxyTarget wraps http.RoundTripper with request url replaced by target resolved by resolver.
+// target is as like gRPC Naming for service discovery.
+func TransportWithProxyTarget(t *http.Transport, target string) *http.Transport {
+	t.Proxy = ProxyFuncWithTargetOrDefault(target, t.Proxy)
+	return t
+}

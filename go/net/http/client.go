@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -56,7 +56,7 @@ func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 	if len(target) > 0 && targetAsProxy {
-		tr.Proxy = ProxyFuncWithTargetOrDefault(target, http.ProxyFromEnvironment)
+		tr.Proxy = ProxyFuncWithTargetOrDefault(target, tr.Proxy)
 	}
 	if len(u) > 0 {
 		urlParsed, err := parseURL(u)

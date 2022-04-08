@@ -51,6 +51,14 @@ func WithDoWithBackoffOptionGrpcBackOff(retries int) DoWithBackoffOption {
 	})
 }
 
+// WithDoWithBackoffOptionRoundTripper returns a DoWithBackoffOption.
+func WithDoWithBackoffOptionRoundTripper(rt http.RoundTripper) DoWithBackoffOption {
+	return WithDoWithBackoffOptionDoRetryHandler(
+		func(req *http.Request, retry int) (*http.Response, error) {
+			return rt.RoundTrip(req)
+		})
+}
+
 // WithDoWithBackoffOptionProxy returns a DoWithBackoffOption.
 func WithDoWithBackoffOptionProxy(proxyUsed string, targetAsProxy bool) DoWithBackoffOption {
 	if proxyUsed == "" {
