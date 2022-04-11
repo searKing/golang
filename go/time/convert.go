@@ -1,8 +1,12 @@
+// Copyright 2022 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package time
 
 import "time"
 
-// Example:
+// RatioFrom Example:
 // ratio, divide := RatioFrom(fromUnit, toUnit)
 // if divide {
 //   toDuration = fromDuration / ratio
@@ -28,7 +32,11 @@ func ConvertTimestamp(timestamp int64, from, to time.Duration) int64 {
 	return int64(time.Duration(timestamp) * ratio)
 }
 
-// Timestamp convert time to timestamp reprensent in unit
+// Timestamp returns a Unix timestamp in unit from "January 1, 1970 UTC".
+// The result is undefined if the Unix time cannot be represented by an int64.
+// Which includes calling TimeUnixMilli on a zero Time is undefined.
+//
+// See Go stdlib https://golang.org/pkg/time/#Time.UnixNano for more information.
 func Timestamp(t time.Time, unit time.Duration) int64 {
 	return ConvertTimestamp(t.UnixNano(), time.Nanosecond, unit)
 }
