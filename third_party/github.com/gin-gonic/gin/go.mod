@@ -8,8 +8,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/searKing/golang/go v1.2.5
 	github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.5
-	github.com/searKing/golang/third_party/github.com/urfave/negroni v1.2.5
 	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.5
-	github.com/urfave/negroni v1.0.0
 	google.golang.org/protobuf v1.28.0
 )

@@ -38,8 +38,6 @@ github.com/searKing/golang/go v1.2.5 h1:f6D2/oSGynAsOeoZqaHYM3rZps411xyD45tZlPY/
 github.com/searKing/golang/go v1.2.5/go.mod h1:/LpNtbBzd34qswUnz8DPvvK3WEH50t0J2Wpx4QojkLk=
 github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.5 h1:PrMjHDIX3FO+IMmoDpXYAP9BjQnH+yf25EkaM5p3rKA=
 github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.5/go.mod h1:ErUM8Q+Ax+tj1uwmBA/I1OJQhQ+Tbw/D92VewP5kLQw=
-github.com/searKing/golang/third_party/github.com/urfave/negroni v1.2.5 h1:OdxhLzOCs3lvOUOGpVMWXmWtsBOqXmdDoaii8kmdaNw=
-github.com/searKing/golang/third_party/github.com/urfave/negroni v1.2.5/go.mod h1:GW6BdUk3IgGCBCbS8XxuFZJs3PscQaaJXpqmUkc63Gg=
 github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.5 h1:9aHM0AuqNfYY+e612/ypBBceSanQK3nYSEfwWyHEOIc=
 github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.5/go.mod h1:E3YqTd1Ql/fFnOuatk4/qLOUAGWHA5mD02UQQhjdWZk=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
@@ -50,8 +48,6 @@ github.com/ugorji/go v1.1.7 h1:/68gy2h+1mWMrwZFeD1kQialdSzAb432dtpeJ42ovdo=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
 github.com/ugorji/go/codec v1.1.7 h1:2SvQaVZ1ouYrrKKwoSk2pzd4A9evlKJb9oTL+OaLUSs=
 github.com/ugorji/go/codec v1.1.7/go.mod h1:Ax+UKWsSmolVDwsd+7N3ZtXu+yMGCf907BLYF3GoBXY=
-github.com/urfave/negroni v1.0.0 h1:kIimOitoypq34K7TG7DUaJ9kq/N4Ofuwi1sjz0KipXc=
-github.com/urfave/negroni v1.0.0/go.mod h1:Meg73S6kFm/4PpbYdq35yYWoCZ9mS/YSx+lKnmiohz4=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
