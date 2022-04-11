@@ -4,6 +4,6 @@ go 1.16
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/searKing/golang v1.1.71
+	github.com/searKing/golang/go v1.2.5
 	google.golang.org/grpc v1.45.0
 )

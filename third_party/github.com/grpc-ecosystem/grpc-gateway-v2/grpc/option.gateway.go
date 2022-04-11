@@ -21,7 +21,6 @@ import (
 	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/runtime"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -181,15 +180,8 @@ var GinLogFormatter = func(param gin.LogFormatterParams) string {
 		// Truncate in a golang < 1.8 safe way
 		param.Latency = param.Latency - param.Latency%time.Second
 	}
-	span := trace.SpanFromContext(param.Request.Context())
 
-	var traceId string
-	if span.SpanContext().HasTraceID() {
-		traceId = span.SpanContext().TraceID().String()
-	}
-
-	return fmt.Sprintf("[gRPC-Gateway] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
-		traceId,
+	return fmt.Sprintf("[gRPC-Gateway] |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
 		statusColor, param.StatusCode, resetColor,
 		param.Latency,
 		param.ClientIP,
