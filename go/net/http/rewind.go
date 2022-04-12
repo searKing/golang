@@ -63,7 +63,7 @@ func BodyRewindableWithFile(file *os.File) (body io.ReadCloser, getBody func() (
 }
 
 // RequestWithBodyRewindable returns a Request suitable for use with Redirect, like 307 redirect for PUT or POST.
-// Only a nil GetBody in Request may be replace with a rewindable GetBody, which is a Body replayer.
+// Only a nil GetBody in Request may be replaced with a rewindable GetBody, which is a Body replayer.
 // A body with a type not ioutil.NopCloser(nil) may return error as the Body in Request will be closed before redirect automatically.
 // So you can close body by yourself to ensure rewindable always:
 // Examples:
