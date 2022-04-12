@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -7,7 +7,8 @@ package otelgrpc
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/metric"
+	errors_ "github.com/searKing/golang/go/errors"
+	"go.opentelemetry.io/otel/metric/instrument"
 	"google.golang.org/grpc"
 )
 
@@ -26,7 +27,7 @@ var (
 
 // ResetServerCounter recreate recording of all counters of RPCs.
 // This function acts on the DefaultServerMetrics variable.
-func ResetServerCounter(opts ...metric.InstrumentOption) {
+func ResetServerCounter(opts ...instrument.Option) {
 	DefaultServerMetrics.ResetCounter(opts...)
 }
 
@@ -40,30 +41,30 @@ func Register(ctx context.Context, server *grpc.Server) {
 
 // EnableServerHandledTimeHistogram turns on recording of handling time of RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerHandledTimeHistogram(opts ...metric.InstrumentOption) {
-	DefaultServerMetrics.EnableServerHandledTimeHistogram(opts...)
+func EnableServerHandledTimeHistogram(opts ...instrument.Option) {
+	errors_.Must(DefaultServerMetrics.EnableServerHandledTimeHistogram(opts...))
 }
 
 // EnableServerStreamReceiveTimeHistogram turns on recording of single message receive time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamReceiveTimeHistogram(opts ...metric.InstrumentOption) {
-	DefaultServerMetrics.EnableServerStreamReceiveTimeHistogram(opts...)
+func EnableServerStreamReceiveTimeHistogram(opts ...instrument.Option) {
+	errors_.Must(DefaultServerMetrics.EnableServerStreamReceiveTimeHistogram(opts...))
 }
 
 // EnableServerStreamReceiveSizeHistogram turns on recording of single message receive size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamReceiveSizeHistogram(opts ...metric.InstrumentOption) {
-	DefaultServerMetrics.EnableServerStreamReceiveSizeHistogram(opts...)
+func EnableServerStreamReceiveSizeHistogram(opts ...instrument.Option) {
+	errors_.Must(DefaultServerMetrics.EnableServerStreamReceiveSizeHistogram(opts...))
 }
 
 // EnableServerStreamSendTimeHistogram turns on recording of single message send time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamSendTimeHistogram(opts ...metric.InstrumentOption) {
-	DefaultServerMetrics.EnableServerStreamSendTimeHistogram(opts...)
+func EnableServerStreamSendTimeHistogram(opts ...instrument.Option) {
+	errors_.Must(DefaultServerMetrics.EnableServerStreamSendTimeHistogram(opts...))
 }
 
 // EnableServerStreamSendSizeHistogram turns on recording of single message send size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamSendSizeHistogram(opts ...metric.InstrumentOption) {
-	DefaultServerMetrics.EnableServerStreamSendSizeHistogram(opts...)
+func EnableServerStreamSendSizeHistogram(opts ...instrument.Option) {
+	errors_.Must(DefaultServerMetrics.EnableServerStreamSendSizeHistogram(opts...))
 }

@@ -249,7 +249,7 @@ func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx c
 }
 
 // registerGrpcReflection registers the server reflection service on the given gRPC server.
-// can be called once, recommend to be called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
+// can be called once, recommend being called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
 func (gateway *Gateway) registerGrpcReflection() {
 	if gateway.grpcServer == nil || !gateway.opt.grpcServerOpts.withReflectionService {
 		return

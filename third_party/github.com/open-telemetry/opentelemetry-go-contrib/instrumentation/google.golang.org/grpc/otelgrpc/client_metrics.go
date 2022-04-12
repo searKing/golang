@@ -1,4 +1,4 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -13,6 +13,9 @@ import (
 	net_ "github.com/searKing/golang/go/net"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
+	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric/instrument/syncfloat64"
+	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/metric/unit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,160 +26,190 @@ import (
 type ClientMetrics struct {
 	ClientHostport string
 
-	clientStartedCounter    metric.Int64Counter
-	clientHandledCounter    metric.Int64Counter
-	clientStreamMsgReceived metric.Int64Counter
-	clientStreamMsgSent     metric.Int64Counter
+	clientStartedCounter    syncint64.Counter
+	clientHandledCounter    syncint64.Counter
+	clientStreamMsgReceived syncint64.Counter
+	clientStreamMsgSent     syncint64.Counter
 
 	// "grpc_type", "grpc_service", "grpc_method"
 	clientHandledTimeHistogramEnabled bool
-	clientHandledTimeHistogram        metric.Float64Histogram
+	clientHandledTimeHistogram        syncfloat64.Histogram
 
 	clientStreamReceiveTimeHistogramEnabled bool
-	clientStreamReceiveTimeHistogram        metric.Float64Histogram
+	clientStreamReceiveTimeHistogram        syncfloat64.Histogram
 
 	clientStreamReceiveSizeHistogramEnabled bool
-	clientStreamReceiveSizeHistogram        metric.Int64Histogram
+	clientStreamReceiveSizeHistogram        syncint64.Histogram
 
 	clientStreamSendTimeHistogramEnabled bool
-	clientStreamSendTimeHistogram        metric.Float64Histogram
+	clientStreamSendTimeHistogram        syncfloat64.Histogram
 
 	clientStreamSendSizeHistogramEnabled bool
-	clientStreamSendSizeHistogram        metric.Int64Histogram
+	clientStreamSendSizeHistogram        syncint64.Histogram
 }
 
 func Meter() metric.Meter {
-	return global.Meter(InstrumentationName, metric.WithInstrumentationVersion(InstrumentationVersion))
+	return global.MeterProvider().Meter(InstrumentationName, metric.WithInstrumentationVersion(InstrumentationVersion))
 }
 
 // NewClientMetrics returns a ClientMetrics object. Use a new instance of
 // ClientMetrics when not using the default Prometheus metrics registry, for
 // example when wanting to control which metrics are added to a registry as
 // opposed to automatically adding metrics via init functions.
-func NewClientMetrics(opts ...metric.InstrumentOption) *ClientMetrics {
+func NewClientMetrics(opts ...instrument.Option) *ClientMetrics {
 	m := &ClientMetrics{}
 	m.ResetCounter(opts...)
 	return m
 }
 
 // ResetCounter recreate recording of all counters of RPCs.
-func (m *ClientMetrics) ResetCounter(opts ...metric.InstrumentOption) {
+func (m *ClientMetrics) ResetCounter(opts ...instrument.Option) (err error) {
 	var addr string
 	if ip, err := net_.ListenIP(); err == nil {
 		addr = ip.String()
 	}
 	m.ClientHostport = net.JoinHostPort(addr, "0")
 	// "grpc_type", "grpc_service", "grpc_method"
-	m.clientStartedCounter = metric.Must(Meter()).NewInt64Counter(
+	m.clientStartedCounter, err = Meter().SyncInt64().Counter(
 		"grpc_client_started_total",
-		func() []metric.InstrumentOption {
-			var options []metric.InstrumentOption
-			options = append(options, metric.WithDescription("Total number of RPCs started on the client."))
+		func() []instrument.Option {
+			var options []instrument.Option
+			options = append(options, instrument.WithDescription("Total number of RPCs started on the client."))
 			options = append(options, opts...)
 			return options
 		}()...)
+	if err != nil {
+		return err
+	}
 	// "grpc_type", "grpc_service", "grpc_method", "grpc_code"
-	m.clientHandledCounter = metric.Must(Meter()).NewInt64Counter(
+	m.clientHandledCounter, err = Meter().SyncInt64().Counter(
 		"grpc_client_handled_total",
-		func() []metric.InstrumentOption {
-			var options []metric.InstrumentOption
-			options = append(options, metric.WithDescription("Total number of RPCs completed by the client, regardless of success or failure."))
+		func() []instrument.Option {
+			var options []instrument.Option
+			options = append(options, instrument.WithDescription("Total number of RPCs completed by the client, regardless of success or failure."))
 			options = append(options, opts...)
 			return options
 		}()...)
+	if err != nil {
+		return err
+	}
 	// "grpc_type", "grpc_service", "grpc_method"
-	m.clientStreamMsgReceived = metric.Must(Meter()).NewInt64Counter(
+	m.clientStreamMsgReceived, err = Meter().SyncInt64().Counter(
 		"grpc_client_msg_received_total",
-		func() []metric.InstrumentOption {
-			var options []metric.InstrumentOption
-			options = append(options, metric.WithDescription("Total number of RPC stream messages received by the client."))
+		func() []instrument.Option {
+			var options []instrument.Option
+			options = append(options, instrument.WithDescription("Total number of RPC stream messages received by the client."))
 			options = append(options, opts...)
 			return options
 		}()...)
+	if err != nil {
+		return err
+	}
 	// "grpc_type", "grpc_service", "grpc_method"
-	m.clientStreamMsgSent = metric.Must(Meter()).NewInt64Counter(
+	m.clientStreamMsgSent, err = Meter().SyncInt64().Counter(
 		"grpc_client_msg_sent_total",
-		func() []metric.InstrumentOption {
-			var options []metric.InstrumentOption
-			options = append(options, metric.WithDescription("Total number of gRPC stream messages sent by the client."))
+		func() []instrument.Option {
+			var options []instrument.Option
+			options = append(options, instrument.WithDescription("Total number of gRPC stream messages sent by the client."))
 			options = append(options, opts...)
 			return options
 		}()...)
+	return err
 }
 
 // EnableClientHandledTimeHistogram turns on recording of handling time of RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientHandledTimeHistogram(opts ...metric.InstrumentOption) {
-	var options []metric.InstrumentOption
+func (m *ClientMetrics) EnableClientHandledTimeHistogram(opts ...instrument.Option) (err error) {
+	var options []instrument.Option
 	options = append(options,
-		metric.WithDescription("Histogram of response latency (seconds) of the gRPC until it is finished by the application."),
-		metric.WithUnit("s"))
+		instrument.WithDescription("Histogram of response latency (seconds) of the gRPC until it is finished by the application."),
+		instrument.WithUnit("s"))
 	options = append(options, opts...)
 	if !m.clientHandledTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientHandledTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_client_handling_seconds", options...)
+		m.clientHandledTimeHistogram, err = Meter().SyncFloat64().Histogram("grpc_client_handling_seconds", options...)
+		if err != nil {
+			return err
+		}
 	}
 	m.clientHandledTimeHistogramEnabled = true
+	return nil
 }
 
 // EnableClientStreamReceiveTimeHistogram turns on recording of single message receive time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...metric.InstrumentOption) {
-	var options []metric.InstrumentOption
+func (m *ClientMetrics) EnableClientStreamReceiveTimeHistogram(opts ...instrument.Option) (err error) {
+	var options []instrument.Option
 	options = append(options,
-		metric.WithDescription("Histogram of response latency (seconds) of the gRPC single message receive."),
-		metric.WithUnit("s"))
+		instrument.WithDescription("Histogram of response latency (seconds) of the gRPC single message receive."),
+		instrument.WithUnit("s"))
 	options = append(options, opts...)
 	if !m.clientStreamReceiveTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientStreamReceiveTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_client_msg_recv_handling_seconds", options...)
+		m.clientStreamReceiveTimeHistogram, err = Meter().SyncFloat64().Histogram("grpc_client_msg_recv_handling_seconds", options...)
+		if err != nil {
+			return err
+		}
 	}
 	m.clientStreamReceiveTimeHistogramEnabled = true
+	return nil
 }
 
 // EnableClientStreamReceiveSizeHistogram turns on recording of single message receive size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamReceiveSizeHistogram(opts ...metric.InstrumentOption) {
-	var options []metric.InstrumentOption
+func (m *ClientMetrics) EnableClientStreamReceiveSizeHistogram(opts ...instrument.Option) (err error) {
+	var options []instrument.Option
 	options = append(options,
-		metric.WithDescription("Histogram of message size (bytes) of the gRPC single message receive."),
-		metric.WithUnit(unit.Bytes))
+		instrument.WithDescription("Histogram of message size (bytes) of the gRPC single message receive."),
+		instrument.WithUnit(unit.Bytes))
 	options = append(options, opts...)
 	if !m.clientStreamReceiveSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientStreamReceiveSizeHistogram = metric.Must(Meter()).NewInt64Histogram("grpc_client_msg_recv_handling_bytes", options...)
+		m.clientStreamReceiveSizeHistogram, err = Meter().SyncInt64().Histogram("grpc_client_msg_recv_handling_bytes", options...)
+		if err != nil {
+			return err
+		}
 	}
 	m.clientStreamReceiveSizeHistogramEnabled = true
+	return nil
 }
 
 // EnableClientStreamSendTimeHistogram turns on recording of single message send time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...metric.InstrumentOption) {
-	var options []metric.InstrumentOption
+func (m *ClientMetrics) EnableClientStreamSendTimeHistogram(opts ...instrument.Option) (err error) {
+	var options []instrument.Option
 	options = append(options,
-		metric.WithDescription("Histogram of response latency (seconds) of the gRPC single message send."),
-		metric.WithUnit("s"))
+		instrument.WithDescription("Histogram of response latency (seconds) of the gRPC single message send."),
+		instrument.WithUnit("s"))
 	options = append(options, opts...)
 	if !m.clientStreamSendTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientStreamSendTimeHistogram = metric.Must(Meter()).NewFloat64Histogram("grpc_client_msg_send_handling_seconds", options...)
+		m.clientStreamSendTimeHistogram, err = Meter().SyncFloat64().Histogram("grpc_client_msg_send_handling_seconds", options...)
+		if err != nil {
+			return err
+		}
 	}
 	m.clientStreamSendTimeHistogramEnabled = true
+	return nil
 }
 
 // EnableClientStreamSendSizeHistogram turns on recording of single message send size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ClientMetrics) EnableClientStreamSendSizeHistogram(opts ...metric.InstrumentOption) {
-	var options []metric.InstrumentOption
+func (m *ClientMetrics) EnableClientStreamSendSizeHistogram(opts ...instrument.Option) (err error) {
+	var options []instrument.Option
 	options = append(options,
-		metric.WithDescription("Histogram of message size (bytes) of the gRPC single message send."),
-		metric.WithUnit(unit.Bytes))
+		instrument.WithDescription("Histogram of message size (bytes) of the gRPC single message send."),
+		instrument.WithUnit(unit.Bytes))
 	options = append(options, opts...)
 	if !m.clientStreamSendSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.clientStreamSendSizeHistogram = metric.Must(Meter()).NewInt64Histogram("grpc_client_msg_send_handling_bytes", options...)
+		m.clientStreamSendSizeHistogram, err = Meter().SyncInt64().Histogram("grpc_client_msg_send_handling_bytes", options...)
+		if err != nil {
+			return err
+		}
 	}
 	m.clientStreamSendSizeHistogramEnabled = true
+	return nil
 }
 
 // UnaryClientInterceptor is a gRPC client-side interceptor that provides Prometheus monitoring for Unary RPCs.
