@@ -10,6 +10,7 @@ import (
 	"net"
 	"time"
 
+	errors_ "github.com/searKing/golang/go/errors"
 	net_ "github.com/searKing/golang/go/net"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
@@ -58,7 +59,7 @@ func Meter() metric.Meter {
 // opposed to automatically adding metrics via init functions.
 func NewClientMetrics(opts ...instrument.Option) *ClientMetrics {
 	m := &ClientMetrics{}
-	m.ResetCounter(opts...)
+	errors_.Must(m.ResetCounter(opts...))
 	return m
 }
 

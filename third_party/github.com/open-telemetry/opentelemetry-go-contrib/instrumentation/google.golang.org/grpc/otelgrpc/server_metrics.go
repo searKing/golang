@@ -8,6 +8,7 @@ import (
 	"context"
 	"time"
 
+	errors_ "github.com/searKing/golang/go/errors"
 	net_ "github.com/searKing/golang/go/net"
 	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
@@ -50,7 +51,7 @@ type ServerMetrics struct {
 // opposed to automatically adding metrics via init functions.
 func NewServerMetrics(opts ...instrument.Option) *ServerMetrics {
 	m := &ServerMetrics{}
-	m.ResetCounter(opts...)
+	errors_.Must(m.ResetCounter(opts...))
 	return m
 }
 

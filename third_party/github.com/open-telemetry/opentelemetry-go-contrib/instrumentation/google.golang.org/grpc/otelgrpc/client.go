@@ -5,7 +5,6 @@
 package otelgrpc
 
 import (
-	errors_ "github.com/searKing/golang/go/errors"
 	"go.opentelemetry.io/otel/metric/instrument"
 )
 
@@ -24,41 +23,41 @@ var (
 
 // ResetClientCounter recreate recording of all counters of RPCs.
 // This function acts on the DefaultClientMetrics variable.
-func ResetClientCounter(opts ...instrument.Option) {
-	DefaultClientMetrics.ResetCounter(opts...)
+func ResetClientCounter(opts ...instrument.Option) error {
+	return DefaultClientMetrics.ResetCounter(opts...)
 }
 
 // EnableClientHandledTimeHistogram turns on recording of handling time of
 // RPCs. Histogram metrics can be very expensive for Prometheus to retain and
 // query. This function acts on the DefaultClientMetrics variable.
-func EnableClientHandledTimeHistogram(opts ...instrument.Option) {
-	errors_.Must(DefaultClientMetrics.EnableClientHandledTimeHistogram(opts...))
+func EnableClientHandledTimeHistogram(opts ...instrument.Option) error {
+	return DefaultClientMetrics.EnableClientHandledTimeHistogram(opts...)
 }
 
 // EnableClientStreamReceiveTimeHistogram turns on recording of
 // single message receive time of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable.
-func EnableClientStreamReceiveTimeHistogram(opts ...instrument.Option) {
-	errors_.Must(DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(opts...))
+func EnableClientStreamReceiveTimeHistogram(opts ...instrument.Option) error {
+	return DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(opts...)
 }
 
 // EnableClientStreamReceiveSizeHistogram turns on recording of
 // single message receive size of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable
-func EnableClientStreamReceiveSizeHistogram(opts ...instrument.Option) {
-	errors_.Must(DefaultClientMetrics.EnableClientStreamReceiveSizeHistogram(opts...))
+func EnableClientStreamReceiveSizeHistogram(opts ...instrument.Option) error {
+	return DefaultClientMetrics.EnableClientStreamReceiveSizeHistogram(opts...)
 }
 
 // EnableClientStreamSendTimeHistogram turns on recording of
 // single message send time of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable.
-func EnableClientStreamSendTimeHistogram(opts ...instrument.Option) {
-	errors_.Must(DefaultClientMetrics.EnableClientStreamSendTimeHistogram(opts...))
+func EnableClientStreamSendTimeHistogram(opts ...instrument.Option) error {
+	return DefaultClientMetrics.EnableClientStreamSendTimeHistogram(opts...)
 }
 
 // EnableClientStreamSendSizeHistogram turns on recording of
 // single message receive size of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable
-func EnableClientStreamSendSizeHistogram(opts ...instrument.Option) {
-	errors_.Must(DefaultClientMetrics.EnableClientStreamSendSizeHistogram(opts...))
+func EnableClientStreamSendSizeHistogram(opts ...instrument.Option) error {
+	return DefaultClientMetrics.EnableClientStreamSendSizeHistogram(opts...)
 }
