@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2022 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -159,7 +159,7 @@ func ParseStructTag(tag string) (*StructTag, error) {
 
 				//value = value[comma+1:]
 			}
-			
+
 			// If spaces exists in tag's value, it is suspicious.
 			if strings.IndexByte(value, ' ') >= 0 {
 				return nil, errTagValueSpace
@@ -218,7 +218,7 @@ func (t *StructTag) Set(subTag SubStructTag) error {
 	return nil
 }
 
-// AddNameAndOptions sets the given name for the given key.
+// SetName sets the given name for the given key.
 func (t *StructTag) SetName(key string, name string) {
 	t.appendOrderedKeysIfNotPresent(key)
 
@@ -274,14 +274,14 @@ func (t StructTag) Keys() []string {
 	return keys
 }
 
-// Keys returns a slice of subTags sorted by keys in increasing order.
+// SortedKeys returns a slice of subTags sorted by keys in increasing order.
 func (t StructTag) SortedKeys() []string {
 	keys := t.Keys()
 	sort.Strings(keys)
 	return keys
 }
 
-// Keys returns a slice of subTags with original order.
+// OrderKeys returns a slice of subTags with original order.
 func (t StructTag) OrderKeys() []string {
 	return t.orderedKeys
 }
@@ -352,14 +352,14 @@ func (t StructTag) String() string {
 	return t.SelectString(t.Keys()...)
 }
 
-// String reassembles the subTags into a valid literal tag field representation
+// SortedString reassembles the subTags into a valid literal tag field representation
 // key is sorted by keys in increasing order.
 // tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
 func (t StructTag) SortedString() string {
 	return t.SelectString(t.SortedKeys()...)
 }
 
-// String reassembles the subTags into a valid literal tag field representation
+// OrderedString reassembles the subTags into a valid literal tag field representation
 // key is in the original order.
 // tag json:"name,omitempty", reflect.StructField.Tag returned by reflect
 func (t StructTag) OrderedString() string {
@@ -387,5 +387,4 @@ func (t StructTag) OrderedAstString() string {
 	return t.SelectAstString(t.OrderKeys()...)
 }
 
-var checkTagDups = []string{"json", "xml"}
 var checkTagSpaces = map[string]bool{"json": true, "xml": true, "asn1": true}
