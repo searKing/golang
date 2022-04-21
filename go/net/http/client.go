@@ -21,15 +21,13 @@ type Client struct {
 }
 
 // Use adds middleware handlers to the transport.
-func (c *Client) Use(h ...RoundTripHandler) *Client {
-	_, ok := c.Transport.(*Transport)
-	if !ok {
-		c.Transport = &Transport{Base: c.Transport}
+func (c *Client) Use(d ...RoundTripDecorator) *Client {
+	if len(d) == 0 {
+		return c
 	}
-
-	// above guarantee its type is *Transport
-	(c.Transport.(*Transport)).Use(h...)
-
+	var rts RoundTripDecorators
+	rts = append(rts, d...)
+	c.Transport = rts.WrapRoundTrip(c.Transport)
 	// for chained call
 	return c
 }
