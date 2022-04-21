@@ -237,7 +237,7 @@ func (g *Generator) Printf(format string, args ...interface{}) {
 }
 
 func (g *Generator) Render(text string, arg interface{}) {
-	tmpl, err := template.New("go-nulljson").Parse(text)
+	tmpl, err := template.New("go-option").Parse(text)
 	if err != nil {
 		panic(err)
 	}
