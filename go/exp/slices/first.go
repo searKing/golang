@@ -19,7 +19,7 @@ func FirstFunc[S ~[]E, E any](s S, f func(E) bool) (e E, ok bool) {
 }
 
 // FirstOrZero returns the first non-zero item from the slice, or zero if none do.
-func FirstOrZero[S ~[]E, E comparable](s S) E {
+func FirstOrZero[E comparable](s ...E) E {
 	var zeroE E
 	return FirstOrZeroFunc(s, func(e E) bool { return e != zeroE })
 }

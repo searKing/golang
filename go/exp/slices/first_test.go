@@ -26,7 +26,7 @@ func TestFirstOrZero_Int(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
 			{
-				got := slices_.FirstOrZero(tt.data)
+				got := slices_.FirstOrZero(tt.data...)
 				if got != tt.want {
 					t.Errorf("first of %v = %v", tt.data, tt.want)
 					t.Errorf("   got %v", got)
@@ -51,7 +51,7 @@ func TestFirstOrZero_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
 			{
-				got := slices_.FirstOrZero(tt.data)
+				got := slices_.FirstOrZero(tt.data...)
 				if got != tt.want {
 					t.Errorf("first of %v = %v", tt.data, tt.want)
 					t.Errorf("   got %v", got)
