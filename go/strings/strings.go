@@ -214,8 +214,8 @@ func CountPrefix(s, substr string) int {
 	return n
 }
 
-// CountPrefix counts the number of non-overlapping instances of continuous substr suffix in s.
-// If substr is an empty string, CountPrefix returns 1 + the number of Unicode code points in s.
+// CountSuffix counts the number of non-overlapping instances of continuous substr suffix in s.
+// If substr is an empty string, CountSuffix returns 1 + the number of Unicode code points in s.
 func CountSuffix(s, substr string) int {
 	// special case
 	if len(substr) == 0 {
