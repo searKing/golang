@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/searKing/travis-ci.svg?branch=mux)](https://travis-ci.org/searKing/travis-ci)
-[![GoDoc](https://godoc.org/github.com/searKing/golang/tools/cmd/mux?status.svg)](https://godoc.org/github.com/searKing/golang/tools/cmd/mux)
-[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/cmd/mux)](https://goreportcard.com/report/github.com/searKing/golang/tools/cmd/mux)
+[![GoDoc](https://godoc.org/github.com/searKing/golang/tools/mux?status.svg)](https://godoc.org/github.com/searKing/golang/go/net/mux)
+[![Report card](https://goreportcard.com/badge/github.com/searKing/golang/tools/mux)](https://goreportcard.com/report/github.com/searKing/golang/go/net/mux)
 [![Sourcegraph](https://sourcegraph.com/github.com/searKing/golang/-/badge.svg)](https://sourcegraph.com/github.com/searKing/travis-ci@mux?badge)
 
 # mux: Connection Mux
