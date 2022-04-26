@@ -15,7 +15,7 @@ import (
 // NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
 // Deprecate, use go-nulljson instead.
 // For more information, see:
-// https://godoc.org/github.com/searKing/golang/tools/cmd/go-nulljson
+// https://godoc.org/github.com/searKing/golang/tools/go-nulljson
 type NullJson struct {
 	Data interface{} // must be set with a pointer to zero value of expect type
 

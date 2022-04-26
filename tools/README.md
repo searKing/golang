@@ -15,16 +15,16 @@ also manually git clone the repository to `$GOPATH/src/github.com/searKing/golan
 
 ### Tips
 ```bash
-go get -u github.com/searKing/golang/tools/cmd/go-atomicvalue
-go get -u github.com/searKing/golang/tools/cmd/go-enum
-go get -u github.com/searKing/golang/tools/cmd/go-import
-go get -u github.com/searKing/golang/tools/cmd/go-nulljson
-go get -u github.com/searKing/golang/tools/cmd/go-option
-go get -u github.com/searKing/golang/tools/cmd/go-sqlx
-go get -u github.com/searKing/golang/tools/cmd/go-syncmap
-go get -u github.com/searKing/golang/tools/cmd/go-syncpool
-go get -u github.com/searKing/golang/tools/cmd/go-validator
-go get -u github.com/searKing/golang/tools/cmd/protoc-gen-go-tag
+go get -u github.com/searKing/golang/tools/go-atomicvalue
+go get -u github.com/searKing/golang/tools/go-enum
+go get -u github.com/searKing/golang/tools/go-import
+go get -u github.com/searKing/golang/tools/go-nulljson
+go get -u github.com/searKing/golang/tools/go-option
+go get -u github.com/searKing/golang/tools/go-sqlx
+go get -u github.com/searKing/golang/tools/go-syncmap
+go get -u github.com/searKing/golang/tools/go-syncpool
+go get -u github.com/searKing/golang/tools/go-validator
+go get -u github.com/searKing/golang/tools/protoc-gen-go-tag
 ```
 
 ## Report Issues / Send Patches
