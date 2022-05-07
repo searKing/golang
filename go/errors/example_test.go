@@ -74,9 +74,14 @@ func ExampleMark() {
 	err = errors_.Mark(fmt.Errorf("whoops"), fmt.Errorf("foo"), fmt.Errorf("bar"))
 	fmt.Println(err)
 	fmt.Println("-----")
+	err = errors_.Mark(err, fmt.Errorf("alice"), fmt.Errorf("bob"))
+	fmt.Println(err)
+	fmt.Println("-----")
 
 	// Output:
 	// <nil>
+	// -----
+	// whoops
 	// -----
 	// whoops
 	// -----
@@ -107,6 +112,11 @@ func ExampleMarkFormat() {
 	fmt.Printf("+v: %+v\n", err)
 	fmt.Println("-----")
 
+	err = errors_.Mark(err, fmt.Errorf("alice"), fmt.Errorf("bob"))
+	fmt.Printf("v: %v\n", err)
+	fmt.Printf("+v: %+v\n", err)
+	fmt.Println("-----")
+
 	// Output:
 	// v: <nil>
 	// +v: <nil>
@@ -124,6 +134,15 @@ func ExampleMarkFormat() {
 	// |	whoops
 	// M	foo
 	// M	bar
+	// -----
+	// v: whoops
+	// +v: Marked errors occurred:
+	// |	Marked errors occurred:
+	// |	whoops
+	// M	foo
+	// M	bar
+	// M	alice
+	// M	bob
 	// -----
 }
 
@@ -149,9 +168,17 @@ func ExampleMarkIs() {
 	fmt.Printf("%v\n", errors.Is(err, mark))
 	fmt.Println("-----")
 
+	err = errors_.Mark(err, fmt.Errorf("alice"), fmt.Errorf("bob"))
+	fmt.Printf("%v\n", errors.Is(err, nil))
+	fmt.Printf("%v\n", errors.Is(err, mark))
+	fmt.Println("-----")
+
 	// Output:
 	// true
 	// false
+	// -----
+	// false
+	// true
 	// -----
 	// false
 	// true
