@@ -16,8 +16,8 @@ import (
 
 type Client struct {
 	http.Client
-	target        string // resolver.Target, will replace Host in url.Url
-	targetAsProxy bool   // resolve target to proxy
+	target               string // resolver.Target, will replace Host in url.Url
+	replaceHostInRequest bool   // resolve target to proxy and replace host if target resolved
 }
 
 // Use adds middleware handlers to the transport.
@@ -55,6 +55,7 @@ func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
 	}
 	if len(target) > 0 && targetAsProxy {
 		tr.Proxy = ProxyFuncWithTargetOrDefault(target, tr.Proxy)
+		target = ""
 	}
 	if len(u) > 0 {
 		urlParsed, err := parseURL(u)
@@ -73,9 +74,9 @@ func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
 	}
 	client := http.Client{Transport: tr}
 	return &Client{
-		Client:        client,
-		target:        target,
-		targetAsProxy: targetAsProxy,
+		Client:               client,
+		target:               target,
+		replaceHostInRequest: false,
 	}, nil
 }
 
@@ -90,11 +91,9 @@ func NewClientWithUnixDisableCompression(u string) (*Client, error) {
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	if !c.targetAsProxy {
-		err := RequestWithTarget(req, c.target, true)
-		if err != nil {
-			return nil, err
-		}
+	err := RequestWithTarget(req, c.target, c.replaceHostInRequest)
+	if err != nil {
+		return nil, err
 	}
 	return c.Client.Do(req)
 }
