@@ -18,7 +18,7 @@ func TestLRU(t *testing.T) {
 		}
 		evictCounter++
 	}
-	l := sync.New[int, int](128)
+	l := sync.NewLRU[int, int](128)
 	l.SetEvictCallback(onEvicted)
 
 	for i := 0; i < 256; i++ {
@@ -82,7 +82,7 @@ func TestLRU(t *testing.T) {
 }
 
 func TestLRU_GetOldest_RemoveOldest(t *testing.T) {
-	l := sync.New[int, int](128)
+	l := sync.NewLRU[int, int](128)
 
 	for i := 0; i < 256; i++ {
 		l.Add(i, i)
@@ -119,7 +119,7 @@ func TestLRU_Add(t *testing.T) {
 		evictCounter++
 	}
 
-	l := sync.New[int, int](1).SetEvictCallback(onEvicted)
+	l := sync.NewLRU[int, int](1).SetEvictCallback(onEvicted)
 
 	if l.Add(1, 1) == true || evictCounter != 0 {
 		t.Errorf("should not have an eviction")
@@ -131,7 +131,7 @@ func TestLRU_Add(t *testing.T) {
 
 // Test that Contains doesn't update recent-ness
 func TestLRU_Contains(t *testing.T) {
-	l := sync.New[int, int](2)
+	l := sync.NewLRU[int, int](2)
 
 	l.Add(1, 1)
 	l.Add(2, 2)
@@ -147,7 +147,7 @@ func TestLRU_Contains(t *testing.T) {
 
 // Test that Peek doesn't update recent-ness
 func TestLRU_Peek(t *testing.T) {
-	l := sync.New[int, int](2)
+	l := sync.NewLRU[int, int](2)
 
 	l.Add(1, 1)
 	l.Add(2, 2)
@@ -168,7 +168,7 @@ func TestLRU_Resize(t *testing.T) {
 		onEvictCounter++
 	}
 
-	l := sync.New[int, int](2).SetEvictCallback(onEvicted)
+	l := sync.NewLRU[int, int](2).SetEvictCallback(onEvicted)
 
 	// Downsize
 	l.Add(1, 1)

@@ -27,8 +27,8 @@ type entry[K comparable, V any] struct {
 	value V
 }
 
-// New constructs an LRU of the given size
-func New[K comparable, V any](size int) *LRU[K, V] {
+// NewLRU constructs an LRU of the given size
+func NewLRU[K comparable, V any](size int) *LRU[K, V] {
 	c := &LRU[K, V]{
 		size: size,
 	}
