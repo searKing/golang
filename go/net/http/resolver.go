@@ -22,9 +22,12 @@ func RequestWithTarget(req *http.Request, target string, replaceHostInRequest bo
 	if err != nil {
 		return err
 	}
+	host := req.URL.Host
 	req.URL = u2
 	if replaceHostInRequest {
 		req.Host = u2.Host
+	} else {
+		req.Host = host
 	}
 	return nil
 }
