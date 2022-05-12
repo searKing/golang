@@ -3,9 +3,12 @@ package status
 import "google.golang.org/genproto/googleapis/rpc/errdetails"
 
 // WithBadRequestDetails returns a new status with the provided bad requests messages appended to the status.
-func WithBadRequestDetails(s *Status, descByField map[string]string) *Status {
+func WithBadRequestDetails(s *Status, descByField map[string]string) (*Status, error) {
+	if s == nil {
+		return nil, nil
+	}
 	if len(descByField) == 0 {
-		return s
+		return s, nil
 	}
 	var badRequest errdetails.BadRequest
 	for f, desc := range descByField {
@@ -14,5 +17,5 @@ func WithBadRequestDetails(s *Status, descByField map[string]string) *Status {
 			Description: desc,
 		})
 	}
-	return WithDetails(s, &badRequest)
+	return s.WithDetails(&badRequest)
 }

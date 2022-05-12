@@ -8,6 +8,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// GetLocalizedMessage returns an error that formats as the given Status with
+// locale message or message.
 // The locale used following the specification defined at
 // http://www.rfc-editor.org/rfc/bcp/bcp47.txt.
 // Examples are: "en-US", "fr-CH", "es-MX", "zh-CN"

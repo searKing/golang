@@ -5,52 +5,64 @@
 package status
 
 import (
-	"github.com/golang/protobuf/proto"
+	"errors"
+	"fmt"
+
+	errors_ "github.com/searKing/golang/go/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Status = status.Status
 
-// Newe returns a Status representing c and error, that is .
-// if err == nil, return codes.OK
-// if err != nil but c == codes.OK, return codes.Internal
-// otherwise, return c
-func Newe(c codes.Code, err error, details ...proto.Message) *Status {
-	if err == nil {
-		return status.New(codes.OK, "")
+// Errore returns an error representing c and msg if err is not status.Status.
+// If c is OK, returns nil.
+// If err is status.Status already, return err.
+// else, return an error representing c and msg marked with err.
+func Errore(err error, c codes.Code, msg string) error {
+	if err == nil || c == codes.OK {
+		return nil
+	}
+	if _, ok := FromError(err); ok {
+		return err
 	}
 
-	if c == codes.OK {
-		// no error details for status with code OK
-		c = codes.Internal
-	}
-
-	return Convert(c, err, details...)
+	return errors_.Mark(status.New(c, msg).Err(), err)
 }
 
-// Errore returns an error representing c and error.  If err is nil, returns nil.
-func Errore(c codes.Code, err error, details ...proto.Message) error {
-	return Newe(c, err, details...).Err()
+// Errorfe returns Errore(c, fmt.Sprintf(format, a...)).
+func Errorfe(err error, c codes.Code, format string, a ...interface{}) error {
+	return Errore(err, c, fmt.Sprintf(format, a...))
 }
 
-// FromError returns a Status representing err if it was produced from this
-// package or has a method `GRPCStatus() *Status`. Otherwise, ok is false and a
-// Status is returned with code.Code and the original error message.
-// code is set only if err has not implemented interface {
-//		GRPCStatus() *Status
-//	}
-func FromError(c codes.Code, err error, details ...proto.Message) (s *Status, ok bool) {
-	stat, ok := status.FromError(err)
+// FromError returns a Status representation of err.
+//
+// - If err was produced by this package or any err by `errors.UnWrap()` implements the method
+//   `GRPCStatus() *Status`, the appropriate Status is returned.
+//
+// - If err is nil, a Status is returned with codes.OK and no message.
+//
+// - Otherwise, err is an error not compatible with this package.  In this
+//   case, a Status is returned with codes.Unknown and err's Error() message,
+//   and ok is false.
+func FromError(err error) (s *Status, ok bool) {
+	s, ok = status.FromError(err)
 	if ok {
-		return WithDetails(stat, details...), ok
+		return s, ok
 	}
-	return WithDetails(status.New(c, err.Error()), details...), false
+	var gRPCStatus interface {
+		GRPCStatus() *status.Status
+	}
+	if errors.As(err, &gRPCStatus) {
+		s = gRPCStatus.GRPCStatus()
+		ok = true
+	}
+	return s, ok
 }
 
 // Convert is a convenience function which removes the need to handle the
 // boolean return value from FromError.
-func Convert(c codes.Code, err error, details ...proto.Message) *Status {
-	s, _ := FromError(c, err, details...)
+func Convert(err error) *Status {
+	s, _ := FromError(err)
 	return s
 }
