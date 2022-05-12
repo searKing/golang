@@ -31,7 +31,7 @@ func ExampleMulti() {
 	// -----
 }
 
-func ExampleMultiFormat() {
+func ExampleMultiErrorFormat() {
 	err := errors_.Multi(nil)
 	fmt.Printf("v: %v\n", err)
 	fmt.Printf("+v: %+v\n", err)
@@ -58,6 +58,110 @@ func ExampleMultiFormat() {
 	// +v: Multiple errors occurred:
 	// |	whoops
 	// |	foo
+	// -----
+}
+
+func ExampleMultiErrorIs() {
+	var asWrapErr = &wrapError{msg: "wrap"}
+
+	var errorStringErr = errors.New("errorString")
+	var wrapErr = &wrapError{msg: "wrap"}
+	err := errors_.Multi(nil, errorStringErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{msg: "nil"}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", error(asWrapErr))
+	fmt.Println("-----")
+
+	err = errors_.Multi(fmt.Errorf("whoops"), nil, errorStringErr, wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
+	fmt.Println("-----")
+
+	err = errors_.Multi(fmt.Errorf("whoops"), fmt.Errorf("foo"), errorStringErr, wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
+	fmt.Println("-----")
+
+	err = errors_.Multi(fmt.Errorf("whoops"), fmt.Errorf("foo"), fmt.Errorf("bar"), errorStringErr, wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
+	fmt.Println("-----")
+
+	err = errors_.Multi(err, fmt.Errorf("alice"), fmt.Errorf("bob"), wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
+	fmt.Println("-----")
+
+	// Output:
+	// err = errorString
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = false
+	// wrapErr = nil
+	// -----
+	// err = Multiple errors occurred:
+	// |	whoops
+	// |	errorString
+	// |	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
+	// -----
+	// err = Multiple errors occurred:
+	// |	whoops
+	// |	foo
+	// |	errorString
+	// |	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
+	// -----
+	// err = Multiple errors occurred:
+	// |	whoops
+	// |	foo
+	// |	bar
+	// |	errorString
+	// |	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
+	// -----
+	// err = Multiple errors occurred:
+	// |	Multiple errors occurred:
+	// |	whoops
+	// |	foo
+	// |	bar
+	// |	errorString
+	// |	wrap
+	// |	alice
+	// |	bob
+	// |	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
 	// -----
 }
 
@@ -91,7 +195,7 @@ func ExampleMark() {
 	// -----
 }
 
-func ExampleMarkFormat() {
+func ExampleMarkErrorFormat() {
 	err := errors_.Mark(nil)
 	fmt.Printf("v: %v\n", err)
 	fmt.Printf("+v: %+v\n", err)
@@ -146,48 +250,114 @@ func ExampleMarkFormat() {
 	// -----
 }
 
-func ExampleMarkIs() {
-	var mark = errors.New("mark")
-	err := errors_.Mark(nil, mark)
-	fmt.Printf("%v\n", errors.Is(err, nil))
-	fmt.Printf("%v\n", errors.Is(err, mark))
+func ExampleMarkErrorIs() {
+	var asWrapErr = &wrapError{msg: "wrap"}
+
+	var errorStringErr = errors.New("errorString")
+	var wrapErr = &wrapError{msg: "wrap"}
+	err := errors_.Mark(nil, errorStringErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{msg: "nil"}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", error(asWrapErr))
 	fmt.Println("-----")
 
-	err = errors_.Mark(fmt.Errorf("whoops"), nil, mark)
-	fmt.Printf("%v\n", errors.Is(err, nil))
-	fmt.Printf("%v\n", errors.Is(err, mark))
+	err = errors_.Mark(fmt.Errorf("whoops"), nil, errorStringErr, wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
 	fmt.Println("-----")
 
-	err = errors_.Mark(fmt.Errorf("whoops"), fmt.Errorf("foo"), mark)
-	fmt.Printf("%v\n", errors.Is(err, nil))
-	fmt.Printf("%v\n", errors.Is(err, mark))
+	err = errors_.Mark(fmt.Errorf("whoops"), fmt.Errorf("foo"), errorStringErr, wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
 	fmt.Println("-----")
 
-	err = errors_.Mark(fmt.Errorf("whoops"), fmt.Errorf("foo"), fmt.Errorf("bar"), mark)
-	fmt.Printf("%v\n", errors.Is(err, nil))
-	fmt.Printf("%v\n", errors.Is(err, mark))
+	err = errors_.Mark(fmt.Errorf("whoops"), fmt.Errorf("foo"), fmt.Errorf("bar"), errorStringErr, wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
 	fmt.Println("-----")
 
-	err = errors_.Mark(err, fmt.Errorf("alice"), fmt.Errorf("bob"))
-	fmt.Printf("%v\n", errors.Is(err, nil))
-	fmt.Printf("%v\n", errors.Is(err, mark))
+	err = errors_.Mark(err, fmt.Errorf("alice"), fmt.Errorf("bob"), wrapErr)
+	fmt.Printf("err = %+v\n", err)
+	fmt.Printf("errors.Is(err, nil) = %v\n", errors.Is(err, nil))
+	fmt.Printf("errors.Is(err, errorStringErr) = %v\n", errors.Is(err, errorStringErr))
+	asWrapErr = &wrapError{}
+	fmt.Printf("errors.As(err, &asWrapErr) = %v\n", errors.As(err, &asWrapErr))
+	fmt.Printf("wrapErr = %v\n", asWrapErr)
 	fmt.Println("-----")
 
 	// Output:
-	// true
-	// false
+	// err = <nil>
+	// errors.Is(err, nil) = true
+	// errors.Is(err, errorStringErr) = false
+	// errors.As(err, &asWrapErr) = false
+	// wrapErr = nil
 	// -----
-	// false
-	// true
+	// err = Marked errors occurred:
+	// |	whoops
+	// M	errorString
+	// M	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
 	// -----
-	// false
-	// true
+	// err = Marked errors occurred:
+	// |	whoops
+	// M	foo
+	// M	errorString
+	// M	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
 	// -----
-	// false
-	// true
+	// err = Marked errors occurred:
+	// |	whoops
+	// M	foo
+	// M	bar
+	// M	errorString
+	// M	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
 	// -----
-	// false
-	// true
+	// err = Marked errors occurred:
+	// |	Marked errors occurred:
+	// |	whoops
+	// M	foo
+	// M	bar
+	// M	errorString
+	// M	wrap
+	// M	alice
+	// M	bob
+	// M	wrap
+	// errors.Is(err, nil) = false
+	// errors.Is(err, errorStringErr) = true
+	// errors.As(err, &asWrapErr) = true
+	// wrapErr = wrap
 	// -----
+}
 
+type wrapError struct {
+	msg string
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
 }

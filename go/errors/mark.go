@@ -101,3 +101,17 @@ func (e markError) Is(target error) bool {
 func (e markError) Unwrap() error {
 	return e.err
 }
+
+// As finds the first error in err's chain that matches target, and if one is found, sets
+// target to that error value and returns true. Otherwise, it returns false.
+func (e markError) As(target any) bool {
+	if errors.As(e.err, target) {
+		return true
+	}
+	for _, err := range e.marks {
+		if errors.As(err, target) {
+			return true
+		}
+	}
+	return false
+}

@@ -105,3 +105,14 @@ func (e multiError) Unwrap() error {
 	// When there are multiple errors, it doesn't make sense to return any of them.
 	return nil
 }
+
+// As finds the first error in err's chain that matches target, and if one is found, sets
+// target to that error value and returns true. Otherwise, it returns false.
+func (e multiError) As(target any) bool {
+	for _, err := range e {
+		if errors.As(err, target) {
+			return true
+		}
+	}
+	return false
+}
