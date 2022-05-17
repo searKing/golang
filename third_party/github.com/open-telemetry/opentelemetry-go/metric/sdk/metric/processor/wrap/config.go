@@ -40,7 +40,7 @@ func WithDefaultLabels(kvs ...attribute.KeyValue) func(os *FactoryConfig) error 
 			if len(kvs) == 0 {
 				return accum
 			}
-			reduced := attribute.NewSet(append(kvs, accum.Labels().ToSlice()...)...)
+			reduced := attribute.NewSet(append(kvs, accum.Attributes().ToSlice()...)...)
 			return export.NewAccumulation(
 				accum.Descriptor(),
 				&reduced,
