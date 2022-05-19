@@ -9,8 +9,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/export"
 )
 
-var _ export.CheckpointerFactory = (*Wrap)(nil)
-var _ export.Checkpointer = (*Wrap)(nil)
+var _ export.CheckpointerFactory = (*Factory)(nil)
+var _ export.Checkpointer = (*Processor)(nil)
+var _ export.Processor = (*Processor)(nil)
 
 type AccumulationHandlerFunc func(accum export.Accumulation) export.Accumulation
 
@@ -20,35 +21,46 @@ func RegisterAccumulationHandler(handlers ...AccumulationHandlerFunc) {
 	AccumulationHandler = append(AccumulationHandler, handlers...)
 }
 
-// Wrap is a wrapped SpanProcessor.
-type Wrap struct {
+// Processor is a wrapped SpanProcessor.
+type Processor struct {
 	Handlers []AccumulationHandlerFunc
 	export.Checkpointer
 }
 
-func (p *Wrap) NewCheckpointer() export.Checkpointer {
-	return p
+type Factory struct {
+	opts []FactoryConfigFunc
+	export.CheckpointerFactory
 }
 
-var _ export.Processor = &Wrap{}
-var _ export.Checkpointer = &Wrap{}
+func (f *Factory) NewCheckpointer() export.Checkpointer {
+	return New(f.CheckpointerFactory.NewCheckpointer(), f.opts...)
+}
 
 // New returns a dimensionality-reset Processor that passes data to
 // the next stage in an export pipeline.
-func New(ckpter export.Checkpointer, opts ...FactoryConfigFunc) *Wrap {
+func New(ckpter export.Checkpointer, opts ...FactoryConfigFunc) *Processor {
 	var config FactoryConfig
 	err := config.ApplyOptions(opts...)
 	if err != nil {
 		otel.Handle(err)
 	}
-	return &Wrap{
+	return &Processor{
 		Checkpointer: ckpter,
 		Handlers:     config.Handlers,
 	}
 }
 
+// NewFactory returns a dimensionality-reset Processor Factory that passes data to
+// the next stage in an export pipeline.
+func NewFactory(checkpointerFactory export.CheckpointerFactory, opts ...FactoryConfigFunc) *Factory {
+	return &Factory{
+		opts:                opts,
+		CheckpointerFactory: checkpointerFactory,
+	}
+}
+
 // Process implements export.Processor.
-func (p *Wrap) Process(accum export.Accumulation) error {
+func (p *Processor) Process(accum export.Accumulation) error {
 	for _, h := range AccumulationHandler {
 		accum = h(accum)
 	}
