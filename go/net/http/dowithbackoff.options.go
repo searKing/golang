@@ -59,12 +59,28 @@ func WithDoWithBackoffOptionRoundTripper(rt http.RoundTripper) DoWithBackoffOpti
 		})
 }
 
-// WithDoWithBackoffOptionProxy returns a DoWithBackoffOption.
-func WithDoWithBackoffOptionProxy(proxyUsed string, targetAsProxy bool) DoWithBackoffOption {
-	if proxyUsed == "" {
+// WithDoWithBackoffOptionTarget returns a DoWithBackoffOption.
+// proxyUrl is proxy's url, like sock5://127.0.0.1:8080
+// proxyTarget is proxy's addr, replace the HOST in proxyUrl if not empty
+func WithDoWithBackoffOptionTarget(target string) DoWithBackoffOption {
+	if target == "" {
 		return EmptyDoWithBackoffOption{}
 	}
-	cli := NewClientWithTarget(proxyUsed, targetAsProxy)
+	cli := NewClientWithTarget(target)
+	return WithDoWithBackoffOptionDoRetryHandler(
+		func(req *http.Request, retry int) (*http.Response, error) {
+			return cli.Do(req)
+		})
+}
+
+// WithDoWithBackoffOptionProxy returns a DoWithBackoffOption.
+// proxyUrl is proxy's url, like sock5://127.0.0.1:8080
+// proxyTarget is proxy's addr, replace the HOST in proxyUrl if not empty
+func WithDoWithBackoffOptionProxy(proxyUrl string, proxyTarget string) DoWithBackoffOption {
+	if proxyUrl == "" {
+		return EmptyDoWithBackoffOption{}
+	}
+	cli := NewClientWithProxy(proxyUrl, proxyTarget)
 	return WithDoWithBackoffOptionDoRetryHandler(
 		func(req *http.Request, retry int) (*http.Response, error) {
 			return cli.Do(req)

@@ -38,9 +38,11 @@ var parseURL = url.Parse
 
 // NewClient returns a http client wrapper behaves like http.Client
 // u is the original url to send HTTP request
-// target is the resolver to resolve Host or proxy
-// targetAsProxy set true to use target as a proxy or false to replace host in url(NOT HOST in http header) by address resolved by target
-func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
+// target is the resolver to resolve Host to send HTTP request,
+// that is replacing host in url(NOT HOST in http header) by address resolved by target
+// proxyUrl is proxy's url, like sock5://127.0.0.1:8080
+// proxyTarget is proxy's addr, replace the HOST in proxyUrl if not empty
+func NewClient(u, target string, proxyUrl string, proxyTarget string) (*Client, error) {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -53,9 +55,8 @@ func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	if len(target) > 0 && targetAsProxy {
-		tr.Proxy = ProxyFuncWithTargetOrDefault(target, tr.Proxy)
-		target = ""
+	if proxyUrl != "" && proxyTarget != "" {
+		tr.Proxy = ProxyFuncWithTargetOrDefault(proxyUrl, proxyTarget, tr.Proxy)
 	}
 	if len(u) > 0 {
 		urlParsed, err := parseURL(u)
@@ -80,14 +81,24 @@ func NewClient(u, target string, targetAsProxy bool) (*Client, error) {
 	}, nil
 }
 
-// NewClientWithTarget returns a Client with http.Client and resolver.Target
-func NewClientWithTarget(target string, targetAsProxy bool) *Client {
-	cli, _ := NewClient("", target, targetAsProxy)
+// NewClientWithTarget returns a Client with http.Client and host replaced by resolver.Target
+// target is the resolver to resolve Host to send HTTP request,
+// that is replacing host in url(NOT HOST in http header) by address resolved by target
+func NewClientWithTarget(target string) *Client {
+	cli, _ := NewClient("", target, "", "")
+	return cli
+}
+
+// NewClientWithProxy returns a Client with http.Client with proxy set by resolver.Target
+// proxyUrl is proxy's url, like sock5://127.0.0.1:8080
+// proxyTarget is proxy's addr, replace the HOST in proxyUrl if not empty
+func NewClientWithProxy(proxyUrl string, proxyTarget string) *Client {
+	cli, _ := NewClient("", "", proxyUrl, proxyTarget)
 	return cli
 }
 
 func NewClientWithUnixDisableCompression(u string) (*Client, error) {
-	return NewClient(u, "", false)
+	return NewClient(u, "", "", "")
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
