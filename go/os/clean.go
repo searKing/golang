@@ -13,9 +13,33 @@ import (
 	filepath_ "github.com/searKing/golang/go/path/filepath"
 )
 
+type DiskQuota struct {
+	MaxAge             time.Duration // max age of files
+	MaxCount           int           // max count of files
+	MaxUsedProportion  float32       // max used proportion of files
+	MaxIUsedProportion float32       // max used proportion of inodes
+}
+
+func (q DiskQuota) NoLimit() bool {
+	return q.MaxAge <= 0 && q.MaxCount <= 0 && q.MaxUsedProportion <= 0 && q.MaxIUsedProportion <= 0
+}
+
+func (q DiskQuota) ExceedBytes(avail, total int64) bool {
+	return q.MaxUsedProportion > 0 && float32(avail) > q.MaxUsedProportion*float32(total)
+}
+
+func (q DiskQuota) ExceedInodes(inodes, inodesFree int64) bool {
+	return q.MaxIUsedProportion > 0 && float32(inodes-inodesFree) > q.MaxIUsedProportion*float32(inodes)
+}
+
 // UnlinkOldestFiles unlink old files if need
-func UnlinkOldestFiles(pattern string, maxAge time.Duration, maxCount int, used, iUsed float32) error {
-	if maxAge <= 0 && maxCount <= 0 && used <= 0 && iUsed <= 0 {
+func UnlinkOldestFiles(pattern string, quora DiskQuota) error {
+	return UnlinkOldestFilesFunc(pattern, quora, func(name string) bool { return true })
+}
+
+// UnlinkOldestFilesFunc unlink old files satisfying f(c) if need
+func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) bool) error {
+	if quora.NoLimit() {
 		return nil
 	}
 
@@ -33,12 +57,12 @@ func UnlinkOldestFiles(pattern string, maxAge time.Duration, maxCount int, used,
 		if err != nil {
 			return false
 		}
-		if maxAge <= 0 {
+		if quora.MaxAge <= 0 {
 			filesNotExpired = append(filesNotExpired, name)
 			return false
 		}
 
-		if now.Sub(fi.ModTime()) < maxAge {
+		if now.Sub(fi.ModTime()) < quora.MaxAge {
 			filesNotExpired = append(filesNotExpired, name)
 			return false
 		}
@@ -54,8 +78,8 @@ func UnlinkOldestFiles(pattern string, maxAge time.Duration, maxCount int, used,
 
 	var filesExceedMaxCount []string
 	var filesLeft = filesNotExpired
-	if maxCount > 0 && len(filesNotExpired) > 0 {
-		removeCount := len(filesNotExpired) - maxCount
+	if quora.MaxCount > 0 && len(filesNotExpired) > 0 {
+		removeCount := len(filesNotExpired) - quora.MaxCount
 		if removeCount < 0 {
 			removeCount = 0
 		}
@@ -63,17 +87,27 @@ func UnlinkOldestFiles(pattern string, maxAge time.Duration, maxCount int, used,
 		filesExceedMaxCount = filesNotExpired[:removeCount]
 		filesLeft = filesNotExpired[removeCount:]
 	}
+	if f == nil {
+		f = func(name string) bool {
+			return true
+		}
+	}
+
 	var errs []error
 	for _, path := range filesExpired {
-		err = os.Remove(path)
-		if err != nil {
-			errs = append(errs, err)
+		if f(path) {
+			err = os.Remove(path)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
 	for _, path := range filesExceedMaxCount {
-		err = os.Remove(path)
-		if err != nil {
-			errs = append(errs, err)
+		if f(path) {
+			err = os.Remove(path)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
 
@@ -85,11 +119,10 @@ func UnlinkOldestFiles(pattern string, maxAge time.Duration, maxCount int, used,
 		if total <= 0 {
 			return false
 		}
-
-		if used > 0 && float32(avail)/float32(total) > used {
+		if quora.ExceedBytes(avail, total) {
 			return true
 		}
-		if iUsed > 0 && float32(inodes-inodesFree)/float32(inodes) > iUsed {
+		if quora.ExceedInodes(inodes-inodesFree, inodes) {
 			return true
 		}
 		return false
@@ -99,9 +132,12 @@ func UnlinkOldestFiles(pattern string, maxAge time.Duration, maxCount int, used,
 		if !needGC(path) {
 			return nil
 		}
-		err = os.Remove(path)
-		if err != nil {
-			errs = append(errs, err)
+
+		if f(path) {
+			err = os.Remove(path)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
 	return errors_.Multi(errs...)
