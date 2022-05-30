@@ -25,7 +25,7 @@ func (q DiskQuota) NoLimit() bool {
 }
 
 func (q DiskQuota) ExceedBytes(avail, total int64) bool {
-	return q.MaxUsedProportion > 0 && float32(avail) > q.MaxUsedProportion*float32(total)
+	return q.MaxUsedProportion > 0 && float32(total-avail) > q.MaxUsedProportion*float32(total)
 }
 
 func (q DiskQuota) ExceedInodes(inodes, inodesFree int64) bool {
