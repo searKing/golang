@@ -189,7 +189,7 @@ func (r Rectangle2f) ColorModel() color.Model {
 	return color.Alpha16Model
 }
 
-func (r Rectangle2f) RoundPoint() image.Rectangle {
+func (r Rectangle2f) RoundRectangle() image.Rectangle {
 	return image.Rect(round(r.Min.X), round(r.Min.Y), round(r.Max.X), round(r.Max.Y))
 }
 
