@@ -15,7 +15,7 @@ type Handler struct {
 	ShutdownFunc ShutdownFunc // func to shutdown the server
 }
 
-// StarFunc is the type of the function invoked by Graceful to start the server
+// StartFunc is the type of the function invoked by Graceful to start the server
 type StartFunc func(context.Context) error
 
 // ShutdownFunc is the type of the function invoked by Graceful to shutdown the server
