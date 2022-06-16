@@ -1,0 +1,15 @@
+{
+  "log": {
+    "format": "glog_human",
+    "level": "info",
+    "path": "./testdata/log/example",
+    "report_caller": true,
+    "rotation_duration": "3600s",
+    "rotation_size_in_byte": 0,
+    "rotation_max_age": "86400s",
+    "rotation_max_count": 0,
+    "mute_directly_output": true,
+    "mute_directly_output_level": "fatal",
+    "truncate_value_size_to": 1024
+  }
+}

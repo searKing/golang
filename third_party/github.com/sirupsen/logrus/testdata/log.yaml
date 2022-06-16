@@ -1,0 +1,12 @@
+log:
+  format: glog_human # 日志格式
+  level: info # 日志最低打印等级
+  path: ./testdata/log/example # 日志存储路径
+  report_caller: true # 是否打印调用者堆栈
+  rotation_duration: 3600s # 日志循环覆盖最大分片时间
+  rotation_size_in_byte: 0 # 日志循环最大分片大小,单位为Byte
+  rotation_max_age: 86400s # 文件最大保存时间
+  rotation_max_count: 0 # 日志循环覆盖保留分片个数
+  mute_directly_output: true # 默认warn及更高级别日志是否打印到标准输出，具体level可由mute_directly_output_level指定
+  mute_directly_output_level: fatal # 标准输出日志最低打印等级
+  truncate_value_size_to: 1024 # 日志键值对的value最大长度，超长则截断; 当前仅glog和glog_human模式生效
