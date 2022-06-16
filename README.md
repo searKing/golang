@@ -1,5 +1,5 @@
-[![GoDoc](https://pkg.go.dev/github.com/searKing/golang@v1.1.18?status.svg)](https://pkg.go.dev/github.com/searKing/golang@v1.1.18)
-[![Report card](https://goreportcard.com/badge/github.com/searKing/golang@v1.1.18)](https://goreportcard.com/report/github.com/searKing/golang@v1.1.18)
+[![GoDoc](https://pkg.go.dev/github.com/searKing/golang?status.svg)](https://pkg.go.dev/github.com/searKing/golang)
+[![Report card](https://goreportcard.com/badge/github.com/searKing/golang)](https://goreportcard.com/report/github.com/searKing/golang)
 
 # golang
 
