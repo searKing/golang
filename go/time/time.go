@@ -4,7 +4,10 @@
 
 package time
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // TruncateByLocation only happens in local semantics, apparently.
 // observed values for truncating given time with 24 Hour:
@@ -29,4 +32,55 @@ func TruncateByLocation(t time.Time, d time.Duration) time.Time {
 	utc = utc.Truncate(d)
 	return time.Date(utc.Year(), utc.Month(), utc.Day(), utc.Hour(), utc.Minute(), utc.Second(), utc.Nanosecond(),
 		t.Location())
+}
+
+// Duration is alias of time.Duration for marshal and unmarshal
+type Duration time.Duration
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(time.Duration(d).String())
+}
+
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	// Ignore null, like in the main JSON package.
+	if string(data) == "null" {
+		return nil
+	}
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch value := v.(type) {
+	case float64:
+		*d = Duration(time.Duration(value))
+		return nil
+	case string:
+		tmp, err := time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+		*d = Duration(tmp)
+		return nil
+	default:
+		return &time.ParseError{
+			Layout:     "",
+			Value:      string(data),
+			LayoutElem: "",
+			ValueElem:  "",
+			Message:    "invalid duration",
+		}
+	}
+}
+
+func (d Duration) MarshalText() ([]byte, error) {
+	return json.Marshal(time.Duration(d).String())
+}
+
+func (d *Duration) UnmarshalText(data []byte) error {
+	tmp, err := time.ParseDuration(string(data))
+	if err != nil {
+		return err
+	}
+	*d = Duration(tmp)
+	return nil
 }
