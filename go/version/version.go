@@ -114,7 +114,7 @@ func (ver Version) BuildInfo() string {
 		fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
 }
 
-// Examples:
+// Format Examples:
 // v1.2.3-fix, Build #gc-go1.15.6-darwin/amd64, built on NOW
 func (ver Version) Format(s fmt.State, verb rune) {
 	switch verb {
