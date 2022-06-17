@@ -11,7 +11,6 @@ require (
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.6
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.5
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.6
-	github.com/searKing/sole v0.0.72
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
 	google.golang.org/grpc v1.47.0
@@ -53,6 +52,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+retract v1.2.26
 
 //replace github.com/searKing/golang/go v1.2.26 => ../../../../../github.com/searKing/golang/go
 //replace github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.6 => ../../../../../github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2
