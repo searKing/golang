@@ -21,12 +21,12 @@ import (
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/rs/cors"
 	net_ "github.com/searKing/golang/go/net"
+	"github.com/searKing/golang/pkg/webserver/healthz"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 	logrus_ "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
-	"github.com/searKing/sole/pkg/webserver/healthz"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -230,7 +230,7 @@ func (f Factory) New() (*WebServer, error) {
 	ginBackend.Use(gin_.UseHTTPPreflight())
 	ginBackend.Use(f.fc.GinMiddlewares...)
 
-	defaultHealthChecks := []healthz.HealthCheck{healthz.PingHealthCheck, healthz.LogHealthCheck}
+	defaultHealthChecks := []healthz.HealthChecker{healthz.PingHealthzCheck, healthz.LogHealthCheck}
 
 	s := &WebServer{
 		Name:                  f.fc.Name,

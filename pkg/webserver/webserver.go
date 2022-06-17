@@ -12,8 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	runtime_ "github.com/searKing/golang/go/runtime"
+	"github.com/searKing/golang/pkg/webserver/healthz"
 	"github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
-	"github.com/searKing/sole/pkg/webserver/healthz"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,15 +46,15 @@ type WebServer struct {
 
 	// healthz checks
 	healthzLock            sync.Mutex
-	healthzChecks          []healthz.HealthCheck
+	healthzChecks          []healthz.HealthChecker
 	healthzChecksInstalled bool
 	// livez checks
 	livezLock            sync.Mutex
-	livezChecks          []healthz.HealthCheck
+	livezChecks          []healthz.HealthChecker
 	livezChecksInstalled bool
 	// readyz checks
 	readyzLock            sync.Mutex
-	readyzChecks          []healthz.HealthCheck
+	readyzChecks          []healthz.HealthChecker
 	readyzChecksInstalled bool
 	livezGracePeriod      time.Duration
 

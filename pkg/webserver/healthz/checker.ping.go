@@ -6,8 +6,8 @@ package healthz
 
 import "net/http"
 
-// PingHealthz returns true automatically when checked
-var PingHealthz HealthChecker = ping{}
+// PingHealthzCheck returns true automatically when checked
+var PingHealthzCheck HealthChecker = ping{}
 
 // ping implements the simplest possible healthz checker.
 type ping struct{}

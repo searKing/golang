@@ -1,4 +1,4 @@
-module webserver
+module github.com/searKing/golang/pkg/webserver
 
 go 1.18
 
@@ -26,7 +26,6 @@ require (
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.3 // indirect

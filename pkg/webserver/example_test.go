@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"webserver"
+	"github.com/searKing/golang/pkg/webserver"
 )
 
 func TestNewWebServer(t *testing.T) {

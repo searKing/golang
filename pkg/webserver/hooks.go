@@ -11,10 +11,9 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"webserver/healthz"
-
 	errors_ "github.com/searKing/golang/go/errors"
 	"github.com/searKing/golang/go/runtime"
+	"github.com/searKing/golang/pkg/webserver/healthz"
 	"github.com/sirupsen/logrus"
 )
 

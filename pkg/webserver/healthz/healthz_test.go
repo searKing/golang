@@ -100,7 +100,7 @@ func testMultipleChecks(path, name string, t *testing.T) {
 
 	for i, test := range tests {
 		mux := http.NewServeMux()
-		checks := []HealthChecker{PingHealthz}
+		checks := []HealthChecker{PingHealthzCheck}
 		if test.addBadCheck {
 			checks = append(checks, NamedCheck("bad", func(_ *http.Request) error {
 				return errors.New("this will fail")

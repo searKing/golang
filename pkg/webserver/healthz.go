@@ -9,13 +9,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/searKing/sole/pkg/webserver/healthz"
+	"github.com/searKing/golang/pkg/webserver/healthz"
 )
 
 // AddHealthChecks adds HealthCheck(s) to health endpoints (healthz, livez, readyz) but
 // configures the liveness grace period to be zero, which means we expect this health check
 // to immediately indicate that the apiserver is unhealthy.
-func (s *WebServer) AddHealthChecks(checks ...healthz.HealthCheck) error {
+func (s *WebServer) AddHealthChecks(checks ...healthz.HealthChecker) error {
 	// we opt for a delay of zero here, because this entrypoint adds generic health checks
 	// and not health checks which are specifically related to kube-apiserver boot-sequences.
 	return s.addHealthChecks(0, checks...)
@@ -27,13 +27,13 @@ func (s *WebServer) AddHealthChecks(checks ...healthz.HealthCheck) error {
 // will default to healthy. One may want to set a grace period in order to prevent the kubelet from restarting
 // the kube-apiserver due to long-ish boot sequences. Readyz health checks, on the other hand, have no grace period,
 // since readyz should fail until boot fully completes.
-func (s *WebServer) AddBootSequenceHealthChecks(checks ...healthz.HealthCheck) error {
+func (s *WebServer) AddBootSequenceHealthChecks(checks ...healthz.HealthChecker) error {
 	return s.addHealthChecks(s.livezGracePeriod, checks...)
 }
 
 // addHealthChecks adds health checks to healthz, livez, and readyz. The delay passed in will set
 // a corresponding grace period on livez.
-func (s *WebServer) addHealthChecks(livezGracePeriod time.Duration, checks ...healthz.HealthCheck) error {
+func (s *WebServer) addHealthChecks(livezGracePeriod time.Duration, checks ...healthz.HealthChecker) error {
 	s.healthzLock.Lock()
 	defer s.healthzLock.Unlock()
 	if s.healthzChecksInstalled {
@@ -44,7 +44,7 @@ func (s *WebServer) addHealthChecks(livezGracePeriod time.Duration, checks ...he
 }
 
 // addReadyzChecks allows you to add a HealthCheck to readyz.
-func (s *WebServer) addReadyzChecks(checks ...healthz.HealthCheck) error {
+func (s *WebServer) addReadyzChecks(checks ...healthz.HealthChecker) error {
 	s.readyzLock.Lock()
 	defer s.readyzLock.Unlock()
 	if s.readyzChecksInstalled {
@@ -56,7 +56,7 @@ func (s *WebServer) addReadyzChecks(checks ...healthz.HealthCheck) error {
 
 // addLivezChecks allows you to add a HealthCheck to livez. It will also automatically add a check to readyz,
 // since we want to avoid being ready when we are not live.
-func (s *WebServer) addLivezChecks(delay time.Duration, checks ...healthz.HealthCheck) error {
+func (s *WebServer) addLivezChecks(delay time.Duration, checks ...healthz.HealthChecker) error {
 	s.livezLock.Lock()
 	defer s.livezLock.Unlock()
 	if s.livezChecksInstalled {
@@ -80,7 +80,7 @@ func (s *WebServer) installHealthz() {
 	s.healthzLock.Lock()
 	defer s.healthzLock.Unlock()
 	s.healthzChecksInstalled = true
-	healthz.InstallHandler(healthz.GinMuxer(s.ginBackend), s.healthzChecks...)
+	healthz.InstallHandler(GinMuxer(s.ginBackend), s.healthzChecks...)
 }
 
 // installReadyz creates the readyz endpoint for this server.
@@ -88,7 +88,7 @@ func (s *WebServer) installReadyz() {
 	s.readyzLock.Lock()
 	defer s.readyzLock.Unlock()
 	s.readyzChecksInstalled = true
-	healthz.InstallReadyzHandler(healthz.GinMuxer(s.ginBackend), s.readyzChecks...)
+	healthz.InstallReadyzHandler(GinMuxer(s.ginBackend), s.readyzChecks...)
 }
 
 // installLivez creates the livez endpoint for this server.
@@ -96,7 +96,7 @@ func (s *WebServer) installLivez() {
 	s.livezLock.Lock()
 	defer s.livezLock.Unlock()
 	s.livezChecksInstalled = true
-	healthz.InstallLivezHandler(healthz.GinMuxer(s.ginBackend), s.livezChecks...)
+	healthz.InstallLivezHandler(GinMuxer(s.ginBackend), s.livezChecks...)
 }
 
 // shutdownCheck fails if the embedded channel is closed. This is intended to allow for graceful shutdown sequences
@@ -120,7 +120,7 @@ func (c shutdownCheck) Check(req *http.Request) error {
 
 // delayedHealthCheck wraps a health check which will not fail until the explicitly defined delay has elapsed. This
 // is intended for use primarily for livez health checks.
-func delayedHealthCheck(check healthz.HealthCheck, delay time.Duration) healthz.HealthCheck {
+func delayedHealthCheck(check healthz.HealthChecker, delay time.Duration) healthz.HealthChecker {
 	return delayedLivezCheck{
 		check,
 		time.Now().Add(delay),
@@ -128,7 +128,7 @@ func delayedHealthCheck(check healthz.HealthCheck, delay time.Duration) healthz.
 }
 
 type delayedLivezCheck struct {
-	check      healthz.HealthCheck
+	check      healthz.HealthChecker
 	startCheck time.Time
 }
 

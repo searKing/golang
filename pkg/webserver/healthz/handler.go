@@ -16,50 +16,50 @@ import (
 )
 
 // InstallHandler registers handlers for health checking on the path
-// "/healthz" to mux. *All handlers* for mux must be specified in
+// "/healthz" to Muxer. *All handlers* for Muxer must be specified in
 // exactly one call to InstallHandler. Calling InstallHandler more
-// than once for the same mux will result in a panic.
-func InstallHandler(mux mux, checks ...HealthChecker) {
+// than once for the same Muxer will result in a panic.
+func InstallHandler(mux Muxer, checks ...HealthChecker) {
 	InstallPathHandler(mux, "/healthz", checks...)
 }
 
 // InstallReadyzHandler registers handlers for health checking on the path
-// "/readyz" to mux. *All handlers* for mux must be specified in
+// "/readyz" to Muxer. *All handlers* for Muxer must be specified in
 // exactly one call to InstallHandler. Calling InstallHandler more
-// than once for the same mux will result in a panic.
-func InstallReadyzHandler(mux mux, checks ...HealthChecker) {
+// than once for the same Muxer will result in a panic.
+func InstallReadyzHandler(mux Muxer, checks ...HealthChecker) {
 	InstallPathHandler(mux, "/readyz", checks...)
 }
 
 // InstallLivezHandler registers handlers for liveness checking on the path
-// "/livez" to mux. *All handlers* for mux must be specified in
+// "/livez" to Muxer. *All handlers* for Muxer must be specified in
 // exactly one call to InstallHandler. Calling InstallHandler more
-// than once for the same mux will result in a panic.
-func InstallLivezHandler(mux mux, checks ...HealthChecker) {
+// than once for the same Muxer will result in a panic.
+func InstallLivezHandler(mux Muxer, checks ...HealthChecker) {
 	InstallPathHandler(mux, "/livez", checks...)
 }
 
 // InstallReadyzHandlerWithHealthyFunc is like InstallReadyzHandler, but in addition call firstTimeReady
 // the first time /readyz succeeds.
-func InstallReadyzHandlerWithHealthyFunc(mux mux, firstTimeReady func(), checks ...HealthChecker) {
+func InstallReadyzHandlerWithHealthyFunc(mux Muxer, firstTimeReady func(), checks ...HealthChecker) {
 	InstallPathHandlerWithHealthyFunc(mux, "/readyz", firstTimeReady, checks...)
 }
 
 // InstallPathHandler registers handlers for health checking on
-// a specific path to mux. *All handlers* for the path must be
+// a specific path to Muxer. *All handlers* for the path must be
 // specified in exactly one call to InstallPathHandler. Calling
-// InstallPathHandler more than once for the same path and mux will
+// InstallPathHandler more than once for the same path and Muxer will
 // result in a panic.
-func InstallPathHandler(mux mux, path string, checks ...HealthChecker) {
+func InstallPathHandler(mux Muxer, path string, checks ...HealthChecker) {
 	InstallPathHandlerWithHealthyFunc(mux, path, nil, checks...)
 }
 
 // InstallPathHandlerWithHealthyFunc is like InstallPathHandler, but calls firstTimeHealthy exactly once
 // when the handler succeeds for the first time.
-func InstallPathHandlerWithHealthyFunc(mux mux, path string, firstTimeHealthy func(), checks ...HealthChecker) {
+func InstallPathHandlerWithHealthyFunc(mux Muxer, path string, firstTimeHealthy func(), checks ...HealthChecker) {
 	if len(checks) == 0 {
 		logrus.Infof("No default health checks specified. Installing the ping handler.")
-		checks = []HealthChecker{PingHealthz}
+		checks = []HealthChecker{PingHealthzCheck}
 	}
 
 	logrus.Infof("Installing health checkers for (%v): %v", path, formatQuoted(checkerNames(checks...)...))
@@ -72,8 +72,8 @@ func InstallPathHandlerWithHealthyFunc(mux mux, path string, firstTimeHealthy fu
 	}
 }
 
-// mux is an interface describing the methods InstallHandler requires.
-type mux interface {
+// Muxer is an interface describing the methods InstallHandler requires.
+type Muxer interface {
 	Handle(pattern string, handler http.Handler)
 }
 
