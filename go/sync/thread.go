@@ -83,7 +83,7 @@ func (th *Thread) Do(ctx context.Context, f func()) error {
 }
 
 func (th *Thread) lockOSThreadForever() {
-	if th.GoRoutine {
+	if !th.GoRoutine {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
 	}
