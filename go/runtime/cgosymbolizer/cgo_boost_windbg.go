@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build BOOST_STACKTRACE_USE_BACKTRACE
-// +build BOOST_STACKTRACE_USE_BACKTRACE
+//go:build BOOST_STACKTRACE_USE_WINDBG
+// +build BOOST_STACKTRACE_USE_WINDBG
 
 package cgosymbolizer
 
 /*
-#cgo windows CXXFLAGS:
-#cgo !windows CXXFLAGS: -DBOOST_STACKTRACE_USE_BACKTRACE
-#cgo !windows LDFLAGS: -ldl -lbacktrace -rdynamic
+#cgo windows CXXFLAGS: -DBOOST_STACKTRACE_USE_WINDBG
+#cgo !windows CXXFLAGS:
+#cgo !windows LDFLAGS:
 */
 import "C"
 
