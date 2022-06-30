@@ -5,9 +5,11 @@
 // Package cgosymbolizer provides a cgo symbolizer based on libbacktrace.
 // This will be used to provide a symbolic backtrace of cgo functions.
 // This package does not export any symbols.
-// To use it, add a line like
-//   import _ "github.com/ianlancetaylor/cgosymbolizer"
+// To use it on all platforms, add a line like
+//   import _ "github.com/searKing/golang/go/runtime/cgosymbolizer"
 // somewhere in your program.
+// for linux only, you can use `cgosymbolizer` by ianlancetaylor instead.
+//   import _ "github.com/ianlancetaylor/cgosymbolizer"
 package cgosymbolizer
 
 // extern void cgoTraceback(void*);
