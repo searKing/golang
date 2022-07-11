@@ -10,7 +10,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/prometheus/client_golang v1.12.1 // indirect
-	github.com/searKing/golang/go v1.2.20
+	github.com/searKing/golang/go v1.2.29
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.6
 	github.com/sirupsen/logrus v1.8.1
 	github.com/ugorji/go v1.2.7 // indirect
