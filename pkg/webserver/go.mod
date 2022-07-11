@@ -7,9 +7,9 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/rs/cors v1.8.2
 	github.com/searKing/golang/go v1.2.29
-	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.5
+	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.29
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.6
-	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.5
+	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.29
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.6
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
