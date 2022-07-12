@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// []byte -> proto|interface{}
+// YamlMarshaller []byte -> proto|interface{}
 type YamlMarshaller struct {
 	runtime.ProtoMarshaller
 }
