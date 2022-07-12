@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-validator
+module github.com/searKing/golang/tools/cmd/go-validator
 
 go 1.16
 

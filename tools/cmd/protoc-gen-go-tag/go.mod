@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/protoc-gen-go-tag
+module github.com/searKing/golang/tools/cmd/protoc-gen-go-tag
 
 go 1.16
 

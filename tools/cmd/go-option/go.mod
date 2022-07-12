@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-option
+module github.com/searKing/golang/tools/cmd/go-option
 
 go 1.16
 

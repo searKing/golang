@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-atomicvalue
+module github.com/searKing/golang/tools/cmd/go-atomicvalue
 
 go 1.16
 

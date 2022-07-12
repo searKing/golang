@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-syncpool
+module github.com/searKing/golang/tools/cmd/go-syncpool
 
 go 1.16
 

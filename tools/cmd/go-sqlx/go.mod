@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-sqlx
+module github.com/searKing/golang/tools/cmd/go-sqlx
 
 go 1.16
 

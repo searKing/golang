@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-nulljson
+module github.com/searKing/golang/tools/cmd/go-nulljson
 
 go 1.16
 

@@ -1,4 +1,4 @@
-module github.com/searKing/golang/tools/go-syncmap
+module github.com/searKing/golang/tools/cmd/go-syncmap
 
 go 1.16
 
