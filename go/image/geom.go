@@ -4,7 +4,10 @@
 
 package image
 
-import "image"
+import (
+	"image"
+	"math"
+)
 
 // UnionPoints returns the smallest rectangle that contains all points.
 func UnionPoints(pts ...image.Point) image.Rectangle {
@@ -40,4 +43,47 @@ func UnionRectangles(rs ...image.Rectangle) image.Rectangle {
 		ur = ur.Union(r)
 	}
 	return ur
+}
+
+func scale(segment image.Point, length int, limit image.Point) image.Point {
+	var swapped = segment.X > segment.Y
+	if swapped { // swap (X,Y) -> (Y,X)
+		segment.X = segment.X ^ segment.Y
+		segment.Y = segment.X ^ segment.Y
+		segment.X = segment.X ^ segment.Y
+		limit.X = limit.X ^ limit.Y
+		limit.Y = limit.X ^ limit.Y
+		limit.X = limit.X ^ limit.Y
+	}
+
+	dx := length - (segment.Y - segment.X)
+	segment.X -= int(math.Round(float64(dx) / 2.0))
+	if segment.X < limit.X {
+		segment.X = limit.X
+	}
+	segment.Y = segment.X + length
+	if segment.Y > limit.Y {
+		segment.Y = limit.Y
+		segment.X = segment.Y - length
+		if segment.X < limit.X {
+			segment.X = limit.X
+		}
+	}
+
+	if swapped {
+		segment.X = segment.X ^ segment.Y
+		segment.Y = segment.X ^ segment.Y
+		segment.X = segment.X ^ segment.Y
+	}
+	return segment
+}
+
+// ScaleRectangleBySize scale rect to size flexible in limit
+func ScaleRectangleBySize(rect image.Rectangle, size image.Point, limit image.Rectangle) image.Rectangle {
+	// padding in x direction
+	x := scale(image.Pt(rect.Min.X, rect.Max.X), size.X, image.Pt(limit.Min.X, limit.Max.X))
+	// padding in x direction
+	y := scale(image.Pt(rect.Min.Y, rect.Max.Y), size.X, image.Pt(limit.Min.Y, limit.Max.Y))
+
+	return limit.Intersect(image.Rect(x.X, y.X, x.Y, y.Y))
 }

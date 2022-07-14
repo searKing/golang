@@ -193,6 +193,46 @@ func (r Rectangle2f) RoundRectangle() image.Rectangle {
 	return image.Rect(round(r.Min.X), round(r.Min.Y), round(r.Max.X), round(r.Max.Y))
 }
 
+// UnionPoints returns the smallest rectangle that contains all points.
+func (r Rectangle2f) UnionPoints(pts ...Point2f) Rectangle2f {
+	if len(pts) == 0 {
+		return r
+	}
+	for _, p := range pts[1:] {
+		if p.X < r.Min.X {
+			r.Min.X = p.X
+		}
+		if p.Y < r.Min.Y {
+			r.Min.Y = p.Y
+		}
+		if p.X > r.Max.X {
+			r.Max.X = p.X
+		}
+		if p.Y > r.Max.Y {
+			r.Max.Y = p.Y
+		}
+	}
+	return r
+}
+
+// ScaleByFactor scale rect to factor*size
+func (r Rectangle2f) ScaleByFactor(factor Point2f) Rectangle2f {
+	factor = factor.Sub(Pt2f(1, 1))
+	minOffset := Point2f{
+		X: r.Dx() * factor.X / 2,
+		Y: r.Dy() * factor.Y / 2,
+	}
+	maxOffset := Point2f{
+		X: r.Dx() * factor.X,
+		Y: r.Dy() * factor.Y,
+	}.Sub(minOffset)
+
+	return Rectangle2f{
+		Min: Point2f{X: r.Min.X - minOffset.X, Y: r.Min.Y - minOffset.Y},
+		Max: Point2f{X: r.Max.X + maxOffset.X, Y: r.Max.Y + maxOffset.Y},
+	}
+}
+
 // ZR2f is the zero Rectangle2f.
 //
 // Deprecated: Use a literal image.Rectangle2f{} instead.
@@ -209,6 +249,10 @@ func Rect2f(x0, y0, x1, y1 float32) Rectangle2f {
 		y0, y1 = y1, y0
 	}
 	return Rectangle2f{Point2f{x0, y0}, Point2f{x1, y1}}
+}
+
+func Rect2fFromRect(rect image.Rectangle) Rectangle2f {
+	return Rect2f(float32(rect.Min.X), float32(rect.Min.Y), float32(rect.Max.X), float32(rect.Max.Y))
 }
 
 func round(x float32) int {
