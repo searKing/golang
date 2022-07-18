@@ -21,7 +21,7 @@ require (
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc v1.2.29
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.30
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.29
-	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.29
+	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.30
 	github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.29
 	github.com/searKing/golang/third_party/github.com/spf13/viper v1.2.29
 	github.com/searKing/golang/third_party/github.com/syndtr/goleveldb v1.2.28

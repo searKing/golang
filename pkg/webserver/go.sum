@@ -249,8 +249,8 @@ github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.28 h1:pDF
 github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.28/go.mod h1:ErUM8Q+Ax+tj1uwmBA/I1OJQhQ+Tbw/D92VewP5kLQw=
 github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.31 h1:uKNxKba8bRCrTC0pSuAqogSDbOsAr514kPsL1Ti0I4c=
 github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.31/go.mod h1:Xaq+71URxpjPj+QFi3TUzua2SZ2JWtla5zKk4TUqmB4=
-github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.29 h1:TsS4a3CMyhDwOjap91/vlCvoAO6vKw+920UxLG+BPcY=
-github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.29/go.mod h1:n/lIJp70nQzIT2Svj4He4xd7s0SSJj/syu2nwlluX+4=
+github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.30 h1:zFHQHcmULQDhozf5QIllqSfWl1iElwyjQo74o5KOfSQ=
+github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.30/go.mod h1:n/lIJp70nQzIT2Svj4He4xd7s0SSJj/syu2nwlluX+4=
 github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.28 h1:K+AMHnOy1yDIq/Tb0MlGzj6ss7U1HPC8FckJavVRR+0=
 github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.28/go.mod h1:wbG+zMU6EYXK/bn6b0fEbdocA0C3Eyofo+r4F2zSSb4=
 github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.30 h1:jNpyhJl7YZs3eRxSj/nH/TFELJ1tRGgDKuXoPp9rWhk=

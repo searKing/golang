@@ -433,8 +433,8 @@ github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-g
 github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.30/go.mod h1:2PtWBkALRRPuFTanOpHVRK/bamSrBuRnrYVXGTrI6lE=
 github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.29 h1:G2OzfyNqJKfQYRdlSrGMV68PFH17Q266cjAoqK64AoA=
 github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.29/go.mod h1:XpK07GwpMUXIxt7cJh3KlY6nyUqBKOCnwmRAMHszjdY=
-github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.29 h1:TsS4a3CMyhDwOjap91/vlCvoAO6vKw+920UxLG+BPcY=
-github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.29/go.mod h1:n/lIJp70nQzIT2Svj4He4xd7s0SSJj/syu2nwlluX+4=
+github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.30 h1:zFHQHcmULQDhozf5QIllqSfWl1iElwyjQo74o5KOfSQ=
+github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.30/go.mod h1:n/lIJp70nQzIT2Svj4He4xd7s0SSJj/syu2nwlluX+4=
 github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.29 h1:RPbP/2Vq+JUFaaZRHriBglVfJwXw3+/iJz152cWJa9I=
 github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.29/go.mod h1:4eWmUdltIByuPEXJwo0ZtpPoktKsMq+25dxgTfIyV94=
 github.com/searKing/golang/third_party/github.com/spf13/viper v1.2.29 h1:v7c+OPN/2EB4wohpgTqFTy7nl96APKpy3MOCxdVPfD0=
