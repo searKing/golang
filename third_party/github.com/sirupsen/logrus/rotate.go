@@ -79,7 +79,7 @@ func WithRotate(log *logrus.Logger, path string, options ...RotateOption) error 
 	file.MaxCount = opt.MaxCount
 	file.ForceNewFileOnStartup = opt.ForceNewFileOnStartup
 	if _, ok := log.Formatter.(*GlogFormatter); ok {
-		file.PreRotateHandler = GlogPreRotate
+		file.PostRotateHandler = GlogRotateHeader
 	}
 
 	var out = ioutil.Discard

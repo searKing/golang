@@ -36,7 +36,9 @@ func shortHostname(hostname string) string {
 	}
 	return hostname
 }
-func GlogPreRotate(name string) {
+
+// GlogRotateHeader append rotate header to a file named by filename.
+func GlogRotateHeader(name string) {
 	// Write header.
 	var buf bytes.Buffer
 	_, _ = fmt.Fprintf(&buf, "Log file created at: %s by %s\n", time.Now().Format("2006/01/02 15:04:05"), program)
