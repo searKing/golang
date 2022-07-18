@@ -3,7 +3,7 @@ module github.com/searKing/golang
 go 1.18
 
 require (
-	github.com/searKing/golang/go v1.2.29
+	github.com/searKing/golang/go v1.2.31
 	github.com/searKing/golang/pkg/webserver v1.2.30
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30
 	github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql v1.2.29
