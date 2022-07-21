@@ -242,8 +242,8 @@ github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6po
 github.com/rs/cors v1.8.2 h1:KCooALfAYGs415Cwu5ABvv9n9509fSiG5SQJn/AQo4U=
 github.com/rs/cors v1.8.2/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/searKing/golang/go v1.2.29/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
-github.com/searKing/golang/go v1.2.32 h1:402c20IztKRCfT2+wJiS5nFQvqEOkzj9uZOlrqwDRE4=
-github.com/searKing/golang/go v1.2.32/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
+github.com/searKing/golang/go v1.2.33 h1:lFrNzMKf0u9ed6xLjS6j7ZrORRgwZed9+Zg3qqlva5I=
+github.com/searKing/golang/go v1.2.33/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30 h1:VQA81MkSDGEbf1fvtioGFqno/lyoNjZWlP8SZIOc+kE=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30/go.mod h1:lyh2UEuH6Z6ZVt4G8YdHBa5kb7n/mYKjdQ8SDhZubKo=
 github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.28 h1:pDF1dUfk+jL1IlAU4KDn9IkvnIoklRxv5v4xCte6hcI=

@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/rs/cors v1.8.2
-	github.com/searKing/golang/go v1.2.32
+	github.com/searKing/golang/go v1.2.33
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.31
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.30
