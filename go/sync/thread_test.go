@@ -19,7 +19,7 @@ func (o *one) Increment() {
 }
 
 func run(thread *sync_.Thread, o *one, c chan bool) {
-	_ = thread.Do(context.Background(), func() { o.Increment() }, false)
+	_ = thread.Do(context.Background(), func() { o.Increment() })
 	c <- true
 }
 
@@ -50,14 +50,14 @@ func TestThreadPanic(t *testing.T) {
 		}()
 		_ = thread.Do(context.Background(), func() {
 			panic("failed")
-		}, false)
+		})
 	}()
 
 	{
 		var do bool
 		_ = thread.Do(context.Background(), func() {
 			do = true
-		}, false)
+		})
 		if !do {
 			t.Fatalf("Thread.Do did not called")
 		}
@@ -68,7 +68,7 @@ func TestThreadPanic(t *testing.T) {
 		var do bool
 		_ = thread.Do(context.Background(), func() {
 			do = true
-		}, false)
+		})
 		if do {
 			t.Fatalf("Thread.Do called after Thread.Shutdown")
 		}
@@ -87,7 +87,7 @@ func TestThreadCancel(t *testing.T) {
 			// Block until canceled
 			err := thread.Do(ctx, func() {
 				select {}
-			}, false)
+			})
 			if err == nil {
 				t.Errorf("Thread.Do did not return error")
 				return
@@ -102,7 +102,7 @@ func TestThreadCancel(t *testing.T) {
 			// Block until canceled
 			err := thread.Do(context.Background(), func() {
 				select {}
-			}, false)
+			})
 			if err == nil {
 				t.Errorf("Thread.Do did not return error")
 				return
@@ -116,7 +116,7 @@ func TestThreadCancel(t *testing.T) {
 		var do bool
 		err := thread.Do(context.Background(), func() {
 			do = true
-		}, false)
+		})
 		if do {
 			t.Fatalf("Thread.Do called after Thread.Shutdown")
 		}
@@ -133,7 +133,7 @@ func BenchmarkThread(b *testing.B) {
 	f := func() {}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = thread.Do(context.Background(), f, false)
+			_ = thread.Do(context.Background(), f)
 		}
 	})
 }

@@ -10,6 +10,12 @@ import (
 	"sync"
 )
 
+//go:generate go-option -type=threadDo
+type threadDo struct {
+	// call the function f in the same thread or escape thread
+	EscapeThread bool
+}
+
 // Thread should be used for such as calling OS services or
 // non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
 type Thread struct {
@@ -41,15 +47,15 @@ func (th *Thread) initOnce() {
 	})
 }
 
-// Do will call the function f in the same thread
-// f is enqueued only if ctx is not canceled and Thread is not Shutdown
-func (th *Thread) Do(ctx context.Context, f func()) error {
-	return th.EscapableDo(ctx, f, false)
+// Do will call the function f in the same thread or escape thread.
+// f is enqueued only if ctx is not canceled and Thread is not Shutdown and Not escape
+func (th *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error {
+	var opt threadDo
+	opt.ApplyOptions(opts...)
+	return th.do(ctx, f, opt.EscapeThread)
 }
 
-// EscapableDo will call the function f in the same thread or escape thread.
-// f is enqueued if and only if ctx is not canceled and Thread is not Shutdown and Not escape
-func (th *Thread) EscapableDo(ctx context.Context, f func(), escapeThread bool) error {
+func (th *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 	th.initOnce()
 	select {
 	case <-ctx.Done():
