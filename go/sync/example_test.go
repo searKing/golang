@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package sync
+package sync_test
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/searKing/golang/go/x/pool"
+	"github.com/searKing/golang/go/sync"
 )
 
 func ExampleWalk() {
@@ -16,7 +16,7 @@ func ExampleWalk() {
 	// chan WalkInfo
 	walkChan := make(chan interface{}, 0)
 
-	p := pool.Walk{
+	p := sync.Walk{
 		Burst: 1,
 	}
 	defer p.Wait()
