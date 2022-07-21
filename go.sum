@@ -397,10 +397,10 @@ github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb
 github.com/sagikazarmark/crypt v0.4.0/go.mod h1:ALv2SRj7GxYV4HO9elxH9nS6M9gW+xDNxqmyJ6RfDFM=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/searKing/golang/go v1.2.29/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
-github.com/searKing/golang/go v1.2.31 h1:Zxpn6VtED1ke/rvmNlGhA8/n/vvFfuOWFYc8BTP/Wwk=
-github.com/searKing/golang/go v1.2.31/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
-github.com/searKing/golang/pkg/webserver v1.2.30 h1:gUPciPQ9sDKqhayOM1iri8/nsPFJfKX2Cb0Es5SB1zA=
-github.com/searKing/golang/pkg/webserver v1.2.30/go.mod h1:pRGi3GBfG7E8y/vbdMgLwB56B3inBkiO2YAa+7Az0UY=
+github.com/searKing/golang/go v1.2.32 h1:402c20IztKRCfT2+wJiS5nFQvqEOkzj9uZOlrqwDRE4=
+github.com/searKing/golang/go v1.2.32/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
+github.com/searKing/golang/pkg/webserver v1.2.32 h1:p1Dff2lJk8R46bxlRpF4pBlvVcxNqAyh1aLE5CMMcEg=
+github.com/searKing/golang/pkg/webserver v1.2.32/go.mod h1:/OvbZo3jK6RjnwPnsg7kTH8X7mAnJQk2EpQCIlP8C4Y=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30 h1:VQA81MkSDGEbf1fvtioGFqno/lyoNjZWlP8SZIOc+kE=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30/go.mod h1:lyh2UEuH6Z6ZVt4G8YdHBa5kb7n/mYKjdQ8SDhZubKo=
 github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql v1.2.29 h1:hC72wEe90iMgNpbs3f3qi1rzU1546v6SbADnmBWgKx0=
