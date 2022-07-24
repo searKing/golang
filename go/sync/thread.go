@@ -66,40 +66,40 @@ func (th *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 		break
 	}
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
-	wg.Add(1)
 	var r interface{}
 	defer func() {
 		if r != nil {
-			panic(r)
+			panic(r) // rethrow panic if panic in f
 		}
 	}()
-	monitor := func() {
-		defer wg.Done()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	neverPanic := func() {
+		defer wg.Done() // Mark f is called or panic
 		defer func() {
 			r = recover()
 		}()
 		f()
 	}
 	if escapeThread {
-		monitor()
+		neverPanic()
 		return nil
 	}
 
 	select {
-	case th.fCh <- monitor:
+	case th.fCh <- neverPanic:
+		wg.Wait() // wait for f has been executed or panic
 		return nil
 	case <-ctx.Done():
-		wg.Done()
 		return ctx.Err()
 	case <-th.ctx.Done():
-		wg.Done()
 		return th.ctx.Err()
 	}
 }
 
 func (th *Thread) lockOSThreadForever() {
+	defer th.cancel()
 	if !th.GoRoutine {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
