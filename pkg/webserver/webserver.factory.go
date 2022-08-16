@@ -121,13 +121,13 @@ func NewFactory(fc FactoryConfig, configs ...FactoryConfigFunc) (Factory, error)
 	return f, nil
 }
 
-func (f Factory) Config() FactoryConfig {
+func (f *Factory) Config() FactoryConfig {
 	return f.fc
 }
 
 // New creates a new server which logically combines the handling chain with the passed server.
 // name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delgating.
-func (f Factory) New() (*WebServer, error) {
+func (f *Factory) New() (*WebServer, error) {
 	f.fc.BindAddress = f.GetBackendBindHostPort()
 	f.fc.ExternalAddress = f.GetBackendServeHostPort(true)
 
@@ -302,15 +302,20 @@ func (f *Factory) HTTPScheme() string {
 }
 
 func (f *Factory) ResolveLocalIp() string {
-	resolvers := f.fc.LocalIpResolver
-	if resolvers == nil {
-		return ""
+	resolver := f.fc.LocalIpResolver
+	if resolver != nil {
+		ip, err := net_.ServeIP(resolver.Networks, resolver.Addresses, resolver.Timeout)
+		if err != nil && len(ip) > 0 {
+			return ip.String()
+		}
 	}
-	ip, err := net_.ServeIP(resolvers.Networks, resolvers.Addresses, resolvers.Timeout)
-	if err != nil {
-		return "localhost"
+
+	// use local ip
+	localIP, err := net_.ListenIP()
+	if err == nil && len(localIP) > 0 {
+		return localIP.String()
 	}
-	return ip.String()
+	return "localhost"
 }
 
 // GetBackendBindHostPort returns a address to listen.
