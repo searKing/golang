@@ -115,14 +115,18 @@ func (s *WebServer) AddPreShutdownHookOrDie(name string, hook PreShutdownHookFun
 }
 
 // RunPostStartHooks runs the PostStartHooks for the server
-func (s *WebServer) RunPostStartHooks(ctx context.Context) {
+func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
+	var errs []error
 	s.postStartHookLock.Lock()
 	defer s.postStartHookLock.Unlock()
 	s.postStartHooksCalled = true
 
 	for hookName, hookEntry := range s.postStartHooks {
-		go runPostStartHook(ctx, hookName, hookEntry)
+		if err := runPostStartHook(ctx, hookName, hookEntry); err != nil {
+			errs = append(errs, err)
+		}
 	}
+	return errors_.Multi(errs...)
 }
 
 // RunPreShutdownHooks runs the PreShutdownHooks for the server
@@ -149,7 +153,7 @@ func (s *WebServer) isPostStartHookRegistered(name string) bool {
 	return exists
 }
 
-func runPostStartHook(ctx context.Context, name string, entry postStartHookEntry) {
+func runPostStartHook(ctx context.Context, name string, entry postStartHookEntry) error {
 	var err error
 	func() {
 		// don't let the hook *accidentally* panic and kill the server
@@ -158,9 +162,10 @@ func runPostStartHook(ctx context.Context, name string, entry postStartHookEntry
 	}()
 	// if the hook intentionally wants to kill server, let it.
 	if err != nil {
-		logrus.Fatalf("PostStartHook %q failed: %v", name, err)
+		return fmt.Errorf("PostStartHook %q failed: %w", name, err)
 	}
 	close(entry.done)
+	return nil
 }
 
 func runPreShutdownHook(name string, entry preShutdownHookEntry) error {
@@ -171,7 +176,7 @@ func runPreShutdownHook(name string, entry preShutdownHookEntry) error {
 		err = entry.hook()
 	}()
 	if err != nil {
-		return fmt.Errorf("PreShutdownHook %q failed: %v", name, err)
+		return fmt.Errorf("PreShutdownHook %q failed: %w", name, err)
 	}
 	return nil
 }
