@@ -20,7 +20,7 @@ type builder struct {
 	scheme string
 }
 
-func (b *builder) Build(target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
+func (b *builder) Build(ctx context.Context, target resolver.Target, opts ...resolver.BuildOption) (resolver.Resolver, error) {
 	var opt resolver.Build
 	opt.ApplyOptions(opts...)
 	cc := opt.ClientConn
