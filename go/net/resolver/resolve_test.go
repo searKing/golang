@@ -22,16 +22,24 @@ func TestResolveAddr(t *testing.T) {
 		expect string
 	}{
 		{
+			target: "google.com",
+			expect: "google.com",
+		},
+		{
 			target: "passthrough://a.server.com/google.com",
 			expect: "google.com",
 		},
 		//{
-		//	target: "dns://www/google.com",
-		//	expect: "google.com",
+		//	target: "dns:///www.google.com",
+		//	expect: "162.125.82.7:443",
+		//},
+		//{
+		//	target: "dns://114.114.114.114/www.google.com",
+		//	expect: "199.16.156.7:443",
 		//},
 		{
 			target: "unix:///a/b/c",
-			expect: "/a/b/c",
+			expect: "a/b/c",
 		},
 	}
 
@@ -44,7 +52,7 @@ func TestResolveAddr(t *testing.T) {
 			if err != nil {
 				t.Fatalf("#%d: ResolveOneAddr failed: %s", i, err)
 			}
-			if addr.Addr != "google.com" {
+			if addr.Addr != test.expect {
 				t.Fatalf("#%d: expected %s got %s", i, test.expect, addr.Addr)
 			}
 			t.Logf("#%d: addr: %s", i, addr.Addr)

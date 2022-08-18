@@ -1,101 +1,70 @@
 // Copyright 2021 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// Code borrowed from https://github.com/grpc/grpc-go/blob/master/internal/grpcutil/target_test.go
-
 package resolver_test
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/searKing/golang/go/net/resolver"
 )
 
 func TestParseTarget(t *testing.T) {
-	for _, test := range []resolver.Target{
-		{Scheme: "dns", Authority: "", Endpoint: "google.com"},
-		{Scheme: "dns", Authority: "a.server.com", Endpoint: "google.com"},
-		{Scheme: "dns", Authority: "a.server.com", Endpoint: "google.com/?a=b"},
-		{Scheme: "passthrough", Authority: "", Endpoint: "/unix/socket/address"},
-	} {
-		str := test.Scheme + "://" + test.Authority + "/" + test.Endpoint
-		got := resolver.ParseTarget(str, false)
-		if got != test {
-			t.Errorf("ParseTarget(%q, false) = %+v, want %+v", str, got, test)
-		}
-		got = resolver.ParseTarget(str, true)
-		if got != test {
-			t.Errorf("ParseTarget(%q, true) = %+v, want %+v", str, got, test)
-		}
-	}
-}
-
-func TestParseTargetString(t *testing.T) {
-	for _, test := range []struct {
-		targetStr      string
-		want           resolver.Target
-		wantWithDialer resolver.Target
+	defScheme := resolver.GetDefaultScheme()
+	for i, test := range []struct {
+		target    string
+		badScheme bool
+		want      resolver.Target
 	}{
-		{targetStr: "", want: resolver.Target{Scheme: "", Authority: "", Endpoint: ""}},
-		{targetStr: ":///", want: resolver.Target{Scheme: "", Authority: "", Endpoint: ""}},
-		{targetStr: "a:///", want: resolver.Target{Scheme: "a", Authority: "", Endpoint: ""}},
-		{targetStr: "://a/", want: resolver.Target{Scheme: "", Authority: "a", Endpoint: ""}},
-		{targetStr: ":///a", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a"}},
-		{targetStr: "a://b/", want: resolver.Target{Scheme: "a", Authority: "b", Endpoint: ""}},
-		{targetStr: "a:///b", want: resolver.Target{Scheme: "a", Authority: "", Endpoint: "b"}},
-		{targetStr: "://a/b", want: resolver.Target{Scheme: "", Authority: "a", Endpoint: "b"}},
-		{targetStr: "a://b/c", want: resolver.Target{Scheme: "a", Authority: "b", Endpoint: "c"}},
-		{targetStr: "dns:///google.com", want: resolver.Target{Scheme: "dns", Authority: "", Endpoint: "google.com"}},
-		{targetStr: "dns://a.server.com/google.com", want: resolver.Target{Scheme: "dns", Authority: "a.server.com", Endpoint: "google.com"}},
-		{targetStr: "dns://a.server.com/google.com/?a=b", want: resolver.Target{Scheme: "dns", Authority: "a.server.com", Endpoint: "google.com/?a=b"}},
+		// No scheme is specified.
+		{target: "", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: ""}},
+		{target: "://", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "://"}},
+		{target: ":///", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: ":///"}},
+		{target: "://a/", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "://a/"}},
+		{target: ":///a", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: ":///a"}},
+		{target: "://a/b", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "://a/b"}},
+		{target: "/", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "/"}},
+		{target: "a/b", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a/b"}},
+		{target: "a//b", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a//b"}},
+		{target: "google.com", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "google.com"}},
+		{target: "google.com/?a=b", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "google.com/"}},
+		{target: "/unix/socket/address", badScheme: true, want: resolver.Target{Scheme: "", Authority: "", Endpoint: "/unix/socket/address"}},
 
-		{targetStr: "/", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "/"}},
-		{targetStr: "google.com", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "google.com"}},
-		{targetStr: "google.com/?a=b", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "google.com/?a=b"}},
-		{targetStr: "/unix/socket/address", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "/unix/socket/address"}},
+		// A scheme is specified.
+		{target: "dns:///google.com", want: resolver.Target{Scheme: "dns", Authority: "", Endpoint: "google.com"}},
+		{target: "dns://a.server.com/google.com", want: resolver.Target{Scheme: "dns", Authority: "a.server.com", Endpoint: "google.com"}},
+		{target: "dns://a.server.com/google.com/?a=b", want: resolver.Target{Scheme: "dns", Authority: "a.server.com", Endpoint: "google.com/"}},
+		{target: "unix:///a/b/c", want: resolver.Target{Scheme: "unix", Authority: "", Endpoint: "a/b/c"}},
+		{target: "unix-abstract:a/b/c", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a/b/c"}},
+		{target: "unix-abstract:a b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a b"}},
+		{target: "unix-abstract:a:b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a:b"}},
+		{target: "unix-abstract:a-b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a-b"}},
+		{target: "unix-abstract:/ a///://::!@#$%25^&*()b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: " a///://::!@"}},
+		{target: "unix-abstract:passthrough:abc", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "passthrough:abc"}},
+		{target: "unix-abstract:unix:///abc", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "unix:///abc"}},
+		{target: "unix-abstract:///a/b/c", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a/b/c"}},
+		{target: "unix-abstract:///", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: ""}},
+		{target: "passthrough:///unix:///a/b/c", want: resolver.Target{Scheme: "passthrough", Authority: "", Endpoint: "unix:///a/b/c"}},
 
-		// If we can only parse part of the target.
-		{targetStr: "://", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "://"}},
-		{targetStr: "unix://domain", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "unix://domain"}},
-		{targetStr: "unix://a/b/c", want: resolver.Target{Scheme: "unix", Authority: "a", Endpoint: "/b/c"}},
-		{targetStr: "a:b", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a:b"}},
-		{targetStr: "a/b", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a/b"}},
-		{targetStr: "a:/b", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a:/b"}},
-		{targetStr: "a//b", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a//b"}},
-		{targetStr: "a://b", want: resolver.Target{Scheme: "", Authority: "", Endpoint: "a://b"}},
-
-		// Unix cases without custom dialer.
-		// unix:[local_path], unix:[/absolute], and unix://[/absolute] have different
-		// behaviors with a custom dialer, to prevent behavior changes with custom dialers.
-		{targetStr: "unix:a/b/c", want: resolver.Target{Scheme: "unix", Authority: "", Endpoint: "a/b/c"}, wantWithDialer: resolver.Target{Scheme: "", Authority: "", Endpoint: "unix:a/b/c"}},
-		{targetStr: "unix:/a/b/c", want: resolver.Target{Scheme: "unix", Authority: "", Endpoint: "/a/b/c"}, wantWithDialer: resolver.Target{Scheme: "", Authority: "", Endpoint: "unix:/a/b/c"}},
-		{targetStr: "unix:///a/b/c", want: resolver.Target{Scheme: "unix", Authority: "", Endpoint: "/a/b/c"}},
-
-		{targetStr: "unix-abstract:a/b/c", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a/b/c"}},
-		{targetStr: "unix-abstract:a b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a b"}},
-		{targetStr: "unix-abstract:a:b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a:b"}},
-		{targetStr: "unix-abstract:a-b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "a-b"}},
-		{targetStr: "unix-abstract:/ a///://::!@#$%^&*()b", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "/ a///://::!@#$%^&*()b"}},
-		{targetStr: "unix-abstract:passthrough:abc", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "passthrough:abc"}},
-		{targetStr: "unix-abstract:unix:///abc", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "unix:///abc"}},
-		{targetStr: "unix-abstract:///a/b/c", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "/a/b/c"}},
-		{targetStr: "unix-abstract://authority/a/b/c", want: resolver.Target{Scheme: "unix-abstract", Authority: "authority", Endpoint: "/a/b/c"}},
-		{targetStr: "unix-abstract:///", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "/"}},
-		{targetStr: "unix-abstract://authority", want: resolver.Target{Scheme: "unix-abstract", Authority: "", Endpoint: "//authority"}},
-
-		{targetStr: "passthrough:///unix:///a/b/c", want: resolver.Target{Scheme: "passthrough", Authority: "", Endpoint: "unix:///a/b/c"}},
+		// Cases for `scheme:absolute-path`.
+		{target: "dns:/a/b/c", want: resolver.Target{Scheme: "dns", Authority: "", Endpoint: "a/b/c"}},
 	} {
-		got := resolver.ParseTarget(test.targetStr, false)
+		target := test.target
+		if test.badScheme {
+			target = defScheme + ":///" + target
+		}
+		url, err := url.Parse(target)
+		if err != nil {
+			t.Fatalf("Unexpected error parsing URL: %v", err)
+		}
+		if test.badScheme {
+			url.Scheme = ""
+		}
+		test.want.URL = *url
+		got := resolver.ParseTarget(test.target)
 		if got != test.want {
-			t.Errorf("ParseTarget(%q, false) = %+v, want %+v", test.targetStr, got, test.want)
-		}
-		wantWithDialer := test.wantWithDialer
-		if wantWithDialer == (resolver.Target{}) {
-			wantWithDialer = test.want
-		}
-		got = resolver.ParseTarget(test.targetStr, true)
-		if got != wantWithDialer {
-			t.Errorf("ParseTarget(%q, true) = %+v, want %+v", test.targetStr, got, wantWithDialer)
+			t.Errorf("#%d: ParseTarget(%q) = %+v, want %+v", i, test.target, got, test.want)
 		}
 	}
 }

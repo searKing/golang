@@ -77,7 +77,7 @@ func ResolveNow(ctx context.Context, target string, opts ...ResolveNowOption) er
 }
 
 func GetBuilderOrDefault(target string) (Builder, error) {
-	tgt := ParseTarget(target, false)
+	tgt := ParseTarget(target)
 	builder := Get(tgt.Scheme)
 	if builder == nil {
 		// If resolver builder is still nil, the parsed target's scheme is
@@ -93,7 +93,7 @@ func GetBuilderOrDefault(target string) (Builder, error) {
 }
 
 func NewResolver(ctx context.Context, target string, opts ...BuildOption) (Resolver, error) {
-	tgt := ParseTarget(target, false)
+	tgt := ParseTarget(target)
 	builder := Get(tgt.Scheme)
 	if builder == nil {
 		// If resolver builder is still nil, the parsed target's scheme is

@@ -6,17 +6,29 @@ package resolver
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 )
 
 // Target represents a target for gRPC, as specified in:
 // https://github.com/grpc/grpc/blob/master/doc/naming.md.
-// It is parsed from the target string that gets passed into Dial or DialContext by the user. And
-// grpc passes it to the resolver and the balancer.
+// It is parsed from the target string that gets passed into Dial or DialContext
+// by the user. And gRPC passes it to the resolver and the balancer.
 //
-// If the target follows the naming spec, and the parsed scheme is registered with grpc, we will
-// parse the target string according to the spec. e.g. "dns://some_authority/foo.bar" will be parsed
-// into &Target{Scheme: "dns", Authority: "some_authority", Endpoint: "foo.bar"}
+// If the target follows the naming spec, and the parsed scheme is registered
+// with gRPC, we will parse the target string according to the spec. If the
+// target does not contain a scheme or if the parsed scheme is not registered
+// (i.e. no corresponding resolver available to resolve the endpoint), we will
+// apply the default scheme, and will attempt to reparse it.
+//
+// Examples:
+//
+//   - "dns://some_authority/foo.bar"
+//     Target{Scheme: "dns", Authority: "some_authority", Endpoint: "foo.bar"}
+//   - "foo.bar"
+//     Target{Scheme: resolver.GetDefaultScheme(), Endpoint: "foo.bar"}
+//   - "unknown_scheme://authority/endpoint"
+//     Target{Scheme: resolver.GetDefaultScheme(), Endpoint: "unknown_scheme://authority/endpoint"}
 //
 // If the target does not contain a scheme, we will apply the default scheme, and set the Target to
 // be the full target string. e.g. "foo.bar" will be parsed into
@@ -26,10 +38,20 @@ import (
 // endpoint), we set the Scheme to be the default scheme, and set the Endpoint to be the full target
 // string. e.g. target string "unknown_scheme://authority/endpoint" will be parsed into
 // &Target{Scheme: resolver.GetDefaultScheme(), Endpoint: "unknown_scheme://authority/endpoint"}.
+
 type Target struct {
-	Scheme    string
+	// Deprecated: use URL.Scheme instead.
+	Scheme string
+	// Deprecated: use URL.Host instead.
 	Authority string
-	Endpoint  string
+	// Deprecated: use URL.Path or URL.Opaque instead. The latter is set when
+	// the former is empty.
+	Endpoint string
+	// URL contains the parsed dial target with an optional default scheme added
+	// to it if the original dial target contained no scheme or contained an
+	// unregistered scheme. Any query params specified in the original dial
+	// target can be accessed from here.
+	URL url.URL
 }
 
 func (t *Target) key() targetKey {
@@ -47,65 +69,67 @@ func (k targetKey) String() string {
 	return fmt.Sprintf("%s|%s|%s", k.Scheme, k.Authority, k.Endpoint)
 }
 
-// ParseTarget splits target into a Target struct containing scheme,
-// authority and endpoint. skipUnixColonParsing indicates that the parse should
-// not parse "unix:[path]" cases. This should be true in cases where a custom
-// dialer is present, to prevent a behavior change.
+// ParseTarget uses RFC 3986 semantics to parse the given target into a
+// resolver.Target struct containing scheme, authority and endpoint. Query
+// params are stripped from the endpoint.
 //
 // If target is not a valid scheme://authority/endpoint as specified in
 // https://github.com/grpc/grpc/blob/master/doc/naming.md,
 // it returns {Endpoint: target}.
-// Code borrowed from https://github.com/grpc/grpc-go/blob/master/internal/grpcutil/target.go
-func ParseTarget(target string, skipUnixColonParsing bool) (ret Target) {
-	var ok bool
-	if strings.HasPrefix(target, "unix-abstract:") {
-		if strings.HasPrefix(target, "unix-abstract://") {
-			// Maybe, with Authority specified, try to parse it
-			var remain string
-			ret.Scheme, remain, _ = split2(target, "://")
-			ret.Authority, ret.Endpoint, ok = split2(remain, "/")
-			if !ok {
-				// No Authority, add the "//" back
-				ret.Endpoint = "//" + remain
-			} else {
-				// Found Authority, add the "/" back
-				ret.Endpoint = "/" + ret.Endpoint
-			}
-		} else {
-			// Without Authority specified, split target on ":"
-			ret.Scheme, ret.Endpoint, _ = split2(target, ":")
+// Code borrowed from https://github.com/grpc/grpc-go/blob/v1.48.0/clientconn.go#L1619
+// See https://github.com/grpc/grpc-go/pull/4817
+func ParseTarget(target string) Target {
+	parsedTarget, err := parseTarget(target)
+	if err == nil && parsedTarget.Scheme != "" {
+		return parsedTarget
+	}
+
+	// We are here because the user's dial target did not contain a scheme or
+	// specified an unregistered scheme. We should fallback to the default
+	// scheme, except when a custom dialer is specified in which case, we should
+	// always use passthrough scheme.
+	defScheme := GetDefaultScheme()
+	canonicalTarget := defScheme + ":///" + target
+
+	parsedTarget, err = parseTarget(canonicalTarget)
+	if err != nil {
+		return Target{
+			Endpoint: target,
+			URL: url.URL{
+				Path: target,
+			},
 		}
-		return ret
 	}
-	ret.Scheme, ret.Endpoint, ok = split2(target, "://")
-	if !ok {
-		if strings.HasPrefix(target, "unix:") && !skipUnixColonParsing {
-			// Handle the "unix:[local/path]" and "unix:[/absolute/path]" cases,
-			// because splitting on :// only handles the
-			// "unix://[/absolute/path]" case. Only handle if the dialer is nil,
-			// to avoid a behavior change with custom dialers.
-			return Target{Scheme: "unix", Endpoint: target[len("unix:"):]}
-		}
-		return Target{Endpoint: target}
-	}
-	ret.Authority, ret.Endpoint, ok = split2(ret.Endpoint, "/")
-	if !ok {
-		return Target{Endpoint: target}
-	}
-	if ret.Scheme == "unix" {
-		// Add the "/" back in the unix case, so the unix resolver receives the
-		// actual endpoint in the "unix://[/absolute/path]" case.
-		ret.Endpoint = "/" + ret.Endpoint
-	}
-	return ret
+	parsedTarget.Scheme = "" // trim scheme
+	parsedTarget.URL.Scheme = ""
+	return parsedTarget
 }
 
-// split2 returns the values from strings.SplitN(s, sep, 2).
-// If sep is not found, it returns ("", "", false) instead.
-func split2(s, sep string) (string, string, bool) {
-	spl := strings.SplitN(s, sep, 2)
-	if len(spl) < 2 {
-		return "", "", false
+// parseTarget uses RFC 3986 semantics to parse the given target into a
+// resolver.Target struct containing scheme, authority and endpoint. Query
+// params are stripped from the endpoint.
+func parseTarget(target string) (Target, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return Target{}, err
 	}
-	return spl[0], spl[1], true
+	// For targets of the form "[scheme]://[authority]/endpoint, the endpoint
+	// value returned from url.Parse() contains a leading "/". Although this is
+	// in accordance with RFC 3986, we do not want to break existing resolver
+	// implementations which expect the endpoint without the leading "/". So, we
+	// end up stripping the leading "/" here. But this will result in an
+	// incorrect parsing for something like "unix:///path/to/socket". Since we
+	// own the "unix" resolver, we can workaround in the unix resolver by using
+	// the `URL` field instead of the `Endpoint` field.
+	endpoint := u.Path
+	if endpoint == "" {
+		endpoint = u.Opaque
+	}
+	endpoint = strings.TrimPrefix(endpoint, "/")
+	return Target{
+		Scheme:    u.Scheme,
+		Authority: u.Host,
+		Endpoint:  endpoint,
+		URL:       *u,
+	}, nil
 }
