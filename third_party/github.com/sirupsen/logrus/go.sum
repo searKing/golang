@@ -4,8 +4,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/searKing/golang/go v1.2.29 h1:KLRw6U0kJkPRG2ym8018O16i8HzZl0bTef/AUt57zKc=
-github.com/searKing/golang/go v1.2.29/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
+github.com/searKing/golang/go v1.2.36 h1:51S6EnBUeEl4HnrYHfY00Xei4KLeRRHb4P7a/k9Evfk=
+github.com/searKing/golang/go v1.2.36/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
