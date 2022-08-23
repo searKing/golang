@@ -11,6 +11,7 @@ import os_ "github.com/searKing/golang/go/os"
 
 func ExampleNewRotateFile() {
 	file := os_.NewRotateFile("log/test.2006-01-02-15-04-05.log")
+	defer file.Close()
 	file.MaxCount = 5
 	file.RotateInterval = 5 * time.Second
 	file.MaxAge = time.Hour
