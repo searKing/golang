@@ -124,6 +124,9 @@ func (f *RotateFile) Write(b []byte) (n int, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("acquite rotated file :%w", err)
 	}
+	if out == nil {
+		return 0, nil
+	}
 
 	return out.Write(b)
 }
@@ -240,9 +243,52 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, seq int, b
 	return name, seq, false, false
 }
 
-func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (io.Writer, error) {
+func (f *RotateFile) makeUsingFileReadyLocked() error {
+	if f.usingFile != nil {
+		_, err := os.Stat(f.usingFile.Name())
+		if err != nil {
+			_ = f.usingFile.Close()
+			f.usingFile = nil
+		}
+	}
+
+	if f.usingFile == nil {
+		file, err := AppendAllIfNotExist(f.usingFilePath)
+		if err != nil {
+			return err
+		}
+
+		// link -> filename
+		if f.FileLinkPath != "" {
+			if err := ReSymlink(f.usingFilePath, f.FileLinkPath); err != nil {
+				return err
+			}
+		}
+		f.usingFile = file
+	}
+	return nil
+
+}
+func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io.Writer, err error) {
 	newName, newSeq, byTime, bySize := f.filePathByRotate(forceRotate)
 	if !byTime && !bySize {
+		err = f.makeUsingFileReadyLocked()
+		if err != nil {
+			if bailOnRotateFail {
+				// Failure to rotate is a problem, but it's really not a great
+				// idea to stop your application just because you couldn't rename
+				// your log.
+				//
+				// We only return this error when explicitly needed (as specified by bailOnRotateFail)
+				//
+				// However, we *NEED* to close `fh` here
+				if f.usingFile != nil {
+					_ = f.usingFile.Close()
+					f.usingFile = nil
+				}
+				return nil, err
+			}
+		}
 		return f.usingFile, nil
 	}
 	if f.PreRotateHandler != nil {
