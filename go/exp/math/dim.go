@@ -49,3 +49,21 @@ func Min[T constraints.Ordered](s ...T) T {
 	}
 	return m
 }
+
+// Clamp returns the value between boundary [lo,hi], as v < lo ? v : hi > v : hi : v.
+// Reference to lo if v is less than lo, reference to hi if hi is less than v, otherwise reference to v.
+// If v compares equivalent to either bound, returns a reference to v, not the bound.
+func Clamp[T constraints.Ordered](v, lo, hi T) T {
+	if lo > hi {
+		t := lo
+		lo = hi
+		hi = t
+	}
+	if v < lo {
+		return lo
+	}
+	if hi < v {
+		return hi
+	}
+	return v
+}
