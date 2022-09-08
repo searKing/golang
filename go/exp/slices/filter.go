@@ -5,30 +5,34 @@
 package slices
 
 // Filter returns a slice satisfying c != zero within all c in the slice.
+// Filter modifies the contents of the slice s; it does not create a new slice.
 func Filter[S ~[]E, E comparable](s S) S {
 	if len(s) == 0 {
 		return s
 	}
-	var ss S
+	i := 0
 	for _, v := range s {
 		var zeroE E
 		if v != zeroE {
-			ss = append(ss, v)
+			s[i] = v
+			i++
 		}
 	}
-	return ss
+	return s[:i]
 }
 
 // FilterFunc returns a slice satisfying f(c) within all c in the slice.
+// FilterFunc modifies the contents of the slice s; it does not create a new slice.
 func FilterFunc[S ~[]E, E any](s S, f func(E) bool) S {
 	if len(s) == 0 {
 		return s
 	}
-	var ss S
+	i := 0
 	for _, v := range s {
 		if f(v) {
-			ss = append(ss, v)
+			s[i] = v
+			i++
 		}
 	}
-	return ss
+	return s[:i]
 }

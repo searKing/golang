@@ -31,8 +31,7 @@ func TestFilter(t *testing.T) {
 				got := slices_.Filter(tt.data)
 
 				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("first of %v = %v", tt.data, tt.want)
-					t.Errorf("   got %v", got)
+					t.Errorf("slices_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
 				}
 			}
 		})
@@ -55,13 +54,13 @@ func TestFilterFunc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
 			{
-				got := slices_.FilterFunc(tt.data, func(e int) bool {
+				copy := slices.Clone(tt.data)
+				got := slices_.FilterFunc(copy, func(e int) bool {
 					return e != 0
 				})
 
 				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("first of %v = %v", tt.data, tt.want)
-					t.Errorf("   got %v", got)
+					t.Errorf("slices_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
 				}
 			}
 		})
