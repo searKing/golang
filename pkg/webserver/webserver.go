@@ -110,6 +110,8 @@ func (s *WebServer) PrepareRun() (preparedWebServer, error) {
 // or the secure port cannot be listened on initially.
 func (s preparedWebServer) Run(ctx context.Context) error {
 	logrus.Infof("Serving securely on %s", s.grpcBackend.Addr)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	stoppedHttpServerCtx, stopHttpServer := context.WithCancel(context.Background())
 
 	var wg sync.WaitGroup
@@ -131,6 +133,7 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 	// close socket after delayed stopCh
 	stopHttpServerCtx, stoppedHttpServerCtx, err := s.NonBlockingRun(stoppedHttpServerCtx)
 	if err != nil {
+		cancel()
 		return err
 	}
 
