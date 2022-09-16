@@ -140,9 +140,9 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 	logrus.Info("[graceful-termination] waiting for shutdown to be initiated")
 	// wait for stoppedCh that is closed when the graceful termination (server.Shutdown) is finished.
 	<-stopHttpServerCtx.Done()
-
 	// run shutdown hooks directly. This includes deregistering from the kubernetes endpoint in case of web server.
 	func() {
+		defer cancel()
 		defer func() {
 			logrus.WithField("name", s.Name).Infof("[graceful-termination] pre-shutdown hooks completed")
 		}()
@@ -155,6 +155,7 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 	// wait for the delayed stopCh before closing the handler chain (it rejects everything after Wait has been called).
 	logrus.Info("[graceful-termination] waiting for http server to be stopped")
 	<-stoppedHttpServerCtx.Done()
+	logrus.Info("[graceful-termination] waiting for http server to be shutdown executed")
 
 	wg.Wait()
 	logrus.Info("[graceful-termination] webserver is exiting")
@@ -177,8 +178,11 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 		// Now that listener have bound successfully, it is the
 		// responsibility of the caller to close the provided channel to
 		// ensure cleanup.
-		ctx, cancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
-		defer cancel()
+		if s.ShutdownTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), s.ShutdownTimeout)
+			defer cancel()
+		}
 		err := s.grpcBackend.Shutdown(ctx)
 		msg := fmt.Sprintf("Have shutdown http server on %s", s.grpcBackend.Addr)
 		if err != nil {
