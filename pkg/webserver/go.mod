@@ -6,13 +6,13 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/rs/cors v1.8.2
-	github.com/searKing/golang/go v1.2.37
+	github.com/searKing/golang/go v1.2.38
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.37
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.37
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.37
 	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
+	golang.org/x/exp v0.0.0-20220915210609-840b3808d824
 	google.golang.org/grpc v1.49.0
 )
 
@@ -44,7 +44,7 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	google.golang.org/genproto v0.0.0-20220822174746-9e6da59bd2fc // indirect
