@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	structpb "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

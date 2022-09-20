@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/searKing/golang/third_party/github.com/golang/protobuf/proto"
-	struct_ "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/proto"
+	"github.com/searKing/golang/third_party/google.golang.org/protobuf/types/known/structpb"
 )
 
 type Human struct {
@@ -73,7 +73,7 @@ var (
 
 func TestToGolangMap(t *testing.T) {
 	for m, test := range toGolangMapTests {
-		humanStructpb, err := struct_.ToProtoStruct(test.input)
+		humanStructpb, err := structpb.ToProtoStruct(test.input)
 		if err != nil {
 			t.Errorf("#%d: ToGolangMap(%+v): got: _, %v exp: _, nil", m, test.input, err)
 		}
