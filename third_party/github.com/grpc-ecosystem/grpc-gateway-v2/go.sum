@@ -301,8 +301,8 @@ github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTE
 github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUAtL9R8=
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/searKing/golang/go v1.2.29/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
-github.com/searKing/golang/go v1.2.37 h1:1e9bKpcQTqef/MzQWKXg9ITSbdmUQ6ZefLHKlKM5zos=
-github.com/searKing/golang/go v1.2.37/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
+github.com/searKing/golang/go v1.2.38 h1:yX9l3wISu71gKq4xMNFv4KixcF6oOK5dOEkZmUPG/gs=
+github.com/searKing/golang/go v1.2.38/go.mod h1:hz6SptvV2YrNwFyFT7g0Yb9/MzhgqjiXqh1IsCeujgY=
 github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.37 h1:M3ejAfl7mg1KOYZuIhZNilXKAuK6zyz9uVBZ/hwl5a8=
 github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.37/go.mod h1:eHKsphPZ5Vta8uLFCMNE7sXSLu1DSPQ6xz6F1pkwJnQ=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
