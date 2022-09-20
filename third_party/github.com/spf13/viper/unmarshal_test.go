@@ -14,16 +14,18 @@ import (
 )
 
 func TestDecodeProtoJsonHook(t *testing.T) {
-	viper.Set("credentials", map[int]string{1: "bar"})
+	viper.Set("credentials", map[int]string{1: "foo"})
 
-	var got testdata.Config
+	var got = testdata.Config{
+		Credentials: map[int64]string{2: "bar"},
+	}
 
 	err := viper.Unmarshal(&got, viper_.DecodeProtoJsonHook(&got))
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 	want := &testdata.Config{
-		Credentials: map[int64]string{1: "bar"},
+		Credentials: map[int64]string{1: "foo", 2: "bar"},
 	}
 	if fmt.Sprintf("%v", want.Credentials) != fmt.Sprintf("%v", got.Credentials) {
 		t.Errorf("got %v want %v", got, want)
@@ -31,15 +33,17 @@ func TestDecodeProtoJsonHook(t *testing.T) {
 }
 
 func TestUnmarshalViper(t *testing.T) {
-	viper.Set("credentials", map[int]string{1: "bar"})
+	viper.Set("credentials", map[int]string{1: "foo"})
 
-	var got testdata.Config
+	var got = testdata.Config{
+		Credentials: map[int64]string{2: "bar"},
+	}
 	err := viper_.Unmarshal(&got)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 	want := &testdata.Config{
-		Credentials: map[int64]string{1: "bar"},
+		Credentials: map[int64]string{1: "foo", 2: "bar"},
 	}
 	if fmt.Sprintf("%v", want.Credentials) != fmt.Sprintf("%v", got.Credentials) {
 		t.Errorf("got %v want %v", got, want)
