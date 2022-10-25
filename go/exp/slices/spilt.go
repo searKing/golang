@@ -4,8 +4,8 @@
 
 package slices
 
-// Split slices s into all substrings separated by sep and returns a slice of
-// the substrings between those separators.
+// Split slices s into all subslices separated by sep and returns a slice of
+// the subslices between those separators.
 //
 // If s is less than sep and sep is more than zero, Split returns a
 // slice of length 1 whose only element is s.
