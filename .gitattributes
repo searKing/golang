@@ -8,3 +8,7 @@
 # See golang.org/issue/9281
 
 * -text
+
+# tell GitHub’s linguist which files to ignore
+# https://stackoverflow.com/questions/34713765/github-changes-repository-to-the-wrong-language
+go/runtime/cgosymbolizer/include/* linguist-vendored
