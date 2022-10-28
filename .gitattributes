@@ -11,4 +11,11 @@
 
 # tell GitHub’s linguist which files to ignore
 # https://stackoverflow.com/questions/34713765/github-changes-repository-to-the-wrong-language
-go/runtime/cgosymbolizer/include/* linguist-vendored
+# https://github.com/github/linguist/blob/master/docs/overrides.md
+# Apply override to all files and directories in the directory
+go/runtime/cgosymbolizer/include/** linguist-vendored
+
+#
+# Enable syntax highlighting for files with `.gitattributes` extensions.
+#
+*.gitattributes linguist-language=gitattributes
