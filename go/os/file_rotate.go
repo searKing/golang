@@ -295,9 +295,6 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io
 		f.PreRotateHandler(f.usingFilePath)
 	}
 	newFile, err := f.rotateLocked(newName)
-	if f.PostRotateHandler != nil {
-		f.PostRotateHandler(f.usingFilePath)
-	}
 	if err != nil {
 		if bailOnRotateFail {
 			// Failure to rotate is a problem, but it's really not a great
@@ -329,6 +326,9 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io
 	f.usingFile = newFile
 	f.usingFilePath = newName
 	f.usingSeq = newSeq
+	if f.PostRotateHandler != nil {
+		f.PostRotateHandler(f.usingFilePath)
+	}
 
 	return f.usingFile, nil
 }
