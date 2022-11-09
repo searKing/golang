@@ -10,6 +10,7 @@ import (
 )
 
 // UnionPoints returns the smallest rectangle that contains all points.
+// an empty rectangle is a empty set, Not a point
 func UnionPoints(pts ...image.Point) image.Rectangle {
 	if len(pts) == 0 {
 		return image.Rectangle{}

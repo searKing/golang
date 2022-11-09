@@ -106,6 +106,11 @@ func TestRectangle2f_UnionPoints(t *testing.T) {
 		wantRect image_.Rectangle2f
 	}{
 		{
+			rect:     image_.Rect2f(0, 0, 0, 0),
+			pts:      []image_.Point2f{image_.Pt2f(2, 2)},
+			wantRect: image_.Rect2f(2, 2, 2, 2),
+		},
+		{
 			rect:     image_.Rect2f(0, 0, 10, 10),
 			pts:      []image_.Point2f{},
 			wantRect: image_.Rect2f(0, 0, 10, 10),
