@@ -65,6 +65,11 @@ func TestRectangle2f_ScaleByFactor(t *testing.T) {
 		wantRect image_.Rectangle2f
 	}{
 		{
+			rect:     image_.Rect2f(10, 10, 10, 10),
+			factor:   image_.Pt2f(1, 1),
+			wantRect: image_.Rect2f(10, 10, 10, 10),
+		},
+		{
 			rect:     image_.Rect2f(0, 0, 10, 10),
 			factor:   image_.Pt2f(1, 1),
 			wantRect: image_.Rect2f(0, 0, 10, 10),

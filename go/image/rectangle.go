@@ -223,6 +223,9 @@ func (r Rectangle2f) UnionPoints(pts ...Point2f) Rectangle2f {
 
 // ScaleByFactor scale rect to factor*size
 func (r Rectangle2f) ScaleByFactor(factor Point2f) Rectangle2f {
+	if r.Empty() {
+		return r
+	}
 	factor = factor.Sub(Pt2f(1, 1))
 	minOffset := Point2f{
 		X: r.Dx() * factor.X / 2,
