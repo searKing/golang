@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/rs/cors v1.8.2
-	github.com/searKing/golang/go v1.2.43
+	github.com/searKing/golang/go v1.2.45
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.30
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.43
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.42
@@ -43,7 +43,7 @@ require (
 	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.30 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
