@@ -36,7 +36,7 @@ func UnionPoints(pts ...image.Point) image.Rectangle {
 	return r
 }
 
-// UnionRectangles returns the smallest rectangle that contains all rectangles.
+// UnionRectangles returns the smallest rectangle that contains all rectangles, empty rectangles excluded.
 func UnionRectangles(rs ...image.Rectangle) image.Rectangle {
 	var ur image.Rectangle
 	for _, r := range rs {
