@@ -195,10 +195,7 @@ func (r Rectangle2f) RoundRectangle() image.Rectangle {
 
 // UnionPoints returns the smallest rectangle that contains all points.
 func (r Rectangle2f) UnionPoints(pts ...Point2f) Rectangle2f {
-	if len(pts) == 0 {
-		return r
-	}
-	for _, p := range pts[1:] {
+	for _, p := range pts {
 		if p.X < r.Min.X {
 			r.Min.X = p.X
 		}

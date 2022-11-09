@@ -2,22 +2,24 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package image
+package image_test
 
 import (
 	"fmt"
 	"testing"
+
+	image_ "github.com/searKing/golang/go/image"
 )
 
 func TestRectangle2f(t *testing.T) {
 	// in checks that every point in f is in g.
-	in := func(f, g Rectangle2f) error {
+	in := func(f, g image_.Rectangle2f) error {
 		if !f.In(g) {
 			return fmt.Errorf("f=%s, f.In(%s): got false, want true", f, g)
 		}
 		for y := f.Min.Y; y < f.Max.Y; y++ {
 			for x := f.Min.X; x < f.Max.X; x++ {
-				p := Point2f{x, y}
+				p := image_.Point2f{x, y}
 				if !p.In(g) {
 					return fmt.Errorf("p=%s, p.In(%s): got false, want true", p, g)
 				}
@@ -26,18 +28,18 @@ func TestRectangle2f(t *testing.T) {
 		return nil
 	}
 
-	rects := []Rectangle2f{
-		Rect2f(0, 0, 10, 10),
-		Rect2f(10, 0, 20, 10),
-		Rect2f(1, 2, 3, 4),
-		Rect2f(4, 6, 10, 10),
-		Rect2f(2, 3, 12, 5),
-		Rect2f(-1, -2, 0, 0),
-		Rect2f(-1, -2, 4, 6),
-		Rect2f(-10, -20, 30, 40),
-		Rect2f(8, 8, 8, 8),
-		Rect2f(88, 88, 88, 88),
-		Rect2f(6, 5, 4, 3),
+	rects := []image_.Rectangle2f{
+		image_.Rect2f(0, 0, 10, 10),
+		image_.Rect2f(10, 0, 20, 10),
+		image_.Rect2f(1, 2, 3, 4),
+		image_.Rect2f(4, 6, 10, 10),
+		image_.Rect2f(2, 3, 12, 5),
+		image_.Rect2f(-1, -2, 0, 0),
+		image_.Rect2f(-1, -2, 4, 6),
+		image_.Rect2f(-10, -20, 30, 40),
+		image_.Rect2f(8, 8, 8, 8),
+		image_.Rect2f(88, 88, 88, 88),
+		image_.Rect2f(6, 5, 4, 3),
 	}
 
 	// r.Eq(s) should be equivalent to every point in r being in s, and every
@@ -63,11 +65,11 @@ func TestRectangle2f(t *testing.T) {
 			if err := in(a, s); err != nil {
 				t.Errorf("Intersect: r=%s, s=%s, a=%s, a not in s: %v", r, s, a, err)
 			}
-			if isZero, overlaps := a == (Rectangle2f{}), r.Overlaps(s); isZero == overlaps {
+			if isZero, overlaps := a == (image_.Rectangle2f{}), r.Overlaps(s); isZero == overlaps {
 				t.Errorf("Intersect: r=%s, s=%s, a=%s: isZero=%t same as overlaps=%t",
 					r, s, a, isZero, overlaps)
 			}
-			largerThanA := [4]Rectangle2f{a, a, a, a}
+			largerThanA := [4]image_.Rectangle2f{a, a, a, a}
 			largerThanA[0].Min.X--
 			largerThanA[1].Min.Y--
 			largerThanA[2].Max.X++
@@ -100,7 +102,7 @@ func TestRectangle2f(t *testing.T) {
 				// You can't get any smaller than a.
 				continue
 			}
-			smallerThanA := [4]Rectangle2f{a, a, a, a}
+			smallerThanA := [4]image_.Rectangle2f{a, a, a, a}
 			smallerThanA[0].Min.X++
 			smallerThanA[1].Min.Y++
 			smallerThanA[2].Max.X--
