@@ -30,3 +30,11 @@ func (f CloserFunc) Close() error {
 	}
 	return f()
 }
+
+// CloseIf call Close() if arg implements io.Closer
+func CloseIf(c interface{}) error {
+	if c, ok := c.(io.Closer); ok && c != nil {
+		return c.Close()
+	}
+	return nil
+}
