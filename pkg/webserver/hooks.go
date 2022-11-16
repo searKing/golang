@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	errors_ "github.com/searKing/golang/go/errors"
 	"github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 // PostStartHookFunc is a function that is called after the server has started.
@@ -117,33 +117,32 @@ func (s *WebServer) AddPreShutdownHookOrDie(name string, hook PreShutdownHookFun
 
 // RunPostStartHooks runs the PostStartHooks for the server
 func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
-	var errs []error
 	s.postStartHookLock.Lock()
 	defer s.postStartHookLock.Unlock()
 	s.postStartHooksCalled = true
 
+	g, gCtx := errgroup.WithContext(context.Background())
 	for hookName, hookEntry := range s.postStartHooks {
-		if err := runPostStartHook(ctx, hookName, hookEntry); err != nil {
-			errs = append(errs, err)
-		}
+		g.Go(func() error {
+			return runPostStartHook(gCtx, hookName, hookEntry)
+		})
 	}
-	return errors_.Multi(errs...)
+	return g.Wait()
 }
 
 // RunPreShutdownHooks runs the PreShutdownHooks for the server
 func (s *WebServer) RunPreShutdownHooks() error {
-	var errs []error
-
 	s.preShutdownHookLock.Lock()
 	defer s.preShutdownHookLock.Unlock()
 	s.preShutdownHooksCalled = true
 
+	g, _ := errgroup.WithContext(context.Background())
 	for hookName, hookEntry := range s.preShutdownHooks {
-		if err := runPreShutdownHook(hookName, hookEntry); err != nil {
-			errs = append(errs, err)
-		}
+		g.Go(func() error {
+			return runPreShutdownHook(hookName, hookEntry)
+		})
 	}
-	return errors_.Multi(errs...)
+	return g.Wait()
 }
 
 // isPostStartHookRegistered checks whether a given PostStartHook is registered
