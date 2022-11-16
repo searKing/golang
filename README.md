@@ -1,4 +1,4 @@
-[![Go Reference](https://pkg.go.dev/badge/github.com/searKing/golang/go.svg)](https://pkg.go.dev/github.com/searKing/golang/go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/searKing/golang.svg)](https://pkg.go.dev/github.com/searKing/golang)
 [![Report card](https://goreportcard.com/badge/github.com/searKing/golang)](https://goreportcard.com/report/github.com/searKing/golang)
 
 # golang
