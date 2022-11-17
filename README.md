@@ -12,9 +12,12 @@ Useful libs or tools for Golang
 * [Thread](https://pkg.go.dev/github.com/searKing/golang/go/sync#Thread) — Thread should be used for such as
   calling OS services or non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
 * [BurstLimiter](https://pkg.go.dev/github.com/searKing/golang/go/time/rate#BurstLimiter) — BurstLimiter behaves
-  like Limiter in `time`, BurstLimiter controls how frequently events are allowed to happen. It implements a "token
-  bucket" of size b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
-  that `time/rate.Limiter`initially full and refilled at rate r tokens per second.
+  like Limiter in `time`, BurstLimiter controls how frequently events are allowed to happen.
+    - It implements a "token
+      bucket" of size b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
+      that `time/rate.Limiter`initially full and refilled at rate r tokens per second.
+    - It implements a [Reorder Buffer](https://en.wikipedia.org/wiki/Re-order_buffer) allocated by `Reserve`  or `ReserveN` into account when allowing future events and
+      `Wait` or `WaitN` blocks until lim permits n events to happen.
 * [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator#Generator) — Generator behaves like
   Generator in python or ES6, with yield and next statements.
 * [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal#Notify) — Signal enhances signal.Notify

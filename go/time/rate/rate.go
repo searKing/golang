@@ -28,6 +28,14 @@ var expectTokensKey expectKeyType
 // As a special case, if r == Inf (the infinite rate), b is ignored.
 // See https://en.wikipedia.org/wiki/Token_bucket for more about token buckets.
 //
+// Reorder Buffer
+// It allows instructions to be committed in-order.
+// - Allocated by `Reserve`  or `ReserveN` into account when allowing future events
+// - Wait by `Wait` or `WaitN` blocks until lim permits n events to happen.
+// - Complete by `PutToken` or `PutTokenN`
+// See https://en.wikipedia.org/wiki/Re-order_buffer for more about Reorder buffer.
+// See https://web.archive.org/web/20040724215416/http://lgjohn.okstate.edu/6253/lectures/reorder.pdf for more about Reorder buffer.
+//
 // The zero value is a valid BurstLimiter, but it will reject all events.
 // Use NewFullBurstLimiter to create non-zero Limiters.
 //
@@ -116,20 +124,35 @@ func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 // The BurstLimiter takes this Reservation into account when allowing future events.
 // ReserveN returns false if n exceeds the BurstLimiter's burst size.
 // Usage example:
-//   r := lim.ReserveN(context.Background(), 1)
-//   if !r.OK() {
-//     // Not allowed to act! Did you remember to set lim.burst to be > 0 ?
-//     return
-//   }
-//   if err:= r.Wait();err!=nil{
-//     // Not allowed to act! Reservation or context canceled ?
-//     return
-//	 }
-//   Act()
+//
+//	 // Allocate: The dispatch stage reserves space in the reorder buffer for instructions in program order.
+//		r := lim.ReserveN(context.Background(), 1)
+//		if !r.OK() {
+//			// Not allowed to act! Did you remember to set lim.burst to be > 0 ?
+//			return
+//		}
+//
+//		// Execute: out-of-order execution
+//		Act()
+//
+//		// Wait: The complete stage must wait for instructions to finish execution.
+//		if err:= r.Wait();err!=nil{
+//		// Not allowed to act! Reservation or context canceled ?
+//			return
+//		}
+//		// Complete: Finished instructions are allowed to write results in order into the architected registers.
+//		// It allows instructions to be committed in-order.
+//		defer r.PutToken()
+//
+//		// Execute: in-order execution
+//		Act()
+//
 // Use this method if you wish to wait and slow down in accordance with the rate limit without dropping events.
 // If you need to respect a deadline or cancel the delay, use Wait instead.
 // To drop or skip events exceeding rate limit, use Allow instead.
 // 当没有可用或足够的事件时，返回 Reservation，和要等待多久才能获得足够的事件。
+// See https://en.wikipedia.org/wiki/Re-order_buffer for more about Reorder buffer.
+// See https://web.archive.org/web/20040724215416/http://lgjohn.okstate.edu/6253/lectures/reorder.pdf for more about Reorder buffer.
 func (lim *BurstLimiter) ReserveN(ctx context.Context, n int) *Reservation {
 	r := lim.reserveN(ctx, n, true)
 	return r
