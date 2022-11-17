@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	errors_ "github.com/searKing/golang/go/errors"
 	"github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	"github.com/sirupsen/logrus"
@@ -71,7 +72,12 @@ func (s *WebServer) AddPostStartHook(name string, hook PostStartHookFunc) error 
 		return fmt.Errorf("unable to add %q because it was already registered by: %s", name, postStartHook.originatingStack)
 	}
 
+	// done is closed when the poststarthook is finished.  This is used by the health check to be able to indicate
+	// that the poststarthook is finished
 	done := make(chan struct{})
+	if err := s.AddBootSequenceHealthChecks(postStartHookHealthz{name: "poststarthook/" + name, done: done}); err != nil {
+		return err
+	}
 	s.postStartHooks[name] = postStartHookEntry{hook: hook, originatingStack: string(debug.Stack()), done: done}
 
 	return nil
@@ -121,7 +127,7 @@ func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
 	defer s.postStartHookLock.Unlock()
 	s.postStartHooksCalled = true
 
-	g, gCtx := errgroup.WithContext(context.Background())
+	g, gCtx := errgroup.WithContext(ctx)
 	for hookName, hookEntry := range s.postStartHooks {
 		g.Go(func() error {
 			return runPostStartHook(gCtx, hookName, hookEntry)
