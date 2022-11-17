@@ -142,13 +142,11 @@ func (s *WebServer) RunPreShutdownHooks() error {
 	defer s.preShutdownHookLock.Unlock()
 	s.preShutdownHooksCalled = true
 
-	g, _ := errgroup.WithContext(context.Background())
+	var errs []error
 	for hookName, hookEntry := range s.preShutdownHooks {
-		g.Go(func() error {
-			return runPreShutdownHook(hookName, hookEntry)
-		})
+		errs = append(errs, runPreShutdownHook(hookName, hookEntry))
 	}
-	return g.Wait()
+	return errors_.Multi(errs...)
 }
 
 // isPostStartHookRegistered checks whether a given PostStartHook is registered
