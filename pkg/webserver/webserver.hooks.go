@@ -128,7 +128,8 @@ func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
 	s.postStartHooksCalled = true
 
 	g, gCtx := errgroup.WithContext(ctx)
-	for hookName, hookEntry := range s.postStartHooks {
+	for k, v := range s.postStartHooks {
+		hookName, hookEntry := k, v
 		g.Go(func() error {
 			return runPostStartHook(gCtx, hookName, hookEntry)
 		})
