@@ -28,6 +28,7 @@ import (
 // Think of it like a mini-controller that is super privileged and gets to run in-process
 // If you use this feature, tag @deads2k on github who has promised to review code for anyone's PostStartHook
 // until it becomes easier to use.
+// ctx will be cancelled when WebServer is Closed or any other PostStartHookFunc failed.
 type PostStartHookFunc func(ctx context.Context) error
 
 // PreShutdownHookFunc is a function that can be added to the shutdown logic.
