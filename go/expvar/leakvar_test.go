@@ -22,29 +22,29 @@ func TestLeak(t *testing.T) {
 
 	reqs.Add(1)
 	reqs.Add(3)
-	if i := reqs.Value(); i != 4 {
-		t.Errorf("reqs.Value() = %v, want 4", i)
+	if got := reqs.Value(); got != 4 {
+		t.Errorf("reqs.Value() = %v, want 4", got)
 	}
 
-	if s := reqs.String(); s != "[4 4]" {
-		t.Errorf("reqs.String() = %q, want %q", "[4 4]", s)
+	if got := reqs.String(); got != "[4 4]" {
+		t.Errorf("reqs.String() = %q, want %q", "[4 4]", got)
 	}
 
 	reqs.Add(-4)
-	if i := reqs.Value(); i != 0 {
-		t.Errorf("reqs.Value() = %v, want 4", i)
+	if got := reqs.Value(); got != 0 {
+		t.Errorf("reqs.Value() = %v, want 4", got)
 	}
 
-	if s := reqs.String(); s != "[0 4]" {
-		t.Errorf("reqs.String() = %q, want %q", "[0 4]", s)
+	if got := reqs.String(); got != "[0 4]" {
+		t.Errorf("reqs.String() = %q, want %q", got, "[0 4]")
 	}
 	reqs.Add(1)
 	reqs.Done()
-	if i := reqs.Value(); i != 0 {
-		t.Errorf("reqs.Value() = %v, want 4", i)
+	if got := reqs.Value(); got != 0 {
+		t.Errorf("reqs.Value() = %v, want 4", got)
 	}
 
-	if s := reqs.String(); s != "[0 5]" {
-		t.Errorf("reqs.String() = %q, want %q", "[0 5]", s)
+	if got := reqs.String(); got != "[0 5]" {
+		t.Errorf("reqs.String() = %q, want %q", got, "[0 5]")
 	}
 }

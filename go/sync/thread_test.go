@@ -6,6 +6,7 @@ package sync_test
 
 import (
 	"context"
+	"expvar"
 	"fmt"
 	"sync"
 	"testing"
@@ -178,15 +179,46 @@ func TestThreadWithLeak(t *testing.T) {
 	if *o != N {
 		t.Errorf("once failed outside run: %d is not %d", *o, N)
 	}
-	if s := thread.OSThreadLeak.String(); s != "[1 1]" {
-		t.Errorf("OSThreadLeak.String() = %q, want %q", "[1 1]", s)
+	if got := thread.OSThreadLeak.String(); got != "[1 1]" {
+		t.Errorf("OSThreadLeak.String() = %q, want %q", got, "[1 1]")
 	}
-	if s := thread.GoroutineLeak.String(); s != "[1 1]" {
-		t.Errorf("GoroutineLeak.String() = %q, want %q", "[1 1]", s)
+	if got := thread.GoroutineLeak.String(); got != "[1 1]" {
+		t.Errorf("GoroutineLeak.String() = %q, want %q", got, "[1 1]")
 	}
 
 	want := fmt.Sprintf("[0 %d]", N)
-	if s := thread.HandlerLeak.String(); s != want {
-		t.Errorf("HandlerLeak.String() = %q, want %q", want, s)
+	if got := thread.HandlerLeak.String(); got != want {
+		t.Errorf("HandlerLeak.String() = %q, want %q", got, want)
 	}
+}
+
+func TestThread_WatchStats(t *testing.T) {
+	o := new(one)
+	thread := new(sync_.Thread)
+	thread.WatchStats()
+
+	defer thread.Shutdown()
+	c := make(chan bool)
+	const N = 10
+	for i := 0; i < N; i++ {
+		go run(thread, o, c)
+	}
+	for i := 0; i < N; i++ {
+		<-c
+	}
+	if *o != N {
+		t.Errorf("once failed outside run: %d is not %d", *o, N)
+	}
+	if got := thread.OSThreadLeak.String(); got != "[1 1]" {
+		t.Errorf("OSThreadLeak.String() = %q, want %q", got, "[1 1]")
+	}
+	if got := thread.GoroutineLeak.String(); got != "[1 1]" {
+		t.Errorf("GoroutineLeak.String() = %q, want %q", got, "[1 1]")
+	}
+
+	want := fmt.Sprintf("[0 %d]", N)
+	if got := thread.HandlerLeak.String(); got != want {
+		t.Errorf("HandlerLeak.String() = %q, want %q", got, want)
+	}
+	t.Logf("sync.Thread: %s", expvar.Get("sync.Thread"))
 }

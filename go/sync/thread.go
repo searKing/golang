@@ -6,11 +6,16 @@ package sync
 
 import (
 	"context"
+	"expvar"
 	"runtime"
 	"sync"
 
 	expvar_ "github.com/searKing/golang/go/expvar"
 )
+
+var threadStatsOnce sync.Once
+var threadStats *expvar.Map
+var osThreadLeak, goroutineLeak, handlerLeak expvar_.Leak
 
 //go:generate go-option -type=threadDo
 type threadDo struct {
@@ -37,6 +42,19 @@ type Thread struct {
 	mu     sync.Mutex
 	ctx    context.Context
 	cancel func()
+}
+
+// WatchStats bind Leak var to "sync.Thread"
+func (t *Thread) WatchStats() {
+	threadStatsOnce.Do(func() {
+		threadStats = expvar.NewMap("sync.Thread")
+		threadStats.Set("goroutine_leak", &goroutineLeak)
+		threadStats.Set("os_thread_leak", &osThreadLeak)
+		threadStats.Set("handler_leak", &handlerLeak)
+	})
+	t.GoroutineLeak = &goroutineLeak
+	t.OSThreadLeak = &osThreadLeak
+	t.HandlerLeak = &handlerLeak
 }
 
 func (t *Thread) Shutdown() {
