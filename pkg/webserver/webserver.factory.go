@@ -52,11 +52,12 @@ type FactoryConfig struct {
 	// but /readyz will return failure.
 	ShutdownDelayDuration time.Duration
 
-	TlsConfig       *tls.Config
-	Cors            cors.Options     // for cors
-	ForceDisableTls bool             // disable tls
-	LocalIpResolver *LocalIpResolver // for resolve local ip to expose, used if advertise_addr is empty
-	NoGrpcProxy     bool             // disable http proxy for grpc client to connect grpc server
+	TlsConfig                      *tls.Config
+	Cors                           cors.Options     // for cors
+	ForceDisableTls                bool             // disable tls
+	LocalIpResolver                *LocalIpResolver // for resolve local ip to expose, used if advertise_addr is empty
+	NoGrpcProxy                    bool             // disable http proxy for grpc client to connect grpc server
+	PreferRegisterHTTPFromEndpoint bool             // prefer register http handler from endpoint
 
 	// grpc middlewares
 	MaxConcurrencyUnary          int           // for concurrent parallel requests of unary server, The default is 0 (no limit is given)
