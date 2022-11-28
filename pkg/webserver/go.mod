@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/rs/cors v1.8.2
-	github.com/searKing/golang/go v1.2.47
+	github.com/searKing/golang/go v1.2.51
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.43
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.43
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.42
@@ -14,7 +14,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/exp v0.0.0-20221114191408-850992195362
 	golang.org/x/sync v0.1.0
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.51.0
 )
 
 require (
