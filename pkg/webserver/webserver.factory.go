@@ -234,12 +234,13 @@ func (f *Factory) New() (*WebServer, error) {
 	defaultHealthChecks := []healthz.HealthChecker{healthz.PingHealthzCheck, healthz.LogHealthCheck}
 
 	s := &WebServer{
-		Name:                  f.fc.Name,
-		BindAddress:           f.fc.BindAddress,
-		ExternalAddress:       f.fc.ExternalAddress,
-		ShutdownDelayDuration: f.fc.ShutdownDelayDuration,
-		grpcBackend:           grpcBackend,
-		ginBackend:            ginBackend,
+		Name:                           f.fc.Name,
+		BindAddress:                    f.fc.BindAddress,
+		ExternalAddress:                f.fc.ExternalAddress,
+		PreferRegisterHTTPFromEndpoint: f.fc.PreferRegisterHTTPFromEndpoint,
+		ShutdownDelayDuration:          f.fc.ShutdownDelayDuration,
+		grpcBackend:                    grpcBackend,
+		ginBackend:                     ginBackend,
 
 		postStartHooks:   map[string]postStartHookEntry{},
 		preShutdownHooks: map[string]preShutdownHookEntry{},

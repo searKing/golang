@@ -32,6 +32,8 @@ type WebServer struct {
 	// Will default to a value based on secure serving info and available ipv4 IPs.
 	ExternalAddress string
 
+	PreferRegisterHTTPFromEndpoint bool // prefer register http handler from endpoint
+
 	ginBackend  *gin.Engine
 	grpcBackend *grpc.Gateway
 
