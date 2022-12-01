@@ -93,7 +93,7 @@ func (fc *FactoryConfig) SetDefaults() {
 }
 
 // Validate inspects the fields of the type to determine if they are valid.
-func (fc FactoryConfig) Validate() error {
+func (fc *FactoryConfig) Validate() error {
 	return nil
 }
 
