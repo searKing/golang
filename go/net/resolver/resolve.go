@@ -86,7 +86,7 @@ func GetBuilderOrDefault(target string) (Builder, error) {
 		tgt.Scheme = GetDefaultScheme()
 		builder = Get(tgt.Scheme)
 		if builder == nil {
-			return nil, fmt.Errorf("could not get resolver for default scheme: %q", tgt.Scheme)
+			return nil, fmt.Errorf("could not get resolver for default scheme: %q (forgotten import?)", tgt.Scheme)
 		}
 	}
 	return builder, nil
@@ -102,7 +102,7 @@ func NewResolver(ctx context.Context, target string, opts ...BuildOption) (Resol
 		tgt.Scheme = GetDefaultScheme()
 		builder = Get(tgt.Scheme)
 		if builder == nil {
-			return nil, fmt.Errorf("could not get resolver for default scheme: %q", tgt.Scheme)
+			return nil, fmt.Errorf("could not get resolver for default scheme: %q (forgotten import?)", tgt.Scheme)
 		}
 	}
 	return builder.Build(ctx, tgt, opts...)
