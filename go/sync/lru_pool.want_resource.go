@@ -15,8 +15,8 @@ import (
 // These three options are racing against each other and use
 // wantResource to coordinate and agree about the winning outcome.
 type wantResource struct {
-	req interface{}
-	key interface{}     // cm.key()
+	req   interface{}
+	key   interface{}     // cm.key()
 	ctx   context.Context // context for New
 	ready chan struct{}   // closed when pr, err pair is delivered
 
@@ -35,15 +35,21 @@ func (w *wantResource) waiting() bool {
 	}
 }
 
+// deliveredLock returns whether resource has been delivered already.
+func (w *wantResource) deliveredLock() bool {
+	return w.pr != nil || w.err != nil
+}
+
 // tryDeliver attempts to deliver pr, err to w and reports whether it succeeded.
 func (w *wantResource) tryDeliver(pr *PersistResource, err error) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.pr != nil || w.err != nil {
+	if w.deliveredLock() {
 		return false
 	}
 
+	// deliver and notify delivered event
 	w.pr = pr
 	w.err = err
 	if w.pr == nil && w.err == nil {
@@ -57,12 +63,15 @@ func (w *wantResource) tryDeliver(pr *PersistResource, err error) bool {
 // If a connection has been delivered already, cancel returns it with t.putOrCloseIdleResource.
 func (w *wantResource) cancel(t *LruPool, err error) {
 	w.mu.Lock()
-	if w.pr == nil && w.err == nil {
+	if !w.deliveredLock() {
+		// notify deliver cancelled event
 		close(w.ready) // catch misbehavior in future delivery
 	}
+
+	// deliver and notify delivered event
 	pc := w.pr
 	w.pr = nil
-	w.err = err
+	w.err = err // not nil always
 	w.mu.Unlock()
 
 	if pc != nil {

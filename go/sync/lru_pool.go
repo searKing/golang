@@ -416,7 +416,6 @@ func (t *LruPool) queueForNewResource(w *wantResource) {
 // If the dial is cancelled or unsuccessful, newResourceFor decrements t.resourceCount[w.cm.key()].
 func (t *LruPool) newResourceFor(w *wantResource) {
 	pc, err := t.buildResource(w.ctx, w.key, w.req)
-	w.err = err
 	delivered := w.tryDeliver(pc, err)
 	if err == nil && (!delivered) {
 		// presource was not passed to w,
