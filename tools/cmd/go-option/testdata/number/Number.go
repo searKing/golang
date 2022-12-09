@@ -13,8 +13,8 @@ import (
 )
 
 //go:generate go-option -type "Number"
-type Number struct {
-	arrayType     [5]int64
+type Number[T comparable] struct {
+	arrayType     [5]T
 	funcType      func()
 	interfaceType interface{}
 	mapType       map[string]int64
@@ -22,21 +22,21 @@ type Number struct {
 	name          string
 }
 
-func NewNumber(options ...NumberOption) *Number {
-	return (&Number{}).ApplyOptions()
+func NewNumber[T comparable](options ...NumberOption[T]) *Number[T] {
+	return (&Number[T]{}).ApplyOptions()
 }
 
 type Value string
 
 func main() {
-	var num *Number
-	num = &Number{}
+	var num *Number[int]
+	num = &Number[int]{}
 	ck(num, "")
-	num = NewNumber(WithNumberName("Name"))
+	num = NewNumber(WithNumberName[int]("Name"))
 	ck(num, "")
 }
 
-func ck(num *Number, str string) {
+func ck[T comparable](num *Number[T], str string) {
 	name := num.name
 	if strings.Compare(name, str) != 0 {
 		panic(fmt.Sprintf("Numbers.go: %s", str))

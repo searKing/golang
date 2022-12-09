@@ -18,10 +18,12 @@ type TmplOptionRender struct {
 	ImportPaths []string
 	ValDecls    []string
 
-	TargetTypeName   string        // type name of target type
-	TargetTypeImport string        // import path of target type
-	TrimmedTypeName  string        // trimmed type name of target type
-	Fields           []StructField // fields if target type is struct
+	TargetTypeName               string        // type name of target type
+	TargetTypeImport             string        // import path of target type
+	TargetTypeGenericDeclaration string        // the Generic type of the struct type
+	TargetTypeGenericParams      string        // the Generic params of the struct type
+	TrimmedTypeName              string        // trimmed type name of target type
+	Fields                       []StructField // fields if target type is struct
 
 	OptionInterfaceName string // option interface name of target type
 	OptionStructName    string // option struct name of target type
@@ -32,11 +34,13 @@ type TmplOptionRender struct {
 
 // Struct represents a declared constant.
 type Struct struct {
-	StructTypeImport      string // The import path of StructTypeName.
-	StructTypeName        string // The StructTypeName of the struct.
-	trimmedStructTypeName string // The trimmed StructTypeName of the struct.
-	IsStruct              bool
-	Fields                []StructField
+	StructTypeImport             string // The import path of StructTypeName.
+	StructTypeName               string // The StructTypeName of the struct.
+	StructTypeGenericDeclaration string // the Generic type of the struct type
+	StructTypeGenericTypeParams  string // the Generic params of the struct type
+	trimmedStructTypeName        string // The trimmed StructTypeName of the struct.
+	IsStruct                     bool
+	Fields                       []StructField
 }
 
 type StructField struct {
@@ -101,28 +105,29 @@ package {{.PackageName}}
 {{range $path := .ImportPaths}} import "{{$path}}" {{end}}
 
 // A {{.OptionInterfaceName}} sets options.
-type {{.OptionInterfaceName}} interface {
-	apply(*{{.TargetTypeName}})
+type {{.OptionInterfaceName}}{{.TargetTypeGenericDeclaration}} interface {
+	apply(*{{.TargetTypeName}}{{.TargetTypeGenericParams}})
 }
 
 // Empty{{.OptionInterfaceName}} does not alter the configuration. It can be embedded
 // in another structure to build custom options.
 //
 // This API is EXPERIMENTAL.
-type Empty{{.OptionInterfaceName}} struct{}
+type Empty{{.OptionInterfaceName}}{{.TargetTypeGenericDeclaration}} struct{}
 
-func (Empty{{.OptionInterfaceName}}) apply(*{{.TargetTypeName}}) {}
+func (Empty{{.OptionInterfaceName}}{{.TargetTypeGenericParams}}) apply(*{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {}
 
-// {{.OptionInterfaceName}}Func wraps a function that modifies {{.TargetTypeName}} into an
-// implementation of the {{.OptionInterfaceName}} interface.
-type {{.OptionInterfaceName}}Func func(*{{.TargetTypeName}})
+// {{.OptionInterfaceName}}Func wraps a function that modifies {{.TargetTypeName}}{{.TargetTypeGenericParams}} into an
+// implementation of the {{.OptionInterfaceName}}{{.TargetTypeGenericDeclaration}} interface.
+type {{.OptionInterfaceName}}Func{{.TargetTypeGenericDeclaration}} func(*{{.TargetTypeName}}{{.TargetTypeGenericParams}})
 
-func (f {{.OptionInterfaceName}}Func) apply(do *{{.TargetTypeName}}) {
+func (f {{.OptionInterfaceName}}Func{{.TargetTypeGenericParams}}) apply(do *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {
 	f(do)
 }
 
 {{- if .ApplyOptionsAsMemberFunction }}
-func (o *{{.TargetTypeName}}) ApplyOptions(options ...{{.OptionInterfaceName}}) *{{.TargetTypeName}} {
+// ApplyOptions call apply() for all options one by one
+func (o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) ApplyOptions(options ...{{.OptionInterfaceName}}{{.TargetTypeGenericParams}}) *{{.TargetTypeName}}{{.TargetTypeGenericParams}} {
 	for _, opt := range options {
 		if opt == nil {
 			continue
@@ -132,7 +137,8 @@ func (o *{{.TargetTypeName}}) ApplyOptions(options ...{{.OptionInterfaceName}}) 
 	return o
 }
 {{- else}}
-func ApplyOptions(o *{{.TargetTypeName}}, options ...{{.OptionInterfaceName}}) *{{.TargetTypeName}} {
+// ApplyOptions call apply() for all options one by one
+func ApplyOptions{{.TargetTypeGenericDeclaration}}(o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}, options ...{{.OptionInterfaceName}}{{.TargetTypeGenericParams}}) *{{.TargetTypeName}}{{.TargetTypeGenericParams}} {
 	for _, opt := range options {
 		if opt == nil {
 			continue
@@ -145,47 +151,47 @@ func ApplyOptions(o *{{.TargetTypeName}}, options ...{{.OptionInterfaceName}}) *
 
 {{- if not .Fields }}
 // sample code for option, default for nothing to change
-func _{{.OptionInterfaceName}}WithDefault() {{.OptionInterfaceName}} {
-	return {{.OptionInterfaceName}}Func(func( *{{.TargetTypeName}}) {
+func _{{.OptionInterfaceName}}WithDefault{{.TargetTypeGenericDeclaration}}() {{.OptionInterfaceName}}{{.TargetTypeGenericParams}} {
+	return {{.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {
 		// nothing to change
 	})
 }
 {{- end}}
 {{- range .Fields}}
-{{- if $package_scope.WithTargetTypeNameAsPrefix }} in {{$package_scope.TargetTypeName}}.
+{{- if $package_scope.WithTargetTypeNameAsPrefix }} in {{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}.
 // {{$package_scope.OptionInterfaceName}}With{{.FieldName}} sets {{.FieldName}}.
-func {{$package_scope.OptionInterfaceName}}With{{.FieldName}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
-	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+func {{$package_scope.OptionInterfaceName}}With{{.FieldName}}{{$package_scope.TargetTypeGenericDeclaration}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
+	return {{$package_scope.OptionInterfaceName}}{{$package_scope.TargetTypeGenericParams}} Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}} {
 		o.{{.FieldName}} = v
 	})
 }
 {{- else}}
 {{- if .FieldIsSlice }}
-// With{{.FormatFieldName}} appends {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+// With{{.FormatFieldName}} appends {{.FieldName}} in {{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}.
 {{- range .FormatFieldComments}}
 {{.}}
 {{- end}}
-func With{{.FormatFieldName}}(v ...{{.FieldSliceElt}}) {{$package_scope.OptionInterfaceName}} {
-	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+func With{{.FormatFieldName}}{{$package_scope.TargetTypeGenericDeclaration}}(v ...{{.FieldSliceElt}}) {{$package_scope.OptionInterfaceName}}{{$package_scope.TargetTypeGenericParams}} {
+	return {{$package_scope.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}) {
 		o.{{.FieldName}} = append(o.{{.FieldName}}, v...)
 	})
 }
-// With{{.FormatFieldName}}Replace sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+// With{{.FormatFieldName}}Replace sets {{.FieldName}} in {{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}.
 {{- range .FormatFieldComments}}
 {{.}}
 {{- end}}
-func With{{.FormatFieldName}}Replace(v ...{{.FieldSliceElt}}) {{$package_scope.OptionInterfaceName}} {
-	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+func With{{.FormatFieldName}}Replace{{$package_scope.TargetTypeGenericDeclaration}}(v ...{{.FieldSliceElt}}) {{$package_scope.OptionInterfaceName}}{{$package_scope.TargetTypeGenericParams}} {
+	return {{$package_scope.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}) {
 		o.{{.FieldName}} = v
 	})
 }
 {{- else if .FieldIsMap}}
-// With{{.FormatFieldName}} appends {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+// With{{.FormatFieldName}} appends {{.FieldName}} in {{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}.
 {{- range .FormatFieldComments}}
 {{.}}
 {{- end}}
-func With{{.FormatFieldName}}(m {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
-	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+func With{{.FormatFieldName}}{{$package_scope.TargetTypeGenericDeclaration}}(m {{.FieldType}}) {{$package_scope.OptionInterfaceName}}{{$package_scope.TargetTypeGenericParams}} {
+	return {{$package_scope.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}) {
 		if o.{{.FieldName}} == nil {
 			o.{{.FieldName}} = m
 			return
@@ -195,22 +201,22 @@ func With{{.FormatFieldName}}(m {{.FieldType}}) {{$package_scope.OptionInterface
 		}
 	})
 }
-// With{{.FormatFieldName}}Replace sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+// With{{.FormatFieldName}}Replace sets {{.FieldName}} in {{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}.
 {{- range .FormatFieldComments}}
 {{.}}
 {{- end}}
-func With{{.FormatFieldName}}Replace(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
-	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+func With{{.FormatFieldName}}Replace{{$package_scope.TargetTypeGenericDeclaration}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}}{{$package_scope.TargetTypeGenericParams}} {
+	return {{$package_scope.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}) {
 		o.{{.FieldName}} = v
 	})
 }
 {{- else}}
-// With{{.FormatFieldName}} sets {{.FieldName}} in {{$package_scope.TargetTypeName}}.
+// With{{.FormatFieldName}} sets {{.FieldName}} in {{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}.
 {{- range .FormatFieldComments}}
 {{.}}
 {{- end}}
-func With{{.FormatFieldName}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}} {
-	return {{$package_scope.OptionInterfaceName}}Func(func( o *{{$package_scope.TargetTypeName}}) {
+func With{{.FormatFieldName}}{{$package_scope.TargetTypeGenericDeclaration}}(v {{.FieldType}}) {{$package_scope.OptionInterfaceName}}{{$package_scope.TargetTypeGenericParams}} {
+	return {{$package_scope.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{$package_scope.TargetTypeName}}{{$package_scope.TargetTypeGenericParams}}) {
 		o.{{.FieldName}} = v
 	})
 }

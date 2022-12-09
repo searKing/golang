@@ -14,8 +14,20 @@
 //	package painkiller
 //
 //
-//	type Pill struct{}
+// // go:generate go-option -type "Pill"
+// type Pill[T comparable] struct {
+// 	//  This is Name doc comment
+// 	Name      string //  This is Name line comment
+// 	Age       string `option:",short"`
+// 	Address   string `option:"-"`
+// 	NameAlias string `option:"Title,"`
 //
+// 	arrayType     [5]T
+// 	funcType      func()
+// 	interfaceType interface{}
+// 	mapType       map[string]int
+// 	sliceType     []int64
+// }
 //
 // running this command
 //
@@ -24,40 +36,110 @@
 // in the same directory will create the file pill_options.go, in package painkiller,
 // containing a definition of
 //
-//	var _default_Pill_value = func() (val Pill) { return }()
-//
-//	// A PillOptions sets options.
-//	type PillOptions interface {
-//		apply(*Pill)
-//	}
-//
-//	// EmptyPillOptions does not alter the configuration. It can be embedded
-//	// in another structure to build custom options.
-//	//
-//	// This API is EXPERIMENTAL.
-//	type EmptyPillOptions struct{}
-//
-//	func (EmptyPillOptions) apply(*Pill) {}
-//
-//	// PillOptionFunc wraps a function that modifies PillOptionFunc into an
-//	// implementation of the PillOptions interface.
-//	type PillOptionFunc func(*Number)
-//
-//	func (f PillOptionFunc) apply(do *Pill) {
-//		f(do)
-//	}
-//
-//	func (o *Pill) ApplyOptions(options ...PillOption) *Pill {
-//		for _, opt := range options {
-//			if opt == nil {
-//				continue
-//			}
-//			opt.apply(o)
-//		}
-//		return o
-//	}
 
+// //  A PillOption sets options.
+// type PillOption[T comparable] interface {
+// 	apply(*Pill[T])
+// }
 //
+// //  EmptyPillOption does not alter the configuration. It can be embedded
+// //  in another structure to build custom options.
+// //
+// //  This API is EXPERIMENTAL.
+// type EmptyPillOption[T comparable] struct{}
+//
+// func (EmptyPillOption[T]) apply(*Pill[T]) {}
+//
+// //  PillOptionFunc wraps a function that modifies Pill[T] into an
+// //  implementation of the PillOption[T comparable] interface.
+// type PillOptionFunc[T comparable] func(*Pill[T])
+//
+// func (f PillOptionFunc[T]) apply(do *Pill[T]) {
+// 	f(do)
+// }
+//
+// //  ApplyOptions call apply() for all options one by one
+// func (o *Pill[T]) ApplyOptions(options ...PillOption[T]) *Pill[T] {
+// 	for _, opt := range options {
+// 		if opt == nil {
+// 			continue
+// 		}
+// 		opt.apply(o)
+// 	}
+// 	return o
+// }
+//
+// //  WithPillName sets Name in Pill[T].
+// //  This is Name doc comment
+// //  This is Name line comment
+// func WithPillName[T comparable](v string) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.Name = v
+// 	})
+// }
+//
+// //  WithAge sets Age in Pill[T].
+// func WithAge[T comparable](v string) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.Age = v
+// 	})
+// }
+//
+// //  WithPillTitle sets NameAlias in Pill[T].
+// func WithPillTitle[T comparable](v string) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.NameAlias = v
+// 	})
+// }
+//
+// //  WithPillArrayType sets arrayType in Pill[T].
+// func WithPillArrayType[T comparable](v [5]T) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.arrayType = v
+// 	})
+// }
+//
+// //  WithPillInterfaceType sets interfaceType in Pill[T].
+// func WithPillInterfaceType[T comparable](v interface{}) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.interfaceType = v
+// 	})
+// }
+//
+// //  WithPillMapType appends mapType in Pill[T].
+// func WithPillMapType[T comparable](m map[string]int) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		if o.mapType == nil {
+// 			o.mapType = m
+// 			return
+// 		}
+// 		for k, v := range m {
+// 			o.mapType[k] = v
+// 		}
+// 	})
+// }
+//
+// //  WithPillMapTypeReplace sets mapType in Pill[T].
+// func WithPillMapTypeReplace[T comparable](v map[string]int) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.mapType = v
+// 	})
+// }
+//
+// //  WithPillSliceType appends sliceType in Pill[T].
+// func WithPillSliceType[T comparable](v ...int64) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.sliceType = append(o.sliceType, v...)
+// 	})
+// }
+//
+// //  WithPillSliceTypeReplace sets sliceType in Pill[T].
+// func WithPillSliceTypeReplace[T comparable](v ...int64) PillOption[T] {
+// 	return PillOptionFunc[T](func(o *Pill[T]) {
+// 		o.sliceType = v
+// 	})
+// }
+
 // Typically this process would be run using go generate, like this:
 //
 //	//go:generate go-option -type=Pill
@@ -70,7 +152,6 @@
 // generate methods for multiple types. The default output file is t_string.go,
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
-//
 package main
 
 import (
@@ -80,7 +161,6 @@ import (
 	"go/ast"
 	"go/format"
 	"go/types"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -111,7 +191,7 @@ func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "Usage of go-option:\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-option [flags] -type T [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/go-option\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/cmd/go-option\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
@@ -131,8 +211,8 @@ func main() {
 	}
 
 	// type <key, value> type <key, value>
-	types := newTypeInfo(*typeInfos)
-	if len(types) == 0 {
+	typs := newTypeInfo(*typeInfos)
+	if len(typs) == 0 {
 		flag.Usage()
 		os.Exit(3)
 	}
@@ -188,12 +268,12 @@ func main() {
 	//
 	//if *code {
 	//	// Run render for each type.
-	//	g.generateConfig(dir, types...)
+	//	g.generateConfig(dir, typs...)
 	//}
 
 	var structs []Struct
 	// Run inspect for each type.
-	for _, typeInfo := range types {
+	for _, typeInfo := range typs {
 		structs = append(structs, g.inspect(typeInfo))
 	}
 
@@ -241,7 +321,10 @@ func (g *Generator) Render(text string, arg interface{}) {
 	if err != nil {
 		panic(err)
 	}
-	_ = tmpl.Execute(&g.buf, arg)
+	err = tmpl.Execute(&g.buf, arg)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // File holds a single parsed file and associated data.
@@ -401,6 +484,8 @@ func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 		PackageName:                  g.pkg.name,
 		TargetTypeName:               value.StructTypeName,
 		TargetTypeImport:             value.StructTypeImport,
+		TargetTypeGenericDeclaration: value.StructTypeGenericDeclaration,
+		TargetTypeGenericParams:      value.StructTypeGenericTypeParams,
 		TrimmedTypeName:              value.trimmedStructTypeName,
 		Fields:                       value.Fields,
 		ApplyOptionsAsMemberFunction: false,
@@ -421,7 +506,7 @@ func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 		baseName := fmt.Sprintf("%s_options.go", value.StructTypeName)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
-	err := ioutil.WriteFile(outputName, target, 0644)
+	err := os.WriteFile(outputName, target, 0644)
 	if err != nil {
 		log.Fatalf("writing output: %s", err)
 	}
@@ -442,6 +527,8 @@ func (g *Generator) generateConfigOneRun(dir string, value Struct) {
 		PackageName:                  g.pkg.name,
 		TargetTypeName:               value.StructTypeName,
 		TargetTypeImport:             value.StructTypeImport,
+		TargetTypeGenericDeclaration: value.StructTypeGenericDeclaration,
+		TargetTypeGenericParams:      value.StructTypeGenericTypeParams,
 		TrimmedTypeName:              value.trimmedStructTypeName,
 		ApplyOptionsAsMemberFunction: false,
 	}
@@ -462,12 +549,12 @@ func (g *Generator) generateConfigOneRun(dir string, value Struct) {
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	if _, err := os.Stat(outputName); !os.IsNotExist(err) {
-		actual, err := ioutil.ReadFile(outputName)
+		actual, err := os.ReadFile(outputName)
 		if err != nil || (len(actual) > 0 && bytes.Compare(actual, target) != 0) {
 			log.Fatalf("%[1]s already exists, remove or truncate(0) it before generate, as %[1]s will be overwritten", outputName)
 		}
 	}
-	err := ioutil.WriteFile(outputName, target, 0644)
+	err := os.WriteFile(outputName, target, 0644)
 	if err != nil {
 		log.Fatalf("writing output: %s", err)
 	}

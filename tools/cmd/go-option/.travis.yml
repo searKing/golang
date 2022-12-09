@@ -7,7 +7,7 @@ os:
 
 go:
   - 1.12.x
-go_import_path: "github.com/searKing/golang/tools/go-option"
+go_import_path: "github.com/searKing/golang/tools/cmd/go-option"
 env:
   - GO111MODULE=on
 
