@@ -4,7 +4,7 @@
 
 // go command is not available on android
 
-// +build !android
+//go:build !android
 
 package main
 
@@ -47,6 +47,10 @@ func walkDir(dir, gooptions, dirname string, t *testing.T) {
 		if file.Mode().IsRegular() {
 			if !strings.HasSuffix(name, ".go") {
 				t.Errorf("%s is not a Go file", name)
+				continue
+			}
+			if strings.HasPrefix(name, ".") {
+				// This file is ignored by the build tool since it's name starts with '.'.
 				continue
 			}
 			if strings.HasPrefix(name, "tag_") || strings.HasPrefix(name, "vary_") {

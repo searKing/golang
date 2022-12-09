@@ -14,7 +14,7 @@
 //	package painkiller
 //
 //
-//	type Pill struct{}
+//	type Pill[T any] struct{}
 //
 //
 // running this command
@@ -24,30 +24,28 @@
 // in the same directory will create the file pill_options.go, in package painkiller,
 // containing a definition of
 //
-//	var _default_Pill_value = func() (val Pill) { return }()
-//
 //	// A PillOptions sets options.
-//	type PillOptions interface {
-//		apply(*Pill)
+//	type PillOptions[T any] interface {
+//		apply(*Pill[T])
 //	}
 //
 //	// EmptyPillOptions does not alter the configuration. It can be embedded
 //	// in another structure to build custom options.
 //	//
 //	// This API is EXPERIMENTAL.
-//	type EmptyPillOptions struct{}
+//	type EmptyPillOptions[T any] struct{}
 //
-//	func (EmptyPillOptions) apply(*Pill) {}
+//	func (EmptyPillOptions[T]) apply(*Pill[T]) {}
 //
 //	// PillOptionFunc wraps a function that modifies PillOptionFunc into an
 //	// implementation of the PillOptions interface.
-//	type PillOptionFunc func(*Number)
+//	type PillOptionFunc[T any] func(*Number)
 //
-//	func (f PillOptionFunc) apply(do *Pill) {
+//	func (f PillOptionFunc[T]) apply(do *Pill[T]) {
 //		f(do)
 //	}
 //
-//	func (o *Pill) ApplyOptions(options ...PillOption) *Pill {
+//	func (o *Pill[T]) ApplyOptions(options ...PillOption[T]) *Pill[T] {
 //		for _, opt := range options {
 //			if opt == nil {
 //				continue
@@ -57,7 +55,6 @@
 //		return o
 //	}
 
-//
 // Typically this process would be run using go generate, like this:
 //
 //	//go:generate go-option -type=Pill
@@ -70,7 +67,6 @@
 // generate methods for multiple types. The default output file is t_string.go,
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
-//
 package main
 
 import (
@@ -80,7 +76,6 @@ import (
 	"go/ast"
 	"go/format"
 	"go/types"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -131,8 +126,8 @@ func main() {
 	}
 
 	// type <key, value> type <key, value>
-	types := newTypeInfo(*typeInfos)
-	if len(types) == 0 {
+	typs := newTypeInfo(*typeInfos)
+	if len(typs) == 0 {
 		flag.Usage()
 		os.Exit(3)
 	}
@@ -188,12 +183,12 @@ func main() {
 	//
 	//if *code {
 	//	// Run render for each type.
-	//	g.generateConfig(dir, types...)
+	//	g.generateConfig(dir, typs...)
 	//}
 
 	var structs []Struct
 	// Run inspect for each type.
-	for _, typeInfo := range types {
+	for _, typeInfo := range typs {
 		structs = append(structs, g.inspect(typeInfo))
 	}
 
@@ -241,7 +236,10 @@ func (g *Generator) Render(text string, arg interface{}) {
 	if err != nil {
 		panic(err)
 	}
-	_ = tmpl.Execute(&g.buf, arg)
+	err = tmpl.Execute(&g.buf, arg)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // File holds a single parsed file and associated data.
@@ -401,6 +399,8 @@ func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 		PackageName:                  g.pkg.name,
 		TargetTypeName:               value.StructTypeName,
 		TargetTypeImport:             value.StructTypeImport,
+		TargetTypeGenericDeclaration: value.StructTypeGenericDeclaration,
+		TargetTypeGenericParams:      value.StructTypeGenericTypeParams,
 		TrimmedTypeName:              value.trimmedStructTypeName,
 		Fields:                       value.Fields,
 		ApplyOptionsAsMemberFunction: false,
@@ -421,7 +421,7 @@ func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 		baseName := fmt.Sprintf("%s_options.go", value.StructTypeName)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
-	err := ioutil.WriteFile(outputName, target, 0644)
+	err := os.WriteFile(outputName, target, 0644)
 	if err != nil {
 		log.Fatalf("writing output: %s", err)
 	}
@@ -442,6 +442,8 @@ func (g *Generator) generateConfigOneRun(dir string, value Struct) {
 		PackageName:                  g.pkg.name,
 		TargetTypeName:               value.StructTypeName,
 		TargetTypeImport:             value.StructTypeImport,
+		TargetTypeGenericDeclaration: value.StructTypeGenericDeclaration,
+		TargetTypeGenericParams:      value.StructTypeGenericTypeParams,
 		TrimmedTypeName:              value.trimmedStructTypeName,
 		ApplyOptionsAsMemberFunction: false,
 	}
@@ -462,12 +464,12 @@ func (g *Generator) generateConfigOneRun(dir string, value Struct) {
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
 	if _, err := os.Stat(outputName); !os.IsNotExist(err) {
-		actual, err := ioutil.ReadFile(outputName)
+		actual, err := os.ReadFile(outputName)
 		if err != nil || (len(actual) > 0 && bytes.Compare(actual, target) != 0) {
 			log.Fatalf("%[1]s already exists, remove or truncate(0) it before generate, as %[1]s will be overwritten", outputName)
 		}
 	}
-	err := ioutil.WriteFile(outputName, target, 0644)
+	err := os.WriteFile(outputName, target, 0644)
 	if err != nil {
 		log.Fatalf("writing output: %s", err)
 	}

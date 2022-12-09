@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -26,6 +27,64 @@ func isPublicName(name string) bool {
 	return false
 }
 
+// FormatTypeParams turns TypeParamList into its Go representation, such as:
+// [T, Y]. Note that it does not print constraints as this is mainly used for
+// formatting type params in method receivers.
+func FormatTypeParams(tparams *ast.FieldList) string {
+	if tparams == nil || len(tparams.List) == 0 {
+		return ""
+	}
+
+	var buf bytes.Buffer
+	buf.WriteByte('[')
+	for i := 0; i < len(tparams.List); i++ {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		for j := 0; j < len(tparams.List[i].Names); j++ {
+			if j > 0 {
+				buf.WriteString(", ")
+			}
+			buf.WriteString(tparams.List[i].Names[j].String())
+		}
+	}
+	buf.WriteByte(']')
+	return buf.String()
+}
+
+// FormatTypeDeclaration turns TypeParamList into its Go representation, such as:
+// [T, Y comparable]. Note that it does not print constraints as this is mainly used for
+// formatting type params in method receivers.
+func FormatTypeDeclaration(tparams *ast.FieldList) (string, error) {
+	if tparams == nil || len(tparams.List) == 0 {
+		return "", nil
+	}
+
+	var buf bytes.Buffer
+	buf.WriteByte('[')
+	for i := 0; i < len(tparams.List); i++ {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		for j := 0; j < len(tparams.List[i].Names); j++ {
+			if j > 0 {
+				buf.WriteString(", ")
+			}
+			buf.WriteString(tparams.List[i].Names[j].String())
+		}
+		buf.WriteString(" ")
+
+		switch expr := tparams.List[i].Type.(type) {
+		case *ast.Ident:
+			buf.WriteString(expr.String())
+		default:
+			return "", fmt.Errorf("unsupported expression %T", expr)
+		}
+	}
+	buf.WriteByte(']')
+	return buf.String(), nil
+}
+
 // genDecl processes one declaration clause.
 func (f *File) genDecl(node ast.Node) bool {
 	decl, ok := node.(*ast.GenDecl)
@@ -44,9 +103,16 @@ func (f *File) genDecl(node ast.Node) bool {
 	for _, spec := range decl.Specs {
 		tspec := spec.(*ast.TypeSpec) // Guaranteed to succeed as this is TYPE.
 		typ = tspec.Name.Name
+		declaration, err := FormatTypeDeclaration(tspec.TypeParams)
+		if err != nil {
+			// This is not the type we're looking for.
+			continue
+		}
 		v := Struct{
-			StructTypeName:   typ,
-			StructTypeImport: f.typeInfo.Import,
+			StructTypeName:               typ,
+			StructTypeGenericDeclaration: declaration,
+			StructTypeGenericTypeParams:  FormatTypeParams(tspec.TypeParams),
+			StructTypeImport:             f.typeInfo.Import,
 		}
 		if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
 			v.trimmedStructTypeName = strings.TrimSpace(c.Text())
