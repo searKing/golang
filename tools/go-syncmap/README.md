@@ -79,7 +79,7 @@ the -output flag.
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/go-syncmap`
+The easiest way to install is to run `go get install github.com/searKing/golang/tools/go-syncmap`
 . You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/go-syncmap`.
 
 ## Inspiring projects

@@ -10,21 +10,21 @@ Static Single Assignment form (SSA) representation for Go programs.
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/...`. You can
+The easiest way to install is to run `go get install github.com/searKing/golang/tools/...`. You can
 also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/`.
 
 ### Tips
 ```bash
-go get -u github.com/searKing/golang/tools/go-atomicvalue
-go get -u github.com/searKing/golang/tools/go-enum
-go get -u github.com/searKing/golang/tools/go-import
-go get -u github.com/searKing/golang/tools/go-nulljson
-go get -u github.com/searKing/golang/tools/go-option
-go get -u github.com/searKing/golang/tools/go-sqlx
-go get -u github.com/searKing/golang/tools/go-syncmap
-go get -u github.com/searKing/golang/tools/go-syncpool
-go get -u github.com/searKing/golang/tools/go-validator
-go get -u github.com/searKing/golang/tools/protoc-gen-go-tag
+go get install github.com/searKing/golang/tools/go-atomicvalue
+go get install github.com/searKing/golang/tools/go-enum
+go get install github.com/searKing/golang/tools/go-import
+go get install github.com/searKing/golang/tools/go-nulljson
+go get install github.com/searKing/golang/tools/go-option
+go get install github.com/searKing/golang/tools/go-sqlx
+go get install github.com/searKing/golang/tools/go-syncmap
+go get install github.com/searKing/golang/tools/go-syncpool
+go get install github.com/searKing/golang/tools/go-validator
+go get install github.com/searKing/golang/tools/protoc-gen-go-tag
 ```
 
 ## Report Issues / Send Patches

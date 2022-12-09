@@ -98,7 +98,7 @@ it in the output.
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/go-enum`
+The easiest way to install is to run `go get install github.com/searKing/golang/tools/go-enum`
 . You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/go-enum`.
 
 ## Inspiring projects

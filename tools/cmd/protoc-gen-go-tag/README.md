@@ -324,7 +324,7 @@ func file_example_proto_init() {
 
 ## Download/Install
 
-The easiest way to install is to run `go get -u github.com/searKing/golang/tools/protoc-gen-go-tag`
+The easiest way to install is to run `go get install github.com/searKing/golang/tools/protoc-gen-go-tag`
 . You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/protoc-gen-go-tag`
 .
 
@@ -340,11 +340,11 @@ export PATH=${PATH}:$(go env GOPATH)/bin
 
 + The `protoc-gen-go-tag` rewrites `*.pb.go` by `proto-gen-go` already. So use `protoc-gen-go-tag` instead
   of `protoc-gen-go`
-+ `protoc-gen-go` is installed by `go get -u google.golang.org/protobuf/cmd/protoc-gen-go`
++ `protoc-gen-go` is installed by `go get install google.golang.org/protobuf/cmd/protoc-gen-go`
 + Basically the magical incantation (apart from includes) is the `--go-tag_out`. That triggers the
   `protoc-gen-go-tag` plugin to generate `*.pb.go`. That's it :)
 
-### If you use `protoc-gen-go` installed by `go get -u github.com/golang/protobuf/protoc-gen-go`
+### If you use `protoc-gen-go` installed by `go get install github.com/golang/protobuf/protoc-gen-go`
 
 + [github.com/golang/protobuf](https://pkg.go.dev/github.com/golang/protobuf) has been superseded by
   the [google.golang.org/protobuf](https://pkg.go.dev/google.golang.org/protobuf) module
