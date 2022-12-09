@@ -9,20 +9,20 @@ import (
 	"strings"
 )
 
-//go:generate go-option -type "Pill"
-type Pill[T comparable] struct {
-	// This is Name doc comment
-	Name      string // This is Name line comment
-	Age       string `option:",short"`
-	Address   string `option:"-"`
-	NameAlias string `option:"Title,"`
-
-	arrayType     [5]T
-	funcType      func()
-	interfaceType interface{}
-	mapType       map[string]int
-	sliceType     []int64
-}
+////go:generate go-option -type "Pill"
+//type Pill[T comparable] struct {
+//	// This is Name doc comment
+//	Name      string // This is Name line comment
+//	Age       string `option:",short"`
+//	Address   string `option:"-"`
+//	NameAlias string `option:"Title,"`
+//
+//	arrayType     [5]T
+//	funcType      func()
+//	interfaceType interface{}
+//	mapType       map[string]int
+//	sliceType     []int64
+//}
 
 func NewPill[T comparable](options ...PillOption[T]) *Pill[T] {
 	return (&Pill[T]{}).ApplyOptions()
