@@ -13,9 +13,10 @@ type EvictCallback[K comparable, V any] func(key K, value V)
 
 // LRU implements a non-thread safe fixed size LRU cache
 type LRU[K comparable, V any] struct {
-	size      int
-	evictList *list.List
-	items     map[K]*list.Element
+	size int // LRU size limit
+
+	evictList *list.List          // sequence order for lru: Latest, Old, Older, ..., Oldest
+	items     map[K]*list.Element // index to element access accelerate
 	onEvict   EvictCallback[K, V]
 }
 
@@ -159,6 +160,11 @@ func (c *LRU[K, V]) Keys() []K {
 // Len returns the number of items in the cache.
 func (c *LRU[K, V]) Len() int {
 	return c.evictList.Len()
+}
+
+// Cap returns the capacity of the cache.
+func (c *LRU[K, V]) Cap() int {
+	return c.size
 }
 
 // Resize changes the cache size.
