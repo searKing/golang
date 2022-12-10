@@ -11,6 +11,10 @@ import (
 // EvictCallback is used to get a callback when a cache entry is evicted
 type EvictCallback[K comparable, V any] func(key K, value V)
 
+type EvictCallbackFunc[K comparable, V any] interface {
+	Evict(key K, value V)
+}
+
 // LRU implements a non-thread safe fixed size LRU cache
 type LRU[K comparable, V any] struct {
 	size int // LRU size limit
@@ -36,6 +40,12 @@ func New[K comparable, V any](size int) *LRU[K, V] {
 
 // SetEvictCallback sets a callback when a cache entry is evicted
 func (c *LRU[K, V]) SetEvictCallback(onEvict EvictCallback[K, V]) *LRU[K, V] {
+	c.onEvict = onEvict
+	return c
+}
+
+// SetEvictCallbackFunc sets a callback func when a cache entry is evicted
+func (c *LRU[K, V]) SetEvictCallbackFunc(onEvict func(key K, value V)) *LRU[K, V] {
 	c.onEvict = onEvict
 	return c
 }
