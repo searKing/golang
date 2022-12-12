@@ -26,6 +26,9 @@ func Example() {
 
 	l.PushBackQueue(l2)
 
+	l2.TrimFrontFunc(func(e int) bool {
+		return e%2 == 1
+	})
 	// Iterate through list and print its contents.
 	l.Do(func(e int) {
 		fmt.Println(e)
@@ -43,7 +46,6 @@ func Example() {
 	// 6
 	// 7
 	// 8
-	// 5
 	// 6
 	// 7
 	// 8

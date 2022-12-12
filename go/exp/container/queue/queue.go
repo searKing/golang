@@ -123,3 +123,16 @@ func (q *Queue[E]) ShrinkToFit() {
 	}
 	return
 }
+
+// TrimFrontFunc pops all leading elem that satisfying f(c) from the head of the
+// queue, reporting whether any were popped.
+func (q *Queue[E]) TrimFrontFunc(f func(e E) bool) (cleaned bool) {
+	for q.Next() {
+		if !f(q.Front()) {
+			return cleaned
+		}
+		q.PopFront()
+		cleaned = true
+	}
+	return cleaned
+}
