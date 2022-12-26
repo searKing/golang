@@ -97,11 +97,12 @@ func NewClientWithUnixDisableCompression(u string) (*Client, error) {
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	err := RequestWithTarget(RequestWithProxyTarget(req, c.Proxy), c.Target, c.replaceHostInRequest)
+	req2 := RequestWithProxyTarget(req, c.Proxy)
+	err := RequestWithTarget(req2, c.Target, c.replaceHostInRequest)
 	if err != nil {
 		return nil, err
 	}
-	return c.Client.Do(req)
+	return c.Client.Do(req2)
 }
 
 func (c *Client) Head(url string) (resp *http.Response, err error) {
