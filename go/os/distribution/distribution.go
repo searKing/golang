@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-type Distributioner interface {
-	String() string
-}
-
 type Distribution int
 
 const (
@@ -38,7 +34,7 @@ func (d Distribution) String() string {
 	return "Butt"
 }
 
-func GetOSVersion() Distributioner {
+func GetOSVersion() Distribution {
 	if runtime.GOOS == "Windows" {
 		return Windows
 	}
