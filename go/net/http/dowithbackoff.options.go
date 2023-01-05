@@ -60,8 +60,8 @@ func WithDoWithBackoffOptionRoundTripper(rt http.RoundTripper) DoWithBackoffOpti
 }
 
 // WithDoWithBackoffOptionTarget returns a DoWithBackoffOption.
-// ProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// ProxyTarget is proxy's addr, replace the HOST in ProxyUrl if not empty
+// TargetUrl is proxy's url, like socks5://127.0.0.1:8080
+// Host is proxy's addr, replace the HOST in TargetUrl if not empty
 func WithDoWithBackoffOptionTarget(target string) DoWithBackoffOption {
 	if target == "" {
 		return EmptyDoWithBackoffOption{}
@@ -74,8 +74,8 @@ func WithDoWithBackoffOptionTarget(target string) DoWithBackoffOption {
 }
 
 // WithDoWithBackoffOptionProxy returns a DoWithBackoffOption.
-// ProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// ProxyTarget is proxy's addr, replace the HOST in ProxyUrl if not empty
+// TargetUrl is proxy's url, like socks5://127.0.0.1:8080
+// Host is proxy's addr, replace the HOST in TargetUrl if not empty
 func WithDoWithBackoffOptionProxy(proxyUrl string, proxyTarget string) DoWithBackoffOption {
 	if proxyUrl == "" {
 		return EmptyDoWithBackoffOption{}

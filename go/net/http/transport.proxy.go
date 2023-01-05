@@ -15,9 +15,9 @@ import (
 )
 
 // RequestWithProxyTarget returns a shallow copy of r with its context changed
-// to ctx, ProxyUrl and ProxyTarget inside. The provided ctx must be non-nil.
+// to ctx, TargetUrl and Host inside. The provided ctx must be non-nil.
 // proxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// proxyTarget is as like gRPC Naming for proxy service discovery, with Host in ProxyUrl replaced if not empty.
+// proxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
 func RequestWithProxyTarget(req *http.Request, proxy *httpproxy.Proxy) *http.Request {
 	if proxy == nil {
 		return req
@@ -60,7 +60,7 @@ func ProxyFuncFromContextOrEnvironment(req *http.Request) (*url.URL, error) {
 }
 
 // DefaultTransportWithDynamicProxy is the default implementation of Transport and is
-// used by DefaultClient. It establishes network connections as needed
+// used by DefaultClientWithDynamicProxy. It establishes network connections as needed
 // and caches them for reuse by subsequent calls. It uses HTTP proxies
 // as directed by the ProxyFuncFromContextOrEnvironment, $HTTP_PROXY and $NO_PROXY (or $http_proxy and
 // $no_proxy) environment variables.
@@ -86,7 +86,7 @@ var DefaultClientWithDynamicProxy = &http.Client{
 // represent a Target that can be used as a proxy. It performs basic
 // sanitization of the Target and returns any error encountered.
 // fixedProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in ProxyUrl replaced if not empty.
+// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
 func ProxyFuncWithTargetOrDefault(fixedProxyUrl string, fixedProxyTarget string, def func(req *http.Request) (*url.URL, error)) func(req *http.Request) (*url.URL, error) {
 	if fixedProxyUrl == "" {
 		return def
@@ -111,24 +111,9 @@ func ProxyFuncWithTargetOrDefault(fixedProxyUrl string, fixedProxyTarget string,
 	}
 }
 
-// RoundTripperWithTarget wraps http.RoundTripper with request url replaced by Target resolved by resolver.
-// Target is as like gRPC Naming for service discovery.
-func RoundTripperWithTarget(rt http.RoundTripper, target string, replaceHostInRequest bool) http.RoundTripper {
-	if target == "" {
-		return rt
-	}
-	return RoundTripFunc(func(req *http.Request) (resp *http.Response, err error) {
-		err = RequestWithTarget(req, target, replaceHostInRequest)
-		if err != nil {
-			return nil, err
-		}
-		return rt.RoundTrip(req)
-	})
-}
-
 // TransportWithProxyTarget wraps http.RoundTripper with request url replaced by Target resolved by resolver.
 // fixedProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in ProxyUrl replaced if not empty.
+// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
 func TransportWithProxyTarget(t *http.Transport, fixedProxyUrl string, fixedProxyTarget string) *http.Transport {
 	t.Proxy = ProxyFuncWithTargetOrDefault(fixedProxyUrl, fixedProxyTarget, t.Proxy)
 	return t

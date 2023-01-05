@@ -12,15 +12,15 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/searKing/golang/go/net/http/httphost"
 	"github.com/searKing/golang/go/net/http/httpproxy"
 )
 
 type Client struct {
 	http.Client
 
-	Proxy                *httpproxy.Proxy
-	Target               string // resolver.Target, will replace Host in url.Url
-	replaceHostInRequest bool   // resolve Target to proxy and replace host if Target resolved
+	Proxy *httpproxy.Proxy
+	Host  *httphost.Host
 }
 
 // Use adds middleware handlers to the transport.
@@ -44,11 +44,11 @@ var parseURL = url.Parse
 //
 // u is the original url to send HTTP request, empty usually.
 // target is the resolver to resolve Host to send HTTP request,
-// that is replacing host in url(NOT HOST in http header) by address resolved by Target
+// that is replacing host in url(NOT HOST in http header) by address resolved by Host
 // fixedProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in ProxyUrl replaced if not empty.
-func NewClient(u, target string, proxyUrl string, proxyTarget string) (*Client, error) {
-	tr := DefaultTransportWithDynamicProxy
+// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
+func NewClient(u, hostTarget string, proxyUrl string, proxyTarget string) (*Client, error) {
+	tr := DefaultTransportWithDynamicHostAndProxy
 	if len(u) > 0 {
 		urlParsed, err := parseURL(u)
 		if err != nil {
@@ -65,28 +65,35 @@ func NewClient(u, target string, proxyUrl string, proxyTarget string) (*Client, 
 		}
 	}
 	client := http.Client{Transport: tr}
-	return &Client{
+	c := &Client{
 		Client: client,
-		Proxy: &httpproxy.Proxy{
+	}
+	if hostTarget != "" {
+		c.Host = &httphost.Host{
+			HostTarget:           hostTarget,
+			ReplaceHostInRequest: false,
+		}
+	}
+	if proxyUrl != "" {
+		c.Proxy = &httpproxy.Proxy{
 			ProxyUrl:    proxyUrl,
 			ProxyTarget: proxyTarget,
-		},
-		Target:               target,
-		replaceHostInRequest: false,
-	}, nil
+		}
+	}
+	return c, nil
 }
 
-// NewClientWithTarget returns a Client with http.Client and host replaced by resolver.Target
+// NewClientWithTarget returns a Client with http.Client and host replaced by resolver.Host
 // target is the resolver to resolve Host to send HTTP request,
-// that is replacing host in url(NOT HOST in http header) by address resolved by Target
+// that is replacing host in url(NOT HOST in http header) by address resolved by Host
 func NewClientWithTarget(target string) *Client {
 	cli, _ := NewClient("", target, "", "")
 	return cli
 }
 
-// NewClientWithProxy returns a Client with http.Client with proxy set by resolver.Target
-// ProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// ProxyTarget is proxy's addr, replace the HOST in ProxyUrl if not empty
+// NewClientWithProxy returns a Client with http.Client with proxy set by resolver.Host
+// TargetUrl is proxy's url, like socks5://127.0.0.1:8080
+// Host is proxy's addr, replace the HOST in TargetUrl if not empty
 func NewClientWithProxy(proxyUrl string, proxyTarget string) *Client {
 	cli, _ := NewClient("", "", proxyUrl, proxyTarget)
 	return cli
@@ -96,13 +103,8 @@ func NewClientWithUnixDisableCompression(u string) (*Client, error) {
 	return NewClient(u, "", "", "")
 }
 
-func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	req2 := RequestWithProxyTarget(req, c.Proxy)
-	err := RequestWithTarget(req2, c.Target, c.replaceHostInRequest)
-	if err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req2)
+func (c *Client) Do(req *http.Request) (_ *http.Response, err error) {
+	return c.Client.Do(RequestWithHostTarget(RequestWithProxyTarget(req, c.Proxy), c.Host))
 }
 
 func (c *Client) Head(url string) (resp *http.Response, err error) {
