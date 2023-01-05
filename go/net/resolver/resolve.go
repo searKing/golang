@@ -76,6 +76,24 @@ func ResolveNow(ctx context.Context, target string, opts ...ResolveNowOption) er
 	return fmt.Errorf("could not get resolver for target: %q", target)
 }
 
+func ResolveDone(ctx context.Context, target string, doneInfo DoneInfo, opts ...ResolveDoneOption) error {
+	_, err := GetBuilderOrDefault(target)
+	if err != nil {
+		return err
+	}
+
+	resolver, put, err := resolverPool.GetOrError(ctx, target)
+	if err != nil {
+		return err
+	}
+	defer put()
+	if resolver, ok := resolver.(ResolveDoneResolver); ok {
+		resolver.ResolveDone(ctx, doneInfo, opts...)
+		return nil
+	}
+	return fmt.Errorf("could not get resolver for target: %q", target)
+}
+
 func GetBuilderOrDefault(target string) (Builder, error) {
 	tgt := ParseTarget(target)
 	builder := Get(tgt.Scheme)

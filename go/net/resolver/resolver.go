@@ -7,6 +7,7 @@ package resolver
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 // ErrBadResolverState may be returned by UpdateState to indicate a
@@ -15,6 +16,7 @@ var ErrBadResolverState = errors.New("bad resolver state")
 
 // Build includes additional information for the builder to create
 // the resolver.
+//
 //go:generate go-option -type "Build"
 type Build struct {
 	ClientConn ClientConn
@@ -39,18 +41,26 @@ type Builder interface {
 }
 
 // resolveOneAddr includes additional information for ResolveOneAddr.
+//
 //go:generate go-option -type "resolveOneAddr"
 type resolveOneAddr struct {
-	Picker        []PickOption
+	Picker []PickOption
 }
 
 // resolveAddr includes additional information for ResolveAddr.
+//
 //go:generate go-option -type "resolveAddr"
 type resolveAddr struct{}
 
 // resolveNow includes additional information for ResolveNow.
+//
 //go:generate go-option -type "resolveNow"
 type resolveNow struct{}
+
+// resolveDone includes additional information for ResolveDone.
+//
+//go:generate go-option -type "resolveDone"
+type resolveDone struct{}
 
 // Resolver watches for the updates on the specified target.
 // Updates include address updates and service config updates.
@@ -72,6 +82,14 @@ type Resolver interface {
 	ResolveNow(ctx context.Context, opts ...ResolveNowOption)
 	// Close closes the resolver.
 	Close()
+}
+
+// ResolveDoneResolver extends Resolver with ResolveDone
+type ResolveDoneResolver interface {
+	Resolver
+	// ResolveDone will be called after the RPC finished.
+	// resolver can ignore this if it's not necessary.
+	ResolveDone(ctx context.Context, doneInfo DoneInfo, opts ...ResolveDoneOption)
 }
 
 // State contains the current Resolver state relevant to the ClientConn.
@@ -100,4 +118,19 @@ type ClientConn interface {
 type Address struct {
 	// Addr is the server address on which a connection will be established.
 	Addr string
+
+	// ResolveLoad is the load received from resolver.
+	ResolveLoad any
+}
+
+// DoneInfo contains additional information for done.
+type DoneInfo struct {
+	// Err is the rpc error the RPC finished with. It could be nil.
+	// usually io.EOF represents server addr is resolved but unacceptable.
+	Err error
+
+	// Addr represents a server the client connects to.
+	Addr Address
+
+	Duration time.Duration
 }
