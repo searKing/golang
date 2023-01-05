@@ -55,6 +55,7 @@ func ProxyFuncFromContextOrEnvironment(req *http.Request) (*url.URL, error) {
 	if address.Addr != "" {
 		proxyUrl.Host = address.Addr
 	}
+	proxy.ProxyAddrResolved = address
 	return proxyUrl, nil
 }
 
@@ -102,14 +103,11 @@ func ProxyFuncWithTargetOrDefault(fixedProxyUrl string, fixedProxyTarget string,
 		}
 	}
 	return func(req *http.Request) (*url.URL, error) {
-		address, err := resolver.ResolveOneAddr(req.Context(), fixedProxyTarget)
-		if err != nil {
-			return nil, err
-		}
-		if address.Addr != "" {
-			proxy.Host = address.Addr
-		}
-		return proxy, nil
+		req2 := RequestWithProxyTarget(req, &httpproxy.Proxy{
+			ProxyUrl:    fixedProxyUrl,
+			ProxyTarget: fixedProxyTarget,
+		})
+		return ProxyFuncFromContextOrEnvironment(req2)
 	}
 }
 

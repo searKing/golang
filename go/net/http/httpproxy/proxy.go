@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+
+	"github.com/searKing/golang/go/net/resolver"
 )
 
 // unique type to prevent assignment.
@@ -19,6 +21,9 @@ type Proxy struct {
 	ProxyUrl string
 	// ProxyTarget is as like gRPC Naming for proxy service discovery, with Host in ProxyUrl replaced if not empty.
 	ProxyTarget string
+
+	// ProxyAddrResolved is the proxy's addr resolved and picked from resolver.
+	ProxyAddrResolved resolver.Address
 }
 
 // ContextProxy returns the Proxy associated with the
