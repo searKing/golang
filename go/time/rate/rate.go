@@ -3,15 +3,20 @@
 // license that can be found in the LICENSE file.
 
 // Package rate
-// The key observation and some code (shr) is borrowed from
-// time/rate/rate.go
+// The key observation and some code is borrowed from
+// golang.org/x/time/rate/rate.go
 package rate
 
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
+)
+
+const (
+	starvationThresholdNs = 1e6
 )
 
 type expectKeyType struct{}
@@ -32,7 +37,8 @@ var expectTokensKey expectKeyType
 // It allows instructions to be committed in-order.
 // - Allocated by `Reserve`  or `ReserveN` into account when allowing future events
 // - Wait by `Wait` or `WaitN` blocks until lim permits n events to happen.
-// - Complete by `PutToken` or `PutTokenN`
+// - Allow and Wait Complete by `PutToken` or `PutTokenN`
+// - Reserve Complete by `Cancel` of the Reservation self, GC Cancel supported
 // See https://en.wikipedia.org/wiki/Re-order_buffer for more about Reorder buffer.
 // See https://web.archive.org/web/20040724215416/http://lgjohn.okstate.edu/6253/lectures/reorder.pdf for more about Reorder buffer.
 //
@@ -40,7 +46,8 @@ var expectTokensKey expectKeyType
 // Use NewFullBurstLimiter to create non-zero Limiters.
 //
 // BurstLimiter has three main methods, Allow, Reserve, and Wait.
-// Most callers should use Wait.
+// Most callers should use Wait for token bucket.
+// Most callers should use Reserve for Reorder buffer.
 //
 // Each of the three methods consumes a single token.
 // They differ in their behavior when no token is available.
@@ -107,11 +114,12 @@ func (lim *BurstLimiter) Allow() bool {
 }
 
 // AllowN reports whether n events may happen at time now.
+// AllowN is shorthand for GetTokenN.
 // Use this method if you intend to drop / skip events that exceed the rate limit.
-// Otherwise use Reserve or Wait.
+// Otherwise, use Reserve or Wait.
 // 当没有可用或足够的事件时，返回false
 func (lim *BurstLimiter) AllowN(n int) bool {
-	return lim.reserveN(context.Background(), n, false).ok
+	return lim.GetTokenN(n)
 }
 
 // Reserve is shorthand for ReserveN(1).
@@ -125,7 +133,7 @@ func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 // ReserveN returns false if n exceeds the BurstLimiter's burst size.
 // Usage example:
 //
-//	 // Allocate: The dispatch stage reserves space in the reorder buffer for instructions in program order.
+//	    // Allocate: The dispatch stage reserves space in the reorder buffer for instructions in program order.
 //		r := lim.ReserveN(context.Background(), 1)
 //		if !r.OK() {
 //			// Not allowed to act! Did you remember to set lim.burst to be > 0 ?
@@ -136,7 +144,7 @@ func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 //		Act()
 //
 //		// Wait: The complete stage must wait for instructions to finish execution.
-//		if err:= r.Wait();err!=nil{
+//		if err:= r.Wait(); err!=nil {
 //		// Not allowed to act! Reservation or context canceled ?
 //			return
 //		}
@@ -183,8 +191,8 @@ func (lim *BurstLimiter) WaitN(ctx context.Context, n int) (err error) {
 	}
 	// Reserve
 	r := lim.reserveN(ctx, n, true)
-	if !r.ok {
-		return fmt.Errorf("rate: Wait(n=%d) would exceed context deadline", n)
+	if r.Ready() { // tokens already hold by the Reservation
+		return nil
 	}
 	// Wait if necessary
 	return r.Wait(ctx)
@@ -207,17 +215,37 @@ func (lim *BurstLimiter) PutTokenN(n int) {
 	for i := 0; i < len(lim.tokensChangedListeners); i++ {
 		tokensGot := lim.tokensChangedListeners[i]
 		r := tokensGot.Value(expectTokensKey).(*Reservation)
-		if (r.tokens) > lim.tokens {
+		if r.burst <= 0 {
+			// remove notified
+			if i == len(lim.tokensChangedListeners)-1 {
+				lim.tokensChangedListeners = lim.tokensChangedListeners[:i]
+			} else {
+				lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
+			}
+			r.notifyTokensReady()
+			continue
+		}
+
+		tokensWait := r.burst - r.tokens
+
+		// tokens in the Bucket is not enough for the Reservation
+		if lim.tokens < tokensWait {
+			r.tokens += lim.tokens
+			lim.tokens = 0
 			break
 		}
+
+		// enough
+		r.tokens = r.burst
+		lim.tokens -= tokensWait
 		// remove notified
 		if i == len(lim.tokensChangedListeners)-1 {
 			lim.tokensChangedListeners = lim.tokensChangedListeners[:i]
 		} else {
 			lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
 		}
-		lim.tokens -= r.tokens
-		r.cancelFn()
+		r.notifyTokensReady()
+		continue
 	}
 }
 
@@ -252,6 +280,14 @@ func (lim *BurstLimiter) getTokenNLocked(n int) (ok bool) {
 // maxFutureReserve specifies the maximum reservation wait duration allowed.
 // reserveN returns Reservation, not *Reservation, to avoid allocation in AllowN and WaitN.
 func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reservation {
+	if n <= 0 {
+		r := newReservation()
+		r.lim = lim
+		r.burst = 0
+		r.tokens = 0
+		return r
+	}
+
 	lim.mu.Lock()
 	defer lim.mu.Unlock()
 
@@ -259,11 +295,11 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reserv
 	if lim.tokens >= n && len(lim.tokensChangedListeners) == 0 {
 		// get n tokens from lim
 		if lim.getTokenNLocked(n) {
-			return &Reservation{
-				ok:     true,
-				lim:    lim,
-				tokens: 0, // tokens if consumed already,don't wait
-			}
+			r := newReservation()
+			r.lim = lim
+			r.burst = n
+			r.tokens = n
+			return r
 		}
 	}
 
@@ -275,20 +311,18 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reserv
 		expired = true
 	}
 
-	ok := n <= lim.burst && !expired && wait
+	addToListener := n <= lim.burst && !expired && wait
 
 	// Prepare reservation
-	r := Reservation{
-		ok:     ok,
-		lim:    lim,
-		tokens: n,
-	}
-	if ok {
-		r.tokensGot, r.cancelFn = context.WithCancel(context.WithValue(ctx, expectTokensKey, &r))
+	r := newReservation()
+	r.lim = lim
+	r.burst = n
+	if addToListener {
+		r.tokensGot, r.notifyTokensReady = context.WithCancel(context.WithValue(ctx, expectTokensKey, r))
 		lim.tokensChangedListeners = append(lim.tokensChangedListeners, r.tokensGot)
 	}
 
-	return &r
+	return r
 }
 
 func (lim *BurstLimiter) trackReservationRemove(r *Reservation) {
@@ -311,32 +345,86 @@ func (lim *BurstLimiter) trackReservationRemove(r *Reservation) {
 // A Reservation holds information about events that are permitted by a BurstLimiter to happen after a delay.
 // A Reservation may be canceled, which may enable the BurstLimiter to permit additional events.
 type Reservation struct {
-	ok     bool
-	lim    *BurstLimiter
-	tokens int // tokens number to consumed(reserved) this time
+	ok  bool
+	lim *BurstLimiter
+
+	// [0, tokens, burst]
+	burst  int // reservation bucket size
+	tokens int // tokens got(reserved) from BurstLimiter, Cancel(put back) must be called to the BurstLimiter after Wait
+
 	//timeToAct time.Time       // now + wait, wait if bucket is not enough
-	tokensGot context.Context // chan to notify tokens is put, check if enough
-	cancelFn  context.CancelFunc
+	tokensGot         context.Context // chan to notify tokens is put, check if enough
+	notifyTokensReady context.CancelFunc
+}
+
+func newReservation() *Reservation {
+	r := &Reservation{}
+	// no need for a finalizer anymore
+	runtime.SetFinalizer(r, (*Reservation).Cancel)
+	return r
 }
 
 // OK returns whether the limiter can provide the requested number of tokens
-// within the maximum wait time.  If OK is false, Delay returns InfDuration, and
+// within the maximum wait time. If OK is false, Delay returns InfDuration, and
 // Cancel does nothing.
 func (r *Reservation) OK() bool {
-	return r.ok
+	return r.burst <= r.lim.Burst()
+}
+
+// Ready returns whether the limiter can provide the requested number of tokens
+// within the maximum wait time. If Ready is false, Wait returns nil directly, and
+// Cancel or GC does put back the token reserved in the Reservation.
+// If Ready is false, WaitN blocks until lim permits n events to happen.
+func (r *Reservation) Ready() bool {
+	return r.tokens >= r.burst
 }
 
 // Wait blocks before taking the reserved action
 // Wait 当没有可用或足够的事件时，将阻塞等待
 func (r *Reservation) Wait(ctx context.Context) error {
+	if r.burst <= 0 {
+		r.burst = 0
+		r.tokens = r.burst
+		return nil
+	}
+
+	if r.Ready() {
+		return nil
+	}
+
+	var burst = r.lim.Burst()
+	if r.burst > burst {
+		return fmt.Errorf("rate: Wait(n=%d) exceeds limiter's burst %d", r.burst, burst)
+	}
+	timer := time.NewTimer(starvationThresholdNs)
+	defer timer.Stop()
 	for {
-		// Wait if necessary
+		// fast path
 		if r.tokensGot == nil {
 			// We can proceed.
-			if r.lim.GetTokenN(r.tokens) {
+			if r.lim.GetTokenN(r.burst - r.tokens) {
+				r.tokens = r.burst
 				return nil
 			}
+			// Wait if necessary
+			if !timer.Stop() {
+				<-timer.C
+			}
+			timer.Reset(starvationThresholdNs)
+
+			select {
+			case <-ctx.Done():
+				// Context was canceled before we could proceed.  Cancel the
+				// reservation, which may permit other events to proceed sooner.
+				r.Cancel()
+				return ctx.Err()
+			case <-timer.C:
+				break
+			}
+			continue
 		}
+
+		// Wait if necessary
 		select {
 		case <-r.tokensGot.Done():
 			// We can proceed.
@@ -354,13 +442,22 @@ func (r *Reservation) Wait(ctx context.Context) error {
 // and reverses the effects of this Reservation on the rate limit as much as possible,
 // considering that other reservations may have already been made.
 func (r *Reservation) Cancel() {
-	if !r.ok {
+	defer func() {
+		// no need for a finalizer anymore
+		runtime.SetFinalizer(r, nil)
+	}()
+	if r.burst <= 0 {
 		return
 	}
-
-	if r.tokens == 0 {
-		return
-	}
+	defer func() { r.burst = 0 }() // set Reservation as empty
 	r.lim.trackReservationRemove(r)
+	r.lim.PutTokenN(r.tokens)
+	r.tokens = 0
 	return
+}
+
+// PutToken (as Complete): refill all tokens taken by the Reservation back to BurstLimiter.
+// PutToken is shorthand for Cancel().
+func (r *Reservation) PutToken() {
+	r.Cancel()
 }
