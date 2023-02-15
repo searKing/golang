@@ -162,7 +162,7 @@ func (lim *BurstLimiter) Reserve(ctx context.Context) *Reservation {
 // See https://en.wikipedia.org/wiki/Re-order_buffer for more about Reorder buffer.
 // See https://web.archive.org/web/20040724215416/http://lgjohn.okstate.edu/6253/lectures/reorder.pdf for more about Reorder buffer.
 func (lim *BurstLimiter) ReserveN(ctx context.Context, n int) *Reservation {
-	r := lim.reserveN(ctx, n, true)
+	r := lim.reserveN(ctx, n, true, true)
 	return r
 }
 
@@ -190,10 +190,11 @@ func (lim *BurstLimiter) WaitN(ctx context.Context, n int) (err error) {
 	default:
 	}
 	// Reserve
-	r := lim.reserveN(ctx, n, true)
+	r := lim.reserveN(ctx, n, true, false)
 	if r.Ready() { // tokens already hold by the Reservation
 		return nil
 	}
+
 	// Wait if necessary
 	return r.Wait(ctx)
 }
@@ -279,9 +280,9 @@ func (lim *BurstLimiter) getTokenNLocked(n int) (ok bool) {
 // reserveN is a helper method for AllowN, ReserveN, and WaitN.
 // maxFutureReserve specifies the maximum reservation wait duration allowed.
 // reserveN returns Reservation, not *Reservation, to avoid allocation in AllowN and WaitN.
-func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reservation {
+func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool, gc bool) *Reservation {
 	if n <= 0 {
-		r := newReservation()
+		r := newReservation(gc)
 		r.lim = lim
 		r.burst = 0
 		r.tokens = 0
@@ -295,7 +296,7 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reserv
 	if lim.tokens >= n && len(lim.tokensChangedListeners) == 0 {
 		// get n tokens from lim
 		if lim.getTokenNLocked(n) {
-			r := newReservation()
+			r := newReservation(gc)
 			r.lim = lim
 			r.burst = n
 			r.tokens = n
@@ -314,7 +315,7 @@ func (lim *BurstLimiter) reserveN(ctx context.Context, n int, wait bool) *Reserv
 	addToListener := n <= lim.burst && !expired && wait
 
 	// Prepare reservation
-	r := newReservation()
+	r := newReservation(gc)
 	r.lim = lim
 	r.burst = n
 	if addToListener {
@@ -357,10 +358,17 @@ type Reservation struct {
 	notifyTokensReady context.CancelFunc
 }
 
-func newReservation() *Reservation {
+func newReservation(gc bool) *Reservation {
 	r := &Reservation{}
+	if gc {
+		runtime.SetFinalizer(r, (*Reservation).Cancel)
+	}
+	return r
+}
+
+func (r *Reservation) removeGC() *Reservation {
 	// no need for a finalizer anymore
-	runtime.SetFinalizer(r, (*Reservation).Cancel)
+	runtime.SetFinalizer(r, nil)
 	return r
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"runtime"
 	"sync"
 	"time"
 
@@ -29,8 +30,11 @@ func ExampleNewFullBurstLimiter() {
 			fmt.Printf("err: %s\n", err.Error())
 			return
 		}
-
 		fmt.Printf("Got %03d, tokens left: %d\n", i, limiter.Tokens())
+
+		// actor mocked by gc
+		runtime.GC()
+
 		if i == 0 {
 			// refill one token
 			limiter.PutToken()

@@ -145,7 +145,7 @@ func runReserve(t *testing.T, lim *BurstLimiter, req reserve) *Reservation {
 func runReserveMax(t *testing.T, lim *BurstLimiter, req reserve, maxReserve time.Duration) *Reservation {
 	ctx, cancel := context.WithTimeout(context.Background(), maxReserve)
 	defer cancel()
-	r := lim.reserveN(ctx, req.n, false)
+	r := lim.reserveN(ctx, req.n, false, false)
 	if r.Ready() != req.ready {
 		t.Errorf("lim.reserveN(%v, %v) = (%v) want (%v)", req.n, maxReserve, r.Ready(), req.ready)
 	}
@@ -298,6 +298,25 @@ func TestWaitTimeout(t *testing.T) {
 	defer cancel()
 	runWait(t, lim, wait{"act-now", ctx, 2, true})
 	runWait(t, lim, wait{"w-timeout-err", ctx, 3, false})
+}
+
+func TestWaitBlock(t *testing.T) {
+	lim := NewFullBurstLimiter(1)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	runWait(t, lim, wait{"act-now", context.Background(), 1, true})
+	runtime.GC()
+	runWait(t, lim, wait{"w-timeout-err", ctx, 1, false})
+	// timeout
+	lim.PutToken()
+	{
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		runWait(t, lim, wait{"act-later", ctx, 1, true})
+		runtime.GC()
+		runWait(t, lim, wait{"w-timeout-err", ctx, 1, false})
+	}
+
 }
 
 func BenchmarkAllowN(b *testing.B) {
