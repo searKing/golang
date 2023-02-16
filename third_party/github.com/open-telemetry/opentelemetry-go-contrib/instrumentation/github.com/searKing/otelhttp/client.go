@@ -27,20 +27,20 @@ func ResetClientCounter(opts ...instrument.Option) error {
 // EnableClientHandledTimeHistogram turns on recording of handling time of
 // RPCs. Histogram metrics can be very expensive for Prometheus to retain and
 // query. This function acts on the DefaultClientMetrics variable.
-func EnableClientHandledTimeHistogram(opts ...instrument.Option) {
+func EnableClientHandledTimeHistogram(opts ...instrument.Float64Option) {
 	DefaultClientMetrics.EnableClientHandledTimeHistogram(opts...)
 }
 
 // EnableClientStreamReceiveSizeHistogram turns on recording of
 // single message receive size of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable
-func EnableClientStreamReceiveSizeHistogram(opts ...instrument.Option) {
+func EnableClientStreamReceiveSizeHistogram(opts ...instrument.Int64Option) {
 	DefaultClientMetrics.EnableClientStreamReceiveSizeHistogram(opts...)
 }
 
 // EnableClientStreamSendSizeHistogram turns on recording of
 // single message receive size of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable
-func EnableClientStreamSendSizeHistogram(opts ...instrument.Option) {
+func EnableClientStreamSendSizeHistogram(opts ...instrument.Int64Option) {
 	DefaultClientMetrics.EnableClientStreamSendSizeHistogram(opts...)
 }
