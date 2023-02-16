@@ -9,12 +9,11 @@ import (
 	"time"
 
 	errors_ "github.com/searKing/golang/go/errors"
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	net_ "github.com/searKing/golang/go/net"
 	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/syncfloat64"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/metric/unit"
 	"google.golang.org/grpc"
 )
@@ -24,25 +23,25 @@ import (
 type ServerMetrics struct {
 	ServerHostport string
 
-	serverStartedCounter    syncint64.Counter
-	serverHandledCounter    syncint64.Counter
-	serverStreamMsgReceived syncint64.Counter
-	serverStreamMsgSent     syncint64.Counter
+	serverStartedCounter    instrument.Int64Counter
+	serverHandledCounter    instrument.Int64Counter
+	serverStreamMsgReceived instrument.Int64Counter
+	serverStreamMsgSent     instrument.Int64Counter
 
 	serverHandledTimeHistogramEnabled bool
-	serverHandledTimeHistogram        syncfloat64.Histogram
+	serverHandledTimeHistogram        instrument.Float64Histogram
 
 	serverStreamReceiveTimeHistogramEnabled bool
-	serverStreamReceiveTimeHistogram        syncfloat64.Histogram
+	serverStreamReceiveTimeHistogram        instrument.Float64Histogram
 
 	serverStreamReceiveSizeHistogramEnabled bool
-	serverStreamReceiveSizeHistogram        syncint64.Histogram
+	serverStreamReceiveSizeHistogram        instrument.Int64Histogram
 
 	serverStreamSendTimeHistogramEnabled bool
-	serverStreamSendTimeHistogram        syncfloat64.Histogram
+	serverStreamSendTimeHistogram        instrument.Float64Histogram
 
 	serverStreamSendSizeHistogramEnabled bool
-	serverStreamSendSizeHistogram        syncint64.Histogram
+	serverStreamSendSizeHistogram        instrument.Int64Histogram
 }
 
 // NewServerMetrics returns a ServerMetrics object. Use a new instance of
@@ -57,6 +56,12 @@ func NewServerMetrics(opts ...instrument.Option) *ServerMetrics {
 
 // ResetCounter recreate recording of all counters of RPCs.
 func (m *ServerMetrics) ResetCounter(opts ...instrument.Option) (err error) {
+	int64Opts := slices_.TypeAssertFilterFunc[[]instrument.Option, []instrument.Int64Option](opts,
+		func(opt instrument.Option) (instrument.Int64Option, bool) {
+			o, ok := opt.(instrument.Int64Option)
+			return o, ok
+		})
+
 	var addr string
 	if ip, err := net_.ListenIP(); err == nil {
 		addr = ip.String()
@@ -64,48 +69,48 @@ func (m *ServerMetrics) ResetCounter(opts ...instrument.Option) (err error) {
 
 	m.ServerHostport = addr
 	// "grpc_type", "grpc_service", "grpc_method"
-	m.serverStartedCounter, err = Meter().SyncInt64().Counter(
+	m.serverStartedCounter, err = Meter().Int64Counter(
 		"grpc_server_started_total",
-		func() []instrument.Option {
-			var options []instrument.Option
+		func() []instrument.Int64Option {
+			var options []instrument.Int64Option
 			options = append(options, instrument.WithDescription("Total number of RPCs started on the server."))
-			options = append(options, opts...)
+			options = append(options, int64Opts...)
 			return options
 		}()...)
 	if err != nil {
 		return err
 	}
 	// "grpc_type", "grpc_service", "grpc_method", "grpc_code"
-	m.serverHandledCounter, err = Meter().SyncInt64().Counter(
+	m.serverHandledCounter, err = Meter().Int64Counter(
 		"grpc_server_handled_total",
-		func() []instrument.Option {
-			var options []instrument.Option
+		func() []instrument.Int64Option {
+			var options []instrument.Int64Option
 			options = append(options, instrument.WithDescription("Total number of RPCs completed by the server, regardless of success or failure."))
-			options = append(options, opts...)
+			options = append(options, int64Opts...)
 			return options
 		}()...)
 	if err != nil {
 		return err
 	}
 	// "grpc_type", "grpc_service", "grpc_method"
-	m.serverStreamMsgReceived, err = Meter().SyncInt64().Counter(
+	m.serverStreamMsgReceived, err = Meter().Int64Counter(
 		"grpc_server_msg_received_total",
-		func() []instrument.Option {
-			var options []instrument.Option
+		func() []instrument.Int64Option {
+			var options []instrument.Int64Option
 			options = append(options, instrument.WithDescription("Total number of RPC stream messages received by the server."))
-			options = append(options, opts...)
+			options = append(options, int64Opts...)
 			return options
 		}()...)
 	if err != nil {
 		return err
 	}
 	// "grpc_type", "grpc_service", "grpc_method"
-	m.serverStreamMsgSent, err = Meter().SyncInt64().Counter(
+	m.serverStreamMsgSent, err = Meter().Int64Counter(
 		"grpc_server_msg_sent_total",
-		func() []instrument.Option {
-			var options []instrument.Option
+		func() []instrument.Int64Option {
+			var options []instrument.Int64Option
 			options = append(options, instrument.WithDescription("Total number of gRPC stream messages sent by the server."))
-			options = append(options, opts...)
+			options = append(options, int64Opts...)
 			return options
 		}()...)
 	return err
@@ -113,15 +118,15 @@ func (m *ServerMetrics) ResetCounter(opts ...instrument.Option) (err error) {
 
 // EnableServerHandledTimeHistogram turns on recording of handling time of RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ServerMetrics) EnableServerHandledTimeHistogram(opts ...instrument.Option) (err error) {
-	var options []instrument.Option
+func (m *ServerMetrics) EnableServerHandledTimeHistogram(opts ...instrument.Float64Option) (err error) {
+	var options []instrument.Float64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of response latency (seconds) of the gRPC until it is finished by the server."),
 		instrument.WithUnit("s"))
 	options = append(options, opts...)
 	if !m.serverHandledTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverHandledTimeHistogram, err = Meter().SyncFloat64().Histogram("grpc_server_handling_seconds", options...)
+		m.serverHandledTimeHistogram, err = Meter().Float64Histogram("grpc_server_handling_seconds", options...)
 		if err != nil {
 			return err
 		}
@@ -132,15 +137,15 @@ func (m *ServerMetrics) EnableServerHandledTimeHistogram(opts ...instrument.Opti
 
 // EnableServerStreamReceiveTimeHistogram turns on recording of single message receive time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ServerMetrics) EnableServerStreamReceiveTimeHistogram(opts ...instrument.Option) (err error) {
-	var options []instrument.Option
+func (m *ServerMetrics) EnableServerStreamReceiveTimeHistogram(opts ...instrument.Float64Option) (err error) {
+	var options []instrument.Float64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of response latency (seconds) of the gRPC single message receive."),
 		instrument.WithUnit("s"))
 	options = append(options, opts...)
 	if !m.serverStreamReceiveTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamReceiveTimeHistogram, err = Meter().SyncFloat64().Histogram("grpc_server_msg_recv_handling_seconds", options...)
+		m.serverStreamReceiveTimeHistogram, err = Meter().Float64Histogram("grpc_server_msg_recv_handling_seconds", options...)
 		if err != nil {
 			return err
 		}
@@ -151,15 +156,15 @@ func (m *ServerMetrics) EnableServerStreamReceiveTimeHistogram(opts ...instrumen
 
 // EnableServerStreamReceiveSizeHistogram turns on recording of single message receive size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ServerMetrics) EnableServerStreamReceiveSizeHistogram(opts ...instrument.Option) (err error) {
-	var options []instrument.Option
+func (m *ServerMetrics) EnableServerStreamReceiveSizeHistogram(opts ...instrument.Int64Option) (err error) {
+	var options []instrument.Int64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of message size (bytes) of the gRPC single message receive."),
 		instrument.WithUnit(unit.Bytes))
 	options = append(options, opts...)
 	if !m.serverStreamReceiveSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamReceiveSizeHistogram, err = Meter().SyncInt64().Histogram("grpc_server_msg_recv_handling_bytes", options...)
+		m.serverStreamReceiveSizeHistogram, err = Meter().Int64Histogram("grpc_server_msg_recv_handling_bytes", options...)
 		if err != nil {
 			return err
 		}
@@ -170,15 +175,15 @@ func (m *ServerMetrics) EnableServerStreamReceiveSizeHistogram(opts ...instrumen
 
 // EnableServerStreamSendTimeHistogram turns on recording of single message send time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ServerMetrics) EnableServerStreamSendTimeHistogram(opts ...instrument.Option) (err error) {
-	var options []instrument.Option
+func (m *ServerMetrics) EnableServerStreamSendTimeHistogram(opts ...instrument.Float64Option) (err error) {
+	var options []instrument.Float64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of response latency (seconds) of the gRPC single message send."),
 		instrument.WithUnit("s"))
 	options = append(options, opts...)
 	if !m.serverStreamSendTimeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamSendTimeHistogram, err = Meter().SyncFloat64().Histogram("grpc_server_msg_send_handling_seconds", options...)
+		m.serverStreamSendTimeHistogram, err = Meter().Float64Histogram("grpc_server_msg_send_handling_seconds", options...)
 		if err != nil {
 			return err
 		}
@@ -189,15 +194,15 @@ func (m *ServerMetrics) EnableServerStreamSendTimeHistogram(opts ...instrument.O
 
 // EnableServerStreamSendSizeHistogram turns on recording of single message send size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func (m *ServerMetrics) EnableServerStreamSendSizeHistogram(opts ...instrument.Option) (err error) {
-	var options []instrument.Option
+func (m *ServerMetrics) EnableServerStreamSendSizeHistogram(opts ...instrument.Int64Option) (err error) {
+	var options []instrument.Int64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of message size (bytes) of the gRPC single message send."),
 		instrument.WithUnit(unit.Bytes))
 	options = append(options, opts...)
 	if !m.serverStreamSendSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
-		m.serverStreamSendSizeHistogram, err = Meter().SyncInt64().Histogram("grpc_server_msg_send_handling_bytes", options...)
+		m.serverStreamSendSizeHistogram, err = Meter().Int64Histogram("grpc_server_msg_send_handling_bytes", options...)
 		if err != nil {
 			return err
 		}

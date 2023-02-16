@@ -5,6 +5,7 @@
 package otelgrpc
 
 import (
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	"go.opentelemetry.io/otel/metric/instrument"
 )
 
@@ -31,33 +32,58 @@ func ResetClientCounter(opts ...instrument.Option) error {
 // RPCs. Histogram metrics can be very expensive for Prometheus to retain and
 // query. This function acts on the DefaultClientMetrics variable.
 func EnableClientHandledTimeHistogram(opts ...instrument.Option) error {
-	return DefaultClientMetrics.EnableClientHandledTimeHistogram(opts...)
+	float64Opts := slices_.TypeAssertFilterFunc[[]instrument.Option, []instrument.Float64Option](opts,
+		func(opt instrument.Option) (instrument.Float64Option, bool) {
+			o, ok := opt.(instrument.Float64Option)
+			return o, ok
+		})
+	return DefaultClientMetrics.EnableClientHandledTimeHistogram(float64Opts...)
 }
 
 // EnableClientStreamReceiveTimeHistogram turns on recording of
 // single message receive time of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable.
 func EnableClientStreamReceiveTimeHistogram(opts ...instrument.Option) error {
-	return DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(opts...)
+	float64Opts := slices_.TypeAssertFilterFunc[[]instrument.Option, []instrument.Float64Option](opts,
+		func(opt instrument.Option) (instrument.Float64Option, bool) {
+			o, ok := opt.(instrument.Float64Option)
+			return o, ok
+		})
+	return DefaultClientMetrics.EnableClientStreamReceiveTimeHistogram(float64Opts...)
 }
 
 // EnableClientStreamReceiveSizeHistogram turns on recording of
 // single message receive size of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable
 func EnableClientStreamReceiveSizeHistogram(opts ...instrument.Option) error {
-	return DefaultClientMetrics.EnableClientStreamReceiveSizeHistogram(opts...)
+	int64Opts := slices_.TypeAssertFilterFunc[[]instrument.Option, []instrument.Int64Option](opts,
+		func(opt instrument.Option) (instrument.Int64Option, bool) {
+			o, ok := opt.(instrument.Int64Option)
+			return o, ok
+		})
+	return DefaultClientMetrics.EnableClientStreamReceiveSizeHistogram(int64Opts...)
 }
 
 // EnableClientStreamSendTimeHistogram turns on recording of
 // single message send time of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable.
 func EnableClientStreamSendTimeHistogram(opts ...instrument.Option) error {
-	return DefaultClientMetrics.EnableClientStreamSendTimeHistogram(opts...)
+	float64Opts := slices_.TypeAssertFilterFunc[[]instrument.Option, []instrument.Float64Option](opts,
+		func(opt instrument.Option) (instrument.Float64Option, bool) {
+			o, ok := opt.(instrument.Float64Option)
+			return o, ok
+		})
+	return DefaultClientMetrics.EnableClientStreamSendTimeHistogram(float64Opts...)
 }
 
 // EnableClientStreamSendSizeHistogram turns on recording of
 // single message receive size of streaming RPCs.
 // This function acts on the DefaultClientMetrics variable
 func EnableClientStreamSendSizeHistogram(opts ...instrument.Option) error {
-	return DefaultClientMetrics.EnableClientStreamSendSizeHistogram(opts...)
+	int64Opts := slices_.TypeAssertFilterFunc[[]instrument.Option, []instrument.Int64Option](opts,
+		func(opt instrument.Option) (instrument.Int64Option, bool) {
+			o, ok := opt.(instrument.Int64Option)
+			return o, ok
+		})
+	return DefaultClientMetrics.EnableClientStreamSendSizeHistogram(int64Opts...)
 }

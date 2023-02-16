@@ -40,30 +40,30 @@ func Register(ctx context.Context, server *grpc.Server) {
 
 // EnableServerHandledTimeHistogram turns on recording of handling time of RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerHandledTimeHistogram(opts ...instrument.Option) error {
+func EnableServerHandledTimeHistogram(opts ...instrument.Float64Option) error {
 	return DefaultServerMetrics.EnableServerHandledTimeHistogram(opts...)
 }
 
 // EnableServerStreamReceiveTimeHistogram turns on recording of single message receive time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamReceiveTimeHistogram(opts ...instrument.Option) error {
+func EnableServerStreamReceiveTimeHistogram(opts ...instrument.Float64Option) error {
 	return DefaultServerMetrics.EnableServerStreamReceiveTimeHistogram(opts...)
 }
 
 // EnableServerStreamReceiveSizeHistogram turns on recording of single message receive size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamReceiveSizeHistogram(opts ...instrument.Option) error {
+func EnableServerStreamReceiveSizeHistogram(opts ...instrument.Int64Option) error {
 	return DefaultServerMetrics.EnableServerStreamReceiveSizeHistogram(opts...)
 }
 
 // EnableServerStreamSendTimeHistogram turns on recording of single message send time of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamSendTimeHistogram(opts ...instrument.Option) error {
+func EnableServerStreamSendTimeHistogram(opts ...instrument.Float64Option) error {
 	return DefaultServerMetrics.EnableServerStreamSendTimeHistogram(opts...)
 }
 
 // EnableServerStreamSendSizeHistogram turns on recording of single message send size of streaming RPCs.
 // Histogram metrics can be very expensive for Prometheus to retain and query.
-func EnableServerStreamSendSizeHistogram(opts ...instrument.Option) error {
+func EnableServerStreamSendSizeHistogram(opts ...instrument.Int64Option) error {
 	return DefaultServerMetrics.EnableServerStreamSendSizeHistogram(opts...)
 }
