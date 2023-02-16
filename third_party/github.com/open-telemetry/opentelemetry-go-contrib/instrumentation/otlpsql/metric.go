@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
+	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/unit"
 )
 
@@ -43,30 +44,30 @@ func Meter() metric.Meter {
 
 // The following measures are supported for use in custom views.
 var (
-	MeasureLatencyMs = metric.Must(Meter()).NewInt64Histogram("go_sql_client_latency_milliseconds",
-		metric.WithDescription("The latency of calls in milliseconds."),
-		metric.WithUnit(unit.Milliseconds))
-	MeasureOpenConnections = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_open",
-		metric.WithDescription("Count of open connections in the pool."),
-		metric.WithUnit(unit.Dimensionless))
-	MeasureIdleConnections = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_idle",
-		metric.WithDescription("Count of idle connections in the pool."),
-		metric.WithUnit(unit.Dimensionless))
-	MeasureActiveConnections = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_active",
-		metric.WithDescription("Count of active connections in the pool."),
-		metric.WithUnit(unit.Dimensionless))
-	MeasureWaitCount = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_wait_count",
-		metric.WithDescription("The total number of connections waited for."),
-		metric.WithUnit(unit.Dimensionless))
-	MeasureWaitDuration = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_wait_duration_milliseconds",
-		metric.WithDescription("The total time blocked waiting for a new connection."),
-		metric.WithUnit(unit.Milliseconds))
-	MeasureIdleClosed = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_idle_closed",
-		metric.WithDescription("The total number of connections closed due to SetMaxIdleConns."),
-		metric.WithUnit(unit.Dimensionless))
-	MeasureLifetimeClosed = metric.Must(Meter()).NewInt64Histogram("go_sql_connections_lifetime_closed",
-		metric.WithDescription("The total number of connections closed due to SetConnMaxLifetime."),
-		metric.WithUnit(unit.Dimensionless))
+	MeasureLatencyMs, _ = Meter().Int64Histogram("go_sql_client_latency_milliseconds",
+		instrument.WithDescription("The latency of calls in milliseconds."),
+		instrument.WithUnit(unit.Milliseconds))
+	MeasureOpenConnections, _ = Meter().Int64Histogram("go_sql_connections_open",
+		instrument.WithDescription("Count of open connections in the pool."),
+		instrument.WithUnit(unit.Dimensionless))
+	MeasureIdleConnections, _ = Meter().Int64Histogram("go_sql_connections_idle",
+		instrument.WithDescription("Count of idle connections in the pool."),
+		instrument.WithUnit(unit.Dimensionless))
+	MeasureActiveConnections, _ = Meter().Int64Histogram("go_sql_connections_active",
+		instrument.WithDescription("Count of active connections in the pool."),
+		instrument.WithUnit(unit.Dimensionless))
+	MeasureWaitCount, _ = Meter().Int64Histogram("go_sql_connections_wait_count",
+		instrument.WithDescription("The total number of connections waited for."),
+		instrument.WithUnit(unit.Dimensionless))
+	MeasureWaitDuration, _ = Meter().Int64Histogram("go_sql_connections_wait_duration_milliseconds",
+		instrument.WithDescription("The total time blocked waiting for a new connection."),
+		instrument.WithUnit(unit.Milliseconds))
+	MeasureIdleClosed, _ = Meter().Int64Histogram("go_sql_connections_idle_closed",
+		instrument.WithDescription("The total number of connections closed due to SetMaxIdleConns."),
+		instrument.WithUnit(unit.Dimensionless))
+	MeasureLifetimeClosed, _ = Meter().Int64Histogram("go_sql_connections_lifetime_closed",
+		instrument.WithDescription("The total number of connections closed due to SetConnMaxLifetime."),
+		instrument.WithUnit(unit.Dimensionless))
 )
 
 func recordCallStats(method, instanceName string) func(ctx context.Context, err error, attrs ...attribute.KeyValue) {
