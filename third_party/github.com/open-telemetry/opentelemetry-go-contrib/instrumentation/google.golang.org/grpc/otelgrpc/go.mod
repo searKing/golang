@@ -3,7 +3,7 @@ module github.com/searKing/golang/third_party/github.com/open-telemetry/opentele
 go 1.18
 
 require (
-	github.com/searKing/golang/go v1.2.58
+	github.com/searKing/golang/go v1.2.59
 	go.opentelemetry.io/contrib v1.14.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.39.0
 	go.opentelemetry.io/otel v1.13.0
