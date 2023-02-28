@@ -81,7 +81,7 @@ func (t *TmplOptionRender) Complete() {
 	for i, field := range t.Fields {
 		t.Fields[i].FormatFieldName = strings_.UpperCamelCaseSlice(strings_.ValueOrDefault(field.OptionTag.Name, field.FieldName))
 		if !field.OptionTag.HasOption(TagOptionFlagShort) {
-			t.Fields[i].FormatFieldName = t.TrimmedTypeName + t.Fields[i].FormatFieldName
+			t.Fields[i].FormatFieldName = strings_.ToUpperLeading(t.TrimmedTypeName) + t.Fields[i].FormatFieldName
 		}
 		if field.FieldDocComment != nil {
 			for _, c := range field.FieldDocComment.List {
