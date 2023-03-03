@@ -15,8 +15,9 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/unit"
 )
+
+const uBytes = "By"
 
 // ClientMetrics represents a collection of metrics to be registered on a
 // Prometheus metrics registry for a gRPC client.
@@ -138,7 +139,7 @@ func (m *ClientMetrics) EnableClientStreamReceiveSizeHistogram(opts ...instrumen
 	var options []instrument.Int64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of message size (bytes) of the gRPC single message receive."),
-		instrument.WithUnit(unit.Bytes))
+		instrument.WithUnit(uBytes))
 	options = append(options, opts...)
 	if !m.clientStreamReceiveSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
@@ -157,7 +158,7 @@ func (m *ClientMetrics) EnableClientStreamSendSizeHistogram(opts ...instrument.I
 	var options []instrument.Int64Option
 	options = append(options,
 		instrument.WithDescription("Histogram of message size (bytes) of the gRPC single message send."),
-		instrument.WithUnit(unit.Bytes))
+		instrument.WithUnit(uBytes))
 	options = append(options, opts...)
 	if !m.clientStreamSendSizeHistogramEnabled {
 		// https://github.com/open-telemetry/opentelemetry-go/issues/1280
