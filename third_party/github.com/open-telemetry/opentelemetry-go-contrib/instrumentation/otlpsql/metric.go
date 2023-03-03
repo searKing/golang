@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/unit"
 )
 
 // The following tags are applied to stats recorded by this package.
@@ -38,6 +37,12 @@ var (
 	InstrumentationVersion = otelcontrib.SemVersion()
 )
 
+const (
+	uDimensionless = "1"
+	uBytes         = "By"
+	uMilliseconds  = "ms"
+)
+
 func Meter() metric.Meter {
 	return global.Meter(InstrumentationName, metric.WithInstrumentationVersion(InstrumentationVersion))
 }
@@ -46,28 +51,28 @@ func Meter() metric.Meter {
 var (
 	MeasureLatencyMs, _ = Meter().Int64Histogram("go_sql_client_latency_milliseconds",
 		instrument.WithDescription("The latency of calls in milliseconds."),
-		instrument.WithUnit(unit.Milliseconds))
+		instrument.WithUnit(uMilliseconds))
 	MeasureOpenConnections, _ = Meter().Int64Histogram("go_sql_connections_open",
 		instrument.WithDescription("Count of open connections in the pool."),
-		instrument.WithUnit(unit.Dimensionless))
+		instrument.WithUnit(uDimensionless))
 	MeasureIdleConnections, _ = Meter().Int64Histogram("go_sql_connections_idle",
 		instrument.WithDescription("Count of idle connections in the pool."),
-		instrument.WithUnit(unit.Dimensionless))
+		instrument.WithUnit(uDimensionless))
 	MeasureActiveConnections, _ = Meter().Int64Histogram("go_sql_connections_active",
 		instrument.WithDescription("Count of active connections in the pool."),
-		instrument.WithUnit(unit.Dimensionless))
+		instrument.WithUnit(uDimensionless))
 	MeasureWaitCount, _ = Meter().Int64Histogram("go_sql_connections_wait_count",
 		instrument.WithDescription("The total number of connections waited for."),
-		instrument.WithUnit(unit.Dimensionless))
+		instrument.WithUnit(uDimensionless))
 	MeasureWaitDuration, _ = Meter().Int64Histogram("go_sql_connections_wait_duration_milliseconds",
 		instrument.WithDescription("The total time blocked waiting for a new connection."),
-		instrument.WithUnit(unit.Milliseconds))
+		instrument.WithUnit(uMilliseconds))
 	MeasureIdleClosed, _ = Meter().Int64Histogram("go_sql_connections_idle_closed",
 		instrument.WithDescription("The total number of connections closed due to SetMaxIdleConns."),
-		instrument.WithUnit(unit.Dimensionless))
+		instrument.WithUnit(uDimensionless))
 	MeasureLifetimeClosed, _ = Meter().Int64Histogram("go_sql_connections_lifetime_closed",
 		instrument.WithDescription("The total number of connections closed due to SetConnMaxLifetime."),
-		instrument.WithUnit(unit.Dimensionless))
+		instrument.WithUnit(uDimensionless))
 )
 
 func recordCallStats(method, instanceName string) func(ctx context.Context, err error, attrs ...attribute.KeyValue) {
