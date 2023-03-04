@@ -7,6 +7,7 @@ package rate
 import (
 	"context"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -158,6 +159,31 @@ func TestSimpleReserve(t *testing.T) {
 	runReserve(t, lim, reserve{2, true}).PutToken()
 	runReserve(t, lim, reserve{2, true}).PutToken()
 	runReserve(t, lim, reserve{2, true}).PutToken()
+}
+
+func TestSimpleReserveGC(t *testing.T) {
+	// disable GC so we can control when it happens.
+	defer debug.SetGCPercent(debug.SetGCPercent(-1))
+	var rc bool
+	{
+		lim := NewEmptyBurstLimiter(1)
+		r := lim.Reserve(context.Background())
+		r.canceled = func() {
+			rc = true
+		}
+		// After one GC, the BurstLimiter should keep the reservation alive.
+		runtime.GC()
+		if rc {
+			t.Errorf("reservation should be alive after gc")
+		}
+		runtime.KeepAlive(r)
+
+		// A second GC should drop the reservation.
+		runtime.GC()
+		if !rc {
+			t.Errorf("reservation should be dropped after gc")
+		}
+	}
 }
 
 func TestMix(t *testing.T) {
