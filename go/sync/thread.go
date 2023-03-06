@@ -6,6 +6,7 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"expvar"
 	"runtime"
 	"sync"
@@ -26,7 +27,7 @@ type threadDo struct {
 // Thread should be used for such as calling OS services or
 // non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
 type Thread struct {
-	GoRoutine bool // Use thread as goroutine, that is without runtime.LockOSThread()var osThreadLeak expvar_.Leak
+	GoRoutine bool // Use thread as goroutine, that is without runtime.LockOSThread()
 
 	// The Leak is published as a variable directly.
 	GoroutineLeak *expvar_.Leak // represents whether goroutine is leaked, take effects if not nil
@@ -41,7 +42,7 @@ type Thread struct {
 
 	mu     sync.Mutex
 	ctx    context.Context
-	cancel func()
+	cancel context.CancelCauseFunc
 }
 
 // WatchStats bind Leak var to "sync.Thread"
@@ -57,16 +58,20 @@ func (t *Thread) WatchStats() {
 	t.HandlerLeak = &handlerLeak
 }
 
+// ErrThreadClosed is returned by the Thread's Do methods after a call to `Shutdown`.
+var ErrThreadClosed = errors.New("sync: Thread closed")
+
 func (t *Thread) Shutdown() {
 	t.initOnce()
-	t.cancel()
+	t.cancel(ErrThreadClosed)
 }
 
 func (t *Thread) initOnce() {
 	t.once.Do(func() {
 		t.mu.Lock()
 		defer t.mu.Unlock()
-		t.ctx, t.cancel = context.WithCancel(context.Background())
+
+		t.ctx, t.cancel = context.WithCancelCause(context.Background())
 		t.fCh = make(chan func())
 		go t.lockOSThreadForever()
 	})
@@ -88,9 +93,9 @@ func (t *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return context.Cause(ctx)
 	case <-t.ctx.Done():
-		return t.ctx.Err()
+		return context.Cause(t.ctx)
 	default:
 		break
 	}
@@ -111,6 +116,7 @@ func (t *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 		}()
 		f()
 	}
+
 	if escapeThread {
 		neverPanic()
 		return nil
@@ -121,14 +127,14 @@ func (t *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 		wg.Wait() // wait for f has been executed or panic
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return context.Cause(ctx)
 	case <-t.ctx.Done():
-		return t.ctx.Err()
+		return context.Cause(t.ctx)
 	}
 }
 
 func (t *Thread) lockOSThreadForever() {
-	defer t.cancel()
+	defer t.cancel(ErrThreadClosed)
 	if t.GoroutineLeak != nil {
 		t.GoroutineLeak.Add(1)
 		defer t.GoroutineLeak.Done()

@@ -6,6 +6,7 @@ package sync_test
 
 import (
 	"context"
+	"errors"
 	"expvar"
 	"fmt"
 	"sync"
@@ -80,10 +81,11 @@ func TestThreadPanic(t *testing.T) {
 
 func TestThreadCancel(t *testing.T) {
 	var thread sync_.Thread
+	var errThreadClosedByUser = errors.New("sync: Thread closed by user")
 	{
 		var wg sync.WaitGroup
 		wg.Add(1)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancelCause(context.Background())
 
 		go func() {
 			defer wg.Done()
@@ -95,8 +97,13 @@ func TestThreadCancel(t *testing.T) {
 				t.Errorf("Thread.Do did not return error")
 				return
 			}
+
+			if !errors.Is(err, errThreadClosedByUser) {
+				t.Errorf("Thread.Do did not return errThreadClosedByUser")
+				return
+			}
 		}()
-		cancel()
+		cancel(errThreadClosedByUser)
 		wg.Wait()
 	}
 
@@ -125,6 +132,11 @@ func TestThreadCancel(t *testing.T) {
 		}
 		if err == nil {
 			t.Errorf("Thread.Do did not return error")
+			return
+		}
+
+		if !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Thread.Do did not return ErrThreadClosed")
 			return
 		}
 	}
