@@ -179,6 +179,16 @@ func (f *File) genDecl(node ast.Node) bool {
 						continue
 					}
 					fieldType = "interface{}"
+				case *ast.SelectorExpr:
+					if p, ok := t.X.(*ast.Ident); ok {
+						typ := strings.Join([]string{p.String(), t.Sel.String()}, ".")
+						if typ == "time.Duration" || typ == "time.Time" {
+							fieldType = typ
+						}
+					}
+					if fieldType == "" {
+						continue
+					}
 				default:
 					continue
 				}
