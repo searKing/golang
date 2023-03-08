@@ -1237,18 +1237,18 @@ var truncateExpected = `{
  "sr": "abcdefghihklmnopqrstuvwxyz",
  "blr": "YWI= [(52)truncated 50 bytes]",
  "slr": [
-  "abcdefghihklmnopqrstuvwxyz",
-  "ab [(52)truncated 50 chars]",
-  "[(4)truncated 2 elems]"
+  "0  [(28)truncated 26 chars]",
+  "1  [(54)truncated 52 chars]",
+  "[(7)truncated 5 elems]"
  ],
  "mr": {
   "a": {
    "sr": "abcdefghihklmnopqrstuvwxyz",
    "blr": "YWI= [(26)truncated 24 bytes]",
    "slr": [
-    "abcdefghihklmnopqrstuvwxyz",
-    "ab [(52)truncated 50 chars]",
-    "[(4)truncated 2 elems]"
+    "0  [(28)truncated 26 chars]",
+    "1  [(54)truncated 52 chars]",
+    "[(7)truncated 5 elems]"
    ],
    "mr": null,
    "str": null
@@ -1260,9 +1260,9 @@ var truncateExpected = `{
   "sr": "abcdefghihklmnopqrstuvwxyz",
   "blr": "YWI= [(26)truncated 24 bytes]",
   "slr": [
-   "abcdefghihklmnopqrstuvwxyz",
-   "ab [(52)truncated 50 chars]",
-   "[(4)truncated 2 elems]"
+   "0  [(28)truncated 26 chars]",
+   "1  [(54)truncated 52 chars]",
+   "[(7)truncated 5 elems]"
   ],
   "mr": null,
   "str": null
@@ -1273,14 +1273,24 @@ func TestTruncateMarshal(t *testing.T) {
 	var o = marshalTruncate{
 		Sr:  "abcdefghihklmnopqrstuvwxyz",
 		Blr: []byte("abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-		Slr: []string{"abcdefghihklmnopqrstuvwxyz", "abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-			"abcdefghihklmnopqrstuvwxyzA", "abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"},
+		Slr: []string{"0 abcdefghihklmnopqrstuvwxyz",
+			"1 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"2 abcdefghihklmnopqrstuvwxyzA",
+			"3 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"4 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"5 abcdefghihklmnopqrstuvwxyzA",
+			"6 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"},
 		Mr: map[string]*marshalTruncate{
 			"a": {
 				Sr:  "abcdefghihklmnopqrstuvwxyz",
 				Blr: []byte("abcdefghihklmnopqrstuvwxyz"),
-				Slr: []string{"abcdefghihklmnopqrstuvwxyz", "abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-					"abcdefghihklmnopqrstuvwxyzA", "abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"},
+				Slr: []string{"0 abcdefghihklmnopqrstuvwxyz",
+					"1 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+					"2 abcdefghihklmnopqrstuvwxyzA",
+					"3 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+					"4 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+					"5 abcdefghihklmnopqrstuvwxyzA",
+					"6 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"},
 				Mr:  nil,
 				Str: nil,
 			},
@@ -1291,8 +1301,13 @@ func TestTruncateMarshal(t *testing.T) {
 		Str: &marshalTruncate{
 			Sr:  "abcdefghihklmnopqrstuvwxyz",
 			Blr: []byte("abcdefghihklmnopqrstuvwxyz"),
-			Slr: []string{"abcdefghihklmnopqrstuvwxyz", "abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-				"abcdefghihklmnopqrstuvwxyzA", "abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"},
+			Slr: []string{"0 abcdefghihklmnopqrstuvwxyz",
+				"1 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+				"2 abcdefghihklmnopqrstuvwxyzA",
+				"3 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+				"4 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+				"5 abcdefghihklmnopqrstuvwxyzA",
+				"6 abcdefghihklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"},
 			Mr:  nil,
 			Str: nil,
 		},

@@ -569,7 +569,7 @@ func (me mapEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	var m string
 	if max := opts.truncateMap; max > 0 && n > max+1 {
 		m = fmt.Sprintf("[(%d)truncated %d elements]", n, n-max)
-		n -= max
+		n = max
 	}
 
 	var j int
@@ -701,7 +701,7 @@ func (ae arrayEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	var m string
 	if max := opts.truncateSlice; max > 0 && n > max+1 {
 		m = fmt.Sprintf(", \"[(%d)truncated %d elems]\"", n, n-max)
-		n -= max
+		n = max
 	}
 
 	for i := 0; i < n; i++ {
