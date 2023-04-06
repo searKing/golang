@@ -27,7 +27,7 @@ var groupTests = []struct {
 
 func TestGroup(t *testing.T) {
 	for i, test := range groupTests {
-		got := slices_.Group[[]int, map[int]int, int, int](test.s)
+		got := slices_.Group(test.s)
 		if len(test.want) != len(got) {
 			t.Errorf("#%d: Group(%v) = %v, want %v", i, test.s, got, test.want)
 			continue
@@ -57,7 +57,7 @@ var groupFuncTests = []struct {
 
 func TestGroupFunc(t *testing.T) {
 	for i, test := range groupFuncTests {
-		got := slices_.GroupFunc[[]int, map[int][]int, int, int](test.s, func(i int) int { return i })
+		got := slices_.GroupFunc(test.s, func(i int) int { return i })
 		if len(test.want) != len(got) {
 			t.Errorf("#%d: Group(%v) = %v, want %v", i, test.s, got, test.want)
 			continue

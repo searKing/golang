@@ -4,8 +4,6 @@
 
 package slices
 
-import "github.com/searKing/golang/go/exp/constraints"
-
 // Group returns a map group by all elements in s that have the same values.
 //
 // If s is nil, Group returns nil (zero map).
@@ -13,7 +11,8 @@ import "github.com/searKing/golang/go/exp/constraints"
 // If s is empty, Group returns an empty map.
 //
 // Else, Group returns a map group by all elements in s that have the same values.
-func Group[S ~[]E, M ~map[E]N, E comparable, N constraints.Number](s S) M {
+// TODO: accept [S ~[]E, M ~map[E]N, E comparable, N constraints.Number] if go support template type deduction
+func Group[S ~[]E, M map[E]N, E comparable, N int](s S) M {
 	// If s is nil, Split returns nil (zero map).
 	if s == nil {
 		return nil
@@ -33,7 +32,6 @@ func Group[S ~[]E, M ~map[E]N, E comparable, N constraints.Number](s S) M {
 		m[e] = m[e] + 1
 	}
 	return m
-
 }
 
 // GroupFunc returns a map satisfying f(c) within
@@ -45,7 +43,8 @@ func Group[S ~[]E, M ~map[E]N, E comparable, N constraints.Number](s S) M {
 //
 // Else, GroupFunc returns a map satisfying f(c)
 // within all c in the map group by all elements in s that have the same values.
-func GroupFunc[S ~[]E, M ~map[K]S, E any, K comparable](s S, f func(E) K) M {
+// TODO: accept [S ~[]E, M ~map[K]S, E any, K comparable] if go support template type deduction
+func GroupFunc[S ~[]E, M map[K]S, E any, K comparable](s S, f func(E) K) M {
 	// If s is nil, Split returns nil (zero submaps).
 	if s == nil {
 		return nil
