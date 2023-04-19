@@ -5,12 +5,11 @@
 package http
 
 import (
-	_ "unsafe" // for go:linkname
-
 	"crypto/tls"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	_ "unsafe" // for go:linkname
 )
 
 //go:linkname CloneURLValues net/http.cloneURLValues
@@ -27,11 +26,13 @@ func CloneMultipartFileHeader(fh *multipart.FileHeader) *multipart.FileHeader
 
 // CloneOrMakeHeader invokes Header.Clone but if the
 // result is nil, it'll instead make and return a non-nil Header.
+//
 //go:linkname CloneOrMakeHeader net/http.cloneOrMakeHeader
 func CloneOrMakeHeader(hdr http.Header) http.Header
 
 // CloneTLSConfig returns a shallow clone of cfg, or a new zero tls.Config if
 // cfg is nil. This is safe to call even if cfg is in active use by a TLS
 // client or server.
+//
 //go:linkname CloneTLSConfig net/http.cloneTLSConfig
 func CloneTLSConfig(cfg *tls.Config) *tls.Config
