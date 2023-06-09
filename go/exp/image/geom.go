@@ -1,22 +1,24 @@
-// Copyright 2022 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package image
 
 import (
-	"image"
 	"math"
+
+	constraints_ "github.com/searKing/golang/go/exp/constraints"
+	"golang.org/x/exp/constraints"
 )
 
 // UnionPoints returns the smallest rectangle that contains all points.
 // an empty rectangle is a empty set, Not a point
-func UnionPoints(pts ...image.Point) image.Rectangle {
+func UnionPoints[E constraints_.Number](pts ...Point[E]) Rectangle[E] {
 	if len(pts) == 0 {
-		return image.Rectangle{}
+		return Rectangle[E]{}
 	}
 
-	r := image.Rectangle{
+	r := Rectangle[E]{
 		Min: pts[0],
 		Max: pts[0],
 	}
@@ -38,8 +40,8 @@ func UnionPoints(pts ...image.Point) image.Rectangle {
 }
 
 // UnionRectangles returns the smallest rectangle that contains all rectangles, empty rectangles excluded.
-func UnionRectangles(rs ...image.Rectangle) image.Rectangle {
-	var ur image.Rectangle
+func UnionRectangles[E constraints_.Number](rs ...Rectangle[E]) Rectangle[E] {
+	var ur Rectangle[E]
 	for _, r := range rs {
 		ur = ur.Union(r)
 	}
@@ -47,7 +49,7 @@ func UnionRectangles(rs ...image.Rectangle) image.Rectangle {
 }
 
 // ScaleLineSegment segment's size to length flexible in limit
-func ScaleLineSegment(segment image.Point, length int, limit image.Point) image.Point {
+func ScaleLineSegment[E constraints_.Number](segment Point[E], length E, limit Point[E]) Point[E] {
 	var swapped = segment.X > segment.Y
 	if swapped { // swap (X,Y) -> (Y,X)
 		segment.X, segment.Y = segment.Y, segment.X
@@ -55,7 +57,7 @@ func ScaleLineSegment(segment image.Point, length int, limit image.Point) image.
 	}
 
 	dx := length - (segment.Y - segment.X)
-	segment.X -= int(math.Round(float64(dx) / 2.0))
+	segment.X -= E(math.Round(float64(dx) / 2.0))
 	if segment.X < limit.X {
 		segment.X = limit.X
 	}
@@ -75,11 +77,11 @@ func ScaleLineSegment(segment image.Point, length int, limit image.Point) image.
 }
 
 // ScaleRectangleBySize scale rect to size flexible in limit
-func ScaleRectangleBySize(rect image.Rectangle, size image.Point, limit image.Rectangle) image.Rectangle {
+func ScaleRectangleBySize[E constraints.Integer](rect Rectangle[E], size Point[E], limit Rectangle[E]) Rectangle[E] {
 	// padding in x direction
-	x := ScaleLineSegment(image.Pt(rect.Min.X, rect.Max.X), size.X, image.Pt(limit.Min.X, limit.Max.X))
+	x := ScaleLineSegment(Pt(rect.Min.X, rect.Max.X), size.X, Pt(limit.Min.X, limit.Max.X))
 	// padding in y direction
-	y := ScaleLineSegment(image.Pt(rect.Min.Y, rect.Max.Y), size.Y, image.Pt(limit.Min.Y, limit.Max.Y))
+	y := ScaleLineSegment(Pt(rect.Min.Y, rect.Max.Y), size.Y, Pt(limit.Min.Y, limit.Max.Y))
 
-	return limit.Intersect(image.Rect(x.X, y.X, x.Y, y.Y))
+	return limit.Intersect(Rect(x.X, y.X, x.Y, y.Y))
 }
