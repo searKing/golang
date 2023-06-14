@@ -56,6 +56,16 @@ func (r Rectangle[E]) Sub(p Point[E]) Rectangle[E] {
 	}
 }
 
+// Mul returns the rectangle r*k.
+func (r Rectangle[E]) Mul(k E) Rectangle[E] {
+	return Rectangle[E]{r.Min.Mul(k), r.Max.Mul(k)}
+}
+
+// Div returns the rectangle p/k.
+func (r Rectangle[E]) Div(k E) Rectangle[E] {
+	return Rectangle[E]{r.Min.Div(k), r.Max.Div(k)}
+}
+
 // Inset returns the rectangle r inset by n, which may be negative. If either
 // of r's dimensions is less than 2*n then an empty rectangle near the center
 // of r will be returned.
