@@ -5,6 +5,8 @@
 package math
 
 import (
+	"math"
+
 	constraints_ "github.com/searKing/golang/go/exp/constraints"
 	"golang.org/x/exp/constraints"
 )
@@ -66,4 +68,52 @@ func Clamp[T constraints.Ordered](v, lo, hi T) T {
 		return hi
 	}
 	return v
+}
+
+// Sum returns the sum of s.
+func Sum[T, R constraints_.Number](s ...T) R {
+	if len(s) == 0 {
+		var zero R
+		return zero
+	}
+	m := R(s[0])
+	for _, v := range s[1:] {
+		m += R(v)
+	}
+	return m
+}
+
+// Mean returns the mean of s.
+func Mean[T constraints_.Number, R constraints.Float](s ...T) R {
+	if len(s) == 0 {
+		var zero R
+		return zero
+	}
+	return Sum[T, R](s...) / R(len(s))
+}
+
+// Variance returns the variance of s.
+func Variance[T constraints_.Number, R constraints.Float](s ...T) R {
+	if len(s) == 0 || len(s) == 1 {
+		var zero R
+		return zero
+	}
+	m := Mean[T, R](s...)
+
+	var res R
+	for _, v := range s {
+		d := R(v) - m
+		res += d * d
+	}
+
+	return res / R(len(s)-1)
+}
+
+// StandardDeviation returns the standard deviation  of s.
+func StandardDeviation[T constraints_.Number, R constraints.Float](s ...T) R {
+	if len(s) == 0 || len(s) == 1 {
+		var zero R
+		return zero
+	}
+	return R(math.Sqrt(Variance[T, float64](s...)))
 }
