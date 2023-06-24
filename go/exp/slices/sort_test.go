@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	math_ "github.com/searKing/golang/go/exp/math"
 	slices_ "github.com/searKing/golang/go/exp/slices"
 	"golang.org/x/exp/slices"
 )
@@ -131,9 +132,7 @@ func TestLinearSearchInts(t *testing.T) {
 			}
 
 			{
-				cmp := func(a, b int) int {
-					return a - b
-				}
+				cmp := math_.Compare[int]
 				pos, found := slices_.LinearSearchFunc(tt.data, tt.target, cmp)
 				if pos != tt.wantPos || found != tt.wantFound {
 					t.Errorf("LinearSearchFunc got (%v, %v), want (%v, %v)", pos, found, tt.wantPos, tt.wantFound)
@@ -141,6 +140,41 @@ func TestLinearSearchInts(t *testing.T) {
 				wantPos, wantFound := slices.BinarySearchFunc(tt.data, tt.target, cmp)
 				if pos != wantPos || found != wantFound {
 					t.Errorf("LinearSearch got (%v, %v), BinarySearchFunc want (%v, %v)", pos, found, wantPos, wantFound)
+				}
+			}
+		})
+	}
+}
+
+func TestPartialSortInts(t *testing.T) {
+	tests := []struct {
+		data []int
+		k    int
+	}{
+		{nil, 3},
+		{[]int{}, 3},
+		{[]int{20, 20, 30, 30}, 3},
+		{[]int{20, 30}, 3},
+		{[]int{20, 30, 40, 50, 60, 70, 80, 90}, 3},
+		{[]int{90, 80, 70, 60, 50, 40, 30, 20}, 3},
+		{[]int{90, 30, 70, 40, 50, 60, 80, 20}, 3},
+	}
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			{
+				slices_.PartialSort(tt.data, tt.k)
+				if !slices_.IsPartialSorted(tt.data, tt.k) {
+					t.Errorf("partial sort didn't sort")
+				}
+			}
+
+			{
+				cmp := math_.Compare[int]
+				slices_.PartialSortFunc(tt.data, tt.k, func(a int, b int) int {
+					return -cmp(a, b)
+				})
+				if !slices_.IsPartialSorted(tt.data, tt.k) {
+					t.Errorf("partial sort func didn't sort")
 				}
 			}
 		})
