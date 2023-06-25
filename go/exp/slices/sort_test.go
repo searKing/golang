@@ -162,18 +162,17 @@ func TestPartialSortInts(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			{
-				slices_.PartialSort(tt.data, tt.k)
-				if !slices_.IsPartialSorted(tt.data, tt.k) {
+				data1 := slices.Clone(tt.data)
+				slices_.PartialSort(data1, tt.k)
+				if !slices_.IsPartialSorted(data1, tt.k) {
 					t.Errorf("partial sort didn't sort")
 				}
 			}
 
 			{
-				cmp := math_.Compare[int]
-				slices_.PartialSortFunc(tt.data, tt.k, func(a int, b int) int {
-					return -cmp(a, b)
-				})
-				if !slices_.IsPartialSorted(tt.data, tt.k) {
+				data2 := slices.Clone(tt.data)
+				slices_.PartialSortFunc(data2, tt.k, math_.Compare[int])
+				if !slices_.IsPartialSorted(data2, tt.k) {
 					t.Errorf("partial sort func didn't sort")
 				}
 			}

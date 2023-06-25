@@ -68,6 +68,10 @@ func search(n int, f func(int) bool) int {
 // contains the sorted m smallest elements in the range [first, data.Len).
 // The order of equal elements is not guaranteed to be preserved.
 // The order of the remaining elements in the range [m, data.Len) is unspecified.
+//
+// The sort is not guaranteed to be stable: equal elements
+// may be reversed from their original order.
+//
 // PartialSort modifies the contents of the slice s; it does not create a new slice.
 func PartialSort[S ~[]E, E constraints.Ordered](s S, k int) {
 	if s == nil {
@@ -82,15 +86,23 @@ func PartialSort[S ~[]E, E constraints.Ordered](s S, k int) {
 		return
 	}
 
-	var ss = make(S, k)
-	copy(ss, s[:k])
-	h := MaxHeap[E](ss)
+	h := MaxHeap[E](s[:k])
 	heap.Init(&h)
-	for i, v := range s[k:] {
+
+	{
+		heap.Push(&h, s[k])
+		s[k] = heap.Pop(&h).(E)
+	}
+
+	sk := s[k] // backup, s[k] will be used as cache for max heap push and pop
+
+	for i, v := range s[k+1:] {
 		heap.Push(&h, v)
 		vv := heap.Pop(&h).(E)
-		s[i+k] = vv
+		s[i+k+1] = vv
 	}
+
+	s[k] = sk
 
 	for h.Len() > 0 {
 		s[h.Len()-1] = heap.Pop(&h).(E)
@@ -98,6 +110,11 @@ func PartialSort[S ~[]E, E constraints.Ordered](s S, k int) {
 	return
 }
 
+// PartialSortFunc works like PartialSort, but uses a custom comparison
+// function. The slice must be sorted in increasing order, where "increasing" is
+// defined by cmp. cmp(a, b) is expected to return an integer comparing the two
+// parameters: 0 if a == b, a negative number if a < b and a positive number if
+// a > b.
 func PartialSortFunc[S ~[]E, E any](s S, k int, cmp func(E, E) int) {
 	if s == nil {
 		return
@@ -111,25 +128,47 @@ func PartialSortFunc[S ~[]E, E any](s S, k int, cmp func(E, E) int) {
 		k = len(s)
 	}
 
-	var ss = make(S, k)
-	copy(ss, s[:k])
-
 	if k <= 0 {
 		return
 	}
+	if k == len(s) {
+		// MinHeap
+		sort.Slice(s, func(i, j int) bool {
+			if cmp == nil {
+				return false
+			}
+			return cmp(s[i], s[j]) < 0
+		})
+		return
+	}
+
 	// MaxHeap
-	h := NewHeapFunc(ss, func(a E, b E) int {
+	h := NewHeapFunc(s[:k], func(a E, b E) int {
 		if cmp == nil {
 			return 0
 		}
 		return -cmp(a, b)
 	})
 	heap.Init(h)
-	for i, v := range s[k:] {
+
+	if k == len(s) {
+		return
+	}
+
+	{
+		heap.Push(h, s[k])
+		s[k] = heap.Pop(h).(E)
+	}
+
+	sk := s[k] // backup, s[k] will be used as cache for max heap push and pop
+
+	for i, v := range s[k+1:] {
 		heap.Push(h, v)
 		vv := heap.Pop(h).(E)
-		s[i+k] = vv
+		s[i+k+1] = vv
 	}
+
+	s[k] = sk
 
 	for h.Len() > 0 {
 		s[h.Len()-1] = heap.Pop(h).(E)

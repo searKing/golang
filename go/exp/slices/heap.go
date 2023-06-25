@@ -54,27 +54,33 @@ func (h *MaxHeap[E]) Pop() any {
 type Heap[S ~[]E, E any] struct {
 	S S
 
-	Size       int
 	Comparator func(v1 E, v2 E) int
 }
 
-func NewHeap[S ~[]E, E constraints.Ordered](s S) *Heap[S, E] {
+func NewHeapMin[S ~[]E, E constraints.Ordered](s S) *Heap[S, E] {
 	return &Heap[S, E]{
 		S:          s,
-		Size:       0,
 		Comparator: math_.Compare[E],
+	}
+}
+
+func NewHeapMax[S ~[]E, E constraints.Ordered](s S) *Heap[S, E] {
+	return &Heap[S, E]{
+		S: s,
+		Comparator: func(v1 E, v2 E) int {
+			return math_.Compare[E](v2, v1)
+		},
 	}
 }
 
 func NewHeapFunc[S ~[]E, E any](s S, cmp func(a E, b E) int) *Heap[S, E] {
 	return &Heap[S, E]{
 		S:          s,
-		Size:       0,
 		Comparator: cmp,
 	}
 }
 
-func (h Heap[S, E]) Len() int { return h.Size }
+func (h Heap[S, E]) Len() int { return len(h.S) }
 
 func (h Heap[S, E]) Less(i, j int) bool {
 	if h.Comparator == nil { // nop, don't sort
@@ -88,12 +94,13 @@ func (h Heap[S, E]) Swap(i, j int) { h.S[i], h.S[j] = h.S[j], h.S[i] }
 func (h *Heap[S, E]) Push(x any) { // add x as element Len()
 	// Push and Pop use pointer receivers because they modify the slice's length,
 	// not just its contents.
-	h.S[h.Size] = x.(E)
-	h.Size++
+	h.S = append(h.S, x.(E))
 }
 
 func (h *Heap[S, E]) Pop() any { // remove and return element Len() - 1.
-	n := h.Size
-	h.Size--
-	return h.S[n-1]
+	old := h.S
+	n := len(old)
+	x := old[n-1]
+	h.S = old[0 : n-1]
+	return x
 }
