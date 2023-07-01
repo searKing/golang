@@ -22,8 +22,8 @@ type Number[T comparable] struct {
 	name          string
 }
 
-func NewNumber[T comparable](options ...NumberOption[T]) *Number[T] {
-	return (&Number[T]{}).ApplyOptions()
+func NewNumber[T comparable](opts ...NumberOption[T]) *Number[T] {
+	return (&Number[T]{}).ApplyOptions(opts...)
 }
 
 type Value string
@@ -33,7 +33,7 @@ func main() {
 	num = &Number[int]{}
 	ck(num, "")
 	num = NewNumber(WithNumberName[int]("Name"))
-	ck(num, "")
+	ck(num, "Name")
 }
 
 func ck[T comparable](num *Number[T], str string) {

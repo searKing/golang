@@ -24,8 +24,8 @@ type Pill[T comparable] struct {
 	sliceType     []int64
 }
 
-func NewPill[T comparable](options ...PillOption[T]) *Pill[T] {
-	return (&Pill[T]{}).ApplyOptions()
+func NewPill[T comparable](opts ...PillOption[T]) *Pill[T] {
+	return (&Pill[T]{}).ApplyOptions(opts...)
 }
 
 type Value string
@@ -35,7 +35,7 @@ func main() {
 	num = &Pill[int]{}
 	ck(num, "")
 	num = NewPill(WithPillName[int]("Name"))
-	ck(num, "")
+	ck(num, "Name")
 }
 
 func ck[T comparable](num *Pill[T], str string) {
