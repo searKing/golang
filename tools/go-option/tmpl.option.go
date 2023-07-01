@@ -18,12 +18,14 @@ type TmplOptionRender struct {
 	ImportPaths []string
 	ValDecls    []string
 
-	TargetTypeName               string        // type name of target type
-	TargetTypeImport             string        // import path of target type
-	TargetTypeGenericDeclaration string        // the Generic type of the struct type
-	TargetTypeGenericParams      string        // the Generic params of the struct type
-	TrimmedTypeName              string        // trimmed type name of target type
-	Fields                       []StructField // fields if target type is struct
+	TargetTypeName               string // type name of target type
+	TargetTypeImport             string // import path of target type
+	TargetTypeGenericDeclaration string // the Generic type of the struct type
+	TargetTypeGenericParams      string // the Generic params of the struct type
+	TrimmedTypeName              string // trimmed type name of target type
+
+	FormatTypeName string        // The format FieldName of the struct type.
+	Fields         []StructField // fields if target type is struct
 
 	OptionInterfaceName string // option interface name of target type
 	OptionStructName    string // option struct name of target type
@@ -77,6 +79,8 @@ func (t *TmplOptionRender) Complete() {
 	if defaultValDecl != "" {
 		t.ValDecls = append(t.ValDecls, defaultValDecl)
 	}
+
+	t.FormatTypeName = strings_.ToUpperLeading(t.TargetTypeName)
 
 	for i, field := range t.Fields {
 		t.Fields[i].FormatFieldName = strings_.UpperCamelCaseSlice(strings_.ValueOrDefault(field.OptionTag.Name, field.FieldName))
@@ -148,6 +152,13 @@ func ApplyOptions{{.TargetTypeGenericDeclaration}}(o *{{.TargetTypeName}}{{.Targ
 	return o
 }
 {{- end}}
+
+// With{{.FormatTypeName}} sets {{.TargetTypeName}}.
+func With{{.FormatTypeName}}{{.TargetTypeGenericDeclaration}}(v {{.TargetTypeName}}{{.TargetTypeGenericParams}}) {{.OptionInterfaceName}}{{.TargetTypeGenericParams}} {
+	return {{.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {
+		*o = v
+	})
+}
 
 {{- if not .Fields }}
 // sample code for option, default for nothing to change
