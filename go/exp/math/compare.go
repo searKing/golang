@@ -24,6 +24,13 @@ func Compare[E constraints.Ordered](a E, b E) int {
 	return 1
 }
 
+// Reverse returns the reverse comparison for cmp, as cmp(b, a).
+func Reverse[E constraints.Ordered](cmp func(a E, b E) int) func(a E, b E) int {
+	return func(a E, b E) int {
+		return cmp(b, a)
+	}
+}
+
 // IsNaN is a copy of math.IsNaN to avoid a dependency on the math package.
 func IsNaN[E constraints.Ordered](f E) bool {
 	return f != f
