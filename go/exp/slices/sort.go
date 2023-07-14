@@ -64,6 +64,68 @@ func search(n int, f func(int) bool) int {
 	return pos
 }
 
+// SearchMin uses liner search to find and return the smallest index i
+// in [0, n) at which f(i) is min(f...), assuming that on the range [0, n),
+// Search returns the first true index. If there is no such index, Search returns n.
+// (Note that the "not found" return value is not -1 as in, for instance,
+// strings.Index.)
+// SearchMin calls f(i) only for i in the range [0, n).
+func SearchMin[S ~[]E, E constraints.Ordered](s S) int {
+	if len(s) == 0 {
+		return 0
+	}
+	m := s[0]
+	mi := 0
+	for i, v := range s[1:] {
+		if v < m {
+			m = v
+			mi = i + 1
+		}
+	}
+	return mi
+}
+
+// SearchMinFunc works like SearchMin, but uses a custom comparison
+// function. The slice is sorted in any order, where "increasing" is
+// defined by cmp. cmp(a, b) is expected to return an integer comparing the two
+// parameters: 0 if a == b, a negative number if a < b and a positive number if
+// a > b.
+func SearchMinFunc[S ~[]E, E any](s S, cmp func(E, E) int) int {
+	if len(s) == 0 {
+		return 0
+	}
+	m := s[0]
+	mi := 0
+	for i, v := range s[1:] {
+		if cmp != nil && cmp(v, m) < 0 {
+			m = v
+			mi = i + 1
+		}
+	}
+	return mi
+}
+
+// SearchMax uses liner search to find and return the biggest index i
+// in [0, n) at which f(i) is min(f...), assuming that on the range [0, n),
+// Search returns the first true index. If there is no such index, Search returns n.
+// (Note that the "not found" return value is not -1 as in, for instance,
+// strings.Index.)
+// Search calls f(i) only for i in the range [0, n).
+func SearchMax[S ~[]E, E constraints.Ordered](s S) int {
+	if len(s) == 0 {
+		return 0
+	}
+	m := s[0]
+	mi := 0
+	for i, v := range s[1:] {
+		if m < v {
+			m = v
+			mi = i + 1
+		}
+	}
+	return mi
+}
+
 // PartialSort rearranges elements such that the range [0, m)
 // contains the sorted m smallest elements in the range [first, data.Len).
 // The order of equal elements is not guaranteed to be preserved.

@@ -179,3 +179,67 @@ func TestPartialSortInts(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchMin(t *testing.T) {
+	tests := []struct {
+		data []int
+		want int
+	}{
+		{nil, 0},
+		{[]int{}, 0},
+		{[]int{20, 20, 30, 30}, 0},
+		{[]int{20, 30}, 0},
+		{[]int{20, 30, 40, 50, 60, 70, 80, 90}, 0},
+		{[]int{90, 80, 70, 60, 50, 40, 30, 20}, 7},
+		{[]int{90, 30, 70, 40, 50, 60, 80, 20}, 7},
+		{[]int{90, 30, 70, 40, 50, 60, 80, 20, 100, 30}, 7},
+	}
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			{
+				got := slices_.SearchMin(tt.data)
+				if got != tt.want {
+					t.Errorf("SearchMin(%v) got (%v), want ( %v)", tt.data, got, tt.want)
+				}
+			}
+			{
+				got := slices_.SearchMinFunc(tt.data, math_.Compare[int])
+				if got != tt.want {
+					t.Errorf("SearchMinFunc(%v, math_.Compare[int]) got (%v), want ( %v)", tt.data, got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func TestSearchMax(t *testing.T) {
+	tests := []struct {
+		data []int
+		want int
+	}{
+		{nil, 0},
+		{[]int{}, 0},
+		{[]int{20, 20, 30, 30}, 2},
+		{[]int{20, 30}, 1},
+		{[]int{20, 30, 40, 50, 60, 70, 80, 90}, 7},
+		{[]int{90, 80, 70, 60, 50, 40, 30, 20}, 0},
+		{[]int{90, 30, 70, 40, 50, 60, 80, 20}, 0},
+		{[]int{90, 30, 70, 40, 50, 60, 80, 20, 100, 30}, 8},
+	}
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			{
+				got := slices_.SearchMax(tt.data)
+				if got != tt.want {
+					t.Errorf("SearchMax(%v) got (%v), want ( %v)", tt.data, got, tt.want)
+				}
+			}
+			{
+				got := slices_.SearchMinFunc(tt.data, math_.Reverse(math_.Compare[int]))
+				if got != tt.want {
+					t.Errorf("SearchMinFunc(%v, math_.Reverse(math_.Compare[int])) got (%v), want ( %v)", tt.data, got, tt.want)
+				}
+			}
+		})
+	}
+}
