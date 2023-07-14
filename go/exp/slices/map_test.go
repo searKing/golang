@@ -32,7 +32,7 @@ func TestMap(t *testing.T) {
 				got := slices_.Map(tt.data)
 
 				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
+					t.Errorf("slices_.Map(%v) = %v, want %v", tt.data, got, tt.want)
 				}
 			}
 		})
@@ -60,7 +60,35 @@ func TestMapFunc(t *testing.T) {
 				})
 
 				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
+					t.Errorf("slices_.MapFunc(%v, func(e int) string {return strconv.Itoa(e)}) = %v, want %v", tt.data, got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func TestMapIndexFunc(t *testing.T) {
+	tests := []struct {
+		data []int
+		want []string
+	}{
+		{nil, nil},
+		{[]int{}, []string{}},
+		{[]int{0}, []string{"0:0"}},
+		{[]int{1, 0}, []string{"0:1", "1:0"}},
+		{[]int{1, 2}, []string{"0:1", "1:2"}},
+		{[]int{0, 1, 2}, []string{"0:0", "1:1", "2:2"}},
+		{[]int{0, 1, 0, 2}, []string{"0:0", "1:1", "2:0", "3:2"}},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
+			{
+				got := slices_.MapIndexFunc(tt.data, func(i int, e int) string {
+					return fmt.Sprintf("%d:%d", i, e)
+				})
+
+				if slices.Compare(got, tt.want) != 0 {
+					t.Errorf("slices_.MapIndexFunc(%v, func(i int, e int) string {return fmt.Sprintf(\"%%d:%%d\", i, e)}) = %v, want %v", tt.data, got, tt.want)
 				}
 			}
 		})
