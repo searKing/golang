@@ -1,6 +1,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/searKing/golang.svg)](https://pkg.go.dev/github.com/searKing/golang)
 [![Report card](https://goreportcard.com/badge/github.com/searKing/golang)](https://goreportcard.com/report/github.com/searKing/golang)
-[![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png)](https://jb.gg/OpenSourceSupport)
+[![JetBrains Logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg =20x20)](https://jb.gg/OpenSourceSupport)
 # golang
 
 Useful libs or tools for Golang
