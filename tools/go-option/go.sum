@@ -1,5 +1,5 @@
-github.com/searKing/golang/go v1.2.75 h1:ZOwSd10uZ/b0lhZDBw++QO6gWrE2BYW3Gml9MUm9WAw=
-github.com/searKing/golang/go v1.2.75/go.mod h1:2Ao6QPnuHPrYOGKl3zXwzZQhOVZJjYyIcySaG9rb/oU=
+github.com/searKing/golang/go v1.2.77 h1:w0pRO20SxsUQIJzTEHFt+fAt0MfBH4RwGRyMrbY0HoA=
+github.com/searKing/golang/go v1.2.77/go.mod h1:2Ao6QPnuHPrYOGKl3zXwzZQhOVZJjYyIcySaG9rb/oU=
 github.com/searKing/golang/tools v1.2.29 h1:gWX4aCA1+N7CfLpNd6tmBjYtecTksZFXziqbQ+AJKLo=
 github.com/searKing/golang/tools v1.2.29/go.mod h1:QtwFM73H1qMKlRl0p8NRWXrNaCaffoYkNHk5YMoRyOY=
 golang.org/x/mod v0.11.0 h1:bUO06HqtnRcc/7l71XBe4WcqTZ+3AH1J59zWDDwLKgU=

@@ -5,6 +5,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/searKing/golang/go/net/http/httphost"
@@ -81,6 +82,13 @@ func RoundTripperWithTarget(rt http.RoundTripper) http.RoundTripper {
 					Addr:     host.HostTargetAddrResolved,
 					Duration: cost.Elapse(),
 				})
+				if err != nil && host.HostTargetAddrResolved.Addr != "" {
+					var s string
+					if host.HostTarget != "" {
+						s = fmt.Sprintf(" in target(%s)", host.HostTarget)
+					}
+					err = fmt.Errorf("->http_host(%s)%s: %w", host.HostTargetAddrResolved.Addr, s, err)
+				}
 			}
 
 			if proxy := httpproxy.ContextProxy(req.Context()); proxy != nil {
@@ -89,6 +97,13 @@ func RoundTripperWithTarget(rt http.RoundTripper) http.RoundTripper {
 					Addr:     proxy.ProxyAddrResolved,
 					Duration: cost.Elapse(),
 				})
+				if err != nil && proxy.ProxyAddrResolved.Addr != "" {
+					var s string
+					if proxy.ProxyTarget != "" {
+						s = fmt.Sprintf(" in target(%s)", proxy.ProxyTarget)
+					}
+					err = fmt.Errorf("->http_proxy(%s)%s: %w", proxy.ProxyAddrResolved.Addr, s, err)
+				}
 			}
 		}()
 		return rt.RoundTrip(req)
