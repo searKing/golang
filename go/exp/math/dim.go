@@ -57,9 +57,7 @@ func Min[T constraints.Ordered](s ...T) T {
 // If v compares equivalent to either bound, returns a reference to v, not the bound.
 func Clamp[T constraints.Ordered](v, lo, hi T) T {
 	if lo > hi {
-		t := lo
-		lo = hi
-		hi = t
+		lo, hi = hi, lo
 	}
 	if v < lo {
 		return lo
