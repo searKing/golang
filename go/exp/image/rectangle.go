@@ -418,15 +418,34 @@ func (r Rectangle[E]) ScaleByFactor(factor Point[E]) Rectangle[E] {
 	}
 }
 
-// FlexIn flex rect into box
-func (r Rectangle[E]) FlexIn(box Rectangle[E]) Rectangle[E] {
-	if box.Empty() {
-		var zero Rectangle[E]
-		return zero
+// FlexIn flex rect into box, shrink but not grow to fit the space available in its flex container
+func (r Rectangle[E]) FlexIn(container Rectangle[E]) Rectangle[E] {
+	r2 := r
+	r2.Min = container.Min
+	r2.Max = container.Min.Add(r.Size())
+	if r.Min.X > r2.Min.X {
+		r2.Max.X += r.Min.X - r2.Min.X
+		r2.Min.X = r.Min.X
 	}
-
-	d := box.Min.Sub(r.Min)
-	return r.Add(d).Intersect(r)
+	if r.Min.Y > r2.Min.Y {
+		r2.Max.Y += r.Min.Y - r2.Min.Y
+		r2.Min.Y = r.Min.Y
+	}
+	if r2.Max.X > container.Max.X {
+		r2.Min.X -= r2.Max.X - container.Max.X
+		r2.Max.X = container.Max.X
+	}
+	if r2.Max.Y > container.Max.Y {
+		r2.Min.Y -= r2.Max.Y - container.Max.Y
+		r2.Max.Y = container.Max.Y
+	}
+	if r2.Min.X < container.Min.X {
+		r2.Min.X = container.Min.X
+	}
+	if r2.Min.Y < container.Min.Y {
+		r2.Min.Y = container.Min.Y
+	}
+	return r2
 }
 
 // Rect is shorthand for Rectangle[E]{Pt(x0, y0), Pt(x1, y1)}. The returned

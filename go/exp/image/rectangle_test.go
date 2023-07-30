@@ -6,6 +6,7 @@ package image_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	image_ "github.com/searKing/golang/go/exp/image"
@@ -282,5 +283,31 @@ func TestRectangle_BorderRectangle(t *testing.T) {
 				t.Errorf("inset=%d: inner intersection: got %v, want empty", inset, got)
 			}
 		}
+	}
+}
+
+func TestRectangle_FlexIn(t *testing.T) {
+	tests := []struct {
+		r    image_.Rectangle[int]
+		box  image_.Rectangle[int]
+		want image_.Rectangle[int]
+	}{
+		{image_.Rectangle[int]{}, image_.Rectangle[int]{}, image_.Rectangle[int]{}},
+		{image_.Rect(0, 0, 10, 10), image_.Rectangle[int]{}, image_.Rectangle[int]{}},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(1, 2, 3, 4), image_.Rect(1, 2, 3, 4)},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(-1, -2, 13, 14), image_.Rect(0, 0, 10, 10)},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(1, -2, 3, 14), image_.Rect(1, 0, 3, 10)},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(1, 2, 13, 14), image_.Rect(1, 2, 11, 12)},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(1, 2, 13, 10), image_.Rect(1, 2, 11, 10)},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(20, 20, 20, 20), image_.Rect(20, 20, 20, 20)},
+		{image_.Rect(0, 0, 10, 10), image_.Rect(1, 20, 3, 20), image_.Rect(1, 20, 3, 20)},
+	}
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			got := tt.r.FlexIn(tt.box)
+			if got != tt.want {
+				t.Errorf("(%v).FlexIn(%v) got (%v), want ( %v)", tt.r, tt.box, got, tt.want)
+			}
+		})
 	}
 }
