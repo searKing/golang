@@ -116,3 +116,171 @@ func TestRectangle(t *testing.T) {
 		}
 	}
 }
+
+func TestRectangle_Border(t *testing.T) {
+	r := image_.Rect(100, 200, 400, 300)
+
+	insets := []int{
+		-100,
+		-1,
+		+0,
+		+1,
+		+20,
+		+49,
+		+50,
+		+51,
+		+149,
+		+150,
+		+151,
+	}
+
+	for _, inset := range insets {
+		border := r.Border(inset)
+
+		outer, inner := r, r.Inset(inset)
+		if inset < 0 {
+			outer, inner = inner, outer
+		}
+
+		got := 0
+		for _, b := range border {
+			got += b.Area()
+		}
+		want := outer.Area() - inner.Area()
+		if got != want {
+			t.Errorf("inset=%d: total area: got %d, want %d", inset, got, want)
+		}
+
+		for i, bi := range border {
+			for j, bj := range border {
+				if i <= j {
+					continue
+				}
+				if !bi.Intersect(bj).Empty() {
+					t.Errorf("inset=%d: %v and %v overlap", inset, bi, bj)
+				}
+			}
+		}
+
+		for _, b := range border {
+			if got := outer.Intersect(b); got != b {
+				t.Errorf("inset=%d: outer intersection: got %v, want %v", inset, got, b)
+			}
+			if got := inner.Intersect(b); !got.Empty() {
+				t.Errorf("inset=%d: inner intersection: got %v, want empty", inset, got)
+			}
+		}
+	}
+}
+
+func TestRectangle_BorderPoint(t *testing.T) {
+	r := image_.Rect(100, 200, 400, 300)
+
+	insets := []image_.Point[int]{
+		image_.Pt(-100, -100),
+		image_.Pt(-1, -1),
+		image_.Pt(+0, +0),
+		image_.Pt(+1, +1),
+		image_.Pt(+20, +20),
+		image_.Pt(+49, +49),
+		image_.Pt(+50, +50),
+		image_.Pt(+51, +51),
+		image_.Pt(+149, +149),
+		image_.Pt(+150, +150),
+		image_.Pt(+151, +151),
+	}
+
+	for _, inset := range insets {
+		border := r.BorderPoint(inset)
+
+		outer, inner := r, r.InsetPoint(inset)
+		if outer.Area() < inner.Area() {
+			outer, inner = inner, outer
+		}
+
+		got := 0
+		for _, b := range border {
+			got += b.Area()
+		}
+		want := outer.Area() - inner.Area()
+		if got != want {
+			t.Errorf("inset=%d: total area: got %d, want %d", inset, got, want)
+		}
+
+		for i, bi := range border {
+			for j, bj := range border {
+				if i <= j {
+					continue
+				}
+				if !bi.Intersect(bj).Empty() {
+					t.Errorf("inset=%d: %v and %v overlap", inset, bi, bj)
+				}
+			}
+		}
+
+		for _, b := range border {
+			if got := outer.Intersect(b); got != b {
+				t.Errorf("inset=%d: outer intersection: got %v, want %v", inset, got, b)
+			}
+			if got := inner.Intersect(b); !got.Empty() {
+				t.Errorf("inset=%d: inner intersection: got %v, want empty", inset, got)
+			}
+		}
+	}
+}
+
+func TestRectangle_BorderRectangle(t *testing.T) {
+	r := image_.Rect(100, 200, 400, 300)
+
+	insets := []image_.Rectangle[int]{
+		image_.Rect(-100, -100, -100, -100),
+		image_.Rect(-1, -1, -1, -1),
+		image_.Rect(+0, +0, +0, +0),
+		image_.Rect(+1, +1, +1, +1),
+		image_.Rect(+20, +20, +20, +20),
+		image_.Rect(+49, +49, +49, +49),
+		image_.Rect(+50, +50, +50, +50),
+		image_.Rect(+51, +51, +51, +51),
+		image_.Rect(+149, +149, +149, +149),
+		image_.Rect(+150, +150, +150, +150),
+		image_.Rect(+151, +151, +151, +151),
+	}
+
+	for _, inset := range insets {
+		border := r.BorderRectangle(inset)
+
+		outer, inner := r, r.InsetRectangle(inset)
+		if outer.Area() < inner.Area() {
+			outer, inner = inner, outer
+		}
+
+		got := 0
+		for _, b := range border {
+			got += b.Area()
+		}
+		want := outer.Area() - inner.Area()
+		if got != want {
+			t.Errorf("inset=%d: total area: got %d, want %d", inset, got, want)
+		}
+
+		for i, bi := range border {
+			for j, bj := range border {
+				if i <= j {
+					continue
+				}
+				if !bi.Intersect(bj).Empty() {
+					t.Errorf("inset=%d: %v and %v overlap", inset, bi, bj)
+				}
+			}
+		}
+
+		for _, b := range border {
+			if got := outer.Intersect(b); got != b {
+				t.Errorf("inset=%d: outer intersection: got %v, want %v", inset, got, b)
+			}
+			if got := inner.Intersect(b); !got.Empty() {
+				t.Errorf("inset=%d: inner intersection: got %v, want empty", inset, got)
+			}
+		}
+	}
+}

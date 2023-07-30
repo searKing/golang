@@ -40,6 +40,15 @@ func (r Rectangle[E]) Size() Point[E] {
 	}
 }
 
+// Area returns r's area, as width * height.
+func (r Rectangle[E]) Area() E {
+	dx, dy := r.Dx(), r.Dy()
+	if dx <= 0 || dy <= 0 {
+		return 0
+	}
+	return dx * dy
+}
+
 // Add returns the rectangle r translated by p.
 func (r Rectangle[E]) Add(p Point[E]) Rectangle[E] {
 	return Rectangle[E]{
@@ -70,19 +79,33 @@ func (r Rectangle[E]) Div(k E) Rectangle[E] {
 // of r's dimensions is less than 2*n then an empty rectangle near the center
 // of r will be returned.
 func (r Rectangle[E]) Inset(n E) Rectangle[E] {
-	if r.Dx() < 2*n {
+	return r.InsetPoint(Point[E]{X: n, Y: n})
+}
+
+// InsetPoint returns the rectangle r inset by n, which may be negative. If either
+// of r's dimensions is less than n.X+n.Y then an empty rectangle near the center
+// of r will be returned.
+func (r Rectangle[E]) InsetPoint(n Point[E]) Rectangle[E] {
+	return r.InsetRectangle(Rectangle[E]{Min: n, Max: n})
+}
+
+// InsetRectangle returns the rectangle r inset by n, which may be negative. If either
+// of r's dimensions is less than (n.Min.X+n.Max.X, n.Min.Y+n.Max.Y), then an empty rectangle near the center
+// of r will be returned.
+func (r Rectangle[E]) InsetRectangle(n Rectangle[E]) Rectangle[E] {
+	if r.Dx() < n.Min.X+n.Max.X {
 		r.Min.X = (r.Min.X + r.Max.X) / 2
 		r.Max.X = r.Min.X
 	} else {
-		r.Min.X += n
-		r.Max.X -= n
+		r.Min.X += n.Min.X
+		r.Max.X -= n.Max.X
 	}
-	if r.Dy() < 2*n {
+	if r.Dy() < n.Min.Y+n.Max.Y {
 		r.Min.Y = (r.Min.Y + r.Max.Y) / 2
 		r.Max.Y = r.Min.Y
 	} else {
-		r.Min.Y += n
-		r.Max.Y -= n
+		r.Min.Y += n.Min.Y
+		r.Max.Y -= n.Max.Y
 	}
 	return r
 }
@@ -111,6 +134,145 @@ func (r Rectangle[E]) Intersect(s Rectangle[E]) Rectangle[E] {
 		return zero
 	}
 	return r
+}
+
+// Border returns four rectangles that together contain those points between r
+// and r.Inset(inset). Visually:
+//
+//	00000000
+//	00000000
+//	11....22
+//	11....22
+//	11....22
+//	33333333
+//	33333333
+//
+// The inset may be negative, in which case the points will be outside r.
+//
+// Some of the returned rectangles may be empty. None of the returned
+// rectangles will overlap.
+func (r Rectangle[E]) Border(inset E) [4]Rectangle[E] {
+	return r.BorderPoint(Point[E]{
+		X: inset,
+		Y: inset,
+	})
+}
+
+// BorderPoint returns four rectangles that together contain those points between r
+// and r.Inset(inset). Visually:
+//
+//	00000000
+//	00000000
+//	11....22
+//	11....22
+//	11....22
+//	33333333
+//	33333333
+//
+// The inset may be negative, in which case the points will be outside r.
+//
+// Some of the returned rectangles may be empty. None of the returned
+// rectangles will overlap.
+func (r Rectangle[E]) BorderPoint(inset Point[E]) [4]Rectangle[E] {
+	return r.BorderRectangle(Rectangle[E]{
+		Min: inset,
+		Max: inset,
+	})
+}
+
+// BorderRectangle returns four rectangles that together contain those points between r
+// and r.Inset(inset). Visually:
+//
+//	00000000
+//	00000000
+//	11....22
+//	11....22
+//	11....22
+//	33333333
+//	33333333
+//
+// The inset may be negative, in which case the points will be outside r.
+//
+// Some of the returned rectangles may be empty. None of the returned
+// rectangles will overlap.
+func (r Rectangle[E]) BorderRectangle(inset Rectangle[E]) [4]Rectangle[E] {
+	if inset.Min.X == 0 && inset.Min.Y == 0 && inset.Max.X == 0 && inset.Max.Y == 0 {
+		return [4]Rectangle[E]{}
+	}
+	if r.Dx() <= inset.Min.X+inset.Max.X || r.Dy() <= inset.Min.Y+inset.Max.Y {
+		return [4]Rectangle[E]{r}
+	}
+
+	x := [4]E{
+		r.Min.X,
+		r.Min.X + inset.Min.X,
+		r.Max.X - inset.Max.X,
+		r.Max.X,
+	}
+	y := [4]E{
+		r.Min.Y,
+		r.Min.Y + inset.Min.Y,
+		r.Max.Y - inset.Max.Y,
+		r.Max.Y,
+	}
+	if inset.Min.X < 0 {
+		x[0], x[1] = x[1], x[0]
+	}
+	if inset.Max.X < 0 {
+		x[2], x[3] = x[3], x[2]
+	}
+	if inset.Min.Y < 0 {
+		y[0], y[1] = y[1], y[0]
+	}
+	if inset.Max.Y < 0 {
+		y[2], y[3] = y[3], y[2]
+	}
+
+	// The top and bottom sections are responsible for filling the corners.
+	// The top and bottom sections go from x[0] to x[3], across the y's.
+	// The left and right sections go from y[1] to y[2], across the x's.
+
+	return [4]Rectangle[E]{{
+		// Top section.
+		Min: Point[E]{
+			X: x[0],
+			Y: y[0],
+		},
+		Max: Point[E]{
+			X: x[3],
+			Y: y[1],
+		},
+	}, {
+		// Left section.
+		Min: Point[E]{
+			X: x[0],
+			Y: y[1],
+		},
+		Max: Point[E]{
+			X: x[1],
+			Y: y[2],
+		},
+	}, {
+		// Right section.
+		Min: Point[E]{
+			X: x[2],
+			Y: y[1],
+		},
+		Max: Point[E]{
+			X: x[3],
+			Y: y[2],
+		},
+	}, {
+		// Bottom section.
+		Min: Point[E]{
+			X: x[0],
+			Y: y[2],
+		},
+		Max: Point[E]{
+			X: x[3],
+			Y: y[3],
+		},
+	}}
 }
 
 // Union returns the smallest rectangle that contains both r and s.
@@ -235,7 +397,7 @@ func (r Rectangle[E]) UnionPoints(pts ...Point[E]) Rectangle[E] {
 	return r
 }
 
-// ScaleByFactor scale rect to factor*size
+// ScaleByFactor scale rect to factor * size
 func (r Rectangle[E]) ScaleByFactor(factor Point[E]) Rectangle[E] {
 	if r.Empty() {
 		return r
@@ -254,6 +416,17 @@ func (r Rectangle[E]) ScaleByFactor(factor Point[E]) Rectangle[E] {
 		Min: Point[E]{X: r.Min.X - minOffset.X, Y: r.Min.Y - minOffset.Y},
 		Max: Point[E]{X: r.Max.X + maxOffset.X, Y: r.Max.Y + maxOffset.Y},
 	}
+}
+
+// FlexIn flex rect into box
+func (r Rectangle[E]) FlexIn(box Rectangle[E]) Rectangle[E] {
+	if box.Empty() {
+		var zero Rectangle[E]
+		return zero
+	}
+
+	d := box.Min.Sub(r.Min)
+	return r.Add(d).Intersect(r)
 }
 
 // Rect is shorthand for Rectangle[E]{Pt(x0, y0), Pt(x1, y1)}. The returned
