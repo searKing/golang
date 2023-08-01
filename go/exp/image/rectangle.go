@@ -397,7 +397,7 @@ func (r Rectangle[E]) UnionPoints(pts ...Point[E]) Rectangle[E] {
 	return r
 }
 
-// ScaleByFactor scale rect to factor * size
+// ScaleByFactor scale rectangle's size to factor * size, by expand from the mid-point of rect.
 func (r Rectangle[E]) ScaleByFactor(factor Point[E]) Rectangle[E] {
 	if r.Empty() {
 		return r
