@@ -65,14 +65,34 @@ func (r Rectangle[E]) Sub(p Point[E]) Rectangle[E] {
 	}
 }
 
-// Mul returns the rectangle r*k.
+// Mul returns the rectangle r translated by r*k.
 func (r Rectangle[E]) Mul(k E) Rectangle[E] {
 	return Rectangle[E]{r.Min.Mul(k), r.Max.Mul(k)}
 }
 
-// Div returns the rectangle p/k.
+// MulPoint returns the rectangle r translated by r.*p.
+func (r Rectangle[E]) MulPoint(p Point[E]) Rectangle[E] {
+	return Rectangle[E]{r.Min.MulPoint(p), r.Max.MulPoint(p)}
+}
+
+// MulRectangle returns the rectangle r translated by r.*p.
+func (r Rectangle[E]) MulRectangle(p Rectangle[E]) Rectangle[E] {
+	return Rectangle[E]{r.Min.MulPoint(p.Min), r.Max.MulPoint(p.Max)}
+}
+
+// Div returns the rectangle r translated by r/k.
 func (r Rectangle[E]) Div(k E) Rectangle[E] {
 	return Rectangle[E]{r.Min.Div(k), r.Max.Div(k)}
+}
+
+// DivPoint returns the rectangle r translated by r./p.
+func (r Rectangle[E]) DivPoint(p Point[E]) Rectangle[E] {
+	return Rectangle[E]{r.Min.DivPoint(p), r.Max.DivPoint(p)}
+}
+
+// DivRectangle returns the rectangle r translated by r./p.
+func (r Rectangle[E]) DivRectangle(p Rectangle[E]) Rectangle[E] {
+	return Rectangle[E]{r.Min.DivPoint(p.Min), r.Max.DivPoint(p.Max)}
 }
 
 // Inset returns the rectangle r inset by n, which may be negative. If either
@@ -397,25 +417,27 @@ func (r Rectangle[E]) UnionPoints(pts ...Point[E]) Rectangle[E] {
 	return r
 }
 
-// ScaleByFactor scale rectangle's size to factor * size, by expand from the mid-point of rect.
-func (r Rectangle[E]) ScaleByFactor(factor Point[E]) Rectangle[E] {
+// Scale scale rectangle's size to size, by expand from the mid-point of rect.
+func (r Rectangle[E]) Scale(size Point[E]) Rectangle[E] {
 	if r.Empty() {
 		return r
 	}
-	factor = factor.Sub(Pt[E](1, 1))
-	minOffset := Point[E]{
-		X: r.Dx() * factor.X / 2,
-		Y: r.Dy() * factor.Y / 2,
-	}
-	maxOffset := Point[E]{
-		X: r.Dx() * factor.X,
-		Y: r.Dy() * factor.Y,
-	}.Sub(minOffset)
+	size = size.Sub(r.Size())
+	minOffset := size.Div(2)
+	maxOffset := size.Sub(minOffset)
 
 	return Rectangle[E]{
 		Min: Point[E]{X: r.Min.X - minOffset.X, Y: r.Min.Y - minOffset.Y},
 		Max: Point[E]{X: r.Max.X + maxOffset.X, Y: r.Max.Y + maxOffset.Y},
 	}
+}
+
+// ScaleByFactor scale rectangle's size to factor * size, by expand from the mid-point of rect.
+func (r Rectangle[E]) ScaleByFactor(factor Point[E]) Rectangle[E] {
+	if r.Empty() {
+		return r
+	}
+	return r.Scale(r.Size().MulPoint(factor))
 }
 
 // FlexIn flex rect into box, shrink but not grow to fit the space available in its flex container

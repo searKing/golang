@@ -36,9 +36,19 @@ func (p Point[E]) Mul(k E) Point[E] {
 	return Point[E]{p.X * k, p.Y * k}
 }
 
+// MulPoint returns the vector p.*k.
+func (p Point[E]) MulPoint(k Point[E]) Point[E] {
+	return Point[E]{p.X * k.X, p.Y * k.Y}
+}
+
 // Div returns the vector p/k.
 func (p Point[E]) Div(k E) Point[E] {
 	return Point[E]{p.X / k, p.Y / k}
+}
+
+// DivPoint returns the vector p./k.
+func (p Point[E]) DivPoint(k Point[E]) Point[E] {
+	return Point[E]{p.X / k.X, p.Y / k.Y}
 }
 
 // In reports whether p is in r.
