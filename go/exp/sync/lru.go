@@ -13,7 +13,9 @@ import (
 // EvictCallback is used to get a callback when a cache entry is evicted
 type EvictCallback[K comparable, V any] func(key K, value V)
 
-// LRU implements a non-thread safe fixed size LRU cache
+// LRU implements a thread safe fixed size LRU cache.
+// A LRU is safe for use by multiple goroutines simultaneously.
+// A LRU must not be copied after first use.
 type LRU[K comparable, V any] struct {
 	c  *lru.LRU[K, V]
 	mu sync.Mutex

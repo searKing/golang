@@ -1,12 +1,27 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/searKing/golang.svg)](https://pkg.go.dev/github.com/searKing/golang)
 [![Report card](https://goreportcard.com/badge/github.com/searKing/golang)](https://goreportcard.com/report/github.com/searKing/golang)
 [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" width="20" height="20">](https://jb.gg/OpenSourceSupport)
+
 # golang
+
 vg
 Useful libs or tools for Golang
 
 # GoLibs
 
+* [exp](https://pkg.go.dev/github.com/searKing/golang/go/exp) — `exp` holds experimental packages and defines various
+  functions useful with [generics](https://go.dev/doc/tutorial/generics) of any type.
+    - [slices](https://pkg.go.dev/github.com/searKing/golang/go/exp/slices)  defines various functions useful with
+      slices of any type.
+    - [maps](https://pkg.go.dev/github.com/searKing/golang/go/exp/maps) defines various functions useful with maps of
+      any type.
+    - [image](https://pkg.go.dev/github.com/searKing/golang/go/exp/image)
+      defines [Point[T]](https://pkg.go.dev/github.com/searKing/golang/go/exp/image#Point)
+      and [Rectangle[T]](https://pkg.go.dev/github.com/searKing/golang/go/exp/image#Rectangle) of any type.
+    - [sync.LRU](https://pkg.go.dev/github.com/searKing/golang/go/exp/sync#LRU) implements a thread safe fixed size LRU
+      cache, based on [not-thread safe lru](https://pkg.go.dev/github.com/searKing/golang/go@v1.2.82/exp/container/lru)
+    - [types.Optional](https://pkg.go.dev/github.com/searKing/golang/go/exp/types#Optional) represents a Value that may
+      be null.
 * [webhdfs](https://github.com/searKing/webhdfs) - Hadoop WebHDFS REST API client library for Golang with fs module
   like (asynchronous) interface.
 * [Thread](https://pkg.go.dev/github.com/searKing/golang/go/sync#Thread) — Thread should be used for such as
@@ -16,7 +31,8 @@ Useful libs or tools for Golang
     - It implements a "token
       bucket" of size b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
       that `time/rate.Limiter`initially full and refilled at rate r tokens per second.
-    - It implements a [Reorder Buffer](https://en.wikipedia.org/wiki/Re-order_buffer) allocated by `Reserve`  or `ReserveN` into account when allowing future events and
+    - It implements a [Reorder Buffer](https://en.wikipedia.org/wiki/Re-order_buffer) allocated by `Reserve`
+      or `ReserveN` into account when allowing future events and
       `Wait` or `WaitN` blocks until lim permits n events to happen.
 * [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator#Generator) — Generator behaves like
   Generator in python or ES6, with yield and next statements.
