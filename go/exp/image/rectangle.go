@@ -419,9 +419,6 @@ func (r Rectangle[E]) UnionPoints(pts ...Point[E]) Rectangle[E] {
 
 // Scale scale rectangle's size to size, by expand from the mid-point of rect.
 func (r Rectangle[E]) Scale(size Point[E]) Rectangle[E] {
-	if r.Empty() {
-		return r
-	}
 	size = size.Sub(r.Size())
 	minOffset := size.Div(2)
 	maxOffset := size.Sub(minOffset)
