@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -152,7 +152,7 @@
 // generate methods for multiple types. The default output file is t_string.go,
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
-package main
+package option
 
 import (
 	"bytes"
@@ -200,7 +200,7 @@ const (
 	goOptionsToolName = "go-option"
 )
 
-func main() {
+func Main() {
 	log.SetFlags(0)
 	log.SetPrefix("go-option: ")
 	flag.Usage = Usage
