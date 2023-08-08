@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	time_ "time"
 )
 
 //go:generate go-option -type "Pill"
@@ -17,12 +18,16 @@ type Pill[T comparable] struct {
 	Address   string `option:"-"`
 	NameAlias string `option:"Title,"`
 
+	genericType   GenericType[T]
+	structType    time_.Time
 	arrayType     [5]T
+	pointerType   *[5]T
 	funcType      func()
 	interfaceType interface{}
-	mapType       map[string]int
+	mapType       map[string]int64
 	sliceType     []int64
 }
+type GenericType[T any] struct{}
 
 func NewPill[T comparable](opts ...PillOption[T]) *Pill[T] {
 	return (&Pill[T]{}).ApplyOptions(opts...)

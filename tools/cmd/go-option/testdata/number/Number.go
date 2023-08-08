@@ -10,10 +10,20 @@ package main
 import (
 	"fmt"
 	"strings"
+	time_ "time"
 )
 
 //go:generate go-option -type "Number"
 type Number[T comparable] struct {
+	// This is Name doc comment
+	Name      string // This is Name line comment
+	Age       string `option:",short"`
+	Address   string `option:"-"`
+	NameAlias string `option:"Title,"`
+
+	genericType   GenericType[T]
+	pointerType   *[5]T
+	structType    time_.Time
 	arrayType     [5]T
 	funcType      func()
 	interfaceType interface{}
@@ -21,6 +31,8 @@ type Number[T comparable] struct {
 	sliceType     []int64
 	name          string
 }
+
+type GenericType[T any] struct{}
 
 func NewNumber[T comparable](opts ...NumberOption[T]) *Number[T] {
 	return (&Number[T]{}).ApplyOptions(opts...)

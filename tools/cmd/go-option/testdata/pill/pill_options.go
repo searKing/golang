@@ -3,6 +3,8 @@
 
 package main
 
+import time_ "time"
+
 // A PillOption sets options.
 type PillOption[T comparable] interface {
 	apply(*Pill[T])
@@ -65,10 +67,38 @@ func WithPillTitle[T comparable](v string) PillOption[T] {
 	})
 }
 
+// WithPillGenericType sets genericType in Pill[T].
+func WithPillGenericType[T comparable](v GenericType[T]) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.genericType = v
+	})
+}
+
+// WithPillStructType sets structType in Pill[T].
+func WithPillStructType[T comparable](v time_.Time) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.structType = v
+	})
+}
+
 // WithPillArrayType sets arrayType in Pill[T].
 func WithPillArrayType[T comparable](v [5]T) PillOption[T] {
 	return PillOptionFunc[T](func(o *Pill[T]) {
 		o.arrayType = v
+	})
+}
+
+// WithPillPointerType sets pointerType in Pill[T].
+func WithPillPointerType[T comparable](v *[5]T) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.pointerType = v
+	})
+}
+
+// WithPillFuncType sets funcType in Pill[T].
+func WithPillFuncType[T comparable](v func()) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.funcType = v
 	})
 }
 
@@ -80,7 +110,7 @@ func WithPillInterfaceType[T comparable](v interface{}) PillOption[T] {
 }
 
 // WithPillMapType appends mapType in Pill[T].
-func WithPillMapType[T comparable](m map[string]int) PillOption[T] {
+func WithPillMapType[T comparable](m map[string]int64) PillOption[T] {
 	return PillOptionFunc[T](func(o *Pill[T]) {
 		if o.mapType == nil {
 			o.mapType = m
@@ -93,7 +123,7 @@ func WithPillMapType[T comparable](m map[string]int) PillOption[T] {
 }
 
 // WithPillMapTypeReplace sets mapType in Pill[T].
-func WithPillMapTypeReplace[T comparable](v map[string]int) PillOption[T] {
+func WithPillMapTypeReplace[T comparable](v map[string]int64) PillOption[T] {
 	return PillOptionFunc[T](func(o *Pill[T]) {
 		o.mapType = v
 	})
