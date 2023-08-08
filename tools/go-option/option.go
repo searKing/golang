@@ -159,7 +159,6 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
-	"go/format"
 	"go/types"
 	"log"
 	"os"
@@ -167,6 +166,7 @@ import (
 	"strings"
 	"text/template"
 
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
@@ -265,11 +265,6 @@ func main() {
 	}
 
 	g.parsePackage(args, tags)
-	//
-	//if *code {
-	//	// Run render for each type.
-	//	g.generateConfig(dir, typs...)
-	//}
 
 	var structs []Struct
 	// Run inspect for each type.
@@ -406,7 +401,22 @@ func (g *Generator) inspect(typeInfo typeInfo) Struct {
 		file.typeInfo = typeInfo
 		file.structs = nil
 		if file.file != nil {
+			importExps := slices_.MapFunc(file.file.Imports, func(e *ast.ImportSpec) string {
+				if e.Path == nil {
+					return ""
+				}
+				if e.Name == nil || e.Name.String() == "_" {
+					return e.Path.Value
+				}
+				return e.Name.String() + " " + e.Path.Value
+			})
+			importExps = slices_.Filter(importExps)
+
 			ast.Inspect(file.file, file.genDecl)
+			for i := range file.structs {
+				file.structs[i].FileImports = importExps
+			}
+
 			structs = append(structs, file.structs...)
 		}
 	}
@@ -419,7 +429,7 @@ func (g *Generator) inspect(typeInfo typeInfo) Struct {
 
 // format returns the gofmt-ed contents of the Generator's buffer.
 func (g *Generator) format() []byte {
-	src, err := format.Source(g.buf.Bytes())
+	src, err := imports.Process("", g.buf.Bytes(), nil)
 	if err != nil {
 		// Should never happen, but can arise when developing this code.
 		// The user can compile the output to see the error.
@@ -427,6 +437,7 @@ func (g *Generator) format() []byte {
 		log.Printf("warning: compile the package to analyze the error")
 		return g.buf.Bytes()
 	}
+
 	return src
 }
 
@@ -482,6 +493,7 @@ func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 		GoOptionToolName:             goOptionsToolName,
 		GoOptionToolArgs:             os.Args[1:],
 		PackageName:                  g.pkg.name,
+		ImportPaths:                  value.FileImports,
 		TargetTypeName:               value.StructTypeName,
 		TargetTypeImport:             value.StructTypeImport,
 		TargetTypeGenericDeclaration: value.StructTypeGenericDeclaration,
@@ -525,6 +537,7 @@ func (g *Generator) generateConfigOneRun(dir string, value Struct) {
 		GoOptionToolName:             goOptionsToolName,
 		GoOptionToolArgs:             os.Args[1:],
 		PackageName:                  g.pkg.name,
+		ImportPaths:                  value.FileImports,
 		TargetTypeName:               value.StructTypeName,
 		TargetTypeImport:             value.StructTypeImport,
 		TargetTypeGenericDeclaration: value.StructTypeGenericDeclaration,

@@ -9,10 +9,11 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"strings"
 	"unicode"
 
-	"github.com/searKing/golang/go/reflect"
+	reflect_ "github.com/searKing/golang/go/reflect"
 )
 
 const (
@@ -85,6 +86,38 @@ func FormatTypeDeclaration(tparams *ast.FieldList) (string, error) {
 	return buf.String(), nil
 }
 
+// fieldName assumes that x is the type of an anonymous field and
+// returns the corresponding field name. If x is not an acceptable
+// anonymous field, the result is nil.
+func fieldNameIndent(x ast.Expr) *ast.Ident {
+	switch t := x.(type) {
+	case *ast.Ident:
+		return t
+	case *ast.SelectorExpr:
+		if _, ok := t.X.(*ast.Ident); ok {
+			return t.Sel
+		}
+	case *ast.StarExpr:
+		return fieldNameIndent(t.X)
+	}
+	return nil
+}
+
+func FilterTypeName(exp ast.Expr) (fieldType string, fieldIsMap bool, fieldSliceElt string) {
+	fieldType = types.ExprString(exp)
+	switch t := exp.(type) {
+	case *ast.ArrayType:
+		if ident, ok := t.Elt.(*ast.Ident); ok {
+			if t.Len == nil {
+				fieldSliceElt = ident.String()
+			}
+		}
+	case *ast.MapType:
+		fieldIsMap = true
+	}
+	return fieldType, fieldIsMap, fieldSliceElt
+}
+
 // genDecl processes one declaration clause.
 func (f *File) genDecl(node ast.Node) bool {
 	decl, ok := node.(*ast.GenDecl)
@@ -132,66 +165,11 @@ func (f *File) genDecl(node ast.Node) bool {
 		for _, field := range sExpr.Fields.List {
 			var fieldName string
 			var fieldType string
-			var filedIsMap bool
-			var fieldIsSlice bool
+			var fieldIsMap bool
 			var fieldSliceElt string
-			{
-				switch t := field.Type.(type) {
-				case *ast.Ident:
-					fieldType = t.String()
-				case *ast.ArrayType:
-					ident, ok := t.Elt.(*ast.Ident)
-					if !ok {
-						continue
-					}
-					if t.Len != nil {
-						l, ok := t.Len.(*ast.BasicLit)
-						if !ok {
-							continue
-						}
-						fieldType = fmt.Sprintf("[%s]%s", l.Value, ident.String())
-					} else {
-						fieldType = fmt.Sprintf("[]%s", ident.String())
-						fieldIsSlice = true
-						fieldSliceElt = ident.String()
-					}
-				case *ast.MapType:
-					k, ok := t.Key.(*ast.Ident)
-					if !ok {
-						continue
-					}
-					v, ok := t.Value.(*ast.Ident)
-					if !ok {
-						continue
-					}
-					fieldType = fmt.Sprintf("map[%s]%s", k.String(), v.String())
-					filedIsMap = true
-				case *ast.FuncType:
-					if t.Params == nil || t.Results == nil {
-						continue
-					}
-					if len(t.Params.List) == 0 || len(t.Results.List) == 0 {
-						continue
-					}
-					fieldType = "func()"
-				case *ast.InterfaceType:
-					if t.Methods == nil {
-						continue
-					}
-					fieldType = "interface{}"
-				case *ast.SelectorExpr:
-					if p, ok := t.X.(*ast.Ident); ok {
-						typ := strings.Join([]string{p.String(), t.Sel.String()}, ".")
-						if typ == "time.Duration" || typ == "time.Time" {
-							fieldType = typ
-						}
-					}
-					if fieldType == "" {
-						continue
-					}
-				default:
-					continue
-				}
+			fieldType, fieldIsMap, fieldSliceElt = FilterTypeName(field.Type)
+			if fieldType == "" {
+				continue
 			}
 			if len(field.Names) != 0 { // pick first exported Name
 				for _, field := range field.Names {
@@ -219,7 +197,7 @@ func (f *File) genDecl(node ast.Node) bool {
 				field.Tag = &ast.BasicLit{}
 			}
 
-			tags, err := reflect.ParseAstStructTag(field.Tag.Value)
+			tags, err := reflect_.ParseAstStructTag(field.Tag.Value)
 			if err != nil {
 				panic(err)
 			}
@@ -235,9 +213,8 @@ func (f *File) genDecl(node ast.Node) bool {
 				FieldDocComment:  field.Doc,
 				FieldLineComment: field.Comment,
 				OptionTag:        tagOption,
-				FieldIsSlice:     fieldIsSlice,
 				FieldSliceElt:    fieldSliceElt,
-				FieldIsMap:       filedIsMap,
+				FieldIsMap:       fieldIsMap,
 			})
 		}
 		f.structs = append(f.structs, v)

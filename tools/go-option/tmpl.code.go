@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	strings_ "github.com/searKing/golang/go/strings"
 )
 
@@ -41,8 +43,9 @@ func (t *TmplConfigRender) Complete() {
 
 	importPath := strings.TrimSpace(t.TargetTypeImport)
 	if importPath != "" {
-		t.ImportPaths = append(t.ImportPaths, importPath)
+		t.ImportPaths = append(t.ImportPaths, fmt.Sprintf("%q", importPath))
 	}
+	t.ImportPaths = slices_.Filter(t.ImportPaths)
 
 	_, defaultValDecl := createValAndNameDecl(t.TargetTypeName)
 	if defaultValDecl != "" {
@@ -57,7 +60,9 @@ package {{.PackageName}}
 
 import "fmt"
 
-{{range $path := .ImportPaths}} import "{{$path}}" {{end}}
+{{range $path := .ImportPaths}}
+import {{$path}} 
+{{end}}
 
 // {{.OptionStructName}} is config param as factory config
 // Code borrowed from https://github.com/kubernetes/kubernetes
