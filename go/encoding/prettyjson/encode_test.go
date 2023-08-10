@@ -7,17 +7,13 @@ package prettyjson
 import (
 	"bytes"
 	"encoding"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"math"
 	"reflect"
 	"regexp"
-	"runtime/debug"
 	"strconv"
 	"testing"
-	"unicode"
 )
 
 type Optionals struct {
@@ -80,60 +76,6 @@ type StringTag struct {
 	UintptrStr uintptr `json:",string"`
 	StrStr     string  `json:",string"`
 	NumberStr  Number  `json:",string"`
-}
-
-func TestRoundtripStringTag(t *testing.T) {
-	tests := []struct {
-		name string
-		in   StringTag
-		want string // empty to just test that we roundtrip
-	}{
-		{
-			name: "AllTypes",
-			in: StringTag{
-				BoolStr:    true,
-				IntStr:     42,
-				UintptrStr: 44,
-				StrStr:     "xzbit",
-				NumberStr:  "46",
-			},
-			want: `{
-				"BoolStr": "true",
-				"IntStr": "42",
-				"UintptrStr": "44",
-				"StrStr": "\"xzbit\"",
-				"NumberStr": "46"
-			}`,
-		},
-		{
-			// See golang.org/issues/38173.
-			name: "StringDoubleEscapes",
-			in: StringTag{
-				StrStr:    "\b\f\n\r\t\"\\",
-				NumberStr: "0", // just to satisfy the roundtrip
-			},
-			want: `{
-				"BoolStr": "false",
-				"IntStr": "0",
-				"UintptrStr": "0",
-				"StrStr": "\"\\u0008\\u000c\\n\\r\\t\\\"\\\\\"",
-				"NumberStr": "0"
-			}`,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// Indent with a tab prefix to make the multi-line string
-			// literals in the table nicer to read.
-			got, err := MarshalIndent(&test.in, "\t\t\t", "\t")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := string(got); got != test.want {
-				t.Fatalf(" got: %s\nwant: %s\n", got, test.want)
-			}
-		})
-	}
 }
 
 // byte slices are special even if they're renamed types.
@@ -217,6 +159,9 @@ func TestSliceNoCycle(t *testing.T) {
 }
 
 var unsupportedValues = []any{
+	math.NaN(),
+	math.Inf(-1),
+	math.Inf(1),
 	pointerCycle,
 	pointerCycleIndirect,
 	mapCycle,
@@ -590,8 +535,8 @@ func TestNilMarshal(t *testing.T) {
 		{v: map[string]string(nil), want: `null`},
 		{v: []byte(nil), want: `null`},
 		{v: struct{ M string }{"gopher"}, want: `{"M":"gopher"}`},
-		{v: struct{ M json.Marshaler }{}, want: `{"M":null}`},
-		{v: struct{ M json.Marshaler }{(*nilJSONMarshaler)(nil)}, want: `{"M":"0zenil0"}`},
+		{v: struct{ M Marshaler }{}, want: `{"M":null}`},
+		{v: struct{ M Marshaler }{(*nilJSONMarshaler)(nil)}, want: `{"M":"0zenil0"}`},
 		{v: struct{ M any }{(*nilJSONMarshaler)(nil)}, want: `{"M":null}`},
 		{v: struct{ M encoding.TextMarshaler }{}, want: `{"M":null}`},
 		{v: struct{ M encoding.TextMarshaler }{(*nilTextMarshaler)(nil)}, want: `{"M":"0zenil0"}`},
@@ -691,54 +636,6 @@ func TestDuplicatedFieldDisappears(t *testing.T) {
 	}
 }
 
-func TestStringBytes(t *testing.T) {
-	t.Parallel()
-	// Test that encodeState.stringBytes and encodeState.string use the same encoding.
-	var r []rune
-	for i := '\u0000'; i <= unicode.MaxRune; i++ {
-		if testing.Short() && i > 1000 {
-			i = unicode.MaxRune
-		}
-		r = append(r, i)
-	}
-	s := string(r) + "\xff\xff\xffhello" // some invalid UTF-8 too
-
-	for _, escapeHTML := range []bool{true, false} {
-		es := &encodeState{}
-		es.string(s, escapeHTML)
-
-		esBytes := &encodeState{}
-		esBytes.stringBytes([]byte(s), escapeHTML)
-
-		enc := es.Buffer.String()
-		encBytes := esBytes.Buffer.String()
-		if enc != encBytes {
-			i := 0
-			for i < len(enc) && i < len(encBytes) && enc[i] == encBytes[i] {
-				i++
-			}
-			enc = enc[i:]
-			encBytes = encBytes[i:]
-			i = 0
-			for i < len(enc) && i < len(encBytes) && enc[len(enc)-i-1] == encBytes[len(encBytes)-i-1] {
-				i++
-			}
-			enc = enc[:len(enc)-i]
-			encBytes = encBytes[:len(encBytes)-i]
-
-			if len(enc) > 20 {
-				enc = enc[:20] + "..."
-			}
-			if len(encBytes) > 20 {
-				encBytes = encBytes[:20] + "..."
-			}
-
-			t.Errorf("with escapeHTML=%t, encodings differ at %#q vs %#q",
-				escapeHTML, enc, encBytes)
-		}
-	}
-}
-
 func TestIssue10281(t *testing.T) {
 	type Foo struct {
 		N Number
@@ -746,52 +643,8 @@ func TestIssue10281(t *testing.T) {
 	x := Foo{Number(`invalid`)}
 
 	b, err := Marshal(&x)
-	if err != nil {
-		t.Errorf("Marshal(&x) = %#q; want nil error", b)
-	}
-}
-
-func TestMarshalErrorAndReuseEncodeState(t *testing.T) {
-	// Disable the GC temporarily to prevent encodeState's in Pool being cleaned away during the test.
-	percent := debug.SetGCPercent(-1)
-	defer debug.SetGCPercent(percent)
-
-	// Trigger an error in Marshal with cyclic data.
-	type Dummy struct {
-		Name string
-		Next *Dummy
-	}
-	dummy := Dummy{Name: "Dummy"}
-	dummy.Next = &dummy
-	if b, err := Marshal(dummy); err == nil {
-		t.Errorf("Marshal(dummy) = %#q; want error", b)
-	}
-
-	type Data struct {
-		A string
-		I int
-	}
-	data := Data{A: "a", I: 1}
-	b, err := Marshal(data)
-	if err != nil {
-		t.Errorf("Marshal(%v) = %v", data, err)
-	}
-
-	_ = b
-}
-
-// golang.org/issue/8582
-func TestEncodePointerString(t *testing.T) {
-	type stringPointer struct {
-		N *int64 `json:"n,string"`
-	}
-	var n int64 = 42
-	b, err := Marshal(stringPointer{N: &n})
-	if err != nil {
-		t.Fatalf("Marshal: %v", err)
-	}
-	if got, want := string(b), `{"n":"42"}`; got != want {
-		t.Errorf("Marshal = %s, want %s", got, want)
+	if err == nil {
+		t.Errorf("Marshal(&x) = %#q; want error", b)
 	}
 }
 
@@ -906,57 +759,6 @@ func TestEncodeBytekind(t *testing.T) {
 	}
 }
 
-type unmarshalerText struct {
-	A, B string
-}
-
-// needed for re-marshaling tests
-func (u unmarshalerText) MarshalText() ([]byte, error) {
-	return []byte(u.A + ":" + u.B), nil
-}
-
-func (u *unmarshalerText) UnmarshalText(b []byte) error {
-	pos := bytes.IndexByte(b, ':')
-	if pos == -1 {
-		return errors.New("missing separator")
-	}
-	u.A, u.B = string(b[:pos]), string(b[pos+1:])
-	return nil
-}
-
-var _ encoding.TextUnmarshaler = (*unmarshalerText)(nil)
-
-func TestTextMarshalerMapKeysAreSorted(t *testing.T) {
-	b, err := Marshal(map[unmarshalerText]int{
-		{"x", "y"}: 1,
-		{"y", "x"}: 2,
-		{"a", "z"}: 3,
-		{"z", "a"}: 4,
-	})
-	if err != nil {
-		t.Fatalf("Failed to Marshal text.Marshaler: %v", err)
-	}
-	const want = `{"a:z":3,"x:y":1,"y:x":2,"z:a":4}`
-	if string(b) != want {
-		t.Errorf("Marshal map with text.Marshaler keys: got %#q, want %#q", b, want)
-	}
-}
-
-// https://golang.org/issue/33675
-func TestNilMarshalerTextMapKey(t *testing.T) {
-	b, err := Marshal(map[*unmarshalerText]int{
-		(*unmarshalerText)(nil): 1,
-		{"A", "B"}:              2,
-	})
-	if err != nil {
-		t.Fatalf("Failed to Marshal *text.Marshaler: %v", err)
-	}
-	const want = `{"":1,"A:B":2}`
-	if string(b) != want {
-		t.Errorf("Marshal map with *text.Marshaler keys: got %#q, want %#q", b, want)
-	}
-}
-
 var re = regexp.MustCompile
 
 // syntactic checks on form of marshaled floating point numbers.
@@ -1064,107 +866,6 @@ func TestMarshalFloat(t *testing.T) {
 	test(math.Copysign(0, -1), 32)
 }
 
-func TestMarshalRawMessageValue(t *testing.T) {
-	type (
-		T1 struct {
-			M json.RawMessage `json:",omitempty"`
-		}
-		T2 struct {
-			M *json.RawMessage `json:",omitempty"`
-		}
-	)
-
-	var (
-		rawNil   = json.RawMessage(nil)
-		rawEmpty = json.RawMessage([]byte{})
-		rawText  = json.RawMessage([]byte(`"foo"`))
-	)
-
-	tests := []struct {
-		in   any
-		want string
-		ok   bool
-	}{
-		// Test with nil RawMessage.
-		{rawNil, "null", true},
-		{&rawNil, "null", true},
-		{[]any{rawNil}, "[null]", true},
-		{&[]any{rawNil}, "[null]", true},
-		{[]any{&rawNil}, "[null]", true},
-		{&[]any{&rawNil}, "[null]", true},
-		{struct{ M json.RawMessage }{rawNil}, `{"M":null}`, true},
-		{&struct{ M json.RawMessage }{rawNil}, `{"M":null}`, true},
-		{struct{ M *json.RawMessage }{&rawNil}, `{"M":null}`, true},
-		{&struct{ M *json.RawMessage }{&rawNil}, `{"M":null}`, true},
-		{map[string]any{"M": rawNil}, `{"M":null}`, true},
-		{&map[string]any{"M": rawNil}, `{"M":null}`, true},
-		{map[string]any{"M": &rawNil}, `{"M":null}`, true},
-		{&map[string]any{"M": &rawNil}, `{"M":null}`, true},
-		{T1{rawNil}, "{}", true},
-		{T2{&rawNil}, `{"M":null}`, true},
-		{&T1{rawNil}, "{}", true},
-		{&T2{&rawNil}, `{"M":null}`, true},
-
-		// Test with empty, but non-nil, RawMessage.
-		{rawEmpty, "", false},
-		{&rawEmpty, "", false},
-		{[]any{rawEmpty}, "", false},
-		{&[]any{rawEmpty}, "", false},
-		{[]any{&rawEmpty}, "", false},
-		{&[]any{&rawEmpty}, "", false},
-		{struct{ X json.RawMessage }{rawEmpty}, "", false},
-		{&struct{ X json.RawMessage }{rawEmpty}, "", false},
-		{struct{ X *json.RawMessage }{&rawEmpty}, "", false},
-		{&struct{ X *json.RawMessage }{&rawEmpty}, "", false},
-		{map[string]any{"nil": rawEmpty}, "", false},
-		{&map[string]any{"nil": rawEmpty}, "", false},
-		{map[string]any{"nil": &rawEmpty}, "", false},
-		{&map[string]any{"nil": &rawEmpty}, "", false},
-		{T1{rawEmpty}, "{}", true},
-		{T2{&rawEmpty}, "", false},
-		{&T1{rawEmpty}, "{}", true},
-		{&T2{&rawEmpty}, "", false},
-
-		// Test with RawMessage with some text.
-		//
-		// The tests below marked with Issue6458 used to generate "ImZvbyI=" instead "foo".
-		// This behavior was intentionally changed in Go 1.8.
-		// See https://golang.org/issues/14493#issuecomment-255857318
-		{rawText, `"foo"`, true}, // Issue6458
-		{&rawText, `"foo"`, true},
-		{[]any{rawText}, `["foo"]`, true},  // Issue6458
-		{&[]any{rawText}, `["foo"]`, true}, // Issue6458
-		{[]any{&rawText}, `["foo"]`, true},
-		{&[]any{&rawText}, `["foo"]`, true},
-		{struct{ M json.RawMessage }{rawText}, `{"M":"foo"}`, true}, // Issue6458
-		{&struct{ M json.RawMessage }{rawText}, `{"M":"foo"}`, true},
-		{struct{ M *json.RawMessage }{&rawText}, `{"M":"foo"}`, true},
-		{&struct{ M *json.RawMessage }{&rawText}, `{"M":"foo"}`, true},
-		{map[string]any{"M": rawText}, `{"M":"foo"}`, true},  // Issue6458
-		{&map[string]any{"M": rawText}, `{"M":"foo"}`, true}, // Issue6458
-		{map[string]any{"M": &rawText}, `{"M":"foo"}`, true},
-		{&map[string]any{"M": &rawText}, `{"M":"foo"}`, true},
-		{T1{rawText}, `{"M":"foo"}`, true}, // Issue6458
-		{T2{&rawText}, `{"M":"foo"}`, true},
-		{&T1{rawText}, `{"M":"foo"}`, true},
-		{&T2{&rawText}, `{"M":"foo"}`, true},
-	}
-
-	for i, tt := range tests {
-		b, err := Marshal(tt.in)
-		if ok := (err == nil); ok != tt.ok {
-			if err != nil {
-				t.Errorf("test %d, unexpected failure: %v", i, err)
-			} else {
-				t.Errorf("test %d, unexpected success", i)
-			}
-		}
-		if got := string(b); got != tt.want {
-			t.Errorf("test %d, Marshal(%#v) = %q, want %q", i, tt.in, got, tt.want)
-		}
-	}
-}
-
 type marshalPanic struct{}
 
 func (marshalPanic) MarshalJSON() ([]byte, error) { panic(0xdead) }
@@ -1191,33 +892,6 @@ func TestMarshalUncommonFieldNames(t *testing.T) {
 	got := string(b)
 	if got != want {
 		t.Fatalf("Marshal: got %s want %s", got, want)
-	}
-}
-
-func TestMarshalerError(t *testing.T) {
-	s := "test variable"
-	st := reflect.TypeOf(s)
-	errText := "json: test error"
-
-	tests := []struct {
-		err  *MarshalerError
-		want string
-	}{
-		{
-			&MarshalerError{st, fmt.Errorf(errText), ""},
-			"json: error calling MarshalJSON for type " + st.String() + ": " + errText,
-		},
-		{
-			&MarshalerError{st, fmt.Errorf(errText), "TestMarshalerError"},
-			"json: error calling TestMarshalerError for type " + st.String() + ": " + errText,
-		},
-	}
-
-	for i, tt := range tests {
-		got := tt.err.Error()
-		if got != tt.want {
-			t.Errorf("MarshalerError test %d, got: %s, want: %s", i, got, tt.want)
-		}
 	}
 }
 

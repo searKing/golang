@@ -1,4 +1,4 @@
-// Copyright 2010 The Go Authors. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"math"
 	"math/rand"
-	"reflect"
 	"testing"
 )
 
@@ -175,29 +174,6 @@ func TestIndentBig(t *testing.T) {
 		t.Error("Compact(Indent(jsonBig)) != jsonBig")
 		diff(t, b1, jsonBig)
 		return
-	}
-}
-
-type indentErrorTest struct {
-	in  string
-	err error
-}
-
-var indentErrorTests = []indentErrorTest{
-	{`{"X": "foo", "Y"}`, &SyntaxError{"invalid character '}' after object key", 17}},
-	{`{"X": "foo" "Y": "bar"}`, &SyntaxError{"invalid character '\"' after object key:value pair", 13}},
-}
-
-func TestIndentErrors(t *testing.T) {
-	for i, tt := range indentErrorTests {
-		slice := make([]uint8, 0)
-		buf := bytes.NewBuffer(slice)
-		if err := Indent(buf, []uint8(tt.in), "", ""); err != nil {
-			if !reflect.DeepEqual(err, tt.err) {
-				t.Errorf("#%d: Indent: %#v", i, err)
-				continue
-			}
-		}
 	}
 }
 

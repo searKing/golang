@@ -10,7 +10,6 @@ func WithEncOptsTruncate(v int) EncOptsOption {
 		o.truncateBytes = v
 		o.truncateString = v
 		o.truncateMap = v
-		o.truncateSlice = v
-		o.truncateArray = v
+		o.truncateSliceOrArray = v
 	})
 }

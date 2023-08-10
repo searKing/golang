@@ -35,6 +35,13 @@ func (o *encOpts) ApplyOptions(options ...EncOptsOption) *encOpts {
 	return o
 }
 
+// WithEncOpts sets encOpts.
+func WithEncOpts(v encOpts) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		*o = v
+	})
+}
+
 // WithEncOptsQuoted sets quoted in encOpts.
 // quoted causes primitive fields to be encoded inside JSON strings.
 func WithEncOptsQuoted(v bool) EncOptsOption {
@@ -72,16 +79,9 @@ func WithEncOptsTruncateMap(v int) EncOptsOption {
 	})
 }
 
-// WithEncOptsTruncateSlice sets truncateSlice in encOpts.
-func WithEncOptsTruncateSlice(v int) EncOptsOption {
+// WithEncOptsTruncateSliceOrArray sets truncateSliceOrArray in encOpts.
+func WithEncOptsTruncateSliceOrArray(v int) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
-		o.truncateSlice = v
-	})
-}
-
-// WithEncOptsTruncateArray sets truncateArray in encOpts.
-func WithEncOptsTruncateArray(v int) EncOptsOption {
-	return EncOptsOptionFunc(func(o *encOpts) {
-		o.truncateArray = v
+		o.truncateSliceOrArray = v
 	})
 }
