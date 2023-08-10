@@ -956,8 +956,7 @@ func (e *encodeState) stringBytes(s []byte, escapeHTML bool) {
 // A field represents a single field found in a struct.
 type field struct {
 	name      string
-	nameBytes []byte                 // []byte(name)
-	equalFold func(s, t []byte) bool // bytes.EqualFold or equivalent
+	nameBytes []byte // []byte(name)
 
 	nameNonEsc  string // `"` + name + `":`
 	nameEscHTML string // `"` + HTMLEscape(name) + `":`
@@ -1084,7 +1083,6 @@ func typeFields(t reflect.Type) structFields {
 						quoted:    quoted,
 					}
 					field.nameBytes = []byte(field.name)
-					field.equalFold = foldFunc(field.nameBytes)
 
 					// Build nameEscHTML and nameNonEsc ahead of time.
 					nameEscBuf.Reset()
