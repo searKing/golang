@@ -143,9 +143,9 @@ func WithNumberSliceTypeReplace[T comparable](v ...int64) NumberOption[T] {
 	})
 }
 
-// WithNumberName sets name in Number[T].
-func WithNumberName[T comparable](v string) NumberOption[T] {
+// WithNumberStringType sets stringType in Number[T].
+func WithNumberStringType[T comparable](v string) NumberOption[T] {
 	return NumberOptionFunc[T](func(o *Number[T]) {
-		o.name = v
+		o.stringType = v
 	})
 }

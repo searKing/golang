@@ -14,6 +14,7 @@ import (
 )
 
 //go:generate go-option -type "Number"
+//go:generate go-option -type "Number" -config=true
 type Number[T comparable] struct {
 	// This is Name doc comment
 	Name      string // This is Name line comment
@@ -29,7 +30,7 @@ type Number[T comparable] struct {
 	interfaceType interface{}
 	mapType       map[string]int64
 	sliceType     []int64
-	name          string
+	stringType    string
 }
 
 type GenericType[T any] struct{}
@@ -49,7 +50,7 @@ func main() {
 }
 
 func ck[T comparable](num *Number[T], str string) {
-	name := num.name
+	name := num.Name
 	if strings.Compare(name, str) != 0 {
 		panic(fmt.Sprintf("Numbers.go: %s", str))
 	}
