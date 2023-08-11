@@ -163,6 +163,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -311,8 +312,12 @@ func (g *Generator) Printf(format string, args ...interface{}) {
 	_, _ = fmt.Fprintf(&g.buf, format, args...)
 }
 
+func IsExported(arg reflect.Value) bool {
+	return ast.IsExported(arg.String())
+}
+
 func (g *Generator) Render(text string, arg interface{}) {
-	tmpl, err := template.New("go-option").Parse(text)
+	tmpl, err := template.New("go-option").Funcs(template.FuncMap{"IsExported": IsExported}).Parse(text)
 	if err != nil {
 		panic(err)
 	}

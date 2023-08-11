@@ -162,12 +162,21 @@ func ApplyOptions{{.TargetTypeGenericDeclaration}}(o *{{.TargetTypeName}}{{.Targ
 }
 {{- end}}
 
+{{- if .FormatTypeName | IsExported }}
 // With{{.FormatTypeName}} sets {{.TargetTypeName}}.
 func With{{.FormatTypeName}}{{.TargetTypeGenericDeclaration}}(v {{.TargetTypeName}}{{.TargetTypeGenericParams}}) {{.OptionInterfaceName}}{{.TargetTypeGenericParams}} {
 	return {{.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {
 		*o = v
 	})
 }
+{{- else}}
+// with{{.FormatTypeName}} sets {{.TargetTypeName}}.
+func with{{.FormatTypeName}}{{.TargetTypeGenericDeclaration}}(v {{.TargetTypeName}}{{.TargetTypeGenericParams}}) {{.OptionInterfaceName}}{{.TargetTypeGenericParams}} {
+	return {{.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {
+		*o = v
+	})
+}
+{{- end}}
 
 {{- if not .Fields }}
 // sample code for option, default for nothing to change
