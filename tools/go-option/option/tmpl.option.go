@@ -162,7 +162,7 @@ func ApplyOptions{{.TargetTypeGenericDeclaration}}(o *{{.TargetTypeName}}{{.Targ
 }
 {{- end}}
 
-{{- if .FormatTypeName | IsExported }}
+{{- if .TargetTypeName | IsExported }}
 // With{{.FormatTypeName}} sets {{.TargetTypeName}}.
 func With{{.FormatTypeName}}{{.TargetTypeGenericDeclaration}}(v {{.TargetTypeName}}{{.TargetTypeGenericParams}}) {{.OptionInterfaceName}}{{.TargetTypeGenericParams}} {
 	return {{.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {
