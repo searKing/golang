@@ -2,8 +2,8 @@ github.com/searKing/golang/go v1.2.84 h1:8+2OJ5Kj2DIZnG7TsWw0bUy4IqufemoAjGtvvwZ
 github.com/searKing/golang/go v1.2.84/go.mod h1:BzAooCyMWGmaGuGdzs6TbXFheWGah8R9/0p+n8D4Mvs=
 github.com/searKing/golang/tools v1.2.29 h1:gWX4aCA1+N7CfLpNd6tmBjYtecTksZFXziqbQ+AJKLo=
 github.com/searKing/golang/tools v1.2.29/go.mod h1:QtwFM73H1qMKlRl0p8NRWXrNaCaffoYkNHk5YMoRyOY=
-github.com/searKing/golang/tools/go-option v1.2.84 h1:Vipb5qTfv/ylDtritpXELfl+3qvxotxI1izdgjXIvNo=
-github.com/searKing/golang/tools/go-option v1.2.84/go.mod h1:2M+QPSFpJop+CiSKFTe1IJV5vxgMkezCeFm/szMoEpw=
+github.com/searKing/golang/tools/go-option v1.2.85 h1:yQd7C8P31ASmdlE9x3JXVmJnPuw5xYYqBYXNlbeTHsM=
+github.com/searKing/golang/tools/go-option v1.2.85/go.mod h1:2M+QPSFpJop+CiSKFTe1IJV5vxgMkezCeFm/szMoEpw=
 golang.org/x/exp v0.0.0-20230810033253-352e893a4cad h1:g0bG7Z4uG+OgH2QDODnjp6ggkk1bJDsINcuWmJN1iJU=
 golang.org/x/exp v0.0.0-20230810033253-352e893a4cad/go.mod h1:FXUEEKJgO7OQYeo8N01OfiKP8RXMtf6e8aTskBGqWdc=
 golang.org/x/mod v0.12.0 h1:rmsUpXtvNzj340zd98LZ4KntptpfRHwpFOHG188oHXc=

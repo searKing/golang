@@ -2,7 +2,7 @@ module github.com/searKing/golang/tools/cmd/go-option
 
 go 1.18
 
-require github.com/searKing/golang/tools/go-option v1.2.84
+require github.com/searKing/golang/tools/go-option v1.2.85
 
 require (
 	github.com/searKing/golang/go v1.2.84 // indirect
