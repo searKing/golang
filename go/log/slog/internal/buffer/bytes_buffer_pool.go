@@ -6,6 +6,7 @@ package buffer
 
 import (
 	"bytes"
+	"encoding/json"
 	"sync"
 )
 
@@ -58,4 +59,18 @@ func (b *Buffer) WritePosIntWidth(i, width int) {
 	// i < 10
 	bb[bp] = byte('0' + i)
 	b.Write(bb[bp:])
+}
+
+// AppendJSONMarshal writes string represents v to the buffer.
+func (b *Buffer) AppendJSONMarshal(v any) error {
+	// Use a json.Encoder to avoid escaping HTML.
+	var bb bytes.Buffer
+	enc := json.NewEncoder(&bb)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return err
+	}
+	bs := bb.Bytes()
+	b.Write(bs[:len(bs)-1]) // remove final newline
+	return nil
 }

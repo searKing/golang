@@ -22,9 +22,8 @@ import (
 )
 
 func ExampleNewGlogFormatter() {
-	getPid = func() int {
-		return 0
-	}
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	tf := NewGlogFormatter()
 	entry := logrus.WithField("foo", "bar").
 		WithError(fmt.Errorf("opps, an error occured"))
@@ -34,13 +33,12 @@ func ExampleNewGlogFormatter() {
 	fmt.Printf("%s", string(b))
 
 	// Output:
-	// P00010101 00:00:00.000000 0 run_example.go:64] Hello World, error="opps, an error occured", foo=bar
+	// P00010101 00:00:00.000000 0 run_example.go:63] Hello World, error="opps, an error occured", foo=bar
 }
 
 func ExampleNewGlogEnhancedFormatter() {
-	getPid = func() int {
-		return 0
-	}
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	tf := NewGlogEnhancedFormatter()
 	entry := logrus.WithField("foo", "bar").
 		WithError(fmt.Errorf("opps, an error occured"))
@@ -49,13 +47,14 @@ func ExampleNewGlogEnhancedFormatter() {
 	fmt.Printf("%s", string(b))
 
 	// Output:
-	// [PANIC] [00010101 00:00:00.000000] [0] [run_example.go:64] Hello World, error=opps, an error occured, foo=bar
+	// [PANIC] [00010101 00:00:00.000000] [0] [run_example.go:63] Hello World, error=opps, an error occured, foo=bar
 }
 
 func TestFormatting(t *testing.T) {
-	getPid = func() int {
-		return 0
-	}
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 
 	tf := &GlogFormatter{
 		DisableColors: true,
@@ -65,7 +64,7 @@ func TestFormatting(t *testing.T) {
 		value    string
 		expected string
 	}{
-		{`foo`, "P00010101 00:00:00.000000 0 testing.go:1259] , test=foo\n"},
+		{`foo`, "P00010101 00:00:00.000000 0 testing.go:1595] , test=foo\n"},
 	}
 
 	for i, tc := range testCases {
@@ -78,9 +77,8 @@ func TestFormatting(t *testing.T) {
 }
 
 func TestQuoting(t *testing.T) {
-	getPid = func() int {
-		return 0
-	}
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 
 	tf := &GlogFormatter{DisableColors: true}
 
@@ -145,6 +143,8 @@ func TestQuoting(t *testing.T) {
 }
 
 func TestEscaping(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	tf := &GlogFormatter{DisableColors: true}
 
 	testCases := []struct {
@@ -164,6 +164,8 @@ func TestEscaping(t *testing.T) {
 }
 
 func TestEscaping_Interface(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	tf := &GlogFormatter{DisableColors: true}
 
 	ts := time.Now()
@@ -185,9 +187,8 @@ func TestEscaping_Interface(t *testing.T) {
 }
 
 func TestTimestampFormat(t *testing.T) {
-	getPid = func() int {
-		return 0
-	}
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	checkTimeStr := func(format string) {
 		customFormatter := &GlogFormatter{DisableColors: true, TimestampFormat: format}
 		customStr, _ := customFormatter.Format(logrus.WithField("test", "test"))
@@ -209,6 +210,8 @@ func TestTimestampFormat(t *testing.T) {
 }
 
 func TestDisableLevelTruncation(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	entry := &logrus.Entry{
 		Time:    time.Now(),
 		Message: "testing",
@@ -340,6 +343,8 @@ func TestPadLevelText(t *testing.T) {
 }
 
 func TestDisableTimestampWithColoredOutput(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	tf := &GlogFormatter{DisableTimestamp: true, ForceColors: true}
 
 	b, _ := tf.Format(logrus.WithField("test", "test"))
@@ -349,6 +354,8 @@ func TestDisableTimestampWithColoredOutput(t *testing.T) {
 }
 
 func TestNewlineBehavior(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	tf := &GlogFormatter{ForceColors: true}
 
 	// Ensure a single new line is removed as per stdlib log
@@ -372,6 +379,8 @@ func TestNewlineBehavior(t *testing.T) {
 }
 
 func TestGlogFormatterFieldMap(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	formatter := &GlogFormatter{
 		DisableColors: true,
 		FieldMap: FieldMap{
@@ -399,17 +408,14 @@ func TestGlogFormatterFieldMap(t *testing.T) {
 	}
 
 	assert.Equal(t,
-		`W19810224 04:28:03.000000 0 testing.go:1259] `+
-			`oh hi, `+
-			`field1=f1, `+
-			`fields.message=messagefield, `+
-			`fields.somelevel=levelfield, `+
-			`fields.timeywimey=timeywimeyfield`+"\n",
+		`W19810224 04:28:03.000000 0 testing.go:1595] oh hi, field1=f1, fields.message=messagefield, fields.somelevel=levelfield, fields.timeywimey=timeywimeyfield`+"\n",
 		string(b),
 		"Formatted output doesn't respect FieldMap")
 }
 
 func TestGlogFormatterIsColored(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	params := []struct {
 		name               string
 		expectedResult     bool
@@ -620,6 +626,8 @@ func TestGlogFormatterIsColored(t *testing.T) {
 }
 
 func TestCustomSorting(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
 	formatter := &GlogFormatter{
 		DisableColors: true,
 		SortingFunc: func(keys []string) {

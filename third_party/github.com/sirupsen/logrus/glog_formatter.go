@@ -378,8 +378,11 @@ It returns a buffer containing the formatted header and the user's file and line
 The depth specifies how many stack frames above lives the source line to be identified in the log message.
 
 Log lines have this form:
+
 	[IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line(func)] ms
+
 where the fields are defined as follows:
+
 	L                A single character, representing the log level (eg 'I' for INFO)
 	mm               The month (zero padded; ie May is '05')
 	dd               The day (zero padded)
@@ -399,7 +402,7 @@ func (f *GlogFormatter) header(entry *logrus.Entry, depth int, levelColor int, l
 			line = 1
 		} else {
 			slash := strings.LastIndex(file, "/")
-			if slash >= 0 {
+			if slash >= 0 && slash+1 < len(file) {
 				file = file[slash+1:]
 			}
 		}
@@ -416,11 +419,11 @@ func (f *GlogFormatter) header(entry *logrus.Entry, depth int, levelColor int, l
 				line = 0 // not a real line number, but acceptable to someDigits
 			}
 			slash := strings.LastIndex(function, ".")
-			if slash >= 0 {
+			if slash >= 0 && slash+1 < len(function) {
 				function = function[slash+1:]
 			}
 			slash = strings.LastIndex(file, "/")
-			if slash >= 0 {
+			if slash >= 0 && slash+1 < len(file) {
 				file = file[slash+1:]
 			}
 			fileline = fmt.Sprintf("%s:%d", file, line)
