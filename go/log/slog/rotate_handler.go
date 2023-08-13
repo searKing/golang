@@ -7,6 +7,7 @@ package slog
 import (
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
 
 	os_ "github.com/searKing/golang/go/os"
@@ -20,8 +21,13 @@ type NewHandler func(w io.Writer, opts *slog.HandlerOptions) slog.Handler
 
 // NewRotateHandler creates a slog.Handler that writes to rotate file,
 // using the given options.
+// If path is empty, the default os.Stdout are used.
 // If opts is nil, the default options are used.
 func NewRotateHandler(h NewHandler, path string, opts *slog.HandlerOptions, options ...RotateOption) (slog.Handler, error) {
+	if path == "" {
+		return h(os.Stdout, opts), nil
+	}
+
 	if err := os_.MakeAll(filepath.Dir(path)); err != nil {
 		return nil, err
 	}
