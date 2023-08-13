@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	strings_ "github.com/searKing/golang/go/strings"
 	"github.com/sirupsen/logrus"
 )
 
@@ -124,99 +123,4 @@ func NewFactory(fc FactoryConfig) Factory {
 
 func (f Factory) Config() FactoryConfig {
 	return f.fc
-}
-
-func (f Factory) Apply() error {
-	logrus.SetLevel(f.fc.Level)
-
-	if f.fc.Format == FormatJson {
-		logrus.SetFormatter(&logrus.JSONFormatter{
-			CallerPrettyfier: ShortCallerPrettyfier,
-		})
-	} else if f.fc.Format == FormatText {
-		logrus.SetFormatter(&logrus.TextFormatter{
-			CallerPrettyfier: ShortCallerPrettyfier,
-			DisableColors:    true,
-		})
-	} else if f.fc.Format == FormatGlog || f.fc.Format == FormatGlogHuman {
-		var formatter *GlogFormatter
-		if f.fc.Format == FormatGlog {
-			formatter = NewGlogFormatter()
-		} else {
-			formatter = NewGlogEnhancedFormatter()
-		}
-		formatter.DisableColors = true
-
-		var truncate = func(s string, n int) string {
-			if len(s) <= n {
-				return s
-			}
-			var buf strings.Builder
-			buf.WriteString(fmt.Sprintf("size: %d, string: ", len(s)))
-			buf.WriteString(strings_.Truncate(s, n))
-			return buf.String()
-		}
-
-		if size := f.fc.TruncateMessageSizeTo; size > 0 {
-			formatter.MessageStringFunc = func(value interface{}) string {
-				stringVal, ok := value.(string)
-				if !ok {
-					stringVal = fmt.Sprint(value)
-				}
-				return truncate(stringVal, size)
-			}
-		}
-
-		if size := f.fc.TruncateKeySizeTo; size > 0 {
-			formatter.KeyStringFunc = func(key string) string {
-				return truncate(key, size)
-			}
-		}
-
-		if size := f.fc.TruncateValueSizeTo; size > 0 {
-			formatter.ValueStringFunc = func(value interface{}) string {
-				stringVal, ok := value.(string)
-				if !ok {
-					stringVal = fmt.Sprint(value)
-				}
-				return truncate(stringVal, size)
-			}
-		}
-
-		logrus.SetFormatter(formatter)
-	}
-
-	var RotateDuration = f.fc.RotationDuration
-	var RotateMaxAge = f.fc.RotationMaxAge
-	var RotateSizeInByte = f.fc.RotationSizeInByte
-	var RotateMaxCount = f.fc.RotationMaxCount
-
-	logrus.SetReportCaller(f.fc.ReportCaller)
-
-	muteDirectlyOutputLogLevel := f.fc.MuteDirectlyOutputLevel
-
-	if err := WithRotate(logrus.StandardLogger(),
-		f.fc.Path,
-		WithRotateInterval(RotateDuration),
-		WithMaxCount(RotateMaxCount),
-		WithMaxAge(RotateMaxAge),
-		WithRotateSize(RotateSizeInByte),
-		WithMuteDirectlyOutput(f.fc.MuteDirectlyOutput),
-		WithMuteDirectlyOutputLogLevel(muteDirectlyOutputLogLevel)); err != nil {
-		logrus.WithField("path", f.fc.Path).
-			WithField("duration", RotateDuration).
-			WithField("max_count", RotateMaxCount).
-			WithField("max_age", RotateMaxAge).
-			WithField("rotate_size_in_byte", RotateSizeInByte).
-			WithField("mute_directly_output", f.fc.MuteDirectlyOutput).
-			WithError(err).Error("add rotation wrapper for log")
-		return err
-	}
-	logrus.WithField("path", f.fc.Path).
-		WithField("duration", RotateDuration).
-		WithField("max_count", RotateMaxCount).
-		WithField("max_age", RotateMaxAge).
-		WithField("mute_directly_output", f.fc.MuteDirectlyOutput).
-		Infof("add rotation wrapper for log")
-	return nil
 }
