@@ -66,3 +66,15 @@ func MultiHandler(handlers ...slog.Handler) slog.Handler {
 	}
 	return &multiHandler{allHandlers}
 }
+
+// MultiReplaceAttr creates a [ReplaceAttr] that call all the provided replacers one by one
+func MultiReplaceAttr(replacers ...func(groups []string, a slog.Attr) slog.Attr) func(groups []string, a slog.Attr) slog.Attr {
+	return func(groups []string, a slog.Attr) slog.Attr {
+		for _, h := range replacers {
+			if h != nil {
+				a = h(groups, a)
+			}
+		}
+		return a
+	}
+}

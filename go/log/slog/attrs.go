@@ -5,9 +5,13 @@
 package slog
 
 import (
+	"fmt"
 	"log/slog"
 	"slices"
+	"strings"
 	"time"
+
+	strings_ "github.com/searKing/golang/go/strings"
 )
 
 // isEmptyAttr reports whether a has an empty key and a nil value.
@@ -38,6 +42,22 @@ func isEmptyAttr(a slog.Attr) bool {
 	default:
 		s := a.String()
 		return s == "" || s == "<nil>"
+	}
+}
+
+// ReplaceAttrTruncate returns [ReplaceAttr] which shrinks attr's key and value[string]'s len to n at most.
+func ReplaceAttrTruncate(n int) func(groups []string, a slog.Attr) slog.Attr {
+	return func(groups []string, a slog.Attr) slog.Attr {
+		if n > 0 {
+			k := truncate(a.Key, n)
+			switch a.Value.Kind() {
+			case slog.KindString:
+				return slog.String(k, truncate(a.Value.String(), n))
+			default:
+				return a
+			}
+		}
+		return a
 	}
 }
 
@@ -88,4 +108,14 @@ func replaceAttrClash(attrs []slog.Attr, key string) []slog.Attr {
 	return slices.DeleteFunc(attrs, func(attr slog.Attr) bool {
 		return attr.Key == key
 	})
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	var buf strings.Builder
+	buf.WriteString(fmt.Sprintf("size: %d, string: ", len(s)))
+	buf.WriteString(strings_.Truncate(s, n))
+	return buf.String()
 }
