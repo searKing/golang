@@ -252,7 +252,7 @@ func (h *commonHandler) handle(r slog.Record) error {
 	state.groups = nil // So ReplaceAttrs sees no groups instead of the pre groups.
 	rep := h.opts.ReplaceAttr
 	// level
-	colored := state.appendLevel(r.Level, h.isColored(), h.PadLevelText, h.sharedVar.maxLevelText, h.HumanReadable)
+	state.appendLevel(r.Level, h.isColored(), h.PadLevelText, h.sharedVar.maxLevelText, h.HumanReadable)
 	// time
 	t := r.Time // strip monotonic to match Attr behavior
 	mode := h.TimestampMode
@@ -302,14 +302,7 @@ func (h *commonHandler) handle(r slog.Record) error {
 
 	state.groups = stateGroups // Restore groups passed to ReplaceAttrs.
 	state.appendNonBuiltIns(r)
-
-	if colored {
-		state.buf.WriteString("\x1b[0m")
-		// Remove a single newline if it already exists in the message to keep
-		// the behavior of logrus glog_formatter the same as the stdlib log package
-	} else {
-		state.buf.WriteByte('\n')
-	}
+	state.buf.WriteByte('\n')
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
