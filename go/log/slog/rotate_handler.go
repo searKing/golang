@@ -45,6 +45,7 @@ func NewRotateHandler(h NewHandler, path string, opts *slog.HandlerOptions, opti
 	file.MaxAge = opt.MaxAge
 	file.MaxCount = opt.MaxCount
 	file.ForceNewFileOnStartup = opt.ForceNewFileOnStartup
+	file.PostRotateHandler = GlogRotateHeader
 	return h(file, opts), nil
 }
 
