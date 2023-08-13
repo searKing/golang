@@ -20,6 +20,30 @@ type GlogHandler struct {
 // NewGlogHandler creates a GlogHandler that writes to w,
 // using the given options.
 // If opts is nil, the default options are used.
+// # LOG LINE PREFIX FORMAT
+//
+// Log lines have this form:
+//
+//	Lyyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg...
+//
+// where the fields are defined as follows:
+//
+//	L                A single character, representing the log level
+//	                 (eg 'I' for INFO)
+//	yyyy             The year
+//	mm               The month (zero padded; ie May is '05')
+//	dd               The day (zero padded)
+//	hh:mm:ss.uuuuuu  Time in hours, minutes and fractional seconds
+//	threadid         The space-padded thread ID as returned by GetTID()
+//	                 (this matches the PID on Linux)
+//	file             The file name
+//	line             The line number
+//	msg              The user-supplied message
+//
+// Example:
+//
+//	I1103 11:57:31.739339 24395 google.cc:2341] Command line: ./some_prog
+//	I1103 11:57:31.739403 24395 google.cc:2342] Process id 24395
 func NewGlogHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 	if opts == nil {
 		opts = &slog.HandlerOptions{
@@ -54,6 +78,31 @@ func NewGlogHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 // NewGlogHumanHandler creates a human-readable GlogHandler that writes to w,
 // using the given options.
 // If opts is nil, the default options are used.
+// # LOG LINE PREFIX FORMAT
+//
+// Log lines have this form:
+//
+//	[LLLLL] [yyyymmdd hh:mm:ss.uuuuuu] [threadid] [file:line(func)] msg...
+//
+// where the fields are defined as follows:
+//
+//	LLLLL            Five characters, representing the log level
+//	                 (eg 'INFO ' for INFO)
+//	yyyy             The year
+//	mm               The month (zero padded; ie May is '05')
+//	dd               The day (zero padded)
+//	hh:mm:ss.uuuuuu  Time in hours, minutes and fractional seconds
+//	threadid         The space-padded thread ID as returned by GetTID()
+//	                 (this matches the PID on Linux)
+//	file             The file name
+//	line             The line number
+//	func             The func name
+//	msg              The user-supplied message
+//
+// Example:
+//
+//	[INFO] [1103 11:57:31.739339] [24395] [google.cc:2341] Command line: ./some_prog
+//	[INFO] [1103 11:57:31.739403 24395] [google.cc:2342] Process id 24395
 func NewGlogHumanHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 	if opts == nil {
 		opts = &slog.HandlerOptions{
