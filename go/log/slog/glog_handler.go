@@ -64,13 +64,13 @@ func NewGlogHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 					return "E"
 				}
 			},
-			opts:             *opts,
-			AttrSep:          ", ",
-			DisableQuote:     true,
-			SourcePrettier:   ShortSource,
-			terminalInitOnce: &sync.Once{},
-			mu:               &sync.Mutex{},
-			w:                w,
+			opts:           *opts,
+			AttrSep:        ", ",
+			DisableQuote:   true,
+			SourcePrettier: ShortSource,
+			sharedVar:      &sharedVar{once: &sync.Once{}},
+			mu:             &sync.Mutex{},
+			w:              w,
 		},
 	}
 }
@@ -111,16 +111,16 @@ func NewGlogHumanHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 	}
 	return &GlogHandler{
 		&commonHandler{
-			opts:             *opts,
-			AttrSep:          ", ",
-			DisableQuote:     true,
-			PadLevelText:     true,
-			HumanReadable:    true,
-			SourcePrettier:   ShortSource,
-			WithFuncName:     true,
-			terminalInitOnce: &sync.Once{},
-			mu:               &sync.Mutex{},
-			w:                w,
+			opts:           *opts,
+			AttrSep:        ", ",
+			DisableQuote:   true,
+			PadLevelText:   true,
+			HumanReadable:  true,
+			SourcePrettier: ShortSource,
+			WithFuncName:   true,
+			sharedVar:      &sharedVar{once: &sync.Once{}},
+			mu:             &sync.Mutex{},
+			w:              w,
 		},
 	}
 }

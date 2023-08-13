@@ -42,6 +42,34 @@ const (
 	SinceStartTimestamp
 )
 
+// sharedVar shared const expvar among handler and children handler...
+type sharedVar struct {
+	once *sync.Once
+
+	// Whether the logger's out is to a terminal
+	isTerminal bool
+	// The max length of the level text, generated dynamically on init
+	maxLevelText int
+	// The process id of the caller.
+	pid int
+}
+
+func (h *sharedVar) init(w io.Writer) {
+	h.once.Do(func() {
+		if f, ok := w.(*os.File); ok {
+			h.isTerminal = term.IsTerminal(int(f.Fd()))
+		}
+		// Get the max length of the level text
+		for _, level := range []slog.Level{slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError} {
+			levelTextLength := utf8.RuneCount([]byte(level.String()))
+			if levelTextLength > h.maxLevelText {
+				h.maxLevelText = levelTextLength
+			}
+		}
+		h.pid = getPid()
+	})
+}
+
 type commonHandler struct {
 	// replace level.String()
 	ReplaceLevelString func(l slog.Level) string
@@ -93,13 +121,7 @@ type commonHandler struct {
 
 	opts slog.HandlerOptions
 
-	// Whether the logger's out is to a terminal
-	isTerminal bool
-
-	terminalInitOnce *sync.Once
-	// The max length of the level text, generated dynamically on init
-	maxLevelText int
-	pid          int
+	sharedVar *sharedVar
 
 	preformattedAttrs []byte
 	// groupPrefix is for the text handler only.
@@ -123,10 +145,10 @@ func NewCommonHandler(w io.Writer, opts *slog.HandlerOptions) *commonHandler {
 		opts = &slog.HandlerOptions{}
 	}
 	return &commonHandler{
-		opts:             *opts,
-		terminalInitOnce: &sync.Once{},
-		mu:               &sync.Mutex{},
-		w:                w,
+		opts:      *opts,
+		sharedVar: &sharedVar{once: &sync.Once{}},
+		mu:        &sync.Mutex{},
+		w:         w,
 	}
 }
 
@@ -221,7 +243,7 @@ func (h *commonHandler) withGroup(name string) *commonHandler {
 // synchronized.  Hence, use caution when comparing the low bits of
 // timestamps from different machines.
 func (h *commonHandler) handle(r slog.Record) error {
-	h.initOnlyOnce()
+	h.sharedVar.init(h.w)
 
 	state := h.newHandleState(buffer.New(), true, "")
 	defer state.free()
@@ -230,7 +252,7 @@ func (h *commonHandler) handle(r slog.Record) error {
 	state.groups = nil // So ReplaceAttrs sees no groups instead of the pre groups.
 	rep := h.opts.ReplaceAttr
 	// level
-	colored := state.appendLevel(r.Level, h.isColored(), h.PadLevelText, h.maxLevelText, h.HumanReadable)
+	colored := state.appendLevel(r.Level, h.isColored(), h.PadLevelText, h.sharedVar.maxLevelText, h.HumanReadable)
 	// time
 	t := r.Time // strip monotonic to match Attr behavior
 	mode := h.TimestampMode
@@ -344,7 +366,7 @@ func (h *commonHandler) newHandleState(buf *buffer.Buffer, freeBuf bool, sep str
 }
 
 func (h *commonHandler) isColored() bool {
-	isColored := h.ForceColors || (h.isTerminal && (runtime.GOOS != "windows"))
+	isColored := h.ForceColors || (h.sharedVar.isTerminal && (runtime.GOOS != "windows"))
 
 	if h.EnvironmentOverrideColors {
 		switch force, ok := os.LookupEnv("CLICOLOR_FORCE"); {
@@ -356,22 +378,4 @@ func (h *commonHandler) isColored() bool {
 	}
 
 	return isColored && !h.DisableColors
-}
-
-func (h *commonHandler) init() {
-	if f, ok := h.w.(*os.File); ok {
-		h.isTerminal = term.IsTerminal(int(f.Fd()))
-	}
-	// Get the max length of the level text
-	for _, level := range []slog.Level{slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError} {
-		levelTextLength := utf8.RuneCount([]byte(level.String()))
-		if levelTextLength > h.maxLevelText {
-			h.maxLevelText = levelTextLength
-		}
-	}
-	h.pid = getPid()
-}
-
-func (h *commonHandler) initOnlyOnce() {
-	h.terminalInitOnce.Do(func() { h.init() })
 }

@@ -274,11 +274,11 @@ func (s *handleState) appendPid(forceGoroutineId bool, humanReadable bool) {
 		if humanReadable {
 			// " [{pid}]"
 			s.buf.WriteString("[")
-			s.buf.WriteString(strconv.Itoa(s.h.pid))
+			s.buf.WriteString(strconv.Itoa(s.h.sharedVar.pid))
 			s.buf.WriteString("]")
 		} else {
 			// " {pid}"
-			s.buf.WriteString(strconv.Itoa(s.h.pid))
+			s.buf.WriteString(strconv.Itoa(s.h.sharedVar.pid))
 		}
 	}
 }
