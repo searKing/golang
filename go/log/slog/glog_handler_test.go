@@ -36,17 +36,17 @@ func TestGlogHandler(t *testing.T) {
 		{
 			"quoted",
 			slog.String("x = y", `qu"o`),
-			`"x = y"`, `"qu\"o"`,
+			`x = y`, `"qu\"o"`,
 		},
 		{
 			"String method",
 			slog.Any("name", name{"Ren", "Hoek"}),
-			`name`, `"Hoek, Ren"`,
+			`name`, `Hoek, Ren`,
 		},
 		{
 			"struct",
 			slog.Any("x", &struct{ A, b int }{A: 1, b: 2}),
-			`x`, `"&{A:1 b:2}"`,
+			`x`, `&{A:1 b:2}`,
 		},
 		{
 			"TextMarshaler",
@@ -56,7 +56,7 @@ func TestGlogHandler(t *testing.T) {
 		{
 			"TextMarshaler error",
 			slog.Any("t", text{""}),
-			`t`, `"!ERROR:text: empty string"`,
+			`t`, `!ERROR:text: empty string`,
 		},
 		{
 			"nil value",
@@ -74,19 +74,19 @@ func TestGlogHandler(t *testing.T) {
 				{
 					"none",
 					slog.HandlerOptions{},
-					`time=2000-01-02T03:04:05.000Z level=INFO msg="a message"`,
+					`I20000102 03:04:05.000000 0] a message`,
 					func(s string) string { return s },
 				},
 				{
 					"replace",
 					slog.HandlerOptions{ReplaceAttr: upperCaseKey},
-					`TIME=2000-01-02T03:04:05.000Z LEVEL=INFO MSG="a message"`,
+					`I20000102 03:04:05.000000 0] a message`,
 					strings.ToUpper,
 				},
 			} {
 				t.Run(opts.name, func(t *testing.T) {
 					var buf bytes.Buffer
-					h := slog.NewTextHandler(&buf, &opts.opts)
+					h := NewGlogHandler(&buf, &opts.opts)
 					r := slog.NewRecord(testTime, slog.LevelInfo, "a message", 0)
 					r.AddAttrs(test.attr)
 					if err := h.Handle(context.Background(), r); err != nil {
@@ -95,7 +95,93 @@ func TestGlogHandler(t *testing.T) {
 					got := buf.String()
 					// Remove final newline.
 					got = got[:len(got)-1]
-					want := opts.wantPrefix + " " + opts.modKey(test.wantKey) + "=" + test.wantVal
+					want := opts.wantPrefix + ", " + opts.modKey(test.wantKey) + "=" + test.wantVal
+					if got != want {
+						t.Errorf("\ngot  %s\nwant %s", got, want)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestGlogHumanHandler(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
+
+	for _, test := range []struct {
+		name             string
+		attr             slog.Attr
+		wantKey, wantVal string
+	}{
+		{
+			"unquoted",
+			slog.Int("a", 1),
+			"a", "1",
+		},
+		{
+			"quoted",
+			slog.String("x = y", `qu"o`),
+			`x = y`, `"qu\"o"`,
+		},
+		{
+			"String method",
+			slog.Any("name", name{"Ren", "Hoek"}),
+			`name`, `Hoek, Ren`,
+		},
+		{
+			"struct",
+			slog.Any("x", &struct{ A, b int }{A: 1, b: 2}),
+			`x`, `&{A:1 b:2}`,
+		},
+		{
+			"TextMarshaler",
+			slog.Any("t", text{"abc"}),
+			`t`, `"text{\"abc\"}"`,
+		},
+		{
+			"TextMarshaler error",
+			slog.Any("t", text{""}),
+			`t`, `!ERROR:text: empty string`,
+		},
+		{
+			"nil value",
+			slog.Any("a", nil),
+			`a`, `<nil>`,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			for _, opts := range []struct {
+				name       string
+				opts       slog.HandlerOptions
+				wantPrefix string
+				modKey     func(string) string
+			}{
+				{
+					"none",
+					slog.HandlerOptions{},
+					`[INFO ][20000102 03:04:05.000000] [0] a message`,
+					func(s string) string { return s },
+				},
+				{
+					"replace",
+					slog.HandlerOptions{ReplaceAttr: upperCaseKey},
+					`[INFO ][20000102 03:04:05.000000] [0] a message`,
+					strings.ToUpper,
+				},
+			} {
+				t.Run(opts.name, func(t *testing.T) {
+					var buf bytes.Buffer
+					h := NewGlogHumanHandler(&buf, &opts.opts)
+					r := slog.NewRecord(testTime, slog.LevelInfo, "a message", 0)
+					r.AddAttrs(test.attr)
+					if err := h.Handle(context.Background(), r); err != nil {
+						t.Fatal(err)
+					}
+					got := buf.String()
+					// Remove final newline.
+					got = got[:len(got)-1]
+					want := opts.wantPrefix + ", " + opts.modKey(test.wantKey) + "=" + test.wantVal
 					if got != want {
 						t.Errorf("\ngot  %s\nwant %s", got, want)
 					}

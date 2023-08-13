@@ -52,6 +52,22 @@ func ExampleGroup() {
 			slog.Int("status", http.StatusOK),
 			slog.Duration("duration", time.Second))
 	}
+	// ...
+	{
+		fmt.Printf("----multi[text-json-glog-glog_human]----\n")
+		logger := slog.New(MultiHandler(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+			NewGlogHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+			NewGlogHumanHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+		))
+		logger.Info("finished",
+			slog.Group("req",
+				slog.String("method", r.Method),
+				slog.String("url", r.URL.String())),
+			slog.Int("status", http.StatusOK),
+			slog.Duration("duration", time.Second))
+	}
 
 	// Output:
 	// ----text----
@@ -59,5 +75,10 @@ func ExampleGroup() {
 	// ----glog----
 	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
 	// ----glog_human----
+	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
+	// ----multi[text-json-glog-glog_human]----
+	// level=INFO msg=finished req.method=GET req.url=localhost status=200 duration=1s
+	// {"level":"INFO","msg":"finished","req":{"method":"GET","url":"localhost"},"status":200,"duration":1000000000}
+	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
 	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
 }
