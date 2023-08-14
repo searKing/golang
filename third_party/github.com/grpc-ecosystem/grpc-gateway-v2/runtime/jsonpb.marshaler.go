@@ -13,8 +13,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// JSONPb is a Marshaler which marshals/unmarshals into/from JSON
+// with the [proto.Message] by "google.golang.org/protobuf/encoding/protojson" marshaler and
+// [any] by "encoding/json" marshaler.
+// It supports the full functionality of protobuf unlike JSONBuiltin.
+//
+// The NewDecoder method returns a DecoderWrapper, so the underlying
+// *json.Decoder methods can be used.
+//
 //go:generate go-option -type=JSONPb
-// json -> proto|interface{}
 type JSONPb struct {
 	runtime.JSONPb
 }
