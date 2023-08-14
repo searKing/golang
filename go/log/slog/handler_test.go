@@ -372,11 +372,11 @@ func TestHandlers(t *testing.T) {
 		{
 			name:          "json.RawMessage",
 			replace:       removeKeys(slog.TimeKey, slog.LevelKey),
-			attrs:         []slog.Attr{slog.Any("bs", json.RawMessage([]byte("1234")))},
+			attrs:         []slog.Attr{slog.Any("bs", json.RawMessage("1234"))},
 			wantText:      `msg=message bs="1234"`,
 			wantJSON:      `{"msg":"message","bs":1234}`,
-			wantGlog:      `0] message, bs="1234"`,
-			wantGlogHuman: `[] [0] message, bs="1234"`,
+			wantGlog:      `0] message, bs=1234`,
+			wantGlogHuman: `[] [0] message, bs=1234`,
 		},
 		{
 			name:    "inline group",

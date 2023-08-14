@@ -6,6 +6,7 @@ package slog
 
 import (
 	"encoding"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -33,6 +34,19 @@ func appendTextValue(s *handleState, v slog.Value) error {
 		}
 		if err, ok := a.(error); ok && err != nil {
 			s.appendString(err.Error())
+			return nil
+		}
+		if tm, ok := a.(fmt.Stringer); ok {
+			s.appendString(tm.String())
+			return nil
+		}
+		if tm, ok := a.(json.Marshaler); ok {
+			data, err := tm.MarshalJSON()
+			if err != nil {
+				return err
+			}
+			// TODO: avoid the conversion to string.
+			s.appendString(string(data))
 			return nil
 		}
 		if bs, ok := byteSlice(a); ok {
