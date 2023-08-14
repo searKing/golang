@@ -135,7 +135,7 @@ func (s *handleState) appendAttr(a slog.Attr) {
 }
 
 func (s *handleState) appendError(err error) {
-	s.appendString(fmt.Sprintf("!ERROR:%v", err))
+	s.appendString(fmt.Sprintf("!ERROR:%v", err.Error()))
 }
 
 func (s *handleState) appendKey(key string) {

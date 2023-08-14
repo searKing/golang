@@ -28,6 +28,13 @@ func init() {
 	baseTimestamp = timeNow()
 }
 
+// Keys for "built-in" attributes.
+const (
+	// ErrorKey is the key used by the handlers for the error
+	// when the log method is called. The associated Value is an [error].
+	ErrorKey = "error"
+)
+
 type TimestampMode int
 
 const (

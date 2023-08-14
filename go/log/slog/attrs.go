@@ -14,6 +14,11 @@ import (
 	strings_ "github.com/searKing/golang/go/strings"
 )
 
+// Error returns an Attr for an error value.
+func Error(err error) slog.Attr {
+	return slog.Any(ErrorKey, err)
+}
+
 // isEmptyAttr reports whether a has an empty key and a nil value.
 // That can be written as Attr{} or Any("", nil).
 func isEmptyAttr(a slog.Attr) bool {

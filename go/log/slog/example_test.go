@@ -19,6 +19,11 @@ func ExampleGroup() {
 	defer func() { getPid = os.Getpid }()
 
 	r, _ := http.NewRequest("GET", "localhost", nil)
+	err := &os.PathError{
+		Op:   "test",
+		Path: "ExampleGroup",
+		Err:  os.ErrInvalid,
+	}
 	// ...
 	{
 		fmt.Printf("----text----\n")
@@ -28,7 +33,8 @@ func ExampleGroup() {
 				slog.String("method", r.Method),
 				slog.String("url", r.URL.String())),
 			slog.Int("status", http.StatusOK),
-			slog.Duration("duration", time.Second))
+			slog.Duration("duration", time.Second),
+			Error(err))
 	}
 	// ...
 	{
@@ -39,7 +45,8 @@ func ExampleGroup() {
 				slog.String("method", r.Method),
 				slog.String("url", r.URL.String())),
 			slog.Int("status", http.StatusOK),
-			slog.Duration("duration", time.Second))
+			slog.Duration("duration", time.Second),
+			Error(err))
 	}
 	// ...
 	{
@@ -50,7 +57,8 @@ func ExampleGroup() {
 				slog.String("method", r.Method),
 				slog.String("url", r.URL.String())),
 			slog.Int("status", http.StatusOK),
-			slog.Duration("duration", time.Second))
+			slog.Duration("duration", time.Second),
+			Error(err))
 	}
 	// ...
 	{
@@ -66,19 +74,20 @@ func ExampleGroup() {
 				slog.String("method", r.Method),
 				slog.String("url", r.URL.String())),
 			slog.Int("status", http.StatusOK),
-			slog.Duration("duration", time.Second))
+			slog.Duration("duration", time.Second),
+			Error(err))
 	}
 
 	// Output:
 	// ----text----
-	// level=INFO msg=finished req.method=GET req.url=localhost status=200 duration=1s
+	// level=INFO msg=finished req.method=GET req.url=localhost status=200 duration=1s error="test ExampleGroup: invalid argument"
 	// ----glog----
-	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
+	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
 	// ----glog_human----
-	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
+	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
 	// ----multi[text-json-glog-glog_human]----
-	// level=INFO msg=finished req.method=GET req.url=localhost status=200 duration=1s
-	// {"level":"INFO","msg":"finished","req":{"method":"GET","url":"localhost"},"status":200,"duration":1000000000}
-	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
-	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s
+	// level=INFO msg=finished req.method=GET req.url=localhost status=200 duration=1s error="test ExampleGroup: invalid argument"
+	// {"level":"INFO","msg":"finished","req":{"method":"GET","url":"localhost"},"status":200,"duration":1000000000,"error":"test ExampleGroup: invalid argument"}
+	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
+	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
 }

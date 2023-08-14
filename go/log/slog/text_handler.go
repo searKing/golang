@@ -31,6 +31,10 @@ func appendTextValue(s *handleState, v slog.Value) error {
 			s.appendString(string(data))
 			return nil
 		}
+		if err, ok := a.(error); ok && err != nil {
+			s.appendString(err.Error())
+			return nil
+		}
 		if bs, ok := byteSlice(a); ok {
 			// As of Go 1.19, this only allocates for strings longer than 32 bytes.
 			s.buf.WriteString(strconv.Quote(string(bs)))
