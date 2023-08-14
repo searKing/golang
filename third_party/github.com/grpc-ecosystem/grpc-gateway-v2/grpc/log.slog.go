@@ -31,7 +31,7 @@ func WithSlogLoggerConfig(logger slog.Handler, conf gin.LoggerConfig) GatewayOpt
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		l := logger.WithGroup("grpc-gateway")
 		if conf.Formatter == nil {
-			conf.Formatter = gin_.LogFormatter("")
+			conf.Formatter = gin_.LogFormatter("gRPC over HTTP")
 		}
 		if conf.Output == nil {
 			conf.Output = slog.NewLogLogger(logger, slog.LevelInfo).Writer()

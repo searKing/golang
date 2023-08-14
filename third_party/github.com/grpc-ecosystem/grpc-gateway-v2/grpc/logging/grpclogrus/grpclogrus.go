@@ -50,7 +50,7 @@ func interceptorLogrusLogger(l logrus.FieldLogger) logging.Logger {
 func WithLogrusLoggerConfig(logger *logrus.Logger, conf gin.LoggerConfig) grpc.GatewayOption {
 	return grpc.GatewayOptionFunc(func(gateway *grpc.Gateway) {
 		if conf.Formatter == nil {
-			conf.Formatter = gin_.LogFormatter("")
+			conf.Formatter = gin_.LogFormatter("gRPC over HTTP")
 		}
 		if conf.Output == nil {
 			conf.Output = logger.Writer()

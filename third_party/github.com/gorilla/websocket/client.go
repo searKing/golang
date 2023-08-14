@@ -46,7 +46,7 @@ func (cli *Client) ServeHTTP(w http.ResponseWriter, r *http.Request) error {
 	return ErrUnImplement
 }
 
-// OnHandshake takes over the http handler
+// DialAndServe takes over the http handler
 func (cli *Client) DialAndServe(urlStr string, requestHeader http.Header) error {
 	if cli.shuttingDown() {
 		return ErrClientClosed
