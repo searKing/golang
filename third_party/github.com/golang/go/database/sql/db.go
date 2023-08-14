@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"runtime"
 	"strconv"
@@ -16,9 +17,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
-
 	"github.com/searKing/golang/go/database/dsn"
+	slog_ "github.com/searKing/golang/go/log/slog"
 	time_ "github.com/searKing/golang/go/time"
 )
 
@@ -27,6 +27,7 @@ var (
 )
 
 // DB represents a connection to a SQL database.
+//
 //go:generate go-option -type "DB"
 type DB struct {
 	DSN           string
@@ -34,7 +35,7 @@ type DB struct {
 	driverName    string
 	driverPackage string
 
-	logger logrus.FieldLogger
+	logger *slog.Logger
 
 	// options
 	opts struct {
@@ -70,9 +71,9 @@ func cleanURLQuery(in url.Values) (out url.Values) {
 	return out
 }
 
-func (db *DB) fieldLogger() logrus.FieldLogger {
+func (db *DB) fieldLogger() *slog.Logger {
 	if db.logger == nil {
-		return logrus.StandardLogger()
+		return slog.Default()
 	}
 	return db.logger
 
@@ -89,18 +90,17 @@ func (db *DB) GetDatabaseRetry(ctx context.Context, maxWait time.Duration, failA
 		db.db, err = db.GetDatabase()
 		if err != nil {
 			if errors.Is(err, ErrRegister) {
-				db.fieldLogger().WithError(err).Errorf("database: Register")
+				db.fieldLogger().ErrorContext(ctx, "database: Register", slog_.Error(err))
 				return nil, err
 			}
 
 			delay, ok := tempDelay.NextBackOff()
 			if !ok {
-				db.fieldLogger().WithError(err).
-					Errorf("database: Connect; retried canceled as time exceed(%v)",
-						tempDelay.GetMaxElapsedDuration())
+				db.fieldLogger().ErrorContext(ctx, fmt.Sprintf("database: Connect; retried canceled as time exceed(%s)",
+					tempDelay.GetMaxElapsedDuration()), slog_.Error(err))
 				return nil, err
 			}
-			db.fieldLogger().WithError(err).Errorf("database: Connect; retrying in (%v)", delay)
+			db.fieldLogger().WarnContext(ctx, fmt.Sprintf("database: Connect; retrying in (%v)", delay), slog_.Error(err))
 			time.Sleep(delay)
 			continue
 		}
@@ -125,21 +125,23 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 	}
 
 	classifiedDSN := dsn.Masking(dsn_)
-	db.fieldLogger().WithField("dsn", classifiedDSN).Info("Establishing connection with SQL database backend")
+
+	logger := db.fieldLogger().With("dsn", classifiedDSN)
+	logger.Info("Establishing connection with SQL database backend")
 
 	db_, err := sql.Open(driverName, dsn_)
 	if err != nil {
-		db.fieldLogger().WithError(err).WithField("dsn", classifiedDSN).Error("Unable to open SQL connection")
+		logger.Error("Unable to open SQL connection", slog_.Error(err))
 		return nil, fmt.Errorf("could not open SQL connection: %w", err)
 	}
 
 	db.db = sqlx.NewDb(db_, driverPackage) // This must be clean.Scheme otherwise things like `Rebind()` won't work
 	if err := db.db.Ping(); err != nil {
-		db.fieldLogger().WithError(err).WithField("dsn", classifiedDSN).Error("Unable to ping SQL database backend")
+		logger.Error("Unable to ping SQL database backend", slog_.Error(err))
 		return nil, fmt.Errorf("could not ping SQL connection: %w", err)
 	}
 
-	db.fieldLogger().WithField("dsn", classifiedDSN).Info("Successfully connected to SQL database backend")
+	logger.Info("Successfully connected to SQL database backend")
 
 	_, _, query := dsn.Split(dsn_)
 
@@ -147,7 +149,7 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 	if v := query.Get("max_conns"); v != "" {
 		s, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			db.fieldLogger().WithError(err).Warnf(`Query parameter "max_conns" value %v could not be parsed to int, falling back to default value %d`, v, maxConns)
+			logger.Warn(fmt.Sprintf(`Query parameter "max_conns" value %v could not be parsed to int, falling back to default value %d`, v, maxConns), slog_.Error(err))
 		} else {
 			maxConns = int(s)
 		}
@@ -157,8 +159,8 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 	if v := query.Get("max_idle_conns"); v != "" {
 		s, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			db.fieldLogger().Warnf("max_idle_conns value %s could not be parsed to int: %s", v, err)
-			db.fieldLogger().WithError(err).Warnf(`Query parameter "max_idle_conns" value %v could not be parsed to int, falling back to default value %d`, v, maxIdleConns)
+			logger.Warn(fmt.Sprintf("max_idle_conns value %s could not be parsed to int: %s", v, err))
+			logger.Warn(fmt.Sprintf(`Query parameter "max_idle_conns" value %v could not be parsed to int, falling back to default value %d`, v, maxIdleConns), slog_.Error(err))
 		} else {
 			maxIdleConns = int(s)
 		}
@@ -168,7 +170,7 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 	if v := query.Get("max_conn_lifetime"); v != "" {
 		s, err := time.ParseDuration(v)
 		if err != nil {
-			db.fieldLogger().WithError(err).Warnf(`Query parameter "max_conn_lifetime" value %v could not be parsed to int, falling back to default value %d`, v, maxConnLifetime)
+			logger.Warn(fmt.Sprintf(`Query parameter "max_conn_lifetime" value %v could not be parsed to int, falling back to default value %d`, v, maxConnLifetime), slog_.Error(err))
 		} else {
 			maxConnLifetime = s
 		}
