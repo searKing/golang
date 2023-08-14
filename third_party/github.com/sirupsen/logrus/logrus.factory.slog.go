@@ -16,22 +16,7 @@ import (
 func (f Factory) Apply() error {
 	logrus.SetLevel(f.fc.Level)
 	logrus.SetReportCaller(f.fc.ReportCaller)
-	logrus.AddHook(HookFunc(func(entry *logrus.Entry) error {
-		var pc uintptr
-		// caller of entry.Caller
-		if entry.Caller != nil {
-			pc = entry.Caller.PC + 1
-		}
-
-		var attrs []slog.Attr
-		for k, v := range entry.Data {
-			attrs = append(attrs, slog.Any(k, v))
-		}
-
-		r := slog.NewRecord(entry.Time, ToSlogLevel(entry.Level), entry.Message, pc)
-		r.AddAttrs(attrs...)
-		return slog.Default().Handler().Handle(entry.Context, r)
-	}))
+	logrus.AddHook(HookFunc(DefaultSlogHook))
 	var slogOpt slog.HandlerOptions
 	slogOpt.AddSource = f.fc.ReportCaller
 	slogOpt.ReplaceAttr = slog_.ReplaceAttrTruncate(max(f.fc.TruncateKeySizeTo, f.fc.TruncateValueSizeTo, f.fc.TruncateMessageSizeTo))

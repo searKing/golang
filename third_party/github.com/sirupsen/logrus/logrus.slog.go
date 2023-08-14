@@ -27,3 +27,29 @@ func ToSlogLevel(l logrus.Level) slog.Level {
 		return slog.LevelDebug
 	}
 }
+
+// DefaultSlogHook returns a logrus Hook by [slog.Default],
+// followed even if [slog.SetDefault] changes default slog logger.
+func DefaultSlogHook(entry *logrus.Entry) error {
+	return SlogHook(slog.Default().Handler())(entry)
+}
+
+// SlogHook returns a logrus Hook by [slog.Handler]
+func SlogHook(h slog.Handler) func(entry *logrus.Entry) error {
+	return func(entry *logrus.Entry) error {
+		var pc uintptr
+		// caller of entry.Caller
+		if entry.Caller != nil {
+			pc = entry.Caller.PC + 1
+		}
+
+		var attrs []slog.Attr
+		for k, v := range entry.Data {
+			attrs = append(attrs, slog.Any(k, v))
+		}
+
+		r := slog.NewRecord(entry.Time, ToSlogLevel(entry.Level), entry.Message, pc)
+		r.AddAttrs(attrs...)
+		return h.Handle(entry.Context, r)
+	}
+}
