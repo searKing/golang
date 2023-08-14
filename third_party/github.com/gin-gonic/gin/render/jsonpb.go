@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	protov1 "github.com/golang/protobuf/proto"
-	"github.com/searKing/golang/third_party/github.com/golang/protobuf/jsonpb"
 	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -41,8 +39,6 @@ func WriteJSONPB(w http.ResponseWriter, obj interface{}) error {
 	var err error
 	if msg, ok := obj.(proto.Message); ok {
 		jsonBytes, err = protojson.Marshal(msg)
-	} else if msg, ok := obj.(protov1.Message); ok {
-		jsonBytes, err = jsonpb.Marshal(msg)
 	} else {
 		jsonBytes, err = json.Marshal(obj)
 	}

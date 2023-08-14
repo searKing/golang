@@ -20,18 +20,19 @@ func TestRenderJSONPB(t *testing.T) {
 		Html: "<b>",
 	}
 
-	(render.JSONPB{Data: data}).WriteContentType(w)
+	(render.JSONPB{Data: &data}).WriteContentType(w)
 	if "application/json; charset=utf-8" != w.Header().Get("Content-Type") {
 		t.Errorf("got %q, want %q", w.Body.String(), `{"foo":"bar","html":"\u003cb\u003e"}`)
 	}
 
-	err := (render.JSONPB{Data: data}).Render(w)
+	err := (render.JSONPB{Data: &data}).Render(w)
 	if err != nil {
 		t.Errorf("data=%q; %v", data.String(), err)
 		return
 	}
-	if `{"foo":"bar","html":"\u003cb\u003e"}` != w.Body.String() {
-		t.Errorf("got %q, want %q", w.Body.String(), `{"foo":"bar","html":"\u003cb\u003e"}`)
+	want := `{"foo":"bar","html":"<b>"}`
+	if want != w.Body.String() {
+		t.Errorf("got %s, want %s", w.Body.String(), want)
 	}
 	if "application/json; charset=utf-8" != w.Header().Get("Content-Type") {
 		t.Errorf("got %q, want %q", w.Header().Get("Content-Type"), "application/json; charset=utf-8")
