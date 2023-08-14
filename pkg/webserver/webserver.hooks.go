@@ -8,13 +8,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 	"runtime/debug"
 
 	errors_ "github.com/searKing/golang/go/errors"
 	"github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -87,7 +88,8 @@ func (s *WebServer) AddPostStartHook(name string, hook PostStartHookFunc) error 
 // AddPostStartHookOrDie allows you to add a PostStartHook, but dies on failure
 func (s *WebServer) AddPostStartHookOrDie(name string, hook PostStartHookFunc) {
 	if err := s.AddPostStartHook(name, hook); err != nil {
-		logrus.Fatalf("Error registering PostStartHook %q: %v", name, err)
+		slog.Error(fmt.Sprintf("Error registering PostStartHook %q: %s", name, err.Error()))
+		os.Exit(1)
 	}
 }
 
@@ -118,7 +120,8 @@ func (s *WebServer) AddPreShutdownHook(name string, hook PreShutdownHookFunc) er
 // AddPreShutdownHookOrDie allows you to add a PostStartHook, but dies on failure
 func (s *WebServer) AddPreShutdownHookOrDie(name string, hook PreShutdownHookFunc) {
 	if err := s.AddPreShutdownHook(name, hook); err != nil {
-		logrus.Fatalf("Error registering PreShutdownHook %q: %v", name, err)
+		slog.Error(fmt.Sprintf("Error registering PreShutdownHook %q: %s", name, err.Error()))
+		os.Exit(1)
 	}
 }
 

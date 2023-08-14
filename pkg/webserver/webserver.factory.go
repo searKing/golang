@@ -7,6 +7,7 @@ package webserver
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"math"
 	"net"
 	"net/http"
@@ -20,14 +21,14 @@ import (
 	"github.com/gin-gonic/gin"
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/rs/cors"
+	slog_ "github.com/searKing/golang/go/log/slog"
 	net_ "github.com/searKing/golang/go/net"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
-	logrus_ "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
+	grpclog_ "github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -44,7 +45,7 @@ type FactoryConfig struct {
 	// BindAddress is the host port to bind to (local internet)
 	// Will default to a value based on secure serving info and available ipv4 IPs.
 	BindAddress string
-	// ExternalAddress is the address advertised, even if BindAddress is a loopback. By default this
+	// ExternalAddress is the address advertised, even if BindAddress is a loopback. By default, this
 	// is set to BindAddress if the later no loopback, or to the first host interface address.
 	ExternalAddress string
 	// ShutdownDelayDuration allows to block shutdown for some time, e.g. until endpoints pointing to this API server
@@ -69,6 +70,7 @@ type FactoryConfig struct {
 	MaxReceiveMessageSizeInBytes int           // sets the maximum message size in bytes the grpc server can receive, The default is 0 (no limit is given).
 	MaxSendMessageSizeInBytes    int           // sets the maximum message size in bytes the grpc server can send, The default is 0 (no limit is given).
 
+	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
 
 	GatewayOptions []grpc_.GatewayOption
@@ -135,20 +137,19 @@ func (f *Factory) New() (*WebServer, error) {
 	// if there is no port, and we listen on one securely, use that one
 	if _, _, err := net.SplitHostPort(f.fc.ExternalAddress); err != nil {
 		if f.fc.BindAddress == "" {
-			logrus.WithError(err).Fatalf("cannot derive external address port without listening on a secure port.")
+			slog.Error("cannot derive external address port without listening on a secure port.", slog_.Error(err))
+			os.Exit(1)
 		}
 
 		_, port, err := net.SplitHostPort(f.fc.BindAddress)
 		if err != nil {
-			logrus.WithError(err).Fatalf("cannot derive external address from the secure port: %v", err)
+			slog.Error("cannot derive external address from the secure port", slog_.Error(err))
+			os.Exit(1)
 		}
 		f.fc.ExternalAddress = net.JoinHostPort(f.fc.ExternalAddress, port)
 	}
 
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(
-		logrus.StandardLogger().WriterLevel(logrus.DebugLevel),
-		logrus.StandardLogger().WriterLevel(logrus.WarnLevel),
-		logrus.StandardLogger().WriterLevel(logrus.ErrorLevel)))
+	grpclog.SetLoggerV2(grpclog_.DefaultSlogLogger())
 	opts := grpc_.WithDefault()
 	if f.fc.NoGrpcProxy {
 		opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithNoProxy()))
@@ -176,7 +177,7 @@ func (f *Factory) New() (*WebServer, error) {
 	{
 		// recover
 		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p interface{}) (err error) {
-			logrus.WithError(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())).Errorf("recovered in grpc")
+			slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
 			{
 				_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
 				debug.PrintStack()
@@ -186,7 +187,7 @@ func (f *Factory) New() (*WebServer, error) {
 			return status.Errorf(codes.Internal, "%s", p)
 		}))))
 		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p interface{}) (err error) {
-			logrus.WithError(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())).Errorf("recovered in grpc")
+			slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
 			{
 				_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
 				debug.PrintStack()
@@ -217,16 +218,16 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 
 	opts = append(opts, f.fc.GatewayOptions...)
-	if f.fc.EnableLogrusMiddleware {
-		opts = append(opts, grpc_.WithLogrusLogger(logrus.StandardLogger()))
-	}
+	opts = append(opts, grpc_.WithSlogLogger(slog.Default().Handler()))
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	grpcBackend.ApplyOptions()
-	grpcBackend.ErrorLog = logrus_.AsStdLogger(logrus.StandardLogger(), logrus.ErrorLevel, "", 0)
+	grpcBackend.ErrorLog = slog.NewLogLogger(slog.Default().Handler(), slog.LevelError)
 	ginBackend := gin.New()
-	if f.fc.EnableLogrusMiddleware {
-		ginBackend.Use(gin.LoggerWithWriter(logrus.StandardLogger().Writer()))
-	}
+
+	ginBackend.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Formatter: gin_.LogFormatter("GIN over HTTP"),
+		Output:    slog.NewLogLogger(slog.Default().Handler(), slog.LevelInfo).Writer(),
+	}))
 	ginBackend.Use(gin_.RecoveryWithWriter(grpcBackend.ErrorLog.Writer()))
 	ginBackend.Use(gin_.UseHTTPPreflight())
 	ginBackend.Use(f.fc.GinMiddlewares...)
@@ -326,7 +327,7 @@ func (f *Factory) GetBackendBindHostPort() string {
 	return getHostPort(host, port)
 }
 
-// GetBackendExternalHostPort returns a address to expose with domain, if not set, use host instead.
+// GetBackendExternalHostPort returns an address to expose with domain, if not set, use host instead.
 func (f *Factory) GetBackendExternalHostPort() string {
 	host, port, _ := net_.SplitHostPort(f.fc.ExternalAddress)
 	if host == "" {
@@ -335,7 +336,7 @@ func (f *Factory) GetBackendExternalHostPort() string {
 	return getHostPort(host, port)
 }
 
-// GetBackendServeHostPort returns a address to expose without domain, if not set, use resolver to resolve a ip
+// GetBackendServeHostPort returns an address to expose without domain, if not set, use resolver to resolve an ip
 func (f *Factory) GetBackendServeHostPort(external bool) string {
 	if external {
 		host, _, _ := net_.SplitHostPort(f.fc.ExternalAddress)

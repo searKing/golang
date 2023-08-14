@@ -8,15 +8,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	slog_ "github.com/searKing/golang/go/log/slog"
 	runtime_ "github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	"github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
-	"github.com/sirupsen/logrus"
 )
 
 type WebHandler interface {
@@ -99,7 +100,7 @@ func (s *WebServer) PrepareRun() (preparedWebServer, error) {
 	s.installLivez()
 	err := s.addReadyzShutdownCheck(s.readinessStopCh)
 	if err != nil {
-		logrus.Errorf("Failed to parseViper readyz shutdown check %s", err)
+		slog.Error("Failed to add readyz shutdown check", slog_.Error(err))
 		return preparedWebServer{}, err
 	}
 	s.installReadyz()
@@ -111,7 +112,7 @@ func (s *WebServer) PrepareRun() (preparedWebServer, error) {
 // Run spawns the secure http server. It only returns if stopCh is closed
 // or the secure port cannot be listened on initially.
 func (s preparedWebServer) Run(ctx context.Context) error {
-	logrus.Infof("Serving securely on %s", s.grpcBackend.Addr)
+	slog.InfoContext(ctx, fmt.Sprintf("Serving securely on %s", s.grpcBackend.Addr))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	stoppedHttpServerCtx, stopHttpServer := context.WithCancel(context.Background())
@@ -121,14 +122,14 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 	go func() {
 		defer wg.Done()
 		defer stopHttpServer()
-		defer logrus.Info("[graceful-termination] shutdown executed")
+		defer slog.Info("[graceful-termination] shutdown executed")
 		<-ctx.Done()
 
 		// As soon as shutdown is initiated, /readyz should start returning failure.
 		// This gives the load balancer a window defined by ShutdownDelayDuration to detect that /readyz is red
 		// and stop sending traffic to this server.
 		close(s.readinessStopCh)
-		logrus.Infof("[graceful-termination] shutdown is initiated and delayed after %d", s.ShutdownDelayDuration)
+		slog.InfoContext(ctx, fmt.Sprintf("[graceful-termination] shutdown is initiated and delayed after %d", s.ShutdownDelayDuration))
 		time.Sleep(s.ShutdownDelayDuration)
 	}()
 
@@ -139,14 +140,14 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 		return err
 	}
 
-	logrus.Info("[graceful-termination] waiting for shutdown to be initiated")
+	slog.Info("[graceful-termination] waiting for shutdown to be initiated")
 	// wait for stoppedCh that is closed when the graceful termination (server.Shutdown) is finished.
 	<-stopHttpServerCtx.Done()
 	// run shutdown hooks directly. This includes deregistering from the kubernetes endpoint in case of web server.
 	func() {
 		defer cancel()
 		defer func() {
-			logrus.WithField("name", s.Name).Infof("[graceful-termination] pre-shutdown hooks completed")
+			slog.Info("[graceful-termination] pre-shutdown hooks completed", slog.String("name", s.Name))
 		}()
 		err = s.RunPreShutdownHooks()
 	}()
@@ -155,12 +156,12 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 	}
 
 	// wait for the delayed stopCh before closing the handler chain (it rejects everything after Wait has been called).
-	logrus.Info("[graceful-termination] waiting for http server to be stopped")
+	slog.Info("[graceful-termination] waiting for http server to be stopped")
 	<-stoppedHttpServerCtx.Done()
-	logrus.Info("[graceful-termination] waiting for http server to be shutdown executed")
+	slog.Info("[graceful-termination] waiting for http server to be shutdown executed")
 
 	wg.Wait()
-	logrus.Info("[graceful-termination] webserver is exiting")
+	slog.Info("[graceful-termination] webserver is exiting")
 	return nil
 }
 
@@ -188,9 +189,10 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 		err := s.grpcBackend.Shutdown(ctx)
 		msg := fmt.Sprintf("Have shutdown http server on %s", s.grpcBackend.Addr)
 		if err != nil {
-			logrus.WithError(err).Errorf(msg)
+			slog.Error(msg, slog_.Error(err))
+			return
 		}
-		logrus.Infof(msg)
+		slog.Info(msg)
 	}()
 
 	go func() {
@@ -200,14 +202,14 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 		err = s.grpcBackend.ListenAndServe()
 		msg := fmt.Sprintf("Stopped listening on %s", s.grpcBackend.Addr)
 		if err == nil || errors.Is(err, http.ErrServerClosed) {
-			logrus.Info(msg)
+			slog.Info(msg)
 			return
 		}
 		select {
 		case <-stoppedCtx.Done():
-			logrus.Info(msg)
+			slog.Info(msg)
 		default: // not caused by Shutdown
-			logrus.WithError(err).Errorf(msg)
+			slog.Error(msg, slog_.Error(err))
 		}
 		return
 	}()
@@ -227,14 +229,10 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 		err = s.RunPostStartHooks(stopCtx)
 		msg := fmt.Sprintf("RunPostStartHooks on %s", s.grpcBackend.Addr)
 		if err == nil {
-			logrus.Info(msg)
+			slog.Info(msg)
 			return
 		}
-		if errors.Is(err, context.Canceled) {
-			logrus.WithError(err).Errorf(msg)
-			return
-		}
-		logrus.WithError(err).Errorf("%s due to error: %v", msg, err)
+		slog.Error(msg, slog_.Error(err))
 	}()
 
 	return stopCtx, stoppedCtx, nil
