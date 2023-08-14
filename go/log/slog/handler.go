@@ -251,8 +251,11 @@ func (h *commonHandler) handle(r slog.Record) error {
 	stateGroups := state.groups
 	state.groups = nil // So ReplaceAttrs sees no groups instead of the pre groups.
 	rep := h.opts.ReplaceAttr
+	if h.isColored() {
+		state.color = levelColor(r.Level)
+	}
 	// level
-	state.appendLevel(r.Level, h.isColored(), h.PadLevelText, h.sharedVar.maxLevelText, h.HumanReadable)
+	state.appendLevel(r.Level, h.PadLevelText, h.sharedVar.maxLevelText, h.HumanReadable)
 	// time
 	t := r.Time // strip monotonic to match Attr behavior
 	mode := h.TimestampMode

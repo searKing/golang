@@ -27,6 +27,8 @@ type handleState struct {
 	sep     string         // separator to write before next key
 	prefix  *buffer.Buffer // for text: key prefix
 	groups  *[]string      // pool-allocated slice of active groups, for ReplaceAttr
+
+	color string // for color of level and attr key
 }
 
 func (s *handleState) free() {
@@ -138,7 +140,13 @@ func (s *handleState) appendError(err error) {
 
 func (s *handleState) appendKey(key string) {
 	s.buf.WriteString(s.sep)
+	if s.color != "" {
+		s.buf.WriteString(s.color)
+	}
 	s.appendString(s.replaceKey(key))
+	if s.color != "" {
+		s.buf.WriteString(reset)
+	}
 	s.buf.WriteByte('=')
 	s.sep = s.h.attrSep()
 }
@@ -162,29 +170,7 @@ func (s *handleState) appendValue(v slog.Value) {
 	}
 }
 
-const (
-	red    = 31
-	yellow = 33
-	blue   = 36
-	gray   = 37
-)
-
-func (s *handleState) appendLevel(level slog.Level, preferColor bool, padLevelText bool, maxLevelText int, humanReadable bool) (colored bool) {
-	var c int
-	if preferColor {
-		switch level {
-		case slog.LevelDebug:
-			c = gray
-		case slog.LevelWarn:
-			c = yellow
-		case slog.LevelError:
-			c = red
-		default:
-			c = blue
-		}
-	}
-	colored = c > 0
-
+func (s *handleState) appendLevel(level slog.Level, padLevelText bool, maxLevelText int, humanReadable bool) {
 	// level
 	key := slog.LevelKey
 	var val string
@@ -223,16 +209,19 @@ func (s *handleState) appendLevel(level slog.Level, preferColor bool, padLevelTe
 
 	// Avoid Fprintf, for speed. The format is so simple that we can do it quickly by hand.
 	// It's worth about 3X. Fprintf is hard.
-	if colored {
-		s.buf.WriteString(fmt.Sprintf("\x1b[%dm%s\x1b[0m", c, val))
-	} else if humanReadable {
+	if humanReadable {
 		s.buf.WriteString("[")
-		s.buf.WriteString(val)
-		s.buf.WriteString("]")
-	} else {
-		s.buf.WriteString(val)
 	}
-	return colored
+	if s.color != "" {
+		s.buf.WriteString(s.color)
+	}
+	s.buf.WriteString(val)
+	if s.color != "" {
+		s.buf.WriteString(reset)
+	}
+	if humanReadable {
+		s.buf.WriteString("]")
+	}
 }
 
 func (s *handleState) appendGlogTime(t time.Time, layout string, mode TimestampMode, humanReadable bool) {
