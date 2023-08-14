@@ -19,7 +19,8 @@ func init() {
 	grpclog.SetLoggerV2(NewLogger(logrus.NewEntry(logrus.StandardLogger())))
 }
 
-// Logger adapts logrus's Logger to be compatible with grpclog.Entry.LoggerV2 and the deprecated grpclog.Entry.Logger.
+// Logger adapts logrus's Logger to be compatible with [grpclog.LoggerV2], the experimental [grpclog.DepthLoggerV2] and the deprecated [grpclog.Logger].
+//
 //go:generate go-option -type "Logger"
 type Logger struct {
 	Entry *logrus.Entry

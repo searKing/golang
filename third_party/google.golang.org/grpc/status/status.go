@@ -5,7 +5,6 @@
 package status
 
 import (
-	"errors"
 	"fmt"
 
 	errors_ "github.com/searKing/golang/go/errors"
@@ -23,7 +22,7 @@ func Errore(err error, c codes.Code, msg string) error {
 	if err == nil || c == codes.OK {
 		return nil
 	}
-	if _, ok := FromError(err); ok {
+	if _, ok := status.FromError(err); ok {
 		return err
 	}
 
@@ -37,32 +36,32 @@ func Errorfe(err error, c codes.Code, format string, a ...interface{}) error {
 
 // FromError returns a Status representation of err.
 //
-// - If err was produced by this package or any err by `errors.UnWrap()` implements the method
-//   `GRPCStatus() *Status`, the appropriate Status is returned.
+//   - If err was produced by this package or implements the method `GRPCStatus()
+//     *Status` and `GRPCStatus()` does not return nil, or if err wraps a type
+//     satisfying this, the Status from `GRPCStatus()` is returned.  For wrapped
+//     errors, the message returned contains the entire err.Error() text and not
+//     just the wrapped status. In that case, ok is true.
 //
-// - If err is nil, a Status is returned with codes.OK and no message.
+//   - If err is nil, a Status is returned with codes.OK and no message, and ok
+//     is true.
 //
-// - Otherwise, err is an error not compatible with this package.  In this
-//   case, a Status is returned with codes.Unknown and err's Error() message,
-//   and ok is false.
+//   - If err implements the method `GRPCStatus() *Status` and `GRPCStatus()`
+//     returns nil (which maps to Codes.OK), or if err wraps a type
+//     satisfying this, a Status is returned with codes.Unknown and err's
+//     Error() message, and ok is false.
+//
+//   - Otherwise, err is an error not compatible with this package.  In this
+//     case, a Status is returned with codes.Unknown and err's Error() message,
+//     and ok is false.
+//
+// Deprecated: As of grpc 1.58.0, Use status.FromError instead.
 func FromError(err error) (s *Status, ok bool) {
-	s, ok = status.FromError(err)
-	if ok {
-		return s, ok
-	}
-	var gRPCStatus interface {
-		GRPCStatus() *status.Status
-	}
-	if errors.As(err, &gRPCStatus) {
-		s = gRPCStatus.GRPCStatus()
-		ok = true
-	}
-	return s, ok
+	return status.FromError(err)
 }
 
 // Convert is a convenience function which removes the need to handle the
 // boolean return value from FromError.
+// Deprecated: As of grpc 1.58.0, Use status.Convert instead.
 func Convert(err error) *Status {
-	s, _ := FromError(err)
-	return s
+	return status.Convert(err)
 }
