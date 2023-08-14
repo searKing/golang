@@ -30,9 +30,12 @@ func GrpcOrDefaultHandler(grpcServer *grpc.Server, defaultHandler http.Handler) 
 		contentType := r.Header.Get("Content-Type")
 		// TODO: do we assume contentType is lowercase? we did before
 		_, validGrpcContentType := contentSubtype(contentType)
+
 		var h http.Handler
-		// This is a partial recreation of gRPC's example code https://github.com/grpc/grpc-go/blob/68098483a7afa91b353453641408e3968ad92738/server.go#L862
-		if r.ProtoMajor == 2 && validGrpcContentType {
+		if _, ok := w.(http.Flusher); !ok { // gRPC requires a ResponseWriter supporting http.Flusher
+			h = defaultHandler
+		} else if r.ProtoMajor == 2 && validGrpcContentType {
+			// This is a partial recreation of gRPC's example code https://github.com/grpc/grpc-go/blob/68098483a7afa91b353453641408e3968ad92738/server.go#L862
 			h = grpcServer
 		} else {
 			h = defaultHandler
@@ -48,7 +51,7 @@ func GrpcOrDefaultHandler(grpcServer *grpc.Server, defaultHandler http.Handler) 
 // contentSubtype returns the content-subtype for the given content-type.  The
 // given content-type must be a valid content-type that starts with
 // "application/grpc". A content-subtype will follow "application/grpc" after a
-// "+" or ";", format as "application/grpc" [("+proto" / "+json" / {custom})]. See
+// "+" or ";". See
 // https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests for
 // more details.
 //
