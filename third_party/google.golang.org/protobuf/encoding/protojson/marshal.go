@@ -13,10 +13,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-//go:generate go-option -type=Marshaler
-
 // Marshaler is a configurable object for converting between
 // protocol buffer objects and a JSON representation for them.
+//
+//go:generate go-option -type=Marshaler
 type Marshaler struct {
 	protojson.MarshalOptions
 }
@@ -67,17 +67,18 @@ func WithMarshalUseEnumNumbers(useEnumNumbers bool) MarshalerOption {
 // WithMarshalEmitUnpopulated specifies whether to emit unpopulated fields. It does not
 // emit unpopulated oneof fields or unpopulated extension fields.
 // The JSON value emitted for unpopulated fields are as follows:
-//  ╔═══════╤════════════════════════════╗
-//  ║ JSON  │ Protobuf field             ║
-//  ╠═══════╪════════════════════════════╣
-//  ║ false │ proto3 boolean fields      ║
-//  ║ 0     │ proto3 numeric fields      ║
-//  ║ ""    │ proto3 string/bytes fields ║
-//  ║ null  │ proto2 scalar fields       ║
-//  ║ null  │ message fields             ║
-//  ║ []    │ list fields                ║
-//  ║ {}    │ map fields                 ║
-//  ╚═══════╧════════════════════════════╝
+//
+//	╔═══════╤════════════════════════════╗
+//	║ JSON  │ Protobuf field             ║
+//	╠═══════╪════════════════════════════╣
+//	║ false │ proto3 boolean fields      ║
+//	║ 0     │ proto3 numeric fields      ║
+//	║ ""    │ proto3 string/bytes fields ║
+//	║ null  │ proto2 scalar fields       ║
+//	║ null  │ message fields             ║
+//	║ []    │ list fields                ║
+//	║ {}    │ map fields                 ║
+//	╚═══════╧════════════════════════════╝
 func WithMarshalEmitUnpopulated(emitUnpopulated bool) MarshalerOption {
 	return MarshalerOptionFunc(func(m *Marshaler) {
 		m.EmitUnpopulated = emitUnpopulated

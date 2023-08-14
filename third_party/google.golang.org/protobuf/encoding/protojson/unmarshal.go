@@ -10,10 +10,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-//go:generate go-option -type=Unmarshaler
-
 // Unmarshaler is a configurable object for converting from a JSON
 // representation to a protocol buffer object.
+//
+//go:generate go-option -type=Unmarshaler
 type Unmarshaler struct {
 	protojson.UnmarshalOptions
 }

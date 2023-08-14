@@ -19,8 +19,8 @@ type Human struct {
 }
 
 type ToProtoStructTests struct {
-	input  Human
-	output string
+	input Human
+	want  string
 }
 
 var (
@@ -37,30 +37,30 @@ var (
 				}},
 			}},
 		},
-		output: `{
- "Friends": [
+		want: `{
+ "Friends":  [
   "Bob",
   "Carol",
   "Dave"
  ],
- "Name": "Alice",
- "Strangers": [
+ "Name":  "Alice",
+ "Strangers":  [
   {
-   "Friends": [
+   "Friends":  [
     "Oscar"
    ],
-   "Name": "Eve",
-   "Strangers": [
+   "Name":  "Eve",
+   "Strangers":  [
     {
-     "Friends": [
+     "Friends":  [
       "Justin",
       "Trent",
       "Pat",
       "Victor",
       "Walter"
      ],
-     "Name": "Isaac",
-     "Strangers": null
+     "Name":  "Isaac",
+     "Strangers":  null
     }
    ]
   }
@@ -84,8 +84,8 @@ func TestToProtoStruct(t *testing.T) {
 			t.Errorf("#%d: json.Marshal(%+v): got: _, %v exp: _, nil", m, test.input, err)
 		}
 
-		if strings.Compare(string(humanBytes), test.output) != 0 {
-			t.Errorf("#%d: json.Marshal(%+v): got: %v exp: %v", m, test.input, string(humanBytes), test.output)
+		if strings.Compare(string(humanBytes), test.want) != 0 {
+			t.Errorf("#%d: json.Marshal(%+v): got: %v want: %v", m, test.input, string(humanBytes), test.want)
 		}
 	}
 }
