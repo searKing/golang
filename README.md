@@ -11,8 +11,8 @@ Useful libs or tools for Golang
 
 * [exp](https://pkg.go.dev/github.com/searKing/golang/go/exp) — `exp` holds experimental packages and defines various
   functions useful with [generics](https://go.dev/doc/tutorial/generics) of any type.
-    - [slices](https://pkg.go.dev/github.com/searKing/golang/go/exp/slices)  defines various functions useful with
-      slices of any type.
+    - [slices](https://pkg.go.dev/github.com/searKing/golang/go/exp/slices) defines various functions useful with slices
+      of any type.
     - [maps](https://pkg.go.dev/github.com/searKing/golang/go/exp/maps) defines various functions useful with maps of
       any type.
     - [image](https://pkg.go.dev/github.com/searKing/golang/go/exp/image)
@@ -22,18 +22,42 @@ Useful libs or tools for Golang
       cache, based on [not-thread safe lru](https://pkg.go.dev/github.com/searKing/golang/go@v1.2.82/exp/container/lru)
     - [types.Optional](https://pkg.go.dev/github.com/searKing/golang/go/exp/types#Optional) represents a Value that may
       be null.
-* [webhdfs](https://github.com/searKing/webhdfs) - Hadoop WebHDFS REST API client library for Golang with fs module
-  like (asynchronous) interface.
+* [slog](https://pkg.go.dev/github.com/searKing/log/slog) - `slog`
+  provides [GlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewGlogHandler),
+  [GlogHumanHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewGlogHumanHandler),
+  [NewRotateHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewRotateHandler) and
+  [MultiHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#MultiHandler) handlers
+  for [slog](https://pkg.go.dev/log/slog)
+    - [GlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewGlogHandler) provides a Handler that
+      writes Records to an io.Writer as line-delimited [glog](https://github.com/google/glog) formats, Log lines have
+      this
+      form: [Lyyyymmdd hh:mm:ss.uuuuuu threadid file:line\] msg...](https://github.com/google/glog/blob/v0.6.0/src/glog/logging.h.in#L346).
+    - [GlogHumanHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewGlogHumanHandler) provides a
+      Handler that writes Records to an io.Writer as line-delimited [glog](https://github.com/google/glog) formats, but
+      human-readable, Log lines have this
+      form: [\[LLLLL\] \[yyyymmdd hh:mm:ss.uuuuuu\] \[threadid\] \[file:line(func)\] msg...](https://github.com/searKing/golang/blob/go/v1.2.86/go/log/slog/glog_handler.go#L85).
+    - [MultiHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#MultiHandler) that duplicates its writes
+      to all the provided handlers, similar to the Unix tee(1) command. `MultiHandler` might be useful for write log to
+      many Handlers, like writing log to both stdout and rotate file.
+    - [RotateHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewRotateHandler) that provides a
+      Handler that writes Records to
+      a [RotateFile](https://pkg.go.dev/github.com/searKing/golang/go/os). `RotateHandler` might be useful for write log
+      to ease administration of systems that generate large numbers of files. It allows automatic rotation,
+      removal, and handler of files. Each file may be handled daily, weekly, monthly, strftimely, time_layoutly or when
+      it grows too large. Here are some helper
+      functions, [NewRotateGlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewRotateGlogHandler), [NewRotateGlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewRotateGlogHandler), [NewRotateGlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewRotateGlogHandler), [NewRotateGlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewRotateGlogHandler)
+* [webhdfs](https://pkg.go.dev/github.com/searKing/webhdfs) - Hadoop WebHDFS REST API client library for Golang with fs
+  module like (asynchronous) interface.
 * [Thread](https://pkg.go.dev/github.com/searKing/golang/go/sync#Thread) — Thread should be used for such as
   calling OS services or non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
 * [BurstLimiter](https://pkg.go.dev/github.com/searKing/golang/go/time/rate#BurstLimiter) — BurstLimiter behaves
   like Limiter in `time`, BurstLimiter controls how frequently events are allowed to happen.
-    - It implements a "token
-      bucket" of size b, initially full、empty or any size, and refilled by `PutToken` or `PutTokenN`. The difference is
+    - It implements a "token bucket" of size b, initially full、empty or any size, and refilled by `PutToken`
+      or `PutTokenN`. The difference is
       that `time/rate.Limiter`initially full and refilled at rate r tokens per second.
     - It implements a [Reorder Buffer](https://en.wikipedia.org/wiki/Re-order_buffer) allocated by `Reserve`
-      or `ReserveN` into account when allowing future events and
-      `Wait` or `WaitN` blocks until lim permits n events to happen.
+      or `ReserveN` into account when allowing future events and `Wait` or `WaitN` blocks until lim permits n events to
+      happen.
 * [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator#Generator) — Generator behaves like
   Generator in python or ES6, with yield and next statements.
 * [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal#Notify) — Signal enhances signal.Notify
@@ -69,7 +93,7 @@ Useful libs or tools for Golang
   designed to ease administration of systems that generate large numbers of files. It allows automatic rotation,
   removal, and handler of files. Each file may be handled daily, weekly, monthly, strftimely, time_layoutly or when it
   grows too large.
-    - [WithRotate](https://pkg.go.dev/github.com/searKing/golang/third_party/github.com/sirupsen/logrus) -
+    - [WithRotate](https://pkg.go.dev/github.com/searKing/golang/third_party/github.com/sirupsen/logrus) —
       WithRotate is an example of os.RotateFile register for logrus.
 
 # GoGenerateTools
