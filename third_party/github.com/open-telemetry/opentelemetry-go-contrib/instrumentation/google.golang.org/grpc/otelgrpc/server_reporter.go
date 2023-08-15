@@ -10,6 +10,7 @@ import (
 
 	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
@@ -29,7 +30,7 @@ func newServerReporter(ctx context.Context, m *ServerMetrics, rpcType grpcType, 
 	}
 	_, attrs := spanInfo(fullMethod, peerAddress, localAddress, rpcType, false)
 	r.attrs = attrs
-	r.metrics.serverStartedCounter.Add(ctx, 1, r.Attrs()...)
+	r.metrics.serverStartedCounter.Add(ctx, 1, metric.WithAttributes(r.Attrs()...))
 	return r
 }
 
@@ -45,7 +46,7 @@ func (r *serverReporter) Attrs(attrs ...attribute.KeyValue) []attribute.KeyValue
 func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time.Time) {
 	if r.metrics.serverStreamReceiveTimeHistogramEnabled {
 		attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
-		r.metrics.serverStreamReceiveTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), attrs...)
+		r.metrics.serverStreamReceiveTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), metric.WithAttributes(attrs...))
 		return
 	}
 	return
@@ -53,12 +54,12 @@ func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time
 
 func (r *serverReporter) ReceivedMessage(ctx context.Context, message interface{}) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
-	r.metrics.serverStreamMsgReceived.Add(ctx, 1, attrs...)
+	r.metrics.serverStreamMsgReceived.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.serverStreamReceiveSizeHistogramEnabled {
 		if p, ok := message.(proto.Message); ok {
-			r.metrics.serverStreamReceiveSizeHistogram.Record(ctx, int64(proto.Size(p)), attrs...)
+			r.metrics.serverStreamReceiveSizeHistogram.Record(ctx, int64(proto.Size(p)), metric.WithAttributes(attrs...))
 		} else {
-			r.metrics.serverStreamReceiveSizeHistogram.Record(ctx, -1, attrs...)
+			r.metrics.serverStreamReceiveSizeHistogram.Record(ctx, -1, metric.WithAttributes(attrs...))
 		}
 	}
 }
@@ -66,7 +67,7 @@ func (r *serverReporter) ReceivedMessage(ctx context.Context, message interface{
 func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Time) {
 	if r.metrics.serverStreamSendTimeHistogramEnabled {
 		attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
-		r.metrics.serverStreamSendTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), attrs...)
+		r.metrics.serverStreamSendTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), metric.WithAttributes(attrs...))
 		return
 	}
 	return
@@ -74,21 +75,21 @@ func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Ti
 
 func (r *serverReporter) SentMessage(ctx context.Context, message interface{}) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
-	r.metrics.serverStreamMsgSent.Add(ctx, 1, attrs...)
+	r.metrics.serverStreamMsgSent.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.serverStreamSendSizeHistogramEnabled {
 		if p, ok := message.(proto.Message); ok {
-			r.metrics.serverStreamSendSizeHistogram.Record(ctx, int64(proto.Size(p)), attrs...)
+			r.metrics.serverStreamSendSizeHistogram.Record(ctx, int64(proto.Size(p)), metric.WithAttributes(attrs...))
 		} else {
-			r.metrics.serverStreamSendSizeHistogram.Record(ctx, int64(proto.Size(nil)), attrs...)
+			r.metrics.serverStreamSendSizeHistogram.Record(ctx, int64(proto.Size(nil)), metric.WithAttributes(attrs...))
 		}
 	}
 }
 
 func (r *serverReporter) Handled(ctx context.Context, code codes.Code) {
 	attrs := r.Attrs(statusCodeAttr(code))
-	r.metrics.serverHandledCounter.Add(ctx, 1, attrs...)
+	r.metrics.serverHandledCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 
 	if r.metrics.serverHandledTimeHistogramEnabled {
-		r.metrics.serverHandledTimeHistogram.Record(ctx, time.Since(r.startTime).Seconds(), attrs...)
+		r.metrics.serverHandledTimeHistogram.Record(ctx, time.Since(r.startTime).Seconds(), metric.WithAttributes(attrs...))
 	}
 }

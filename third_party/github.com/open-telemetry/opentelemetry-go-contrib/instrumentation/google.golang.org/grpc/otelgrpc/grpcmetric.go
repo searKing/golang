@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// GRPCTypeKey is convention for grpc type of a gRPC connection.
+	// GRPCTypeKey is convention for grpc type of gRPC connection.
 	GRPCTypeKey = attribute.Key("rpc.grpc.type")
 )
 
@@ -18,7 +18,7 @@ var (
 	// InstrumentationName is the name of this instrumentation package.
 	InstrumentationName = "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	// InstrumentationVersion is the version of this instrumentation package.
-	InstrumentationVersion = otelcontrib.SemVersion()
+	InstrumentationVersion = otelcontrib.Version()
 
 	// AttrsFilter is a filter before Report
 	AttrsFilter = func(attrs ...attribute.KeyValue) []attribute.KeyValue {

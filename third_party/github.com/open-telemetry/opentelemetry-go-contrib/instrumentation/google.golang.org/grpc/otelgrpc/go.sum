@@ -21,6 +21,7 @@ github.com/searKing/golang/go v1.2.89/go.mod h1:OnRUfEFkYVdTlEdif1G5u+jSIAhJx0fI
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
 go.opentelemetry.io/contrib v1.15.0 h1:XHmAg3KX6N1kYvhd/tEfDojFcpcRzyz0X8085+wPJyI=
 go.opentelemetry.io/contrib v1.15.0/go.mod h1:O3SXx534x0bWzGJlxXiUXpV7Ao7Iweib+s/urIXELrs=
+go.opentelemetry.io/contrib v1.17.0/go.mod h1:gIzjwWFoGazJmtCaDgViqOSJPde2mCWzv60o0bWPcZs=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0 h1:5jD3teb4Qh7mx/nfzq4jO2WFFpvXD0vYWFDrdvNWmXk=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0/go.mod h1:UMklln0+MRhZC4e3PwmN3pCtq4DyIadWw4yikh6bNrw=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0 h1:ZOLJc06r4CB42laIXg/7udr0pbZyuAihN10A/XuiQRY=

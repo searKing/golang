@@ -13,7 +13,7 @@ import (
 
 	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 )
@@ -39,7 +39,7 @@ func peerAttr(addr string, client bool) []attribute.KeyValue {
 
 	var attrs []attribute.KeyValue
 	if host != "" {
-		attrs = append(attrs, semconv.NetPeerIPKey.String(host))
+		attrs = append(attrs, semconv.NetPeerNameKey.String(host))
 	}
 	if port != "" && port != "0" && client { // avoid bombs of various client's peer port
 		attrs = append(attrs, semconv.NetPeerPortKey.String(port))
@@ -55,7 +55,7 @@ func localAttr(addr string, client bool) []attribute.KeyValue {
 	}
 	var attrs []attribute.KeyValue
 	if host != "" {
-		attrs = append(attrs, semconv.NetHostIPKey.String(host))
+		attrs = append(attrs, semconv.NetPeerNameKey.String(host))
 	}
 	if port != "" && port != "0" && !client { // avoid bombs of various server's local port
 		attrs = append(attrs, semconv.NetHostPortKey.String(port))
