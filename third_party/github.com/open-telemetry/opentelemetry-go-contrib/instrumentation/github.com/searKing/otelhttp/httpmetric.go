@@ -13,7 +13,7 @@ var (
 	// InstrumentationName is the name of this instrumentation package.
 	InstrumentationName = "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/octelhttp"
 	// InstrumentationVersion is the version of this instrumentation package.
-	InstrumentationVersion = otelcontrib.SemVersion()
+	InstrumentationVersion = otelcontrib.Version()
 
 	// AttrsFilter is a filter before Report
 	AttrsFilter = func(attrs ...attribute.KeyValue) []attribute.KeyValue {

@@ -13,6 +13,7 @@ import (
 	net_ "github.com/searKing/golang/go/net"
 	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type clientReporter struct {
@@ -39,7 +40,7 @@ func newClientReporter(ctx context.Context, m *ClientMetrics, req *http.Request)
 
 	attrs := AttrsFromRequest(req, m.ClientHostport)
 	r.attrs = attrs
-	r.metrics.clientStartedCounter.Add(ctx, 1, r.Attrs()...)
+	r.metrics.clientStartedCounter.Add(ctx, 1, metric.WithAttributes(r.Attrs()...))
 	return r
 }
 
@@ -54,12 +55,12 @@ func (r *clientReporter) Attrs(attrs ...attribute.KeyValue) []attribute.KeyValue
 
 func (r *clientReporter) ReceivedResponse(ctx context.Context, resp *http.Response) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
-	r.metrics.clientStreamRequestReceived.Add(ctx, 1, attrs...)
+	r.metrics.clientStreamRequestReceived.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.clientStreamReceiveSizeHistogramEnabled {
 		if resp != nil {
-			r.metrics.clientStreamReceiveSizeHistogram.Record(ctx, resp.ContentLength, attrs...)
+			r.metrics.clientStreamReceiveSizeHistogram.Record(ctx, resp.ContentLength, metric.WithAttributes(attrs...))
 		} else {
-			r.metrics.clientStreamReceiveSizeHistogram.Record(ctx, -1, attrs...)
+			r.metrics.clientStreamReceiveSizeHistogram.Record(ctx, -1, metric.WithAttributes(attrs...))
 		}
 	}
 }
@@ -67,21 +68,21 @@ func (r *clientReporter) ReceivedResponse(ctx context.Context, resp *http.Respon
 func (r *clientReporter) SentRequest(ctx context.Context, req *http.Request) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
 
-	r.metrics.clientStreamRequestSent.Add(ctx, 1, attrs...)
+	r.metrics.clientStreamRequestSent.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.clientStreamSendSizeHistogramEnabled {
 		if req != nil {
-			r.metrics.clientStreamSendSizeHistogram.Record(ctx, req.ContentLength, attrs...)
+			r.metrics.clientStreamSendSizeHistogram.Record(ctx, req.ContentLength, metric.WithAttributes(attrs...))
 		} else {
-			r.metrics.clientStreamSendSizeHistogram.Record(ctx, -1, attrs...)
+			r.metrics.clientStreamSendSizeHistogram.Record(ctx, -1, metric.WithAttributes(attrs...))
 		}
 	}
 }
 
 func (r *clientReporter) Handled(ctx context.Context, resp *http.Response) {
 	attrs := r.Attrs(AttrsFromResponse(resp)...)
-	r.metrics.clientHandledCounter.Add(ctx, 1, attrs...)
+	r.metrics.clientHandledCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 
 	if r.metrics.clientHandledTimeHistogramEnabled {
-		r.metrics.clientHandledTimeHistogram.Record(ctx, time.Since(r.startTime).Seconds(), attrs...)
+		r.metrics.clientHandledTimeHistogram.Record(ctx, time.Since(r.startTime).Seconds(), metric.WithAttributes(attrs...))
 	}
 }
