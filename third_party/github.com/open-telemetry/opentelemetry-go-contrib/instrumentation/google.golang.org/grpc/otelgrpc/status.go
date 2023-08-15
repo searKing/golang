@@ -50,12 +50,6 @@ func FromError(err error) (s *status.Status, ok bool) {
 		return s, true
 	}
 
-	// Try to unwrap native wrapped errors using `fmt.Errorf` and `%w`
-	s, ok = unwrapNativeWrappedGRPCStatus(err)
-	if ok {
-		return s, true
-	}
-
 	// We failed to unwrap any GRPSStatus so return default `Unknown`
 	return status.New(codes.Unknown, err.Error()), false
 }
