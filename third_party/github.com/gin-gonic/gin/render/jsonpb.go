@@ -5,11 +5,14 @@
 package render
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
-	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	protov1 "github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	protov2 "google.golang.org/protobuf/proto"
 )
 
 // JSONPB contains the given interface object.
@@ -37,11 +40,31 @@ func WriteJSONPB(w http.ResponseWriter, obj interface{}) error {
 	writeContentType(w, jsonpbContentType)
 	var jsonBytes []byte
 	var err error
-	if msg, ok := obj.(proto.Message); ok {
-		jsonBytes, err = protojson.Marshal(msg)
-	} else {
-		jsonBytes, err = json.Marshal(obj)
+	switch ee := obj.(type) {
+	case protov2.Message:
+		mm := protojson.MarshalOptions{AllowPartial: true}
+		jsonBytes, err = mm.Marshal(ee)
+		if err != nil {
+			// This may fail for proto.Anys, e.g. for xDS v2, LDS, the v2
+			// messages are not imported, and this will fail because the message
+			// is not found.
+			return err
+		}
+	case protov1.Message:
+		mm := jsonpb.Marshaler{}
+		var buf bytes.Buffer
+		err := mm.Marshal(&buf, ee)
+		if err != nil {
+			// This may fail for proto.Anys, e.g. for xDS v2, LDS, the v2
+			// messages are not imported, and this will fail because the message
+			// is not found.
+			return err
+		}
+		jsonBytes = buf.Bytes()
+	default:
+		jsonBytes, err = json.Marshal(ee)
 	}
+
 	if err != nil {
 		return err
 	}
