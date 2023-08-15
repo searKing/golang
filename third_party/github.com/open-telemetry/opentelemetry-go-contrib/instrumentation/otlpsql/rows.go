@@ -46,8 +46,9 @@ type otlpRows struct {
 	options wrapper
 }
 
+// ColumnTypeScanType will be implemented as optional Method
 //func (r otlpRows) ColumnTypeScanType(index int) reflect.Type {
-//	if v, ok := r.parent.(driver.RowsColumnTypeScanType); ok {
+//	if v, ok := r.parent.(RowsColumnTypeScanType); ok {
 //		return v.ColumnTypeScanType(index)
 //	}
 //
@@ -55,7 +56,7 @@ type otlpRows struct {
 //}
 
 // HasNextResultSet calls the implements the driver.RowsNextResultSet for otlpRows.
-// It returns the the underlying result of HasNextResultSet from the otlpRows.parent
+// It returns the underlying result of HasNextResultSet from the otlpRows.parent
 // if the parent implements driver.RowsNextResultSet.
 func (r otlpRows) HasNextResultSet() bool {
 	if v, ok := r.parent.(driver.RowsNextResultSet); ok {
@@ -66,7 +67,7 @@ func (r otlpRows) HasNextResultSet() bool {
 }
 
 // NextResultSet calls the implements the driver.RowsNextResultSet for otlpRows.
-// It returns the the underlying result of NextResultSet from the otlpRows.parent
+// It returns the underlying result of NextResultSet from the otlpRows.parent
 // if the parent implements driver.RowsNextResultSet.
 func (r otlpRows) NextResultSet() error {
 	if v, ok := r.parent.(driver.RowsNextResultSet); ok {
@@ -77,7 +78,7 @@ func (r otlpRows) NextResultSet() error {
 }
 
 // ColumnTypeDatabaseTypeName calls the implements the driver.RowsColumnTypeDatabaseTypeName for otlpRows.
-// It returns the the underlying result of ColumnTypeDatabaseTypeName from the otlpRows.parent
+// It returns the underlying result of ColumnTypeDatabaseTypeName from the otlpRows.parent
 // if the parent implements driver.RowsColumnTypeDatabaseTypeName.
 func (r otlpRows) ColumnTypeDatabaseTypeName(index int) string {
 	if v, ok := r.parent.(driver.RowsColumnTypeDatabaseTypeName); ok {
@@ -88,7 +89,7 @@ func (r otlpRows) ColumnTypeDatabaseTypeName(index int) string {
 }
 
 // ColumnTypeLength calls the implements the driver.RowsColumnTypeLength for otlpRows.
-// It returns the the underlying result of ColumnTypeLength from the otlpRows.parent
+// It returns the underlying result of ColumnTypeLength from the otlpRows.parent
 // if the parent implements driver.RowsColumnTypeLength.
 func (r otlpRows) ColumnTypeLength(index int) (length int64, ok bool) {
 	if v, ok := r.parent.(driver.RowsColumnTypeLength); ok {
@@ -99,7 +100,7 @@ func (r otlpRows) ColumnTypeLength(index int) (length int64, ok bool) {
 }
 
 // ColumnTypeNullable calls the implements the driver.RowsColumnTypeNullable for otlpRows.
-// It returns the the underlying result of ColumnTypeNullable from the otlpRows.parent
+// It returns the underlying result of ColumnTypeNullable from the otlpRows.parent
 // if the parent implements driver.RowsColumnTypeNullable.
 func (r otlpRows) ColumnTypeNullable(index int) (nullable, ok bool) {
 	if v, ok := r.parent.(driver.RowsColumnTypeNullable); ok {
@@ -110,7 +111,7 @@ func (r otlpRows) ColumnTypeNullable(index int) (nullable, ok bool) {
 }
 
 // ColumnTypePrecisionScale calls the implements the driver.RowsColumnTypePrecisionScale for otlpRows.
-// It returns the the underlying result of ColumnTypePrecisionScale from the otlpRows.parent
+// It returns the underlying result of ColumnTypePrecisionScale from the otlpRows.parent
 // if the parent implements driver.RowsColumnTypePrecisionScale.
 func (r otlpRows) ColumnTypePrecisionScale(index int) (precision, scale int64, ok bool) {
 	if v, ok := r.parent.(driver.RowsColumnTypePrecisionScale); ok {
@@ -194,17 +195,13 @@ func (r otlpRows) Next(dest []driver.Value) (err error) {
 // valid zero value. This interface is tested for and only enabled in case the
 // parent implementation supports it.
 func wrapRows(ctx context.Context, parent driver.Rows, options wrapper) driver.Rows {
-	var (
-		ts, hasColumnTypeScan = parent.(driver.RowsColumnTypeScanType)
-	)
-
 	r := otlpRows{
 		parent:  parent,
 		ctx:     ctx,
 		options: options,
 	}
 
-	if hasColumnTypeScan {
+	if ts, ok := parent.(RowsColumnTypeScanType); ok {
 		return struct {
 			otlpRows
 			withRowsColumnTypeScanType

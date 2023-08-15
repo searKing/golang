@@ -41,11 +41,11 @@ func TestWrappingTransparency(t *testing.T) {
 		t.Errorf("rows.Column want: %v, have: %v", want, have)
 	}
 
-	if want, have := oRows.Close(), wRows.Close(); want != have {
+	if want, have := oRows.Close(), wRows.Close(); !errors.Is(have, want) {
 		t.Errorf("rows.Close want: %v, have: %v", want, have)
 	}
 
-	if want, have := oRows.Next(nil), wRows.Next(nil); want != have {
+	if want, have := oRows.Next(nil), wRows.Next(nil); !errors.Is(have, want) {
 		t.Errorf("rows.Next want: %v, have: %v", want, have)
 	}
 
@@ -53,11 +53,11 @@ func TestWrappingTransparency(t *testing.T) {
 		t.Errorf("rows.HasNextResultSet want: %t, have: %t", want, have)
 	}
 
-	if want, have := oRows.NextResultSet(), wRows.(driver.RowsNextResultSet).NextResultSet(); want != have {
+	if want, have := oRows.NextResultSet(), wRows.(driver.RowsNextResultSet).NextResultSet(); !errors.Is(have, want) {
 		t.Errorf("rows.NextResultSet want: %v, have: %v", want, have)
 	}
 
-	if want, have := oRows.ColumnTypeScanType(1), wRows.(driver.RowsColumnTypeScanType).ColumnTypeScanType(1); want != have {
+	if want, have := oRows.ColumnTypeScanType(1), wRows.(RowsColumnTypeScanType).ColumnTypeScanType(1); want != have {
 		t.Errorf("rows.ColumnTypeScanType want: %v, have: %v", want, have)
 	}
 
@@ -95,11 +95,11 @@ func TestWrappingFallback(t *testing.T) {
 		t.Errorf("rows.Column want: %v, have: %v", want, have)
 	}
 
-	if want, have := oRows.Close(), wRows.Close(); want != have {
+	if want, have := oRows.Close(), wRows.Close(); !errors.Is(have, want) {
 		t.Errorf("rows.Close want: %v, have: %v", want, have)
 	}
 
-	if want, have := oRows.Next(nil), wRows.Next(nil); want != have {
+	if want, have := oRows.Next(nil), wRows.Next(nil); !errors.Is(have, want) {
 		t.Errorf("rows.Next want: %v, have: %v", want, have)
 	}
 
@@ -107,7 +107,7 @@ func TestWrappingFallback(t *testing.T) {
 		t.Errorf("rows.HasNextResultSet want: %t, have: %t", want, have)
 	}
 
-	if want, have := io.EOF, wRows.(driver.RowsNextResultSet).NextResultSet(); want != have {
+	if want, have := io.EOF, wRows.(driver.RowsNextResultSet).NextResultSet(); !errors.Is(have, want) {
 		t.Errorf("rows.NextResultSet want: %v, have: %v", want, have)
 	}
 

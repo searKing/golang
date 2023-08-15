@@ -10,16 +10,17 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // Compile time validation that our types implement the expected interfaces
 var (
-	_ driver.Stmt             = otlpStmt{}
-	_ driver.StmtExecContext  = otlpStmt{}
-	_ driver.StmtQueryContext = otlpStmt{}
-	_ driver.ColumnConverter  = otlpStmt{}
+	_ driver.Stmt              = otlpStmt{}
+	_ driver.StmtExecContext   = otlpStmt{}
+	_ driver.StmtQueryContext  = otlpStmt{}
+	_ driver.NamedValueChecker = otlpStmt{}
+	_ driver.ColumnConverter   = otlpStmt{}
 )
 
 // otlpStmt implements driver.Stmt
@@ -27,6 +28,14 @@ type otlpStmt struct {
 	parent  driver.Stmt
 	query   string
 	options wrapper
+}
+
+func (s otlpStmt) CheckNamedValue(v *driver.NamedValue) error {
+	if checker, ok := s.parent.(NamedValueChecker); ok {
+		return checker.CheckNamedValue(v)
+	}
+
+	return driver.ErrSkip
 }
 
 func (s otlpStmt) ColumnConverter(idx int) driver.ValueConverter {

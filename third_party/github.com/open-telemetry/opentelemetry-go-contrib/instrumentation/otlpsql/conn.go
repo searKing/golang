@@ -10,7 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -50,7 +50,7 @@ type otlpConn struct {
 	options wrapper
 }
 
-func (c otlpConn) Ping(ctx context.Context) (err error) {
+func (c *otlpConn) Ping(ctx context.Context) (err error) {
 	attrs := append([]attribute.KeyValue(nil), c.options.DefaultAttributes...)
 	onDeferWithErr := recordCallStats("go.sql.conn.ping", c.options.InstanceName)
 	defer func() {
@@ -77,7 +77,7 @@ func (c otlpConn) Ping(ctx context.Context) (err error) {
 	return
 }
 
-func (c otlpConn) Exec(query string, args []driver.Value) (res driver.Result, err error) {
+func (c *otlpConn) Exec(query string, args []driver.Value) (res driver.Result, err error) {
 	ctx := context.Background()
 	attrs := append([]attribute.KeyValue(nil), c.options.DefaultAttributes...)
 	onDeferWithErr := recordCallStats("go.sql.conn.exec", c.options.InstanceName)
@@ -116,7 +116,7 @@ func (c otlpConn) Exec(query string, args []driver.Value) (res driver.Result, er
 	return nil, driver.ErrSkip
 }
 
-func (c otlpConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (res driver.Result, err error) {
+func (c *otlpConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (res driver.Result, err error) {
 	attrs := append([]attribute.KeyValue(nil), c.options.DefaultAttributes...)
 	onDeferWithErr := recordCallStats("go.sql.conn.exec", c.options.InstanceName)
 	defer func() {
@@ -155,7 +155,7 @@ func (c otlpConn) ExecContext(ctx context.Context, query string, args []driver.N
 	return nil, driver.ErrSkip
 }
 
-func (c otlpConn) Query(query string, args []driver.Value) (rows driver.Rows, err error) {
+func (c *otlpConn) Query(query string, args []driver.Value) (rows driver.Rows, err error) {
 	ctx := context.Background()
 	attrs := append([]attribute.KeyValue(nil), c.options.DefaultAttributes...)
 	onDeferWithErr := recordCallStats("go.sql.conn.query", c.options.InstanceName)
@@ -201,7 +201,7 @@ func (c otlpConn) Query(query string, args []driver.Value) (rows driver.Rows, er
 	return nil, driver.ErrSkip
 }
 
-func (c otlpConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
+func (c *otlpConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
 	attrs := append([]attribute.KeyValue(nil), c.options.DefaultAttributes...)
 	onDeferWithErr := recordCallStats("go.sql.conn.query", c.options.InstanceName)
 	defer func() {
@@ -241,7 +241,7 @@ func (c otlpConn) QueryContext(ctx context.Context, query string, args []driver.
 	return nil, driver.ErrSkip
 }
 
-func (c otlpConn) Prepare(query string) (stmt driver.Stmt, err error) {
+func (c *otlpConn) Prepare(query string) (stmt driver.Stmt, err error) {
 	ctx := context.Background()
 	attrs := append([]attribute.KeyValue(nil), c.options.DefaultAttributes...)
 	onDeferWithErr := recordCallStats("go.sql.conn.prepare", c.options.InstanceName)
