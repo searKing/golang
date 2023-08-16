@@ -71,15 +71,19 @@ func IsZeroValue(v reflect.Value) bool {
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
-func IsNilValue(v reflect.Value) (result bool) {
+// IsNilValue reports whether v is untyped nil or typed nil for its type.
+func IsNilValue(v reflect.Value) bool {
 	if !v.IsValid() {
-		return true
+		// This should never happen, but will act as a safeguard for later,
+		// as a default value doesn't make sense here.
+		panic(&reflect.ValueError{Method: "reflect.Value.IsNilValue", Kind: v.Kind()})
 	}
 	switch v.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.UnsafePointer,
+		reflect.Interface, reflect.Slice:
 		return v.IsNil()
 	}
-	return
+	return false
 }
 
 func FollowValuePointer(v reflect.Value) reflect.Value {
