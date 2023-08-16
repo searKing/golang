@@ -22,6 +22,16 @@ func IsNil(v any) bool {
 	return IsNilValue(reflect.ValueOf(v))
 }
 
+// UnTypeNil reports whether its argument v is a nil interface value or an untyped nil.
+// Interface returns its argument v or nil if and only if v is a nil interface value or an untyped nil.
+func UnTypeNil(v any) any {
+	// convert typed nil into untyped nil
+	if IsNil(v) {
+		return nil
+	}
+	return v
+}
+
 // Deprecated: Use [IsNil] instead.
 func IsNilObject(i any) (result bool) {
 	return IsNil(i)
