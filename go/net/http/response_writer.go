@@ -26,8 +26,7 @@ var (
 // provides extra information about the response.
 // It is recommended that middleware handlers use this construct to wrap a [http.ResponseWriter]
 // if the functionality calls for it.
-
-func NewRecordResponseWriter(rw http.ResponseWriter) http.ResponseWriter {
+func NewRecordResponseWriter(rw http.ResponseWriter) *recordResponseWriter {
 	return &recordResponseWriter{
 		ResponseWriter: rw,
 	}
