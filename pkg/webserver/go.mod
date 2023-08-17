@@ -8,11 +8,11 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/rs/cors v1.9.0
-	github.com/searKing/golang/go v1.2.91
+	github.com/searKing/golang/go v1.2.95
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.91
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.93
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.95-rc.1
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.93
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
+	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.57.0
 )

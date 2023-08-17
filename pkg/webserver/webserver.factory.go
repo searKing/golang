@@ -7,6 +7,7 @@ package webserver
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"log/slog"
 	"math"
 	"net"
@@ -26,12 +27,10 @@ import (
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
-	grpclog_ "github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 )
 
@@ -149,7 +148,6 @@ func (f *Factory) New() (*WebServer, error) {
 		f.fc.ExternalAddress = net.JoinHostPort(f.fc.ExternalAddress, port)
 	}
 
-	grpclog.SetLoggerV2(grpclog_.DefaultSlogLogger())
 	opts := grpc_.WithDefault()
 	if f.fc.NoGrpcProxy {
 		opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithNoProxy()))
@@ -213,21 +211,26 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 
 	// cors
-	{
-		opts = append(opts, grpc_.WithHttpWrapper(cors.New(f.fc.Cors).Handler))
-	}
-
+	opts = append(opts, grpc_.WithHttpWrapper(cors.New(f.fc.Cors).Handler))
 	opts = append(opts, f.fc.GatewayOptions...)
-	opts = append(opts, grpc_.WithSlogLogger(slog.Default().Handler()))
+	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...)))
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	grpcBackend.ApplyOptions()
-	grpcBackend.ErrorLog = slog.NewLogLogger(slog.Default().Handler(), slog.LevelError)
+	{
+		l := slog.NewLogLogger(slog.Default().Handler(), slog.LevelError)
+		l.SetFlags(log.Lshortfile)
+		grpcBackend.ErrorLog = l
+	}
 	ginBackend := gin.New()
 
-	ginBackend.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		Formatter: gin_.LogFormatter("GIN over HTTP"),
-		Output:    slog.NewLogLogger(slog.Default().Handler(), slog.LevelInfo).Writer(),
-	}))
+	{
+		l := slog.NewLogLogger(slog.Default().Handler(), slog.LevelInfo)
+		l.SetFlags(log.Lshortfile)
+		ginBackend.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+			Formatter: gin_.LogFormatter("GIN over HTTP"),
+			Output:    l.Writer(),
+		}))
+	}
 	ginBackend.Use(gin_.RecoveryWithWriter(grpcBackend.ErrorLog.Writer()))
 	ginBackend.Use(gin_.UseHTTPPreflight())
 	ginBackend.Use(f.fc.GinMiddlewares...)
