@@ -11,9 +11,7 @@ import (
 	"net/http"
 	"sync"
 
-	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/prometheus/client_golang/prometheus"
 	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -265,17 +263,6 @@ func (gateway *Gateway) registerGrpcReflection() {
 func (gateway *Gateway) preServe() {
 	if gateway == nil {
 		return
-	}
-	if gateway.grpcServer != nil {
-		// After all your registrations, make sure all of the Prometheus metrics are initialized.
-		// Setup metrics.
-		srvMetrics := grpcprom.NewServerMetrics(
-			grpcprom.WithServerHandlingTimeHistogram(
-				grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
-			),
-		)
-		srvMetrics.InitializeMetrics(gateway.grpcServer)
-		prometheus.MustRegister(srvMetrics)
 	}
 	gateway.registerGrpcReflection()
 }
