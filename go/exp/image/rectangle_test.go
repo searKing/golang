@@ -306,7 +306,7 @@ func TestRectangle_FlexIn(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			got := tt.r.FlexIn(tt.box)
 			if got != tt.want {
-				t.Errorf("(%v).FlexIn(%v) got (%v), want ( %v)", tt.r, tt.box, got, tt.want)
+				t.Errorf("(%v).FlexIn(%v) got (%v), want (%v)", tt.r, tt.box, got, tt.want)
 			}
 		})
 	}

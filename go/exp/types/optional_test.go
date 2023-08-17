@@ -115,7 +115,7 @@ func TestOptional_String(t *testing.T) {
 			{
 				got := tt.a.String()
 				if got != tt.want {
-					t.Errorf("%v.String() got (%v), want ( %v)", tt.a, got, tt.want)
+					t.Errorf("%v.String() got (%v), want (%v)", tt.a, got, tt.want)
 				}
 			}
 		})
@@ -140,7 +140,7 @@ func TestCompareOptional(t *testing.T) {
 			{
 				got := types.CompareOptional(tt.a, tt.b)
 				if got != tt.want {
-					t.Errorf("CompareOptional(%v, %v) got (%v), want ( %v)", tt.a, tt.b, got, tt.want)
+					t.Errorf("CompareOptional(%v, %v) got (%v), want (%v)", tt.a, tt.b, got, tt.want)
 				}
 			}
 		})

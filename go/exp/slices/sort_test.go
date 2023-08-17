@@ -199,13 +199,13 @@ func TestSearchMin(t *testing.T) {
 			{
 				got := slices_.SearchMin(tt.data)
 				if got != tt.want {
-					t.Errorf("SearchMin(%v) got (%v), want ( %v)", tt.data, got, tt.want)
+					t.Errorf("SearchMin(%v) got (%v), want (%v)", tt.data, got, tt.want)
 				}
 			}
 			{
 				got := slices_.SearchMinFunc(tt.data, math_.Compare[int])
 				if got != tt.want {
-					t.Errorf("SearchMinFunc(%v, math_.Compare[int]) got (%v), want ( %v)", tt.data, got, tt.want)
+					t.Errorf("SearchMinFunc(%v, math_.Compare[int]) got (%v), want (%v)", tt.data, got, tt.want)
 				}
 			}
 		})
@@ -231,13 +231,13 @@ func TestSearchMax(t *testing.T) {
 			{
 				got := slices_.SearchMax(tt.data)
 				if got != tt.want {
-					t.Errorf("SearchMax(%v) got (%v), want ( %v)", tt.data, got, tt.want)
+					t.Errorf("SearchMax(%v) got (%v), want (%v)", tt.data, got, tt.want)
 				}
 			}
 			{
 				got := slices_.SearchMinFunc(tt.data, math_.Reverse(math_.Compare[int]))
 				if got != tt.want {
-					t.Errorf("SearchMinFunc(%v, math_.Reverse(math_.Compare[int])) got (%v), want ( %v)", tt.data, got, tt.want)
+					t.Errorf("SearchMinFunc(%v, math_.Reverse(math_.Compare[int])) got (%v), want (%v)", tt.data, got, tt.want)
 				}
 			}
 		})
