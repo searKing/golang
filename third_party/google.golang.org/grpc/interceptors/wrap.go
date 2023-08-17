@@ -29,3 +29,23 @@ func WrapServerStream(stream grpc.ServerStream) *WrappedServerStream {
 	}
 	return &WrappedServerStream{ServerStream: stream, WrappedContext: stream.Context()}
 }
+
+// WrappedClientStream is a thin wrapper around grpc.ClientStream that allows modifying context.
+type WrappedClientStream struct {
+	grpc.ClientStream
+	// WrappedContext is the wrapper's own Context. You can assign it.
+	WrappedContext context.Context
+}
+
+// Context returns the wrapper's WrappedContext, overwriting the nested grpc.ClientStream.Context()
+func (w *WrappedClientStream) Context() context.Context {
+	return w.WrappedContext
+}
+
+// WrapClientStream returns a ClientStream that has the ability to overwrite context.
+func WrapClientStream(stream grpc.ClientStream) *WrappedClientStream {
+	if s, ok := stream.(*WrappedClientStream); ok {
+		return s
+	}
+	return &WrappedClientStream{ClientStream: stream, WrappedContext: stream.Context()}
+}
