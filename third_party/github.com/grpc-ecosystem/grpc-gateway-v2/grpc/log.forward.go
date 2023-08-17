@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// FieldsFromContextWithForward fill "X-Forwarded-For" and "X-Forwarded-Host" to record http callers
 func FieldsFromContextWithForward(ctx context.Context) logging.Fields {
 	const xForwardedFor = "X-Forwarded-For"
 	const xForwardedHost = "X-Forwarded-Host"

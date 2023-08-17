@@ -10,9 +10,9 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.2
 	github.com/prometheus/client_golang v1.16.0
-	github.com/searKing/golang/go v1.2.88
-	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.88
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.87
+	github.com/searKing/golang/go v1.2.91
+	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.91
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.92
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -44,7 +44,6 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
-	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.86 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/arch v0.4.0 // indirect
@@ -53,6 +52,6 @@ require (
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20230807174057-1744710a1577 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230815205213-6bfd019c3878 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230815205213-6bfd019c3878 // indirect
 )

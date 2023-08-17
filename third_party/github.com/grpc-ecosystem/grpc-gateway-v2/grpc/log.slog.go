@@ -6,6 +6,7 @@ package grpc
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"net/http"
 
@@ -15,7 +16,7 @@ import (
 )
 
 func WithSlogLogger(logger slog.Handler) GatewayOption {
-	return WithSlogLoggerConfig(logger, gin.LoggerConfig{})
+	return WithSlogLoggerConfig(logger, nil, gin.LoggerConfig{})
 }
 
 // interceptorSlogLogger adapts slog logger to interceptor logger.
@@ -27,14 +28,16 @@ func interceptorSlogLogger(h slog.Handler) logging.Logger {
 	})
 }
 
-func WithSlogLoggerConfig(logger slog.Handler, conf gin.LoggerConfig) GatewayOption {
+func WithSlogLoggerConfig(logger slog.Handler, slogOpts []logging.Option, conf gin.LoggerConfig) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		l := logger.WithGroup("grpc-gateway")
 		if conf.Formatter == nil {
 			conf.Formatter = gin_.LogFormatter("HTTP")
 		}
 		if conf.Output == nil {
-			conf.Output = slog.NewLogLogger(logger, slog.LevelInfo).Writer()
+			logger := slog.NewLogLogger(logger, slog.LevelInfo)
+			logger.SetFlags(log.Lshortfile)
+			conf.Output = logger.Writer()
 		}
 
 		loggerOpts := []logging.Option{
@@ -42,6 +45,7 @@ func WithSlogLoggerConfig(logger slog.Handler, conf gin.LoggerConfig) GatewayOpt
 			logging.WithFieldsFromContext(FieldsFromContextWithForward),
 			// Add any other option (check functions starting with logging.With).
 		}
+		loggerOpts = append(loggerOpts, slogOpts...)
 
 		var opts []GatewayOption
 		opts = append(opts, WithGrpcStreamServerChain(logging.StreamServerInterceptor(interceptorSlogLogger(l), loggerOpts...)))
