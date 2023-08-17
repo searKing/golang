@@ -7,6 +7,7 @@ package slog
 import (
 	"fmt"
 	"log/slog"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -163,6 +164,23 @@ func (s *handleState) appendString(str string) {
 }
 
 func (s *handleState) appendValue(v slog.Value) {
+	defer func() {
+		if r := recover(); r != nil {
+			// If it panics with a nil pointer, the most likely cases are
+			// an encoding.TextMarshaler or error fails to guard against nil,
+			// in which case "<nil>" seems to be the feasible choice.
+			//
+			// Adapted from the code in fmt/print.go.
+			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
+				s.appendString("<nil>")
+				return
+			}
+
+			// Otherwise just print the original panic message.
+			s.appendString(fmt.Sprintf("!PANIC: %v", r))
+		}
+	}()
+
 	var err error
 	err = appendTextValue(s, v)
 	if err != nil {

@@ -149,6 +149,11 @@ func TestGlogHumanHandler(t *testing.T) {
 			slog.Any("a", nil),
 			`a`, `<nil>`,
 		},
+		{
+			"typed nil value",
+			slog.Any("a", (*text)(nil)),
+			`a`, `<nil>`,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			for _, opts := range []struct {
@@ -203,7 +208,7 @@ type text struct {
 	s string
 }
 
-func (t text) String() string { return t.s } // should be ignored
+func (t text) Error() string { return t.s } // should be ignored
 
 func (t text) MarshalText() ([]byte, error) {
 	if t.s == "" {

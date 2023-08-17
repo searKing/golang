@@ -11,8 +11,25 @@ import (
 	"os"
 	"time"
 
+	"github.com/searKing/golang/go/exp/types"
 	"github.com/searKing/golang/go/log/slog/internal/slogtest"
 )
+
+func slogNil(name string, h slog.Handler) {
+	defer func() {
+		if err := recover(); err != nil {
+			// in go1.21, [slog.TextHandler] and [slog.JSONHandler] will panic
+			// https://github.com/golang/go/commit/73667209c1c83bd48fe7338c3b4caaa05c073202
+			fmt.Printf("[slog/%s] unexpected panic: %v\n", name, err)
+		}
+	}()
+	logger := slog.New(h)
+	{
+		var typedNil *text
+		logger.With("attr_typed_nil", types.Any(typedNil)).Info(fmt.Sprintf("[slog/%s]", name), "args_typed_nil", types.Any(typedNil))
+		logger.With("attr_typed_nil", typedNil).Info(fmt.Sprintf("[slog/%s]", name), "args_typed_nil", typedNil)
+	}
+}
 
 func ExampleGroup() {
 	getPid = func() int { return 0 } // set pid to zero for test
