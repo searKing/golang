@@ -96,8 +96,8 @@ github.com/searKing/golang/go v1.2.91 h1:Ghn6I+Fd9rHejO7lFbvL92yql2SEFpx+YWi5dUd
 github.com/searKing/golang/go v1.2.91/go.mod h1:OnRUfEFkYVdTlEdif1G5u+jSIAhJx0fI0t5yudvUq9s=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.91 h1:hEBXeKCRmAab761xd9CkM0Yk7ocBKiJ+C0oue4b3kG4=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.91/go.mod h1:sjA6vctPjccd7EUy3kalYDhlYJ9IWALO3DFUo3FJnrk=
-github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.90 h1:sJ9omxHBzeEAlahB4LK8Oxzp6XbM3zdGmp4oBirpeYo=
-github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.90/go.mod h1:6asvguPmuo4jRUFq7O/xb1TzW3sYVP6rURAf2jYiJbw=
+github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.91 h1:voGHlfD9Y9oP/LOXVJY8nYmqc02No9BqDowaP24jyQY=
+github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.91/go.mod h1:sjlW1IMfuvQeGMK6gZSA6KruhwVH9tLqXtpyasxtC9U=
 github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.92 h1:vkNAJPLvfMArHDdZpCAPC4+HLLX1EW0bLJ51GblBCgc=
 github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.92/go.mod h1:CKZ45icfm4heCCN+jkOzo2OQeGFiDhSfRDlDdCqchSU=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
