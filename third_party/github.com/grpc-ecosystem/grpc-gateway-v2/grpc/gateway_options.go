@@ -5,7 +5,6 @@ package grpc
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -77,12 +76,5 @@ func WithGatewayHandler(v http.Handler) GatewayOption {
 func WithGatewayGrpcServer(v *grpc.Server) GatewayOption {
 	return GatewayOptionFunc(func(o *Gateway) {
 		o.grpcServer = v
-	})
-}
-
-// WithGatewayOnce sets once in Gateway.
-func WithGatewayOnce(v sync.Once) GatewayOption {
-	return GatewayOptionFunc(func(o *Gateway) {
-		o.once = v
 	})
 }

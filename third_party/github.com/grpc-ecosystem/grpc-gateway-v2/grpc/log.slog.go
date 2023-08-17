@@ -6,17 +6,20 @@ package grpc
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
+	http_ "github.com/searKing/golang/go/net/http"
+	time_ "github.com/searKing/golang/go/time"
+	grpclog_ "github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/grpclog"
 )
 
 func WithSlogLogger(logger slog.Handler) GatewayOption {
-	return WithSlogLoggerConfig(logger, nil, gin.LoggerConfig{})
+	return WithSlogLoggerConfig(logger, nil)
 }
 
 // interceptorSlogLogger adapts slog logger to interceptor logger.
@@ -28,18 +31,12 @@ func interceptorSlogLogger(h slog.Handler) logging.Logger {
 	})
 }
 
-func WithSlogLoggerConfig(logger slog.Handler, slogOpts []logging.Option, conf gin.LoggerConfig) GatewayOption {
+func WithSlogLoggerConfig(logger slog.Handler, slogOpts []logging.Option) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		l := logger.WithGroup("grpc-gateway")
-		if conf.Formatter == nil {
-			conf.Formatter = gin_.LogFormatter("HTTP")
-		}
-		if conf.Output == nil {
-			logger := slog.NewLogLogger(logger, slog.LevelInfo)
-			logger.SetFlags(log.Lshortfile)
-			conf.Output = logger.Writer()
-		}
+		grpclog.SetLoggerV2(grpclog_.NewSlogger(l))
 
+		// interceptor's log below
 		loggerOpts := []logging.Option{
 			logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
 			logging.WithFieldsFromContext(FieldsFromContextWithForward),
@@ -54,10 +51,34 @@ func WithSlogLoggerConfig(logger slog.Handler, slogOpts []logging.Option, conf g
 		opts = append(opts, WithGrpcUnaryClientChain(logging.UnaryClientInterceptor(interceptorSlogLogger(l), loggerOpts...)))
 		opts = append(opts, WithHttpWrapper(func(handler http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				g := gin.New()
-				g.Use(gin.LoggerWithConfig(conf))
-				g.Any("/*path", gin.WrapH(handler))
-				g.ServeHTTP(w, r)
+				var cost time_.Cost
+				cost.Start()
+
+				rw := http_.NewRecordResponseWriter(w)
+				handler.ServeHTTP(rw, r)
+				attrs := logging.ExtractFields(r.Context())
+				attrs = append(attrs, slog.String("remote_addr", r.RemoteAddr))
+				ip := http_.ClientIP(r)
+				if ip != "" && !strings.HasPrefix(r.RemoteAddr, ip) {
+					attrs = append(attrs, slog.String("client_ip", http_.ClientIP(r)))
+				}
+
+				attrs = append(attrs, slog.String("method", r.Method), slog.String("request_uri", r.RequestURI))
+
+				absRequestURI := strings.HasPrefix(r.RequestURI, "http://") || strings.HasPrefix(r.RequestURI, "https://")
+				if !absRequestURI {
+					host := r.Host
+					if host == "" && r.URL != nil {
+						host = r.URL.Host
+					}
+					if host != "" {
+						attrs = append(attrs, slog.String("host", host))
+					}
+				}
+				attrs = append(attrs, slog.String("status_code", http.StatusText(rw.Status())),
+					slog.Int64("request_body_size", r.ContentLength),
+					slog.Int("response_body_size", rw.Size()))
+				slog.With(attrs...).Info(fmt.Sprintf("finished http call with code %d", rw.Status()))
 			})
 		}))
 		gateway.ApplyOptions(opts...)

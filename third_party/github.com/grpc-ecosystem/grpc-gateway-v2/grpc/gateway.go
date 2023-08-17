@@ -30,7 +30,7 @@ type Gateway struct {
 	// runtime
 	grpcServer *grpc.Server
 
-	once sync.Once
+	once sync.Once `option:"-"`
 }
 
 func NewGateway(addr string, opts ...GatewayOption) *Gateway {

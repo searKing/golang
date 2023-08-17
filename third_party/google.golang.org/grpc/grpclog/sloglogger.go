@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package sloglogger defines slog-based logging for grpc.
+// Package grpclog defines slog-based logging for grpc.
 // Importing this package will install slog as the logger used by grpclog.
 package grpclog
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin/binding"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	http_ "github.com/searKing/golang/go/net/http"
@@ -30,6 +31,7 @@ type gatewayOption struct {
 	srvMuxOpts []runtime.ServeMuxOption
 
 	interceptors http_.HandlerInterceptorChain
+	loggingOpts  []logging.Option
 }
 
 func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
@@ -52,6 +54,12 @@ func (opt *gatewayOption) ClientDialOpts() []grpc.DialOption {
 	unaryInterceptors = append(unaryInterceptors)
 	return append(opt.grpcClientDialOpts, grpc.WithChainStreamInterceptor(streamInterceptors...),
 		grpc.WithChainUnaryInterceptor(unaryInterceptors...))
+}
+
+func WithLoggingOption(opts ...logging.Option) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.loggingOpts = append(gateway.opt.loggingOpts, opts...)
+	})
 }
 
 func WithGrpcUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) GatewayOption {
@@ -182,4 +190,11 @@ func WithHttpAfterCompletion(
 func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) error) GatewayOption {
 	return WithHttpHandlerInterceptor(
 		http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
+}
+
+// ExtractLoggingOptions extract all [logging.Option] from the given options.
+func ExtractLoggingOptions(options ...GatewayOption) []logging.Option {
+	var g Gateway
+	(&g).ApplyOptions(options...)
+	return g.opt.loggingOpts
 }
