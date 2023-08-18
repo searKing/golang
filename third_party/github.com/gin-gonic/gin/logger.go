@@ -15,6 +15,11 @@ const DateTime = "2006/01/02 - 15:04:05"
 
 // LogFormatter is the log format function [gin.Logger] middleware uses.
 func LogFormatter(layout string) func(param gin.LogFormatterParams) string {
+	return LogFormatterWithExtra(layout, nil)
+}
+
+// LogFormatterWithExtra is the log format function [gin.Logger] middleware uses with extra append {path}.
+func LogFormatterWithExtra(layout string, getExtra func(param gin.LogFormatterParams) string) func(param gin.LogFormatterParams) string {
 	return func(param gin.LogFormatterParams) string {
 		var statusColor, methodColor, resetColor string
 		if param.IsOutputColor() {
@@ -26,23 +31,29 @@ func LogFormatter(layout string) func(param gin.LogFormatterParams) string {
 		if param.Latency > time.Minute {
 			param.Latency = param.Latency.Truncate(time.Second)
 		}
+		var extra string
+		if getExtra != nil {
+			extra = getExtra(param)
+		}
 		if layout == "" {
-			return fmt.Sprintf("[GIN] %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+			return fmt.Sprintf("[GIN] %3d %s| %13v | %15s |%s %-7s %s %#v%s\n%s",
 				param.StatusCode, resetColor,
 				param.Latency,
 				param.ClientIP,
 				methodColor, param.Method, resetColor,
 				param.Path,
+				extra,
 				param.ErrorMessage,
 			)
 		}
-		return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+		return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v%s\n%s",
 			param.TimeStamp.Format(layout),
 			statusColor, param.StatusCode, resetColor,
 			param.Latency,
 			param.ClientIP,
 			methodColor, param.Method, resetColor,
 			param.Path,
+			extra,
 			param.ErrorMessage,
 		)
 	}
