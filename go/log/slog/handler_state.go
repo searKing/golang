@@ -157,7 +157,11 @@ func (s *handleState) appendString(str string) {
 	if s.h.ForceQuote ||
 		(!s.h.DisableQuote && needsQuoting(str, false)) ||
 		(s.h.DisableQuote && needsQuoting(str, true)) {
-		s.buf.WriteString(strconv.Quote(str))
+
+		// sharp format, if the string str can be backquoted, than
+		// represented unchanged as a single-line backquoted string
+		// without control characters other than tab.
+		_, _ = fmt.Fprintf(s.buf, "%#q", str)
 	} else {
 		s.buf.WriteString(str)
 	}

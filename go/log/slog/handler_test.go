@@ -249,8 +249,8 @@ func TestHandlers(t *testing.T) {
 			},
 			wantText:      `msg=message "a b"="x\t\n\x00y" " b.c=\"\\x2E\t.d=e"="f.g\"" " b.c=\"\\x2E\t.m.d"=1`,
 			wantJSON:      `{"msg":"message","a b":"x\t\n\u0000y"," b.c=\"\\x2E\t":{"d=e":"f.g\"","m.d":1}}`,
-			wantGlog:      `0] message, a b="x\t\n\x00y", " b.c=\"\\x2E\t.d=e"="f.g\"", " b.c=\"\\x2E\t.m.d"=1`,
-			wantGlogHuman: `[] [0] message, a b="x\t\n\x00y", " b.c=\"\\x2E\t.d=e"="f.g\"", " b.c=\"\\x2E\t.m.d"=1`,
+			wantGlog:      "0] message, a b=\"x\\t\\n\\x00y\", ` b.c=\"\\x2E\t.d=e`=`f.g\"`, ` b.c=\"\\x2E\t.m.d`=1",
+			wantGlogHuman: "[] [0] message, a b=\"x\\t\\n\\x00y\", ` b.c=\"\\x2E\t.d=e`=`f.g\"`, ` b.c=\"\\x2E\t.m.d`=1",
 		},
 		{
 			name:    "LogValuer",

@@ -36,7 +36,7 @@ func TestGlogHandler(t *testing.T) {
 		{
 			"quoted",
 			slog.String("x = y", `qu"o`),
-			`x = y`, `"qu\"o"`,
+			`x = y`, "`qu\"o`",
 		},
 		{
 			"String method",
@@ -51,7 +51,7 @@ func TestGlogHandler(t *testing.T) {
 		{
 			"TextMarshaler",
 			slog.Any("t", text{"abc"}),
-			`t`, `"text{\"abc\"}"`,
+			`t`, "`text{\"abc\"}`",
 		},
 		{
 			"TextMarshaler error",
@@ -122,7 +122,7 @@ func TestGlogHumanHandler(t *testing.T) {
 		{
 			"quoted",
 			slog.String("x = y", `qu"o`),
-			`x = y`, `"qu\"o"`,
+			`x = y`, "`qu\"o`",
 		},
 		{
 			"String method",
@@ -137,7 +137,7 @@ func TestGlogHumanHandler(t *testing.T) {
 		{
 			"TextMarshaler",
 			slog.Any("t", text{"abc"}),
-			`t`, `"text{\"abc\"}"`,
+			`t`, "`text{\"abc\"}`",
 		},
 		{
 			"TextMarshaler error",
