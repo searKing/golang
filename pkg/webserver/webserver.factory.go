@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/rs/cors"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	net_ "github.com/searKing/golang/go/net"
@@ -213,7 +213,7 @@ func (f *Factory) New() (*WebServer, error) {
 	// cors
 	opts = append(opts, grpc_.WithHttpWrapper(cors.New(f.fc.Cors).Handler))
 	opts = append(opts, f.fc.GatewayOptions...)
-	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...)))
+	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...))...)
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	grpcBackend.ApplyOptions()
 	{
@@ -227,7 +227,7 @@ func (f *Factory) New() (*WebServer, error) {
 		l := slog.NewLogLogger(slog.Default().Handler(), slog.LevelInfo)
 		l.SetFlags(log.Lshortfile)
 		ginBackend.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-			Formatter: gin_.LogFormatter("GIN over HTTP"),
+			Formatter: GinLogFormatter("GIN over HTTP"),
 			Output:    l.Writer(),
 		}))
 	}
