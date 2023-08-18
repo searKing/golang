@@ -301,6 +301,7 @@ func (h *commonHandler) handle(r slog.Record) error {
 		}
 	} else if r.Message != "" {
 		state.buf.WriteString(" ")
+		// take message as well formatted raw string, may be with color and so on, disable quote
 		state.appendString(r.Message)
 		hasMessage = true
 	}

@@ -18,7 +18,7 @@ import (
 func appendTextValue(s *handleState, v slog.Value) error {
 	switch v.Kind() {
 	case slog.KindString:
-		s.appendString(v.String())
+		s.appendStringMayQuote(v.String())
 	case slog.KindTime:
 		s.appendTime(v.Time())
 	case slog.KindAny:
@@ -29,15 +29,15 @@ func appendTextValue(s *handleState, v slog.Value) error {
 				return err
 			}
 			// TODO: avoid the conversion to string.
-			s.appendString(string(data))
+			s.appendStringMayQuote(string(data))
 			return nil
 		}
 		if err, ok := a.(error); ok && err != nil {
-			s.appendString(err.Error())
+			s.appendStringMayQuote(err.Error())
 			return nil
 		}
 		if tm, ok := a.(fmt.Stringer); ok {
-			s.appendString(tm.String())
+			s.appendStringMayQuote(tm.String())
 			return nil
 		}
 		if tm, ok := a.(json.Marshaler); ok {
@@ -46,7 +46,7 @@ func appendTextValue(s *handleState, v slog.Value) error {
 				return err
 			}
 			// TODO: avoid the conversion to string.
-			s.appendString(string(data))
+			s.appendStringMayQuote(string(data))
 			return nil
 		}
 		if bs, ok := byteSlice(a); ok {
@@ -54,9 +54,9 @@ func appendTextValue(s *handleState, v slog.Value) error {
 			s.buf.WriteString(strconv.Quote(string(bs)))
 			return nil
 		}
-		s.appendString(fmt.Sprintf("%+v", v.Any()))
+		s.appendStringMayQuote(fmt.Sprintf("%+v", v.Any()))
 	default:
-		s.appendString(v.String())
+		s.appendStringMayQuote(v.String())
 	}
 	return nil
 }

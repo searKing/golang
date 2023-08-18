@@ -136,7 +136,7 @@ func (s *handleState) appendAttr(a slog.Attr) {
 }
 
 func (s *handleState) appendError(err error) {
-	s.appendString(fmt.Sprintf("!ERROR:%v", err.Error()))
+	s.appendStringMayQuote(fmt.Sprintf("!ERROR:%v", err.Error()))
 }
 
 func (s *handleState) appendKey(key string) {
@@ -144,7 +144,7 @@ func (s *handleState) appendKey(key string) {
 	if s.color != "" {
 		s.buf.WriteString(s.color)
 	}
-	s.appendString(s.replaceKey(key))
+	s.appendStringMayQuote(s.replaceKey(key))
 	if s.color != "" {
 		s.buf.WriteString(reset)
 	}
@@ -153,6 +153,10 @@ func (s *handleState) appendKey(key string) {
 }
 
 func (s *handleState) appendString(str string) {
+	s.buf.WriteString(str)
+}
+
+func (s *handleState) appendStringMayQuote(str string) {
 	// text
 	if s.h.ForceQuote ||
 		(!s.h.DisableQuote && needsQuoting(str, false)) ||
@@ -176,12 +180,12 @@ func (s *handleState) appendValue(v slog.Value) {
 			//
 			// Adapted from the code in fmt/print.go.
 			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
-				s.appendString("<nil>")
+				s.appendStringMayQuote("<nil>")
 				return
 			}
 
 			// Otherwise just print the original panic message.
-			s.appendString(fmt.Sprintf("!PANIC: %v", r))
+			s.appendStringMayQuote(fmt.Sprintf("!PANIC: %v", r))
 		}
 	}()
 
