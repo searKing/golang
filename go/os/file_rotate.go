@@ -20,16 +20,22 @@ import (
 	time_ "github.com/searKing/golang/go/time"
 )
 
+// RotateMode represents a way to rotate file.
+// see details: https://linux.die.net/man/8/logrotate
 type RotateMode int
 
 const (
 	// RotateModeNew create new rotate file directly
+	// Immediately after rotation (before the postrotate script is run) the log file is created (with
+	// the same name as the log file just rotated).
+	// see option: `create` in https://linux.die.net/man/8/logrotate
 	RotateModeNew RotateMode = iota
 
 	// RotateModeCopyRename Make a copy of the log file, but don't change the original at all. This option can be
 	// used, for instance, to make a snapshot of the current log file, or when some other
 	// utility needs to truncate or parse the file. When this option is used, the create
 	// option will have no effect, as the old log file stays in place.
+	// see option: `copy` in https://linux.die.net/man/8/logrotate
 	RotateModeCopyRename RotateMode = iota
 
 	// RotateModeCopyTruncate Truncate the original log file in place after creating a copy, instead of moving the
@@ -38,6 +44,7 @@ const (
 	// previous log file forever. Note that there is a very small time slice between copying
 	// the file and truncating it, so some logging data might be lost. When this option is
 	// used, the create option will have no effect, as the old log file stays in place.
+	// see option: `copytruncate` in https://linux.die.net/man/8/logrotate
 	RotateModeCopyTruncate RotateMode = iota
 )
 
@@ -116,6 +123,9 @@ func fileGlobFromStrftimeLayout(strftimeLayout string) string {
 }
 
 func (f *RotateFile) Write(b []byte) (n int, err error) {
+	if err := f.checkValid("write"); err != nil {
+		return 0, err
+	}
 	// Guard against concurrent writes
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -124,9 +134,6 @@ func (f *RotateFile) Write(b []byte) (n int, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("acquite rotated file :%w", err)
 	}
-	if out == nil {
-		return 0, nil
-	}
 
 	return out.Write(b)
 }
@@ -134,6 +141,9 @@ func (f *RotateFile) Write(b []byte) (n int, err error) {
 // WriteString is like Write, but writes the contents of string s rather than
 // a slice of bytes.
 func (f *RotateFile) WriteString(s string) (n int, err error) {
+	if err := f.checkValid("close"); err != nil {
+		return 0, err
+	}
 	return f.Write([]byte(s))
 }
 
@@ -143,21 +153,34 @@ func (f *RotateFile) WriteString(s string) (n int, err error) {
 //
 // If file was opened with the O_APPEND flag, WriteAt returns an error.
 func (f *RotateFile) WriteAt(b []byte, off int64) (n int, err error) {
+	if err := f.checkValid("write"); err != nil {
+		return 0, err
+	}
 	// Guard against concurrent writes
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	return f.WriteAt(b, off)
+	out, err := f.getWriterLocked(false, false)
+	if err != nil {
+		return 0, fmt.Errorf("acquite rotated file :%w", err)
+	}
+	if w, ok := out.(io.WriterAt); ok {
+		return w.WriteAt(b, off)
+	}
+	return 0, fmt.Errorf("WriteAt is not supported")
 }
 
 // Close satisfies the io.Closer interface. You must
 // call this method if you performed any writes to
 // the object.
 func (f *RotateFile) Close() error {
+	if err := f.checkValid("close"); err != nil {
+		return err
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if f.usingFile == nil {
+	if f.usingFile == nil { // maybe file is closed or not open
 		return nil
 	}
 	defer f.serializedClean()
@@ -173,6 +196,9 @@ func (f *RotateFile) Close() error {
 // This method can be used in conjunction with a signal handler so to
 // emulate servers that generate new log files when they receive a SIGHUP
 func (f *RotateFile) Rotate(forceRotate bool) error {
+	if err := f.checkValid("rotate"); err != nil {
+		return err
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if _, err := f.getWriterLocked(true, forceRotate); err != nil {
@@ -222,7 +248,7 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, seq int, b
 
 	// determine if rotate by size
 
-	// using file not exist, recreate file as rotated by time
+	// recreate file if file not exist, removed by other process for example
 	usingFileInfo, err := os.Stat(f.usingFilePath)
 	if os.IsNotExist(err) {
 		name = f.usingFilePath
@@ -244,74 +270,56 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, seq int, b
 }
 
 func (f *RotateFile) makeUsingFileReadyLocked() error {
+	// using file exist, close this file if not ready to use
 	if f.usingFile != nil {
 		_, err := os.Stat(f.usingFile.Name())
-		if err != nil {
-			_ = f.usingFile.Close()
-			f.usingFile = nil
+		if err == nil {
+			return nil
 		}
+		_ = f.usingFile.Close()
+		f.usingFile = nil
 	}
 
-	if f.usingFile == nil {
-		file, err := AppendAllIfNotExist(f.usingFilePath)
-		if err != nil {
+	// using file not exist, recreate the file and file link
+	file, err := AppendAllIfNotExist(f.usingFilePath)
+	if err != nil {
+		return err
+	}
+
+	// link -> filename
+	if f.FileLinkPath != "" {
+		if err := ReSymlink(f.usingFilePath, f.FileLinkPath); err != nil {
 			return err
 		}
-
-		// link -> filename
-		if f.FileLinkPath != "" {
-			if err := ReSymlink(f.usingFilePath, f.FileLinkPath); err != nil {
-				return err
-			}
-		}
-		f.usingFile = file
 	}
+	f.usingFile = file
 	return nil
 
 }
+
 func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io.Writer, err error) {
 	newName, newSeq, byTime, bySize := f.filePathByRotate(forceRotate)
-	if !byTime && !bySize {
+	if !byTime && !bySize { // no need to rotate by time and size
 		err = f.makeUsingFileReadyLocked()
 		if err != nil {
-			if bailOnRotateFail {
-				// Failure to rotate is a problem, but it's really not a great
-				// idea to stop your application just because you couldn't rename
-				// your log.
-				//
-				// We only return this error when explicitly needed (as specified by bailOnRotateFail)
-				//
-				// However, we *NEED* to close `fh` here
-				if f.usingFile != nil {
-					_ = f.usingFile.Close()
-					f.usingFile = nil
-				}
-				return nil, err
-			}
+			return nil, err
 		}
 		return f.usingFile, nil
 	}
+
+	// rotate the file
 	if f.PreRotateHandler != nil {
 		f.PreRotateHandler(f.usingFilePath)
 	}
 	newFile, err := f.rotateLocked(newName)
 	if err != nil {
 		if bailOnRotateFail {
-			// Failure to rotate is a problem, but it's really not a great
-			// idea to stop your application just because you couldn't rename
-			// your log.
+			// Failure to rotate is a problem, but it's really not a great idea
+			// to stop your application just because you couldn't rename your log.
 			//
 			// We only return this error when explicitly needed (as specified by bailOnRotateFail)
-			//
-			// However, we *NEED* to close `fh` here
-			if newFile != nil {
-				_ = newFile.Close()
-				newFile = nil
-			}
 			return nil, err
 		}
-	}
-	if newFile == nil {
 		// no file can be written, it's an error explicitly
 		if f.usingFile == nil {
 			return nil, err
@@ -319,6 +327,7 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io
 		return f.usingFile, nil
 	}
 
+	// swap file
 	if f.usingFile != nil {
 		_ = f.usingFile.Close()
 		f.usingFile = nil
@@ -335,27 +344,35 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io
 
 // file may not be nil if err is nil
 func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
-	var err error
 	// if we got here, then we need to create a file
-	switch f.RotateMode {
-	case RotateModeCopyRename:
-		// for which open the file, and write file not by RotateFile
-		// CopyRenameFileAll = RenameFileAll(src->dst) + OpenFile(src)
-		// usingFilePath->newName + recreate usingFilePath
-		err = CopyRenameAll(newName, f.usingFilePath)
-	case RotateModeCopyTruncate:
-		// for which open the file, and write file not by RotateFile
-		// CopyTruncateFile = CopyFile(src->dst) + Truncate(src)
-		// usingFilePath->newName + truncate usingFilePath
-		err = CopyTruncateAll(newName, f.usingFilePath)
-	case RotateModeNew:
-		// for which open the file, and write file by RotateFile
-		fallthrough
-	default:
+	if newName != f.usingFilePath {
+		var err error
+		var mode string
+		switch f.RotateMode {
+		case RotateModeCopyRename:
+			// for which open the file, and write file not by RotateFile
+			// CopyRenameFileAll = RenameFileAll(src->dst) + OpenFile(src)
+			// usingFilePath -> newName + recreate usingFilePath
+			err = CopyRenameAll(newName, f.usingFilePath)
+			mode = "copy_rename"
+		case RotateModeCopyTruncate:
+			// for which open the file, and write file not by RotateFile
+			// CopyTruncateFile = CopyFile(src->dst) + Truncate(src)
+			// usingFilePath -> newName + truncate usingFilePath
+			err = CopyTruncateAll(newName, f.usingFilePath)
+			mode = "copy_truncate"
+		case RotateModeNew:
+			// for which open the file, and write file by RotateFile
+			mode = "new"
+			fallthrough
+		default:
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to %s file %s to %s: %w", mode, f.usingFilePath, newName, err)
+		}
 	}
-	if err != nil {
-		return nil, err
-	}
+
+	// make sure new file exists
 	file, err := AppendAllIfNotExist(newName)
 	if err != nil {
 		return nil, err
@@ -440,9 +457,28 @@ func (f *RotateFile) serializedClean() error {
 	return errors_.Multi(errs...)
 }
 
+// checkValid checks whether f is valid for use.
+// If not, it returns an appropriate error, perhaps incorporating the operation name op.
+func (f *RotateFile) checkValid(op string) error {
+	if f == nil {
+		return os.ErrInvalid
+	}
+	return nil
+}
+
 // foo.txt, 0 -> foo.txt
 // foo.txt, 1 -> foo.txt.[1,2,...], which is not exist and seq is max
 func nextSeqFileName(name string, seq int) (string, int) {
+	// Special case: if seq is 0, we don't want to append 0 to the file name.
+	if seq == 0 {
+		nf, err := LockAll(name)
+		if !os.IsExist(err) {
+			return name, seq
+		}
+		_ = nf.Close()
+		seq++
+	}
+
 	// A new file has been requested. Instead of just using the
 	// regular strftime pattern, we create a new file name using
 	// generational names such as "foo.1", "foo.2", "foo.3", etc

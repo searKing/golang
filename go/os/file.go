@@ -463,10 +463,9 @@ func NextFile(pattern string, seq int) (f *os.File, seqUsed int, err error) {
 		seqUsed = seq + i
 		name := fmt.Sprintf("%s%d%s", prefix, seqUsed, suffix)
 		f, err = LockAll(name)
-		if os.IsExist(err) {
-			continue
+		if !os.IsExist(err) {
+			return
 		}
-		break
 	}
 	return
 }
