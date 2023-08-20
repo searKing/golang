@@ -35,17 +35,17 @@ func (b jsonpbBinding) Bind(req *http.Request, obj interface{}) error {
 
 func (jsonpbBinding) BindBody(body []byte, obj interface{}) error {
 	switch msg := obj.(type) {
+	case protov1.Message:
+		mm := jsonpb.Unmarshaler{AllowUnknownFields: true}
+		if err := mm.Unmarshal(bytes.NewBuffer(body), msg); err != nil {
+			return err
+		}
 	case protov2.Message:
 		mm := protojson.UnmarshalOptions{
 			AllowPartial:   true,
 			DiscardUnknown: true,
 		}
 		if err := mm.Unmarshal(body, msg); err != nil {
-			return err
-		}
-	case protov1.Message:
-		mm := jsonpb.Unmarshaler{AllowUnknownFields: true}
-		if err := mm.Unmarshal(bytes.NewBuffer(body), msg); err != nil {
 			return err
 		}
 	default:
