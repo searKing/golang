@@ -459,15 +459,19 @@ func NextFile(pattern string, seq int) (f *os.File, seqUsed int, err error) {
 	// returning prefix as the part before "*" and suffix as the part after "*".
 	prefix, suffix := prefixAndSuffix(pattern)
 
-	for i := 0; i < 10000; i++ {
-		seqUsed = seq + i
+	try := 0
+	for {
+		seqUsed = seq + try
 		name := fmt.Sprintf("%s%d%s", prefix, seqUsed, suffix)
 		f, err = LockAll(name)
-		if !os.IsExist(err) {
-			return
+		if os.IsExist(err) {
+			if try++; try < 10000 {
+				continue
+			}
+			return nil, 0, &os.PathError{Op: "nextfile", Path: prefix + "*" + suffix, Err: os.ErrExist}
 		}
+		return f, seqUsed, err
 	}
-	return
 }
 
 // MaxSeq return max seq set by NextFile
@@ -478,6 +482,7 @@ func MaxSeq(pattern string) (prefix string, seq int, suffix string) {
 	prefix, suffix = prefixAndSuffix(pattern)
 
 	var maxSeq int
+	// ignore [os.ErrBadPattern], taken as maxSeq is 0
 	_, _ = filepath_.GlobFunc(fmt.Sprintf("%s*%s", prefix, suffix), func(name string) bool {
 		// filepath.Clean fix ./xxx -> xxx
 		seqStr := strings.TrimSuffix(strings.TrimPrefix(name, filepath.Clean(prefix)), suffix)
@@ -499,7 +504,7 @@ func prefixAndSuffix(pattern string) (prefix, suffix string) {
 	} else {
 		prefix = pattern
 	}
-	return
+	return prefix, suffix
 }
 
 // WriteAll writes data to a file named by filename.

@@ -3,6 +3,8 @@ package os_test
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	os_ "github.com/searKing/golang/go/os"
@@ -96,5 +98,37 @@ func TestReSymlink(t *testing.T) {
 	}
 	if err := os.Remove(tmpNew); err != nil {
 		t.Fatalf("temp file[%s] Remove failed: %v", tmpNew, err)
+	}
+}
+
+func TestNextFile(t *testing.T) {
+	t.Parallel()
+
+	dir, err := os.MkdirTemp("", "TestNextFileBadDir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	tests := []struct{ pattern, prefix, suffix string }{
+		{filepath.Join(dir, "tempfile_test"), "tempfile_test", ""},
+		{filepath.Join(dir, "tempfile_test*"), "tempfile_test", ""},
+		{filepath.Join(dir, "tempfile_test*xyz"), "tempfile_test", "xyz"},
+	}
+
+	for _, test := range tests {
+		f, seq, err := os_.NextFile(test.pattern, 0)
+		if err != nil {
+			t.Errorf("CreateTemp(..., %q) error: %v", test.pattern, err)
+			continue
+		}
+		defer os.Remove(f.Name())
+		base := filepath.Base(f.Name())
+		f.Close()
+		_ = seq
+		if !(strings.HasPrefix(base, test.prefix) && strings.HasSuffix(base, test.suffix)) {
+			t.Errorf("NextFile pattern %q created bad name %q; want prefix %q suffix %q",
+				test.pattern, base, test.prefix, test.suffix)
+		}
 	}
 }
