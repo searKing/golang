@@ -4,6 +4,7 @@
 
 // go command is not available on android
 
+//go:build !android
 // +build !android
 
 package main
@@ -11,7 +12,6 @@ package main
 import (
 	"go/build"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +33,7 @@ func TestEndToEnd(t *testing.T) {
 
 func walkDir(dir, goenum, dirname string, t *testing.T) {
 	// Generate, compile, and run the test programs.
-	files, err := ioutil.ReadDir(dirname)
+	files, err := os.ReadDir(dirname)
 	if err != nil {
 		t.Fatalf("read dir[%s] failed %s", dirname, err)
 		return
@@ -44,7 +44,7 @@ func walkDir(dir, goenum, dirname string, t *testing.T) {
 			walkDir(dir, goenum, filepath.Join(dirname, name), t)
 			continue
 		}
-		if file.Mode().IsRegular() {
+		if file.Type().IsRegular() {
 			if !strings.HasSuffix(name, ".go") {
 				t.Errorf("%s is not a Go file", name)
 				continue
@@ -67,7 +67,7 @@ func walkDir(dir, goenum, dirname string, t *testing.T) {
 // buildEnum creates a temporary directory and installs go-enum there.
 func buildEnum(t *testing.T) (dir string, goenum string) {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "go-enum")
+	dir, err := os.MkdirTemp("", "go-enum")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -98,7 +98,6 @@ import (
 	"go/format"
 	"go/token"
 	"go/types"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -181,8 +180,8 @@ func main() {
 	}
 
 	// type <key, value> type <key, value>
-	types := newTypeInfo(typeInfos)
-	if len(types) == 0 {
+	typs := newTypeInfo(typeInfos)
+	if len(typs) == 0 {
 		flag.Usage()
 		os.Exit(3)
 	}
@@ -226,7 +225,7 @@ func main() {
 	g.Printf("\n")
 
 	// Run generate for each type.
-	for _, typeInfo := range types {
+	for _, typeInfo := range typs {
 		g.generate(typeInfo)
 	}
 
@@ -238,10 +237,10 @@ func main() {
 	// Write to file.
 	outputName := output
 	if outputName == "" {
-		baseName := fmt.Sprintf("%s_enum.go", types[0].Name)
+		baseName := fmt.Sprintf("%s_enum.go", typs[0].Name)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
 	}
-	err := ioutil.WriteFile(outputName, target, 0644)
+	err := os.WriteFile(outputName, target, 0644)
 	if err != nil {
 		log.Fatalf("writing output: %s", err)
 	}
@@ -321,7 +320,7 @@ type Package struct {
 // parsePackage exits if there is an error.
 func (g *Generator) parsePackage(patterns []string, tags []string) {
 	cfg := &packages.Config{
-		Mode: packages.LoadSyntax,
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
 		// TODO: Need to think about constants in test files. Maybe write type_string_test.go
 		// in a separate pass? For later.
 		Tests:      false,
