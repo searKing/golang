@@ -20,7 +20,6 @@
 // in the same directory will create the file goimport.go,
 // and in /dirs_to_be_force_imported will create the file gokeep.go
 //
-//
 // Typically, this process would be run using go generate, like this:
 //
 //	//go:generate go-import
@@ -30,7 +29,6 @@
 // or a set of Go source files that represent a single Go package.
 //
 // The -tag flag accepts a build tag string.
-//
 package main
 
 import (
@@ -56,7 +54,7 @@ func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-import [flags] [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-import [flags] -tag T [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/go-import\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://pkg.go.dev/github.com/searKing/golang/tools/go-import\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }

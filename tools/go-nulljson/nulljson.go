@@ -5,8 +5,10 @@
 // go-nulljson Generates Go code using a package as a generic template that implements database/sql.Scanner and database/sql/driver.Valuer.
 // Given the name of a NullJson type T , and the name of a type Value
 // go-nulljson will create a new self-contained Go source file implementing
+//
 //	func (m *T) Scan(src interface{}) error
 //	func (m *T) Value() (driver.Value, error)
+//
 // The file is created in the same package and directory as the package that defines T, Key.
 // It has helpful defaults designed for use with go generate.
 //
@@ -37,7 +39,6 @@
 // generate methods for multiple types. The default output file is t_string.go,
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
-//
 package main
 
 import (
@@ -78,7 +79,7 @@ func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T,S [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-nulljson [flags] -type T<V>,S<V> [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/go-nulljson\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://pkg.go.dev/github.com/searKing/golang/tools/go-nulljson\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
@@ -403,6 +404,7 @@ func (g *Generator) buildOneRun(value Value) {
 }
 
 // Arguments to format are:
+//
 //	[1]: import path
 const stringImport = `import "%s"
 `

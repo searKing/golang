@@ -154,7 +154,7 @@ func ParseCommandLine(def bool) *flag.FlagSet {
 		_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T files... # Must be a single package\n")
 		_, _ = fmt.Fprintf(os.Stderr, "\tgo-enum [flags] -type T,S [directory]\n")
 		_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-		_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/go-enum\n")
+		_, _ = fmt.Fprintf(os.Stderr, "\thttps://pkg.go.dev/github.com/searKing/golang/tools/go-enum\n")
 		_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 		commandLine.PrintDefaults()
 	}

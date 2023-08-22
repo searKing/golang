@@ -31,7 +31,6 @@
 // generate methods for multiple types. The default flagOutput file is t_string.go,
 // where t is the lower-cased trimmedStructName of the first type listed. It can be overridden
 // with the -flagOutput flag.
-//
 package main
 
 import (
@@ -73,7 +72,7 @@ func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T files... # Must be a single package\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tgo-sqlx [flags] -type T,S [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/searKing/golang/tools/go-sqlx\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://pkg.go.dev/github.com/searKing/golang/tools/go-sqlx\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }
@@ -389,6 +388,7 @@ func (g *Generator) buildOneRun(value Struct) {
 }
 
 // Arguments to format are:
+//
 //	[1]: import path
 const stringImport = `import "%s"
 `
