@@ -3,6 +3,8 @@ github.com/searKing/golang/go v1.2.52 h1:Nbsr8HIS4ATL7LY1BE3SwRyEQd+UkrRymyol46s
 github.com/searKing/golang/go v1.2.52/go.mod h1:9AhTd9NFW/ck459PgNJwBA6I5q/ZBt9qOSvv9oZvHgA=
 github.com/searKing/golang/tools v1.2.29 h1:gWX4aCA1+N7CfLpNd6tmBjYtecTksZFXziqbQ+AJKLo=
 github.com/searKing/golang/tools v1.2.29/go.mod h1:QtwFM73H1qMKlRl0p8NRWXrNaCaffoYkNHk5YMoRyOY=
+github.com/searKing/golang/tools/go-enum v1.2.97 h1:mX396oCnjdGqmMmwffBwpEU3L1X/7K3eDuXOOLow+TQ=
+github.com/searKing/golang/tools/go-enum v1.2.97/go.mod h1:gWZ/vkIPpA0nCHDMETjzKqsHPDWSPdhZeXPxf/jWyqA=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
