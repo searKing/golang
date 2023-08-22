@@ -1,10 +1,11 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package enum
 
 // Arguments to format are:
+//
 //	[1]: type name
 //	[2]: size of index element (8 for uint8 etc.)
 //	[3]: less than zero check (for signed types)

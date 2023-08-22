@@ -1,8 +1,8 @@
-// Copyright 2021 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package enum
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 var checkImportPackages = []string{`fmt`}
 
 // Arguments to format are:
+//
 //	[1]: type name
 const stringNameToValueMethod = `
 // Parse%[1]sString retrieves an enum value from the enum constants string name.
@@ -25,6 +26,7 @@ func Parse%[1]sString(s string) (%[1]s, error) {
 `
 
 // Arguments to format are:
+//
 //	[1]: type name
 const stringValuesMethod = `
 // %[1]sValues returns all values of the enum
@@ -34,6 +36,7 @@ func %[1]sValues() []%[1]s {
 `
 
 // Arguments to format are:
+//
 //	[1]: type name
 const stringBelongsMethodLoop = `
 // IsA%[1]s returns "true" if the value is listed in the enum definition. "false" otherwise
@@ -48,6 +51,7 @@ func (i %[1]s) Registered() bool {
 `
 
 // Arguments to format are:
+//
 //	[1]: type name
 const stringBelongsMethodSet = `
 // IsA%[1]s returns "true" if the value is listed in the enum definition. "false" otherwise

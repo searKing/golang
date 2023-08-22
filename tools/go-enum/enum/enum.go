@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -87,7 +87,7 @@
 //	PillAspirin // Aspirin
 //
 // to suppress it in the output.
-package main
+package enum
 
 import (
 	"bytes"
@@ -167,7 +167,7 @@ const (
 	goJsonEnumToolName = "go-enum"
 )
 
-func main() {
+func Main() {
 	log.SetFlags(0)
 	log.SetPrefix("go-enum: ")
 	ParseCommandLine(true)
