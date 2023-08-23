@@ -77,8 +77,8 @@ github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUz
 github.com/rs/cors v1.9.0 h1:l9HGsTsHJcvW14Nk7J9KFz8bzeAWXn3CG6bgt7LsrAE=
 github.com/rs/cors v1.9.0/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/searKing/golang/go v1.2.96/go.mod h1:OnRUfEFkYVdTlEdif1G5u+jSIAhJx0fI0t5yudvUq9s=
-github.com/searKing/golang/go v1.2.97 h1:G0t8bP6rDgft8fgd9F8DnogwDvlBrGsg56+xnO5BR9A=
-github.com/searKing/golang/go v1.2.97/go.mod h1:OnRUfEFkYVdTlEdif1G5u+jSIAhJx0fI0t5yudvUq9s=
+github.com/searKing/golang/go v1.2.98 h1:VIYruGsbOthIlhlnWEoEsR3/OCxU6M64B5T5rzVq3hk=
+github.com/searKing/golang/go v1.2.98/go.mod h1:OnRUfEFkYVdTlEdif1G5u+jSIAhJx0fI0t5yudvUq9s=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.96-rc.0 h1:I+WYS4x+HAHQkBdsEennsEgSI6sI4Ap1DAuMuiecOAc=
 github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.96-rc.0/go.mod h1:mqppCTGPXeMQTsoEUVbHqoH+DEiIgaqCrd+/pVhryNM=
 github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.96-rc.1 h1:m0ObLlVZmUAoRbuyTTNJEUACqAWjR29Dy4IbvryAQmU=
