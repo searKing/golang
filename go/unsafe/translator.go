@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build ignore
+
 package unsafe
 
 // #include <stdlib.h>
@@ -15,8 +17,9 @@ import (
 )
 
 // CStringArray You can write as this directly.
+//
 //	// []string -> [](*C.char)
-// 	var strs []string
+//	var strs []string
 //	cCharArray := make([]*C.char, 0, len(strs))
 //	for _, s := range strs {
 //		char := (*C.char)(unsafe.Pointer(C.CString(s)))
@@ -24,7 +27,7 @@ import (
 //		defer C.free(unsafe.Pointer(char)) //释放内存
 //	}
 //	var cstr **C.char
-// 	var cstrSize C.int
+//	var cstrSize C.int
 //	cstr = (**C.char)(unsafe.Pointer(&cCharArray[0]))
 //	cstrSize =  C.int(len(strs))
 func CStringArray(strs ...string) (**C.char, C.int) {
