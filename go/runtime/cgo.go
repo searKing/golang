@@ -6,7 +6,7 @@ package runtime
 
 import "unsafe"
 
-// BytesPointer returns a pointer which an be used by CGO
+// BytesPointer returns a pointer which can be used by CGO
 func BytesPointer(data []byte) unsafe.Pointer {
 	if len(data) == 0 {
 		return nil

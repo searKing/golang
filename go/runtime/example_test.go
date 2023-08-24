@@ -37,6 +37,7 @@ func cf() (got, expect uintptr) {
 
 	return uintptr(unsafe.Pointer(sp)), uintptr(unsafe.Pointer(&spv))
 }
+
 func ExampleGetCallFrame() {
 	got, expect := cf()
 	if got != expect {
