@@ -5,7 +5,6 @@
 package strings_test
 
 import (
-	"reflect"
 	"testing"
 	"unicode"
 	"unicode/utf8"
@@ -203,8 +202,7 @@ func TestMapLeading(t *testing.T) {
 	}
 	orig := "Input string that we expect not to be copied."
 	m = strings.MapLeading(identity, orig)
-	if (*reflect.StringHeader)(unsafe.Pointer(&orig)).Data !=
-		(*reflect.StringHeader)(unsafe.Pointer(&m)).Data {
+	if unsafe.StringData(orig) != unsafe.StringData(m) {
 		t.Error("unexpected copy during identity map")
 	}
 
