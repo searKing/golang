@@ -14,7 +14,7 @@ func TestGetCallerFrame(t *testing.T) {
 	// github.com/searKing/golang/go/runtime_test.TestGetCallerFrame
 	frame := runtime.GetCallerFrame(1)
 	if match, _ := regexp.MatchString(`TestGetCaller(.*)`, frame.Function); !match {
-		t.Errorf("mismatch symbolized function name: %s",  frame.Function)
+		t.Errorf("mismatch symbolized function name: %s", frame.Function)
 	}
 }
 

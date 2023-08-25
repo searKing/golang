@@ -6,17 +6,27 @@ import (
 	"strings"
 )
 
+// GetCallerPC returns the caller PC of the function that calls it.
+// The argument skip is the number of stack frames
+// to skip before recording in pc, with 0 identifying the frame for Callers itself and
+// 1 identifying the caller of Callers.
+func GetCallerPC(skip int) uintptr {
+	var pcs [1]uintptr
+	runtime.Callers(skip+1, pcs[:])
+	return pcs[0]
+}
+
 // GetCallerFrame returns the caller frame of the function that calls it.
 // The argument skip is the number of stack frames
 // to skip before recording in pc, with 0 identifying the frame for Callers itself and
 // 1 identifying the caller of Callers.
 func GetCallerFrame(skip int) *runtime.Frame {
-	pc := make([]uintptr, 1)
-	n := runtime.Callers(skip+1, pc[:])
+	var pcs [1]uintptr
+	n := runtime.Callers(skip+1, pcs[:])
 	if n < 1 {
 		return nil
 	}
-	frame, _ := runtime.CallersFrames(pc).Next()
+	frame, _ := runtime.CallersFrames(pcs[:]).Next()
 	return &frame
 }
 
@@ -27,9 +37,10 @@ func GetCallerFrame(skip int) *runtime.Frame {
 func GetCaller(skip int) string {
 	var pc [1]uintptr
 	runtime.Callers(skip+1, pc[:])
+
 	f := runtime.FuncForPC(pc[0])
 	if f == nil {
-		return "Unable to find caller"
+		return "???"
 	}
 	return f.Name()
 }
@@ -48,12 +59,21 @@ func GetShortCaller(skip int) string {
 // 1 identifying the caller of Callers.
 func GetCallerFuncFileLine(skip int) (caller string, file string, line int) {
 	var ok bool
-	_, file, line, ok = runtime.Caller(skip + 1)
+	// For historical reasons the meaning of skip differs between Caller and Callers
+	pc, file, line, ok := runtime.Caller(skip)
 	if !ok {
+		caller = "???"
 		file = "???"
 		line = 0
+		return
 	}
-	return GetCaller(skip + 1), file, line
+	f := runtime.FuncForPC(pc)
+	if f != nil {
+		caller = f.Name()
+		return
+	}
+	caller = "???"
+	return
 }
 
 // GetShortCallerFuncFileLine returns the short form of GetCallerFuncFileLine.
