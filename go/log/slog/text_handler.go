@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/searKing/golang/go/unsafe"
 )
 
 func appendTextValue(s *handleState, v slog.Value) error {
@@ -28,8 +30,7 @@ func appendTextValue(s *handleState, v slog.Value) error {
 			if err != nil {
 				return err
 			}
-			// TODO: avoid the conversion to string.
-			s.appendStringMayQuote(string(data))
+			s.appendBytesMayQuote(data)
 			return nil
 		}
 		if err, ok := a.(error); ok && err != nil {
@@ -45,13 +46,12 @@ func appendTextValue(s *handleState, v slog.Value) error {
 			if err != nil {
 				return err
 			}
-			// TODO: avoid the conversion to string.
-			s.appendStringMayQuote(string(data))
+			s.appendBytesMayQuote(data)
 			return nil
 		}
 		if bs, ok := byteSlice(a); ok {
 			// As of Go 1.19, this only allocates for strings longer than 32 bytes.
-			s.buf.WriteString(strconv.Quote(string(bs)))
+			s.buf.WriteString(strconv.Quote(unsafe.BytesToString(bs)))
 			return nil
 		}
 		s.appendStringMayQuote(fmt.Sprintf("%+v", v.Any()))

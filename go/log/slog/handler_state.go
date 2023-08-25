@@ -16,6 +16,7 @@ import (
 	"github.com/searKing/golang/go/runtime/goroutine"
 	strings_ "github.com/searKing/golang/go/strings"
 	time_ "github.com/searKing/golang/go/time"
+	unsafe_ "github.com/searKing/golang/go/unsafe"
 )
 
 // handleState holds state for a single call to commonHandler.handle.
@@ -154,6 +155,12 @@ func (s *handleState) appendKey(key string) {
 
 func (s *handleState) appendString(str string) {
 	s.buf.WriteString(str)
+}
+
+func (s *handleState) appendBytesMayQuote(b []byte) {
+	// avoid the conversion to string.
+	// converts byte slice to string without a memory allocation.
+	s.appendStringMayQuote(unsafe_.BytesToString(b))
 }
 
 func (s *handleState) appendStringMayQuote(str string) {
