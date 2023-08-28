@@ -21,21 +21,21 @@ import (
 )
 
 // RotateMode represents a way to rotate file.
-// see details: https://linux.die.net/man/8/logrotate
+// see details: https://man7.org/linux/man-pages/man8/logrotate.8.html
 type RotateMode int
 
 const (
 	// RotateModeNew create new rotate file directly
 	// Immediately after rotation (before the postrotate script is run) the log file is created (with
 	// the same name as the log file just rotated).
-	// see option: `create` in https://linux.die.net/man/8/logrotate
+	// see option: `create` in https://man7.org/linux/man-pages/man8/logrotate.8.html
 	RotateModeNew RotateMode = iota
 
 	// RotateModeCopyRename Make a copy of the log file, but don't change the original at all. This option can be
 	// used, for instance, to make a snapshot of the current log file, or when some other
 	// utility needs to truncate or parse the file. When this option is used, the create
 	// option will have no effect, as the old log file stays in place.
-	// see option: `copy` in https://linux.die.net/man/8/logrotate
+	// see option: `copy` in https://man7.org/linux/man-pages/man8/logrotate.8.html
 	RotateModeCopyRename RotateMode = iota
 
 	// RotateModeCopyTruncate Truncate the original log file in place after creating a copy, instead of moving the
@@ -44,7 +44,7 @@ const (
 	// previous log file forever. Note that there is a very small time slice between copying
 	// the file and truncating it, so some logging data might be lost. When this option is
 	// used, the create option will have no effect, as the old log file stays in place.
-	// see option: `copytruncate` in https://linux.die.net/man/8/logrotate
+	// see option: `copytruncate` in https://man7.org/linux/man-pages/man8/logrotate.8.html
 	RotateModeCopyTruncate RotateMode = iota
 )
 
