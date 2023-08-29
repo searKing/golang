@@ -1,11 +1,11 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/searKing/golang.svg)](https://pkg.go.dev/github.com/searKing/golang)
 [![Report card](https://goreportcard.com/badge/github.com/searKing/golang)](https://goreportcard.com/report/github.com/searKing/golang)
-[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" width="20" height="20">](https://jb.gg/OpenSourceSupport)
+[<img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2FsearKing%2Fgolang&countColor=%23263759" height="20">](https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2FsearKing%2Fgolang)
+[<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" height="20">](https://jb.gg/OpenSourceSupport)
 
 # golang
 
-vg
-Useful libs or tools for Golang
+various libs or tools for Golang
 
 # GoLibs
 
