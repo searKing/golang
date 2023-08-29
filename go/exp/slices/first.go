@@ -4,9 +4,7 @@
 
 package slices
 
-import (
-	"golang.org/x/exp/slices"
-)
+import "slices"
 
 // FirstFunc returns the first item from the slice satisfying f(c), or zero if none do.
 func FirstFunc[S ~[]E, E any](s S, f func(E) bool) (e E, ok bool) {

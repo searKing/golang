@@ -4,14 +4,16 @@
 
 package slices
 
-import "golang.org/x/exp/slices"
+import "slices"
 
 // Contains reports whether v is present in s.
+// Deprecated: Use slices.Contains instead since go1.21.
 func Contains[E comparable](s []E, v E) bool {
 	return slices.Contains(s, v)
 }
 
 // ContainsFunc reports whether v satisfying f(s[i]) is present in s.
+// Deprecated: Use slices.ContainsFunc instead since go1.21.
 func ContainsFunc[E any](s []E, f func(E) bool) bool {
 	return slices.IndexFunc(s, f) >= 0
 }

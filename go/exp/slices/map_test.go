@@ -6,11 +6,11 @@ package slices_test
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"testing"
 
 	slices_ "github.com/searKing/golang/go/exp/slices"
-	"golang.org/x/exp/slices"
 )
 
 func TestMap(t *testing.T) {

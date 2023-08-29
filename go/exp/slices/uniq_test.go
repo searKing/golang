@@ -5,11 +5,11 @@
 package slices_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
 	slices_ "github.com/searKing/golang/go/exp/slices"
-	"golang.org/x/exp/slices"
 )
 
 var uniqTests = []struct {

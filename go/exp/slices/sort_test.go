@@ -5,13 +5,13 @@
 package slices_test
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
 
 	math_ "github.com/searKing/golang/go/exp/math"
 	slices_ "github.com/searKing/golang/go/exp/slices"
-	"golang.org/x/exp/slices"
 )
 
 func TestLinearSearch(t *testing.T) {

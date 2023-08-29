@@ -7,11 +7,11 @@ package slices_test
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strconv"
 	"testing"
 
 	slices_ "github.com/searKing/golang/go/exp/slices"
-	"golang.org/x/exp/slices"
 )
 
 func TestFilter(t *testing.T) {

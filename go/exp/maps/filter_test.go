@@ -6,12 +6,12 @@ package maps_test
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 	"strconv"
 	"testing"
 
 	maps_ "github.com/searKing/golang/go/exp/maps"
-	"golang.org/x/exp/maps"
 )
 
 func TestFilter(t *testing.T) {

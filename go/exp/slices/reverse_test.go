@@ -6,10 +6,10 @@ package slices_test
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	slices_ "github.com/searKing/golang/go/exp/slices"
-	"golang.org/x/exp/slices"
 )
 
 func TestReverse(t *testing.T) {
