@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-var _ error = markError{} // verify that Error implements error
+var _ error = (*markError)(nil) // verify that Error implements error
 
 // Mark returns an error with the supplied errors as marks.
 // If err is nil, return nil.
@@ -20,13 +20,30 @@ func Mark(err error, marks ...error) error {
 	if err == nil {
 		return nil
 	}
-	if len(marks) == 0 {
+	n := 0
+	for _, mark := range marks {
+		if mark != nil {
+			// avoid repeat marks
+			if errors.Is(err, mark) {
+				return err
+			}
+			n++
+		}
+	}
+	if n == 0 {
 		return err
 	}
+
 	me := markError{
 		err:   err,
-		marks: marks,
+		marks: make([]error, 0, n),
 	}
+	for _, mark := range marks {
+		if mark != nil {
+			me.marks = append(me.marks, mark)
+		}
+	}
+
 	return me
 }
 
@@ -49,36 +66,15 @@ func (e markError) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			me := e.clean()
-			if len(me.marks) == 0 {
-				_, _ = fmt.Fprintf(s, "%+v", me.err)
-				return
-			}
-			_, _ = io.WriteString(s, "Marked errors occurred:\n")
-
-			_, _ = fmt.Fprintf(s, "|\t%+v", me.err)
-			for _, mark := range me.marks {
-				_, _ = fmt.Fprintf(s, "\nM\t%+v", mark)
+			_, _ = fmt.Fprintf(s, "Marked errors occurred:%+v", e.err)
+			for i, mark := range e.marks {
+				_, _ = fmt.Fprintf(s, "\nM[%d]/[%d]\t%+v", i, len(e.marks), mark)
 			}
 			return
 		}
 		fallthrough
 	case 's', 'q':
 		_, _ = io.WriteString(s, e.Error())
-	}
-}
-
-// clean removes all none nil elem in all the marks
-func (e markError) clean() markError {
-	var marks []error
-	for _, err := range e.marks {
-		if err != nil {
-			marks = append(marks, err)
-		}
-	}
-	return markError{
-		err:   e.err,
-		marks: marks,
 	}
 }
 
