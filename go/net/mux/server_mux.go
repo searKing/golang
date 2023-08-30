@@ -5,12 +5,12 @@
 package mux
 
 import (
+	"errors"
 	"io"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/searKing/golang/go/errors"
 	io_ "github.com/searKing/golang/go/io"
 	net_ "github.com/searKing/golang/go/net"
 )
@@ -21,10 +21,10 @@ func NotFound(c net.Conn) {
 }
 
 // NotFoundHandler returns a simple request handler
-// that replies to each request with a ``404 page not found'' reply.
+// that replies to each request with a “404 page not found” reply.
 func NotFoundHandler() HandlerConn { return HandlerConnFunc(NotFound) }
 
-// MuxListener is a net.ServeMux that accepts only the connections that matched.
+// ServeMux is a net.ServeMux that accepts only the connections that matched.
 // goroutine unsafe
 type ServeMux struct {
 	// NotFound replies to the listener with a not found error.
@@ -58,7 +58,7 @@ type Matcher interface {
 	Match(io.Writer, io.Reader) bool
 }
 
-// MatchWriter is a match that can also write response (say to do handshake).
+// MatcherFunc is a match that can also write response (say to do handshake).
 type MatcherFunc func(io.Writer, io.Reader) bool
 
 func (f MatcherFunc) Match(w io.Writer, r io.Reader) bool {
@@ -148,7 +148,7 @@ func (mux *ServeMux) match(c *sniffConn) (h HandlerConn) {
 
 }
 
-// handler is the main implementation of HandlerConn.
+// Handler is the main implementation of HandlerConn.
 func (mux *ServeMux) Handler(c *sniffConn) (h HandlerConn) {
 	mux.mu.RLock()
 	defer mux.mu.RUnlock()
@@ -192,7 +192,7 @@ func (mux *ServeMux) Close() error {
 			errs = append(errs, l.Close())
 		}
 	}
-	return errors.Multi(errs...)
+	return errors.Join(errs...)
 }
 
 func HandleListener(pattern Matcher) net.Listener {

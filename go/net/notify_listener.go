@@ -58,7 +58,7 @@ func (l *NotifyListener) DoneC() <-chan struct{} {
 	return l.getDoneChan()
 }
 
-// Stop prevents the NotifyListener from firing.
+// Close prevents the NotifyListener from firing.
 // To ensure the channel is empty after a call to Close, check the
 // return value and drain the channel.
 func (l *NotifyListener) Close() error {
