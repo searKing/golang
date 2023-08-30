@@ -23,9 +23,10 @@ func ExampleStringSliceVar() {
 	fmt.Printf("infos before parse: %q\n", infos)
 	_ = fs.Parse([]string{"-i", "golang", "-i", "flag", "-i", "string slice"})
 	fmt.Printf("infos after parse: %q\n", infos)
+
 	// Output:
 	// -i value
-	//     	info arrays (default &["hello" "world"])
+	//     	info arrays (default ["hello" "world"])
 	// infos before parse: ["hello" "world"]
 	// infos after parse: ["golang" "flag" "string slice"]
 

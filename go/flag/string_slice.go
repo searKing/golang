@@ -46,16 +46,20 @@ type stringSliceValue struct {
 func newStringSliceValue(val []string, p *[]string) *stringSliceValue {
 	*p = val
 	return &stringSliceValue{vars: p}
-	//return (*stringSliceValue)(p)
 }
 
-func (ss *stringSliceValue) Get() interface{} { return *ss.vars }
+func (ss *stringSliceValue) Get() interface{} { return *(ss.vars) }
 
-func (ss *stringSliceValue) String() string { return fmt.Sprintf("%q", ss.vars) }
+func (ss *stringSliceValue) String() string {
+	if ss.vars == nil {
+		return "[]"
+	}
+	return fmt.Sprintf("%q", *(ss.vars))
+}
 
 func (ss *stringSliceValue) Set(s string) error {
 	ss.once.Do(func() {
-		*(ss.vars) = nil
+		*(ss.vars) = (*(ss.vars))[0:0]
 	})
 	*(ss.vars) = append(*(ss.vars), s)
 	return nil
