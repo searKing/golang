@@ -1,8 +1,8 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package goimport
 
 import (
 	"bytes"
@@ -160,8 +160,10 @@ func (g *Generator) generateGoKeep(toolName string, toolArgs ...string) {
 			log.Fatalf("render template %s for %s: %v", tmplName, dir, err)
 		}
 
+		file := *gokeepName + ".go"
+		log.Println("add", filepath.Join(dir, file))
 		// Write to file.
-		g.formatDumpTo(dir, *gokeepName+".go")
+		g.formatDumpTo(dir, file)
 	}
 
 }
@@ -184,7 +186,8 @@ func (g *Generator) generateGoImport(toolName string, toolArgs ...string) {
 	if err := tmpl().Execute(&g.buf, tmplInfo); err != nil {
 		log.Fatalf("render template %s for %s: %v", tmplName, *output, err)
 	}
-
+	file := *goimportName + ".go"
+	log.Println("add", file)
 	g.formatDumpTo("", *goimportName+".go")
 }
 

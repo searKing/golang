@@ -1,4 +1,4 @@
-// Copyright 2020 The searKing Author. All rights reserved.
+// Copyright 2023 The searKing Author. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -29,7 +29,7 @@
 // or a set of Go source files that represent a single Go package.
 //
 // The -tag flag accepts a build tag string.
-package main
+package goimport
 
 import (
 	"flag"
@@ -71,7 +71,7 @@ type Import struct {
 	BuildTags        []string
 }
 
-func main() {
+func Main() {
 	log.SetFlags(0)
 	log.SetPrefix(fmt.Sprintf("%s: ", goImportToolName))
 	flag.Usage = Usage

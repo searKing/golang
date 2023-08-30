@@ -4,6 +4,7 @@
 
 // go command is not available on android
 
+//go:build !android
 // +build !android
 
 package main
@@ -78,7 +79,7 @@ func goimportCompileAndRun(t *testing.T, dir, goimport, fileName string) {
 	}
 
 	// Run goimport in the temporary directory.
-	err = run(goimport, target)
+	err = runInDir(target, goimport, target)
 	if err != nil {
 		t.Fatal(err)
 	}
