@@ -2,8 +2,6 @@ module github.com/searKing/golang
 
 go 1.21
 
-toolchain go1.21.0
-
 require (
 	github.com/searKing/golang/go v1.2.98
 	github.com/searKing/golang/pkg/webserver v1.2.93

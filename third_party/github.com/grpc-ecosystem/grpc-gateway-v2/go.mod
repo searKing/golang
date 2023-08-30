@@ -2,8 +2,6 @@ module github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gat
 
 go 1.21
 
-toolchain go1.21.0
-
 require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
