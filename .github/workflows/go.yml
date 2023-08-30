@@ -29,3 +29,6 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+
+    - name: Test Recursive
+      run: find ./go -type f -name "go.mod" -not -path "./.*" -exec bash -c 'cd $(dirname "$1"); go test ./...' sh {} \;
