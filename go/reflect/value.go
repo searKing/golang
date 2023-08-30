@@ -73,6 +73,10 @@ func IsZeroValue(v reflect.Value) bool {
 
 // IsNilValue reports whether v is untyped nil or typed nil for its type.
 func IsNilValue(v reflect.Value) bool {
+	var zeroV reflect.Value
+	if v == zeroV {
+		return true
+	}
 	if !v.IsValid() {
 		// This should never happen, but will act as a safeguard for later,
 		// as a default value doesn't make sense here.
@@ -94,7 +98,7 @@ func FollowValuePointer(v reflect.Value) reflect.Value {
 	return v
 }
 
-// A field represents a single field found in a struct.
+// FieldValueInfo represents a single field found in a struct.
 type FieldValueInfo struct {
 	value       reflect.Value
 	structField reflect.StructField
