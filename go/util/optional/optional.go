@@ -39,7 +39,7 @@ func Of(value interface{}) Optional {
 	}
 }
 
-// Of Returns an {@code Optional} describing the given value, if
+// OfNillable Returns an {@code Optional} describing the given value, if
 // non-{@code null}, otherwise returns an empty {@code Optional}.
 func OfNillable(value interface{}) Optional {
 	if value == nil {

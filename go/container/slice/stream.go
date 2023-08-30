@@ -80,15 +80,15 @@ func (stream *Stream) ToSlice(ifStringAsRune ...bool) interface{} {
 	return ToSliceFunc(stream.s)
 }
 
-func (stream *Stream) Reduce(f func(left, right interface{}) interface{}) *optional.Optional {
+func (stream *Stream) Reduce(f func(left, right interface{}) interface{}) optional.Optional {
 	return optional.OfNillable(ReduceFunc(stream.s, f))
 }
 
-func (stream *Stream) Min(f func(interface{}, interface{}) int) *optional.Optional {
+func (stream *Stream) Min(f func(interface{}, interface{}) int) optional.Optional {
 	return optional.OfNillable(MinFunc(stream.s, f))
 }
 
-func (stream *Stream) Max(f func(interface{}, interface{}) int) *optional.Optional {
+func (stream *Stream) Max(f func(interface{}, interface{}) int) optional.Optional {
 	return optional.OfNillable(MaxFunc(stream.s, f))
 }
 
@@ -108,7 +108,7 @@ func (stream *Stream) NoneMatch(f func(interface{}) bool) bool {
 	return NoneMatchFunc(stream.s, f)
 }
 
-func (stream *Stream) FindFirst(f func(interface{}) bool) *optional.Optional {
+func (stream *Stream) FindFirst(f func(interface{}) bool) optional.Optional {
 	return optional.OfNillable(FindFirstFunc(stream.s, f))
 }
 
@@ -116,7 +116,7 @@ func (stream *Stream) FindFirstIndex(f func(interface{}) bool) int {
 	return FindFirstIndexFunc(stream.s, f)
 }
 
-func (stream *Stream) FindAny(f func(interface{}) bool) *optional.Optional {
+func (stream *Stream) FindAny(f func(interface{}) bool) optional.Optional {
 	return optional.OfNillable(FindAnyFunc(stream.s, f))
 }
 
@@ -139,7 +139,7 @@ func (stream *Stream) ConcatWithValue(v interface{}) *Stream {
 	return stream.Concat(NewStream().WithSlice(v))
 }
 
-//grammar surger for count
+// Size grammar sugar for count
 func (stream *Stream) Size() int {
 	return stream.Count()
 }
