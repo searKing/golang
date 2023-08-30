@@ -118,13 +118,27 @@ func FindModuleName(modRoot string) (name string, err error) {
 
 }
 
-// FindGoMod returns the nearest go.mod by walk dir and dir's parent and forefathers in order
+// FindGoMod returns the nearest go.mod by walk dir and i's parent and forefathers in order
 func FindGoMod(dir string) string {
-	root := FindModuleRoot(dir)
-	if root != "" {
-		return filepath.Join(dir, "go.mod")
+	modRoot := findModuleRoot(dir)
+	if modRoot == "" {
+		return ""
 	}
-	return ""
+
+	// InDir checks whether path is in the file tree rooted at dir.
+	// If so, InDir returns an equivalent path relative to dir.
+	// If not, InDir returns an empty string.
+	// InDir makes some effort to succeed even in the presence of symbolic links.
+	rel, _ := filepath.Rel(os.TempDir(), modRoot)
+	if rel == "." {
+		// If you create /tmp/go.mod for experimenting,
+		// then any tests that create work directories under /tmp
+		// will find it and get modules when they're not expecting them.
+		// It's a bit of a peculiar thing to disallow but quite mysterious
+		// when it happens. See golang.org/issue/26708.
+		return ""
+	}
+	return filepath.Join(dir, "go.mod")
 }
 
 // FindModuleRoot returns the nearest dir of go.mod by walk dir and dir's parent and forefathers in order
@@ -133,8 +147,11 @@ func FindModuleRoot(dir string) (root string) {
 }
 
 // borrow from golang src code
-////go:linkname findModuleRoot cmd/go/internal/modload.findModuleRoot
+// //go:linkname findModuleRoot cmd/go/internal/modload.findModuleRoot
 func findModuleRoot(dir string) (root string) {
+	if dir == "" {
+		panic("dir not set")
+	}
 	dir = filepath.Clean(dir)
 
 	// Look for enclosing go.mod.
