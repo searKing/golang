@@ -39,7 +39,7 @@ const (
 
 func safeServe(errCh chan<- error, muxl *mux.Server, l net.Listener) {
 	if err := muxl.Serve(l); err != nil {
-		if err == mux.ErrServerClosed || err == mux.ErrListenerClosed {
+		if errors.Is(err, mux.ErrServerClosed) || errors.Is(err, mux.ErrListenerClosed) {
 			return
 		}
 		if strings.Contains(err.Error(), "use of closed") {
@@ -307,10 +307,12 @@ func testHTTP2HeaderField(
 		}
 	}()
 
+	muxer := mux.NewServeMux()
+
 	l := newChanListener()
 	l.Notify(reader)
 	// Register a bogus matcher that only reads one byte.
-	muxl := mux.HandleListener(mux.MatcherFunc(func(w io.Writer, r io.Reader) bool {
+	muxl := muxer.HandleListener(mux.MatcherFunc(func(w io.Writer, r io.Reader) bool {
 		var b [1]byte
 		_, _ = r.Read(b[:])
 		return false
@@ -320,10 +322,12 @@ func testHTTP2HeaderField(
 	// Create a matcher that cannot match the response.
 	//muxl.Match(matcherConstructor(false, hpack.HeaderField{Name: name, Value: notMatchValue}))
 	// Then match with the expected field.
-	h2l := mux.HandleListener(matcherConstructor(false, hpack.HeaderField{Name: name, Value: matchValue}))
+	h2l := muxer.HandleListener(matcherConstructor(false, hpack.HeaderField{Name: name, Value: matchValue}))
 	defer h2l.Close()
 
 	srv := mux.NewServer()
+	defer srv.Close()
+	srv.Handler = muxer
 	go func() {
 		safeServe(errCh, srv, l)
 	}()
