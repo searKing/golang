@@ -132,8 +132,7 @@ func TestTernarySearchTree_String1(t *testing.T) {
 	s := tree.String()
 	expect := `abcd:0
 abcd1234:1
-abcd1234ABCD:2
-`
+abcd1234ABCD:2`
 	if s != expect {
 		t.Errorf("actual:\n%s\nexpect:\n%s", s, expect)
 	}
@@ -146,8 +145,7 @@ func TestTernarySearchTree_String2(t *testing.T) {
 	tree.Store("1234", 1)
 	s := tree.String()
 	expect := `1234:1
-abcd:0
-`
+abcd:0`
 	if s != expect {
 		t.Errorf("actual:\n%s\nexpect:\n%s", s, expect)
 	}
