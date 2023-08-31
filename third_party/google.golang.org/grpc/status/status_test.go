@@ -19,7 +19,7 @@ func TestFromError(t *testing.T) {
 	var markErr = errors.New("mark")
 	var multiErr = errors.New("multi")
 	code, message := codes.Internal, "test description"
-	err := errors_.Multi(errors_.Mark(status.Error(code, message), markErr), multiErr)
+	err := errors.Join(errors_.Mark(status.Error(code, message), markErr), multiErr)
 
 	s, ok := status.FromError(err)
 	if !ok || s.Code() != code || s.Message() != message || s.Err() == nil {
@@ -37,7 +37,7 @@ func TestConvertKnownError(t *testing.T) {
 	var markErr = errors.New("mark")
 	var multiErr = errors.New("multi")
 	code, message := codes.Internal, "test description"
-	err := errors_.Multi(errors_.Mark(status.Error(code, message), markErr), multiErr)
+	err := errors.Join(errors_.Mark(status.Error(code, message), markErr), multiErr)
 	s := status.Convert(err)
 	if s.Code() != code || s.Message() != message {
 		t.Fatalf("Convert(%v) = %v; want <Code()=%s, Message()=%q>", err, s, code, message)

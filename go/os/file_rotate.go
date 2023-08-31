@@ -5,6 +5,7 @@
 package os
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	errors_ "github.com/searKing/golang/go/errors"
 	filepath_ "github.com/searKing/golang/go/path/filepath"
 	"github.com/searKing/golang/go/sync/atomic"
 	time_ "github.com/searKing/golang/go/time"
@@ -454,7 +454,7 @@ func (f *RotateFile) serializedClean() error {
 			errs = append(errs, err)
 		}
 	}
-	return errors_.Multi(errs...)
+	return errors.Join(errs...)
 }
 
 // checkValid checks whether f is valid for use.

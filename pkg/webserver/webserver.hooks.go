@@ -13,7 +13,6 @@ import (
 	"os"
 	"runtime/debug"
 
-	errors_ "github.com/searKing/golang/go/errors"
 	"github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	"golang.org/x/sync/errgroup"
@@ -151,7 +150,7 @@ func (s *WebServer) RunPreShutdownHooks() error {
 	for hookName, hookEntry := range s.preShutdownHooks {
 		errs = append(errs, runPreShutdownHook(hookName, hookEntry))
 	}
-	return errors_.Multi(errs...)
+	return errors.Join(errs...)
 }
 
 // isPostStartHookRegistered checks whether a given PostStartHook is registered

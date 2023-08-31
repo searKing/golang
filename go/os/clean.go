@@ -5,11 +5,11 @@
 package os
 
 import (
+	"errors"
 	"os"
 	"sort"
 	"time"
 
-	errors_ "github.com/searKing/golang/go/errors"
 	filepath_ "github.com/searKing/golang/go/path/filepath"
 )
 
@@ -140,5 +140,5 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 			}
 		}
 	}
-	return errors_.Multi(errs...)
+	return errors.Join(errs...)
 }
