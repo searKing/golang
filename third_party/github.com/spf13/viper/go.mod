@@ -1,10 +1,10 @@
 module github.com/searKing/golang/third_party/github.com/spf13/viper
 
-go 1.18
+go 1.21
 
 require (
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/searKing/golang/go v1.2.89
+	github.com/searKing/golang/go v1.2.99
 	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.86
 	github.com/spf13/viper v1.16.0
 	google.golang.org/protobuf v1.31.0

@@ -4,8 +4,8 @@ github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiu
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/searKing/golang/go v1.2.86 h1:zUaaViti3baR1g6N3/HID0UYYWlamnIlcazNbVgUIgg=
-github.com/searKing/golang/go v1.2.86/go.mod h1:OnRUfEFkYVdTlEdif1G5u+jSIAhJx0fI0t5yudvUq9s=
+github.com/searKing/golang/go v1.2.99 h1:degnYLZSBhk1w5oEmYUujzHoHEqSEAGqJs+JxchaMyo=
+github.com/searKing/golang/go v1.2.99/go.mod h1:B1BQ/Fpo5fKyEyXcRxkNYegLIcvbAe8/lmo09y2OJFg=
 golang.org/x/net v0.14.0 h1:BONx9s002vGdD9umnlX1Po8vOZmrgH34qlHcD1MfK14=
 golang.org/x/net v0.14.0/go.mod h1:PpSgVXXLK0OxS0F31C1/tv6XNguvCrnXIDrFMspZIUI=
 golang.org/x/sys v0.11.0 h1:eG7RXZHdqOJ1i+0lgLgCpSXAp6M3LYlAo6osgSi0xOM=

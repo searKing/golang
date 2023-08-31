@@ -3,7 +3,7 @@ module github.com/searKing/golang/third_party/google.golang.org/grpc
 go 1.21
 
 require (
-	github.com/searKing/golang/go v1.2.86
+	github.com/searKing/golang/go v1.2.99
 	golang.org/x/net v0.14.0
 	golang.org/x/time v0.3.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577
