@@ -2,7 +2,7 @@ module github.com/searKing/golang/third_party/gocloud.dev
 
 go 1.18
 
-require gocloud.dev v0.33.0
+require gocloud.dev v0.34.0
 
 require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
