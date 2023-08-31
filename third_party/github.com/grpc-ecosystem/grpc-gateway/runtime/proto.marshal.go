@@ -9,6 +9,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
+// ProtoMarshaller is a Marshaller which marshals/unmarshals into/from serialize proto bytes,
+// but ContentType() always returns "application/x-protobuf".
 // []byte -> proto|interface{}
 type ProtoMarshaller struct {
 	runtime.ProtoMarshaller

@@ -44,7 +44,7 @@ func (*YamlMarshaller) ContentType() string {
 	return binding.MIMEYAML
 }
 
-// DecoderWrapper is a wrapper around a *json.Decoder that adds
+// YamlDecoderWrapper is a wrapper around a *json.Decoder that adds
 // support for proto and json to the Decode method.
 type YamlDecoderWrapper struct {
 	decoderYaml *yaml.Decoder // json -> interface{}
