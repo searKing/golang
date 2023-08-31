@@ -12,7 +12,7 @@ require (
 	github.com/searKing/golang/third_party/github.com/google/uuid v1.2.99
 	github.com/searKing/golang/third_party/github.com/gorilla/websocket v1.2.99
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware v1.2.99
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway v1.2.99
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway v1.2.100
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.99
 	github.com/searKing/golang/third_party/github.com/gtank/cryptopasta v1.2.99
 	github.com/searKing/golang/third_party/github.com/jmoiron/sqlx v1.2.99
