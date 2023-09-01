@@ -5,6 +5,8 @@
 package os_test
 
 import (
+	"fmt"
+	"log"
 	"time"
 )
 import os_ "github.com/searKing/golang/go/os"
@@ -19,9 +21,9 @@ func ExampleNewRotateFile() {
 	for i := 0; i < 10000; i++ {
 		time.Sleep(1 * time.Millisecond)
 		file.WriteString(time.Now().String())
-		//if err := file.Rotate(false); err != nil {
-		//	fmt.Printf("%d, err: %v", i, err)
-		//}
+		if err := file.Rotate(false); err != nil {
+			fmt.Printf("%d, err: %v\n", i, err)
+		}
 	}
 	// Output:
 }
@@ -35,9 +37,9 @@ func ExampleNewRotateFileWithStrftime() {
 	for i := 0; i < 10000; i++ {
 		time.Sleep(1 * time.Millisecond)
 		file.WriteString(time.Now().String())
-		//if err := file.Rotate(false); err != nil {
-		//	fmt.Printf("%d, err: %v", i, err)
-		//}
+		if err := file.Rotate(false); err != nil {
+			fmt.Printf("%d, err: %v\n", i, err)
+		}
 	}
 	// Output:
 }
@@ -48,9 +50,20 @@ func ExampleDiskUsage() {
 		return
 	}
 
-	_, _, _, _, _ = total, free, avail, inodes, inodesFree
-	//fmt.Printf("total :%d B, free: %d B, avail: %d B, inodes: %d, inodesFree: %d", total, free, avail, inodes, inodesFree)
+	fmt.Printf("total :%d B, free: %d B, avail: %d B, inodes: %d, inodesFree: %d", total, free, avail, inodes, inodesFree)
 	// total :499963174912 B, free: 57534603264 B, avail: 57534603264 B, inodes: 566386444, inodesFree: 561861360
+}
+
+func ExampleReadDirN() {
+	files, err := os_.ReadDirN(".", 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		fmt.Println(file.Name())
+	}
 
 	// Output:
+	// dir.go
 }
