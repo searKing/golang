@@ -10,16 +10,15 @@ import (
 	"net/http"
 
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
+	"go.opentelemetry.io/otel/semconv/v1.20.0/httpconv"
 )
 
 // AttrsFromRequest generates attributes as specified by the OpenTelemetry specification
 // for a span.
 func AttrsFromRequest(req *http.Request, localAddress string) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{semconv.RPCSystemKey.String("http")}
-	attrs = append(attrs, semconv.HTTPClientAttributesFromHTTPRequest(req)...)
-	attrs = append(attrs, semconv.EndUserAttributesFromHTTPRequest(req)...)
-	attrs = append(attrs, semconv.NetAttributesFromHTTPRequest("tcp", req)...)
+	attrs = append(attrs, httpconv.ClientRequest(req)...)
 	attrs = append(attrs, semconv.HTTPClientIPKey.String(localAddress))
 	return attrs
 }
@@ -28,14 +27,6 @@ func AttrsFromRequest(req *http.Request, localAddress string) []attribute.KeyVal
 // for a span.
 func AttrsFromResponse(resp *http.Response) []attribute.KeyValue {
 	var attrs []attribute.KeyValue
-	attrs = append(attrs, semconv.HTTPResponseContentLengthKey.Int64(resp.ContentLength))
-	attrs = append(attrs, semconv.HTTPAttributesFromHTTPStatusCode(resp.StatusCode)...)
-	return attrs
-}
-
-// httpClientIpAttr returns http client ip attribute based on addr
-func httpClientIpAttr(addr string) []attribute.KeyValue {
-	var attrs []attribute.KeyValue
-	attrs = append(attrs, semconv.HTTPClientIPKey.String(addr))
+	attrs = append(attrs, httpconv.ClientResponse(resp)...)
 	return attrs
 }
