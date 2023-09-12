@@ -7,6 +7,8 @@ package os_test
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 )
 import os_ "github.com/searKing/golang/go/os"
@@ -66,4 +68,21 @@ func ExampleReadDirN() {
 
 	// Output:
 	// dir.go
+}
+
+func ExampleNewCacheFile() {
+	file := os_.NewCacheFile(os_.WithCacheFileBucketRootDir("log"),
+		os_.WithCacheFileCacheExpiredAfter(10*time.Millisecond),
+		os_.WithCacheFileBucketKeyFunc(func(url string) string {
+			return "always conflict key"
+		}))
+
+	for i := 0; i < 10000; i++ {
+		time.Sleep(1 * time.Millisecond)
+		_, _, err := file.Put(fmt.Sprintf("cache%d", i), strings.NewReader(strconv.Itoa(i)))
+		if err != nil {
+			fmt.Printf("%d, err: %v\n", i, err)
+		}
+	}
+	// Output:
 }
