@@ -477,23 +477,38 @@ func NextFile(pattern string, seq int) (f *os.File, seqUsed int, err error) {
 // MaxSeq return max seq set by NextFile
 // split pattern by the last wildcard "*"
 func MaxSeq(pattern string) (prefix string, seq int, suffix string) {
+	return MaxSeqFunc(pattern, func(name string) bool { return false })
+}
+
+// MaxSeqFunc return hit seq or max seq else set by NextFile
+// split pattern by the last wildcard "*"
+// All errors that arise visiting files and directories are filtered by fn:
+// see the [filepath.WalkFunc] documentation for details.
+func MaxSeqFunc(pattern string, handler func(name string) bool) (prefix string, seq int, suffix string) {
 	// prefixAndSuffix splits pattern by the last wildcard "*", if applicable,
 	// returning prefix as the part before "*" and suffix as the part after "*".
 	prefix, suffix = prefixAndSuffix(pattern)
 
-	var maxSeq int
-	// ignore [os.ErrBadPattern], taken as maxSeq is 0
-	_, _ = filepath_.GlobFunc(fmt.Sprintf("%s*%s", prefix, suffix), func(name string) bool {
+	var hitOrMaxSeq int
+	// ignore [os.ErrBadPattern], taken as hitOrMaxSeq is 0
+	_ = filepath_.WalkGlob(fmt.Sprintf("%s*%s", prefix, suffix), func(path string) error {
+		hit := handler(path)
 		// filepath.Clean fix ./xxx -> xxx
-		seqStr := strings.TrimSuffix(strings.TrimPrefix(name, filepath.Clean(prefix)), suffix)
+		seqStr := strings.TrimSuffix(strings.TrimPrefix(path, filepath.Clean(prefix)), suffix)
 		if seq, err := strconv.Atoi(seqStr); err == nil {
-			if seq > maxSeq {
-				maxSeq = seq
+			if seq > hitOrMaxSeq || hit {
+				hitOrMaxSeq = seq
 			}
+		} else if hit {
+			hitOrMaxSeq = 0
 		}
-		return false
+
+		if hit {
+			return filepath.SkipAll
+		}
+		return nil
 	})
-	return prefix, maxSeq, suffix
+	return prefix, hitOrMaxSeq, suffix
 }
 
 // prefixAndSuffix splits pattern by the last wildcard "*", if applicable,
