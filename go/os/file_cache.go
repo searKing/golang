@@ -83,12 +83,18 @@ func (f *CacheFile) Get(name string) (cacheFilePath, cacheMetaPath string, hit b
 	// <protect> 2. cache removed by other process or goroutine -- not controllable
 	// 3. refresh cache's ModTime
 	{
-		_, err_ := os.Stat(cacheMetaPath)
+		info, err_ := os.Stat(cacheMetaPath)
 		if err_ != nil {
 			hit = false
 			return
 		}
-		info, err_ := os.Stat(cacheFilePath)
+		// violate cache file if cache expired
+		expired := time.Since(info.ModTime()) > f.CacheExpiredAfter
+		if expired {
+			hit = false
+			return
+		}
+		info, err_ = os.Stat(cacheFilePath)
 		if err_ != nil {
 			hit = false
 			return
@@ -115,16 +121,6 @@ func (f *CacheFile) Put(name string, r io.Reader) (cacheFilePath string, refresh
 		return cacheFilePath, false, nil
 	}
 
-	cacheFilePathExists, _ := PathExists(cacheFilePath)
-	cacheMetaPathExists, _ := PathExists(cacheMetaPath)
-	if cacheFilePathExists && cacheMetaPathExists {
-		// avoid parallel writes
-		return cacheFilePath, false, nil
-	}
-
-	// remove invalid cache
-	_ = os.Remove(cacheFilePath)
-	_ = os.Remove(cacheMetaPath)
 	err = WriteRenameAllFrom(cacheFilePath, r)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to create cache file: %w", err)
@@ -140,7 +136,24 @@ func (f *CacheFile) Put(name string, r io.Reader) (cacheFilePath string, refresh
 func (f *CacheFile) getCacheMeta(key, cacheMetaPathPattern string) (cacheFilePath, cacheMetaPath string, err error) {
 	var hitMeta bool
 
-	// STEP1 search for cache file in cache open list
+	// STEP1 clean expired cache file
+	_ = filepath_.WalkGlob(cacheMetaPathPattern, func(path string) error {
+		cacheMetaPath = path
+		cacheFilePath = strings.TrimSuffix(cacheMetaPath, f.CacheMetaExt)
+		info, err := os.Stat(cacheMetaPath)
+		if err == nil {
+			// violate cache file if cache expired
+			expired := time.Since(info.ModTime()) > f.CacheExpiredAfter
+			if expired {
+				_ = os.Remove(cacheFilePath)
+				_ = os.Remove(cacheMetaPath)
+				return nil
+			}
+		}
+		return nil
+	})
+
+	// STEP2 search for cache file in cache open list
 	_ = filepath_.WalkGlob(cacheMetaPathPattern, func(path string) error {
 		cacheMetaPath = path
 		cacheFilePath = strings.TrimSuffix(cacheMetaPath, f.CacheMetaExt)
@@ -151,36 +164,6 @@ func (f *CacheFile) getCacheMeta(key, cacheMetaPathPattern string) (cacheFilePat
 			return filepath.SkipAll
 		}
 		// cache key conflict, continue search cache file list
-		return nil
-	})
-	if hitMeta {
-		return
-	}
-
-	// STEP2 no cache file hit in cache open list, then try to remove expired cache file
-	_ = filepath_.WalkGlob(cacheMetaPathPattern, func(path string) error {
-		cacheMetaPath = path
-		cacheFilePath = strings.TrimSuffix(cacheMetaPath, f.CacheMetaExt)
-		// verify whether if cache key in cache file is match
-		keyInCache, _ := os.ReadFile(cacheMetaPath)
-
-		if string(keyInCache) == key {
-			hitMeta = true
-			return filepath.SkipAll
-		}
-
-		info, err := os.Stat(cacheMetaPath)
-		if err == nil {
-			// violate cache file if cache expired
-			expired := time.Since(info.ModTime()) > f.CacheExpiredAfter
-			if expired {
-				_ = os.Remove(cacheFilePath)
-				_ = os.Remove(cacheMetaPath)
-				return filepath.SkipAll
-			}
-		}
-
-		// cache file conflict and not expired, continue search cache file list
 		return nil
 	})
 	if hitMeta {

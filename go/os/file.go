@@ -324,7 +324,7 @@ func CopyTruncateFile(dst string, src string, flag int, perm os.FileMode, size i
 }
 
 // CopyRenameAll makes a copy of the src file, but don't change the original src at all.
-// This option can  be used,  for  instance, to  make  a snapshot of the current log file,
+// This option can be used, for instance, to make a snapshot of the current log file,
 // or when some other utility needs to truncate or parse the file.
 // parent dirs will be created with dirperm if not exist.
 func CopyRenameAll(dst string, src string) error {
