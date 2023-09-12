@@ -38,6 +38,7 @@ func WalkGlob(pattern string, fn WalkGlobFunc) error {
 		if err != nil && errors.Is(err, filepath.SkipAll) {
 			// Successfully skipped all remaining files and directories.
 			err = nil
+			return nil
 		}
 		if err != nil {
 			return err
