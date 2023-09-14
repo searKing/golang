@@ -18,6 +18,7 @@ func (f Factory) Apply() error {
 	logrus.SetReportCaller(f.fc.ReportCaller)
 	logrus.AddHook(HookFunc(DefaultSlogHook))
 	var slogOpt slog.HandlerOptions
+	slogOpt.Level = ToSlogLevel(f.fc.Level)
 	slogOpt.AddSource = f.fc.ReportCaller
 	slogOpt.ReplaceAttr = slog_.ReplaceAttrTruncate(max(f.fc.TruncateKeySizeTo, f.fc.TruncateValueSizeTo, f.fc.TruncateMessageSizeTo))
 	var rotateOpts []slog_.RotateOption

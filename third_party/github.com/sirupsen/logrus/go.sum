@@ -3,8 +3,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/searKing/golang/go v1.2.99 h1:degnYLZSBhk1w5oEmYUujzHoHEqSEAGqJs+JxchaMyo=
-github.com/searKing/golang/go v1.2.99/go.mod h1:B1BQ/Fpo5fKyEyXcRxkNYegLIcvbAe8/lmo09y2OJFg=
+github.com/searKing/golang/go v1.2.101 h1:7Be+MlvvfQ0bZTmfh+FGrCC4fNhePbsSmuhygF4YOus=
+github.com/searKing/golang/go v1.2.101/go.mod h1:B1BQ/Fpo5fKyEyXcRxkNYegLIcvbAe8/lmo09y2OJFg=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
