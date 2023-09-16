@@ -13,7 +13,7 @@ import (
 
 // DiskUsage returns total and free bytes available in a directory, e.g. `/`.
 func DiskUsage(path string) (total int64, free int64, avail int64, inodes int64, inodesFree int64, err error) {
-	st := unix.Statvfs_t{}
+	var st unix.Statvfs_t
 	if err := unix.Statvfs(path, &st); err != nil {
 		return 0, 0, 0, 0, 0, err
 	}

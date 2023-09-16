@@ -3,8 +3,6 @@
 // license that can be found in the LICENSE file.
 
 //go:build !windows && (android || darwin || dragonfly || freebsd || linux || ios)
-// +build !windows
-// +build android darwin dragonfly freebsd linux ios
 
 package os
 

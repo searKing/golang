@@ -27,7 +27,6 @@ func ExampleNewRotateFile() {
 			fmt.Printf("%d, err: %v\n", i, err)
 		}
 	}
-	// Output:
 }
 
 func ExampleNewRotateFileWithStrftime() {
@@ -43,7 +42,6 @@ func ExampleNewRotateFileWithStrftime() {
 			fmt.Printf("%d, err: %v\n", i, err)
 		}
 	}
-	// Output:
 }
 
 func ExampleDiskUsage() {
@@ -84,5 +82,4 @@ func ExampleNewCacheFile() {
 			fmt.Printf("%d, err: %v\n", i, err)
 		}
 	}
-	// Output:
 }
