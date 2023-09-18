@@ -1,7 +1,6 @@
 package os_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +11,7 @@ import (
 
 // tmpDir creates a temporary directory and returns its name.
 func tmpFile(t *testing.T) string {
-	tmp, err := ioutil.TempFile("", "")
+	tmp, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("temp file creation failed: %v", err)
 	}
