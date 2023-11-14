@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -224,7 +225,7 @@ func (o *doWithBackoff) Complete() {
 
 // DoWithBackoff will retry by exponential backoff if failed.
 // If request is not rewindable, retry wil be skipped.
-func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Response, error) {
+func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
 	var opt doWithBackoff
 	opt.SetDefault()
 	opt.ApplyOptions(opts...)
@@ -239,11 +240,23 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 	backoff := time_.NewDefaultExponentialBackOff(option...)
 	rewindableErr := RequestWithBodyRewindable(httpReq)
 	var retries int
+	var errs []error
+	defer func() {
+		if resp != nil {
+			if err := errors.Join(errs...); err != nil {
+				resp.Header.Add("Warning", Warn{
+					Warn:     err.Error(),
+					WarnCode: WarnMiscellaneousWarning,
+				}.String())
+			}
+		}
+	}()
 	for {
 		if retries > 0 && httpReq.GetBody != nil {
 			newBody, err := httpReq.GetBody()
 			if err != nil {
-				return nil, err
+				errs = append(errs, err)
+				return nil, errors.Join(errs...)
 			}
 			httpReq.Body = newBody
 		}
@@ -254,12 +267,13 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 				return opt.clientInterceptor(req, retry, do, opts...)
 			}
 		}
-		resp, err := httpDo(httpReq, retries)
+		resp, err = httpDo(httpReq, retries)
+		errs = append(errs, err)
 
 		wait, ok := backoff.NextBackOff()
 		if !ok {
 			if err != nil {
-				return nil, fmt.Errorf("http do reach backoff limit after retries %d: %w", retries, err)
+				return nil, fmt.Errorf("http do reach backoff limit after retries %d: %w", retries, errors.Join(errs...))
 			} else {
 				return resp, nil
 			}
@@ -268,7 +282,7 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 		wait, retry := opt.RetryAfter(resp, err, wait)
 		if !retry {
 			if err != nil {
-				return nil, fmt.Errorf("http do reach server limit after retries %d: %w", retries, err)
+				return nil, fmt.Errorf("http do reach server limit after retries %d: %w", retries, errors.Join(errs...))
 			} else {
 				return resp, nil
 			}
@@ -276,8 +290,12 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 
 		if rewindableErr != nil {
 			if err != nil {
-				return nil, fmt.Errorf("http do cannot rewindbody after retries %d: %w", retries, err)
+				return nil, fmt.Errorf("http do cannot rewindbody after retries %d: %w", retries, errors.Join(errs...))
 			} else {
+				resp.Header.Add("Warning", Warn{
+					Warn:     errors.Join(errs...).Error(),
+					WarnCode: WarnMiscellaneousWarning,
+				}.String())
 				return resp, nil
 			}
 		}
@@ -290,7 +308,7 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (*http.Re
 		case <-httpReq.Context().Done():
 			timer.Stop()
 			if err != nil {
-				return nil, fmt.Errorf("http do canceled after retries %d: %w", retries, err)
+				return nil, fmt.Errorf("http do canceled after retries %d: %w", retries, errors.Join(errs...))
 			} else {
 				return resp, nil
 			}
