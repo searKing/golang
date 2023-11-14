@@ -244,6 +244,9 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (resp *ht
 	defer func() {
 		if resp != nil {
 			if err := errors.Join(errs...); err != nil {
+				if resp.Header == nil {
+					resp.Header = make(http.Header)
+				}
 				resp.Header.Add("Warning", Warn{
 					Warn:     err.Error(),
 					WarnCode: WarnMiscellaneousWarning,
