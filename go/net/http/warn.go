@@ -16,6 +16,11 @@ import (
 // HTTP warn codes as registered with IANA.
 // See: https://www.iana.org/assignments/http-warn-codes/http-warn-codes.xhtml
 // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning#warning_codes
+// Deprecated: The "Warning" header field was used to carry additional information about
+// the status or transformation of a message that might not be reflected in the status code.
+// This specification obsoletes it, as it is not widely generated or surfaced to users.
+// The information it carried can be gleaned from examining other header fields, such as Age.
+// See: https://www.rfc-editor.org/rfc/rfc9111.html#name-warning
 const (
 	WarnResponseIsStale                = 110 // RFC 7234, 5.5.1
 	WarnRevalidationFailed             = 111 // RFC 7234, 5.5.2
