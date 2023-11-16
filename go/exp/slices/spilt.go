@@ -92,3 +92,27 @@ func SplitN[S ~[]E, E any](s S, sep int, n int) []S {
 	}
 	return chunks
 }
+
+// SplitMap slices s into all key-value pairs and returns a map of the key-value pairs.
+//
+// If s is nil, SplitMap returns nil (zero map).
+//
+// If len(s) is odd, it treats args[len(args)-1] as a value with a missing value.
+func SplitMap[M ~map[K]V, S ~[]E, K comparable, V any, E any](s S) M {
+	if s == nil {
+		return nil
+	}
+	kvs := Split(s, 2)
+	var m = make(M, len(kvs))
+	for _, kv := range kvs {
+		switch len(kv) {
+		case 1:
+			var zeroV V
+			m[any(kv[0]).(K)] = zeroV
+		case 2:
+			m[any(kv[0]).(K)] = any(kv[1]).(V)
+		default:
+		}
+	}
+	return m
+}

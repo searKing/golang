@@ -5,6 +5,7 @@
 package slices_test
 
 import (
+	"maps"
 	"slices"
 	"testing"
 
@@ -189,6 +190,34 @@ func TestSplitN(t *testing.T) {
 				t.Errorf("#%d: SplitN(%v, %v, %v) = %v, want %v", i, test.s, test.sep, test.n, got, test.want)
 				break
 			}
+		}
+	}
+}
+
+var splitMapTests = []struct {
+	s    []any
+	want map[string]int
+}{
+	{nil, nil},
+	{[]any{}, map[string]int{}},
+	{[]any{"k1"}, map[string]int{"k1": 0}},
+	{[]any{"k1", 1}, map[string]int{"k1": 1}},
+	{[]any{"k1", 1, "k2"}, map[string]int{"k1": 1, "k2": 0}},
+}
+
+func TestSplitMap(t *testing.T) {
+	for i, tt := range splitMapTests {
+		got := slices_.SplitMap[map[string]int](tt.s)
+		if len(tt.want) != len(got) {
+			t.Errorf("#%d: SplitMap(%v) = %v, want %v", i, tt.s, got, tt.want)
+			continue
+		}
+		if (got == nil && tt.want != nil) || (got != nil && tt.want == nil) {
+			t.Errorf("#%d: slices.SplitMap(%v) = %v, want %v", i, tt.s, got, tt.want)
+			return
+		}
+		if !maps.Equal(got, tt.want) {
+			t.Errorf("#%d: slices.SplitMap(%v) = %v, want %v", i, tt.s, got, tt.want)
 		}
 	}
 }
