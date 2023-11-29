@@ -35,8 +35,8 @@ func (o *encOpts) ApplyOptions(options ...EncOptsOption) *encOpts {
 	return o
 }
 
-// WithEncOpts sets encOpts.
-func WithEncOpts(v encOpts) EncOptsOption {
+// withEncOpts sets encOpts.
+func withEncOpts(v encOpts) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		*o = v
 	})
@@ -83,5 +83,13 @@ func WithEncOptsTruncateMap(v int) EncOptsOption {
 func WithEncOptsTruncateSliceOrArray(v int) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.truncateSliceOrArray = v
+	})
+}
+
+// WithEncOptsTruncateUrl sets truncateUrl in encOpts.
+// truncate query and fragment in url
+func WithEncOptsTruncateUrl(v bool) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.truncateUrl = v
 	})
 }

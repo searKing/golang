@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
@@ -159,6 +160,7 @@ type encOpts struct {
 	truncateString       int
 	truncateMap          int
 	truncateSliceOrArray int
+	truncateUrl          bool // truncate query and fragment in url
 }
 
 type encoderFunc func(e *encodeState, v reflect.Value, opts encOpts)
@@ -417,6 +419,34 @@ func stringEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 	}
 	// @diff
 	s := v.String()
+
+	if opts.truncateUrl {
+		u, err := url.Parse(s)
+		if err == nil {
+			q := u.Query()
+			f := u.RawFragment
+			if len(q) > 0 || len(f) > 0 {
+				u.RawQuery = ""
+				u.RawFragment = ""
+				st := u.RequestURI()
+				st += fmt.Sprintf(" [(%d) truncated", len(s))
+				if len(q) > 0 {
+					st += fmt.Sprintf(" %d querys", len(q))
+				}
+				if len(f) > 0 {
+					if len(q) > 0 {
+						st += fmt.Sprintf(" and")
+					}
+					st += fmt.Sprintf(" %d fragment chars", len(f))
+				}
+				st += "]"
+				if len(st) < len(s) {
+					s = st
+				}
+			}
+		}
+	}
+
 	if limit := opts.truncateString; limit > 0 && len(s) > limit {
 		st := strings_.Truncate(s, limit) + fmt.Sprintf(" [(%d)truncated %d chars]", len(s), len(s)-limit)
 		if len(st) < len(s) {
