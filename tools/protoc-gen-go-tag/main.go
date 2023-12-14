@@ -5,17 +5,21 @@
 // protoc-gen-go-tag is a plugin for the Google protocol buffer compiler to Generate
 // Go code. Install it by building this program and making it accessible within
 // your PATH with the name:
+//
 //	protoc-gen-go-tag
 //
 // The 'go' suffix becomes part of the argument for the protocol compiler,
 // such that it can be invoked as:
+//
 //	protoc --go-tag_out=paths=source_relative:. path/to/astFile.proto
 //
 // This generates Go bindings for the protocol buffer defined by astFile.proto.
 // With that input, the output will be written to:
+//
 //	path/to/astFile.pb.go
 //
 // See the README and documentation for protocol buffers to learn more:
+//
 //	https://developers.google.com/protocol-buffers/
 package main
 
@@ -34,11 +38,11 @@ func main() {
 	)
 	// For Debug Only
 	//{ // Dump
-	//	in, err := ioutil.ReadAll(os.Stdin)
+	//	in, err := io.ReadAll(os.Stdin)
 	//	if err != nil {
 	//		panic(err)
 	//	}
-	//	if err := ioutil.WriteFile("in.pb", in, 0666); err != nil {
+	//	if err := os.WriteFile("in.pb", in, 0666); err != nil {
 	//		panic(err)
 	//	}
 	//}

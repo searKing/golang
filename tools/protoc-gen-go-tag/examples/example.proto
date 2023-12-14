@@ -9,13 +9,17 @@ option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/examples
 message Http{
   string protocol = 1[(google.protobuf.field_tag) = {struct_tag: 'validate:"oneof=http https"'}];
   // version_default is the same as version_update
-  string version_default = 2[json_name = "VersionDefault", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\" json:\"version_with_default\""}];
-  string version_update = 3[json_name = "VersionUpdate", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\" json:\"version_with_update\"", update_strategy:update}];
-  string version_replace = 4[json_name = "VersionReplace", (google.protobuf.field_tag) = {struct_tag: "validate:\"gte=0,lte=130\" json:\"version_with_replace\"", update_strategy:replace}];
+  string version_default = 2[json_name = "VersionDefault", (google.protobuf.field_tag) = {struct_tag: 'validate:"gte=0,lte=130" json:"version_with_default"'}];
+  string version_update = 3[json_name = "VersionUpdate", (google.protobuf.field_tag) = {struct_tag: 'validate:"gte=0,lte=130" json:"version_with_update"', update_strategy:update}];
+  string version_replace = 4[json_name = "VersionReplace", (google.protobuf.field_tag) = {struct_tag: 'validate:"gte=0,lte=130" json:"version_with_replace"', update_strategy:replace}];
 
   Url url = 5[json_name = "Url", (google.protobuf.field_tag) = {struct_tag: "json:\"url_tag,omitempty\""}];
   message Url {
-    string scheme = 1[json_name = "Scheme", (google.protobuf.field_tag) = {struct_tag: "json:\"schema_tag,omitempty\""}];
-    //  string scheme = 1[json_name = "Scheme"];
+    string scheme = 1[json_name = "Scheme", (google.protobuf.field_tag) = {struct_tag: 'validate:"required" json:"schema_tag,omitempty"'}];
+  }
+
+  oneof test_oneof {
+    string name = 6[json_name = "Name", (google.protobuf.field_tag) = {struct_tag: 'validate:"required" json:"name,omitempty"'}];
+    string name_no_json_name = 7[(google.protobuf.field_tag) = {struct_tag: 'json:"name_no_json_name,omitempty"'}];
   }
 }

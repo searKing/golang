@@ -51,36 +51,60 @@ func WalkDescriptorProto(g *protogen.Plugin, dp *descriptorpb.DescriptorProto, t
 	s.StructNameInProto = dp.GetName()
 	s.StructNameInGo = CamelCaseSlice(append(typeNames, CamelCase(dp.GetName())))
 
-	//typeNames := []string{s.StructNameInGo}
 	for _, field := range dp.GetField() {
-		if field.GetOptions() == nil {
-			continue
+		var oneofS *StructInfo
+		if field.OneofIndex != nil { // Special Case: oneof
+			oneofS = &StructInfo{}
+			oneofS.StructNameInProto = field.GetName()
+			oneofS.StructNameInGo = CamelCaseSlice(append(typeNames, CamelCase(dp.GetName()), CamelCase(field.GetName())))
 		}
 
-		v := proto.GetExtension(field.Options, pb.E_FieldTag)
-		switch v := v.(type) {
-		case *pb.FieldTag:
-			tag := v.GetStructTag()
-			tags, err := reflect.ParseStructTag(tag)
-			if err != nil {
-				g.Error(fmt.Errorf("failed to parse struct tag in field extension: %w", err))
-				// ignore this tag
-				continue
+		f := HandleFieldDescriptorProto(g, field)
+		if f != nil {
+			if oneofS != nil {
+				oneofS.FieldInfos = append(oneofS.FieldInfos, *f)
+				if len(oneofS.FieldInfos) > 0 {
+					ss = append(ss, *oneofS)
+				}
+			} else {
+				s.FieldInfos = append(s.FieldInfos, *f)
 			}
-
-			s.FieldInfos = append(s.FieldInfos, FieldInfo{
-				FieldNameInProto: field.GetName(),
-				FieldNameInGo:    CamelCase(field.GetName()),
-				FieldTag:         *tags,
-				UpdateStrategy:   v.GetUpdateStrategy(),
-			})
 		}
 	}
+
+	typeNames = append(typeNames, CamelCase(dp.GetName()))
+
+	for _, decl := range dp.GetOneofDecl() {
+		declS := HandleOneofDescriptorProto(g, decl, typeNames)
+		if declS != nil {
+			if decl.GetOptions() != nil {
+				v := proto.GetExtension(decl.GetOptions(), pb.E_FieldTag)
+				switch v := v.(type) {
+				case *pb.FieldTag:
+					tag := v.GetStructTag()
+					tags, err := reflect.ParseStructTag(tag)
+					if err != nil {
+						g.Error(fmt.Errorf("failed to parse struct tag in oneof field extension: %w", err))
+						// ignore this tag
+						break
+					}
+					s.FieldInfos = append(s.FieldInfos, FieldInfo{
+						FieldNameInProto: decl.GetName(),
+						FieldNameInGo:    CamelCase(decl.GetName()),
+						FieldTag:         *tags,
+						UpdateStrategy:   v.GetUpdateStrategy(),
+					})
+				}
+			}
+
+			ss = append(ss, *declS)
+		}
+	}
+
 	if len(s.FieldInfos) > 0 {
 		ss = append(ss, s)
 	}
 
-	typeNames = append(typeNames, CamelCase(dp.GetName()))
 	for _, nest := range dp.GetNestedType() {
 		nestSs := WalkDescriptorProto(g, nest, typeNames)
 		if len(nestSs) > 0 {
@@ -88,6 +112,41 @@ func WalkDescriptorProto(g *protogen.Plugin, dp *descriptorpb.DescriptorProto, t
 		}
 	}
 	return ss
+}
+
+func HandleOneofDescriptorProto(g *protogen.Plugin, dp *descriptorpb.OneofDescriptorProto, typeNames []string) *StructInfo {
+	if dp == nil {
+		return nil
+	}
+	s := StructInfo{}
+	s.StructNameInProto = dp.GetName()
+	s.StructNameInGo = "is" + CamelCaseSlice(append(typeNames, CamelCase(dp.GetName())))
+	return &s
+}
+
+func HandleFieldDescriptorProto(g *protogen.Plugin, field *descriptorpb.FieldDescriptorProto) *FieldInfo {
+	if field.GetOptions() == nil {
+		return nil
+	}
+
+	v := proto.GetExtension(field.GetOptions(), pb.E_FieldTag)
+	switch v := v.(type) {
+	case *pb.FieldTag:
+		tag := v.GetStructTag()
+		tags, err := reflect.ParseStructTag(tag)
+		if err != nil {
+			g.Error(fmt.Errorf("failed to parse struct tag in field extension: %w", err))
+			// ignore this tag
+			return nil
+		}
+		return &FieldInfo{
+			FieldNameInProto: field.GetName(),
+			FieldNameInGo:    CamelCase(field.GetName()),
+			FieldTag:         *tags,
+			UpdateStrategy:   v.GetUpdateStrategy(),
+		}
+	}
+	return nil
 }
 
 func Rewrite(g *protogen.Plugin) {

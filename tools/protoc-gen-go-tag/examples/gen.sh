@@ -4,4 +4,4 @@
 # license that can be found in the LICENSE file.
 #
 
-protoc -I . -I /Users/chenhaixin/workspace/src/ --go-tag_out=paths=source_relative:. *.proto
+protoc -I . -I ../../../../../../ --go-tag_out=paths=source_relative:. *.proto
