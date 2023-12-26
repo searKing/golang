@@ -15,6 +15,7 @@ import (
 	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -134,7 +135,7 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 		} else {
 			// disables transport security
 			var opts []grpc.DialOption
-			opts = append(opts, grpc.WithInsecure())
+			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			gateway.opt.grpcClientDialOpts = append(opts, gateway.opt.grpcClientDialOpts...)
 		}
 
