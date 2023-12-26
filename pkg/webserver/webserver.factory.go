@@ -5,6 +5,7 @@
 package webserver
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -253,6 +254,30 @@ func (f *Factory) New() (*WebServer, error) {
 		readyzChecks:     defaultHealthChecks,
 		readinessStopCh:  make(chan struct{}),
 	}
+
+	_ = s.AddPostStartHook("__bind_addr__", func(ctx context.Context) error {
+		host, port, err := net.SplitHostPort(s.ExternalAddress)
+		if err != nil {
+			return fmt.Errorf("malformed external address: %w", err)
+		}
+		_, bindPort, err := net.SplitHostPort(s.grpcBackend.BindAddr())
+		if err != nil {
+			return fmt.Errorf("malformed bind address: %w", err)
+		}
+		if bindPort == "" || bindPort == "0" {
+			return nil
+		}
+
+		if port == "0" {
+			logger := slog.With("old_external_address", s.ExternalAddress).
+				With("bind_address", s.BindAddress).
+				With("bind_port", bindPort)
+			s.ExternalAddress = net.JoinHostPort(host, bindPort)
+			logger.With("new_external_address", s.ExternalAddress).
+				Info("update external address with bind port")
+		}
+		return nil
+	})
 
 	return s, nil
 }

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -100,7 +101,7 @@ func (s *WebServer) PrepareRun() (preparedWebServer, error) {
 	s.installLivez()
 	err := s.addReadyzShutdownCheck(s.readinessStopCh)
 	if err != nil {
-		slog.Error("Failed to add readyz shutdown check", slog_.Error(err))
+		slog.With(slog_.Error(err)).Error("Failed to add readyz shutdown check")
 		return preparedWebServer{}, err
 	}
 	s.installReadyz()
@@ -112,7 +113,7 @@ func (s *WebServer) PrepareRun() (preparedWebServer, error) {
 // Run spawns the secure http server. It only returns if stopCh is closed
 // or the secure port cannot be listened on initially.
 func (s preparedWebServer) Run(ctx context.Context) error {
-	slog.InfoContext(ctx, fmt.Sprintf("Serving securely on %s", s.grpcBackend.Addr))
+	slog.InfoContext(ctx, fmt.Sprintf("Serving securely on %s", s.grpcBackend.BindAddr()))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	stoppedHttpServerCtx, stopHttpServer := context.WithCancel(context.Background())
@@ -187,38 +188,26 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 			defer cancel()
 		}
 		err := s.grpcBackend.Shutdown(ctx)
-		msg := fmt.Sprintf("Have shutdown http server on %s", s.grpcBackend.Addr)
+		msg := fmt.Sprintf("Have shutdown http server on %s", s.grpcBackend.BindAddr())
 		if err != nil {
-			slog.Error(msg, slog_.Error(err))
+			slog.With(slog_.Error(err)).Error(msg)
 			return
 		}
 		slog.Info(msg)
 	}()
 
-	go func() {
-		defer runtime_.LogPanic.Recover()
-		defer stop()
-		var err error
-		err = s.grpcBackend.ListenAndServe()
-		msg := fmt.Sprintf("Stopped listening on %s", s.grpcBackend.Addr)
-		if err == nil || errors.Is(err, http.ErrServerClosed) {
-			slog.Info(msg)
-			return
-		}
-		select {
-		case <-stoppedCtx.Done():
-			slog.Info(msg)
-		default: // not caused by Shutdown
-			slog.Error(msg, slog_.Error(err))
-		}
-		return
-	}()
+	// await when [Accept] will be called immediately inside [Serve].
+	startedCtx, started := context.WithCancel(context.Background())
 
-	// Now that listener have bound successfully, it is the
-	// responsibility of the caller to close the provided channel to
-	// ensure cleanup.
+	// Start the post start hooks daemon before any request comes in.
 	go func() {
 		defer runtime_.LogPanic.Recover()
+		select {
+		case <-stoppedCtx.Done(): // exit early
+			return
+		case <-startedCtx.Done(): // wait for start
+			slog.Info(fmt.Sprintf("Startted listening on %s", s.grpcBackend.BindAddr()))
+		}
 
 		var err error
 		defer func() {
@@ -227,12 +216,39 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 			}
 		}()
 		err = s.RunPostStartHooks(stopCtx)
-		msg := fmt.Sprintf("RunPostStartHooks on %s", s.grpcBackend.Addr)
+		msg := fmt.Sprintf("RunPostStartHooks on %s", s.grpcBackend.BindAddr())
 		if err == nil {
 			slog.Info(msg)
 			return
 		}
-		slog.Error(msg, slog_.Error(err))
+		slog.With(slog_.Error(err)).Error(msg)
+	}()
+
+	go func() {
+		defer runtime_.LogPanic.Recover()
+		defer stop()
+		baseCtx := s.grpcBackend.BaseContext
+		s.grpcBackend.BaseContext = func(lis net.Listener) context.Context {
+			defer started()
+			if baseCtx == nil {
+				return context.Background()
+			}
+			return baseCtx(lis)
+		}
+		var err error
+		err = s.grpcBackend.ListenAndServe()
+		msg := fmt.Sprintf("Stopped listening on %s", s.grpcBackend.BindAddr())
+		if err == nil || errors.Is(err, http.ErrServerClosed) {
+			slog.Info(msg)
+			return
+		}
+		select {
+		case <-stoppedCtx.Done():
+			slog.Info(msg)
+		default: // not caused by Shutdown
+			slog.With(slog_.Error(err)).Error(msg)
+		}
+		return
 	}()
 
 	return stopCtx, stoppedCtx, nil
