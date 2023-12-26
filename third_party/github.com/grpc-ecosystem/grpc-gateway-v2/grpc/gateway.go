@@ -7,6 +7,8 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -30,6 +32,7 @@ type Gateway struct {
 
 	// runtime
 	grpcServer *grpc.Server
+	listenAddr *net.TCPAddr //  addr actually listen, useful for :0 or port not specified.
 
 	once sync.Once `option:"-"`
 }
@@ -157,6 +160,23 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 
 		gateway.grpcServer = grpc.NewServer(gateway.opt.ServerOptions()...)
 		gateway.httpMuxToGrpc = runtime.NewServeMux(gateway.opt.srvMuxOpts...)
+
+		{
+			ctx := gateway.Server.BaseContext
+			gateway.Server.BaseContext = func(lis net.Listener) context.Context {
+				slog.Info("Serve() passed a net.Listener on %s", lis.Addr().String())
+				if addr, ok := lis.Addr().(*net.TCPAddr); !ok {
+					slog.Warn(fmt.Sprintf("GatewayServer expects listener to return a net.TCPAddr. Got %T", lis.Addr()))
+				} else {
+					gateway.listenAddr = addr
+				}
+				if ctx == nil {
+					return context.Background()
+				}
+				return ctx(lis)
+			}
+		}
+
 		gateway.Server.Handler = grpc_.GrpcOrDefaultHandler(gateway.grpcServer, &serverHandler{
 			gateway: gateway,
 		})
@@ -221,6 +241,14 @@ func (gateway *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
 	gateway.lazyInit()
 	gateway.preServe()
 	return gateway.Server.ListenAndServeTLS(certFile, keyFile)
+}
+
+// BindAddr returns actual addr bind after a net.Listener on
+func (gateway *Gateway) BindAddr() string {
+	if gateway.listenAddr != nil {
+		return gateway.listenAddr.String()
+	}
+	return gateway.Server.Addr
 }
 
 // RegisterGRPCHandler registers grpc handler of the gateway
