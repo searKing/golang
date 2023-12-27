@@ -255,7 +255,7 @@ func (f *Factory) New() (*WebServer, error) {
 		readinessStopCh:  make(chan struct{}),
 	}
 
-	_ = s.AddPostStartHook("__bind_addr__", func(ctx context.Context) error {
+	err := s.AddBootSequencePostStartHook("__bind_addr__", func(ctx context.Context) error {
 		host, port, err := net.SplitHostPort(s.ExternalAddress)
 		if err != nil {
 			return fmt.Errorf("malformed external address: %w", err)
@@ -278,6 +278,9 @@ func (f *Factory) New() (*WebServer, error) {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return s, nil
 }

@@ -42,13 +42,15 @@ type WebServer struct {
 	// PostStartHooks are each called after the server has started listening, in a separate go func for each
 	// with no guarantee of ordering between them.  The map key is a name used for error reporting.
 	// It may kill the process with a panic if it wishes to by returning an error.
-	postStartHookLock    sync.Mutex
-	postStartHooks       map[string]postStartHookEntry
-	postStartHooksCalled bool
+	postStartHookLock        sync.Mutex
+	postStartHooks           map[string]postStartHookEntry
+	postStartHookOrderedKeys []string // ordered keys..., other keys in random order
+	postStartHooksCalled     bool
 
-	preShutdownHookLock    sync.Mutex
-	preShutdownHooks       map[string]preShutdownHookEntry
-	preShutdownHooksCalled bool
+	preShutdownHookLock        sync.Mutex
+	preShutdownHooks           map[string]preShutdownHookEntry
+	preShutdownHookOrderedKeys []string // other keys in random order, ordered keys in reverse order
+	preShutdownHooksCalled     bool
 
 	// healthz checks
 	healthzLock            sync.Mutex

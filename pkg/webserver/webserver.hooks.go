@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"slices"
 
 	"github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
@@ -53,8 +54,112 @@ type preShutdownHookEntry struct {
 	hook PreShutdownHookFunc
 }
 
+// AddBootSequencePostStartHook allows you to add a PostStartHook in order.
+func (s *WebServer) AddBootSequencePostStartHook(name string, hook PostStartHookFunc) error {
+	return s.addPostStartHook(name, hook, true)
+}
+
 // AddPostStartHook allows you to add a PostStartHook.
 func (s *WebServer) AddPostStartHook(name string, hook PostStartHookFunc) error {
+	return s.addPostStartHook(name, hook, false)
+}
+
+// AddPostStartHookOrDie allows you to add a PostStartHook, but dies on failure
+func (s *WebServer) AddPostStartHookOrDie(name string, hook PostStartHookFunc) {
+	if err := s.AddPostStartHook(name, hook); err != nil {
+		slog.Error(fmt.Sprintf("Error registering PostStartHook %q: %s", name, err.Error()))
+		os.Exit(1)
+	}
+}
+
+// AddBootSequencePreShutdownHook allows you to add a PreShutdownHook in reverse order.
+func (s *WebServer) AddBootSequencePreShutdownHook(name string, hook PreShutdownHookFunc) error {
+	return s.addPreShutdownHook(name, hook, true)
+}
+
+// AddPreShutdownHook allows you to add a PreShutdownHook.
+func (s *WebServer) AddPreShutdownHook(name string, hook PreShutdownHookFunc) error {
+	return s.addPreShutdownHook(name, hook, false)
+}
+
+// AddPreShutdownHookOrDie allows you to add a PostStartHook, but dies on failure
+func (s *WebServer) AddPreShutdownHookOrDie(name string, hook PreShutdownHookFunc) {
+	if err := s.AddPreShutdownHook(name, hook); err != nil {
+		slog.Error(fmt.Sprintf("Error registering PreShutdownHook %q: %s", name, err.Error()))
+		os.Exit(1)
+	}
+}
+
+// RunPostStartHooks runs the PostStartHooks for the server
+func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
+	s.postStartHookLock.Lock()
+	defer s.postStartHookLock.Unlock()
+	s.postStartHooksCalled = true
+
+	g, gCtx := errgroup.WithContext(ctx)
+	var keys = s.postStartHookOrderedKeys
+	for k := range s.postStartHooks {
+		if !slices.Contains(s.postStartHookOrderedKeys, k) {
+			keys = append(keys, k)
+		}
+	}
+
+	for i, k := range keys {
+		if v, has := s.postStartHooks[k]; has {
+			hookName, hookEntry := k, v
+			if i < len(s.postStartHookOrderedKeys) {
+				if err := runPostStartHook(gCtx, hookName, hookEntry); err != nil {
+					return err
+				}
+				continue
+			}
+
+			g.Go(func() error {
+				return runPostStartHook(gCtx, hookName, hookEntry)
+			})
+		} else { // never happen
+			hookName := k
+			slog.Warn(fmt.Sprintf("unknown PostStartHook %q", hookName))
+		}
+	}
+	return g.Wait()
+}
+
+// RunPreShutdownHooks runs the PreShutdownHooks for the server
+func (s *WebServer) RunPreShutdownHooks() error {
+	s.preShutdownHookLock.Lock()
+	defer s.preShutdownHookLock.Unlock()
+	s.preShutdownHooksCalled = true
+
+	var keys = s.preShutdownHookOrderedKeys
+	for k := range s.preShutdownHooks {
+		if !slices.Contains(s.preShutdownHookOrderedKeys, k) {
+			keys = append(keys, k)
+		}
+	}
+	slices.Reverse(keys)
+	var errs []error
+	for _, k := range keys {
+		if v, has := s.preShutdownHooks[k]; has {
+			hookName, hookEntry := k, v
+			errs = append(errs, runPreShutdownHook(hookName, hookEntry))
+		} else {
+			hookName := k
+			slog.Warn(fmt.Sprintf("unknown PreShutdownHook %q", hookName))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// isPostStartHookRegistered checks whether a given PostStartHook is registered
+func (s *WebServer) isPostStartHookRegistered(name string) bool {
+	s.postStartHookLock.Lock()
+	defer s.postStartHookLock.Unlock()
+	_, exists := s.postStartHooks[name]
+	return exists
+}
+
+func (s *WebServer) addPostStartHook(name string, hook PostStartHookFunc, order bool) error {
 	if len(name) == 0 {
 		return fmt.Errorf("missing name")
 	}
@@ -79,21 +184,14 @@ func (s *WebServer) AddPostStartHook(name string, hook PostStartHookFunc) error 
 	if err := s.AddBootSequenceHealthChecks(postStartHookHealthz{name: "poststarthook/" + name, done: done}); err != nil {
 		return err
 	}
+	if order {
+		s.postStartHookOrderedKeys = append(s.postStartHookOrderedKeys, name)
+	}
 	s.postStartHooks[name] = postStartHookEntry{hook: hook, originatingStack: string(debug.Stack()), done: done}
-
 	return nil
 }
 
-// AddPostStartHookOrDie allows you to add a PostStartHook, but dies on failure
-func (s *WebServer) AddPostStartHookOrDie(name string, hook PostStartHookFunc) {
-	if err := s.AddPostStartHook(name, hook); err != nil {
-		slog.Error(fmt.Sprintf("Error registering PostStartHook %q: %s", name, err.Error()))
-		os.Exit(1)
-	}
-}
-
-// AddPreShutdownHook allows you to add a PreShutdownHook.
-func (s *WebServer) AddPreShutdownHook(name string, hook PreShutdownHookFunc) error {
+func (s *WebServer) addPreShutdownHook(name string, hook PreShutdownHookFunc, order bool) error {
 	if len(name) == 0 {
 		return fmt.Errorf("missing name")
 	}
@@ -111,54 +209,12 @@ func (s *WebServer) AddPreShutdownHook(name string, hook PreShutdownHookFunc) er
 		return fmt.Errorf("unable to add %q because it is already registered", name)
 	}
 
+	if order {
+		s.preShutdownHookOrderedKeys = append(s.preShutdownHookOrderedKeys, name)
+	}
 	s.preShutdownHooks[name] = preShutdownHookEntry{hook: hook}
 
 	return nil
-}
-
-// AddPreShutdownHookOrDie allows you to add a PostStartHook, but dies on failure
-func (s *WebServer) AddPreShutdownHookOrDie(name string, hook PreShutdownHookFunc) {
-	if err := s.AddPreShutdownHook(name, hook); err != nil {
-		slog.Error(fmt.Sprintf("Error registering PreShutdownHook %q: %s", name, err.Error()))
-		os.Exit(1)
-	}
-}
-
-// RunPostStartHooks runs the PostStartHooks for the server
-func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
-	s.postStartHookLock.Lock()
-	defer s.postStartHookLock.Unlock()
-	s.postStartHooksCalled = true
-
-	g, gCtx := errgroup.WithContext(ctx)
-	for k, v := range s.postStartHooks {
-		hookName, hookEntry := k, v
-		g.Go(func() error {
-			return runPostStartHook(gCtx, hookName, hookEntry)
-		})
-	}
-	return g.Wait()
-}
-
-// RunPreShutdownHooks runs the PreShutdownHooks for the server
-func (s *WebServer) RunPreShutdownHooks() error {
-	s.preShutdownHookLock.Lock()
-	defer s.preShutdownHookLock.Unlock()
-	s.preShutdownHooksCalled = true
-
-	var errs []error
-	for hookName, hookEntry := range s.preShutdownHooks {
-		errs = append(errs, runPreShutdownHook(hookName, hookEntry))
-	}
-	return errors.Join(errs...)
-}
-
-// isPostStartHookRegistered checks whether a given PostStartHook is registered
-func (s *WebServer) isPostStartHookRegistered(name string) bool {
-	s.postStartHookLock.Lock()
-	defer s.postStartHookLock.Unlock()
-	_, exists := s.postStartHooks[name]
-	return exists
 }
 
 func runPostStartHook(ctx context.Context, name string, entry postStartHookEntry) error {
