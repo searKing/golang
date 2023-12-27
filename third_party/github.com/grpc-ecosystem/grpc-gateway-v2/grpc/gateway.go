@@ -164,7 +164,7 @@ func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
 		{
 			ctx := gateway.Server.BaseContext
 			gateway.Server.BaseContext = func(lis net.Listener) context.Context {
-				slog.Info("Serve() passed a net.Listener on %s", lis.Addr().String())
+				slog.Info(fmt.Sprintf("Serve() passed a net.Listener on %s", lis.Addr().String()))
 				if addr, ok := lis.Addr().(*net.TCPAddr); !ok {
 					slog.Warn(fmt.Sprintf("GatewayServer expects listener to return a net.TCPAddr. Got %T", lis.Addr()))
 				} else {
