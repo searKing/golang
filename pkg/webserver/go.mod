@@ -8,7 +8,7 @@ require (
 	github.com/rs/cors v1.10.1
 	github.com/searKing/golang/go v1.2.108
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.109
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.109
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.110
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.109
 	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b
 	golang.org/x/sync v0.5.0
