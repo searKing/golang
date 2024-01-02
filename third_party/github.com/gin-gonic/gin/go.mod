@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.5.0
-	github.com/searKing/golang/go v1.2.108
+	github.com/searKing/golang/go v1.2.112
 	google.golang.org/protobuf v1.32.0
 )
 
@@ -36,3 +36,5 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/searKing/golang/go => ../../../../go

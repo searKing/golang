@@ -39,8 +39,8 @@ import _ "github.com/searKing/golang/pkg/webserver"
 // https://github.com/ugorji/go/blob/master/FAQ.md#resolving-module-issues
 // https://github.com/spf13/cobra/pull/1233
 
-// for f in $(find . -name go.mod)
-//	do (cd $(dirname $f); go mod tidy)
-// done
+// find . -type f -name "go.mod" -not -path "./.*" -exec bash -c 'cd $(dirname "$1"); go mod tidy' sh {} \;
+// TAG=v1.2.112 find . -type f -name "go.mod" -not -path "./.*" -exec bash -c 'path=$(dirname "${1#./}");if [ "$path" == "." ]; then git tag "${TAG}"; else git tag "${path}/${TAG}"; fi;' sh {} \;
+//
 // go clean -modcache
 // GOPROXY=direct go mod tidy -v

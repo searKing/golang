@@ -6,8 +6,8 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1
-	github.com/searKing/golang/go v1.2.108
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.109
+	github.com/searKing/golang/go v1.2.112
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.112
 	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -40,4 +40,9 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0 // indirect
+)
+
+replace (
+	github.com/searKing/golang/go => ../../../../go
+	github.com/searKing/golang/third_party/google.golang.org/grpc => ../../../../third_party/google.golang.org/grpc
 )

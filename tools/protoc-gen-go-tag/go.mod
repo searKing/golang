@@ -1,8 +1,14 @@
 module github.com/searKing/golang/tools/protoc-gen-go-tag
 
-go 1.16
+go 1.21
+
+toolchain go1.21.5
 
 require (
-	github.com/searKing/golang/go v1.2.52
-	google.golang.org/protobuf v1.28.0
+	github.com/searKing/golang/go v1.2.112
+	google.golang.org/protobuf v1.32.0
 )
+
+require github.com/google/go-cmp v0.5.8 // indirect
+
+replace github.com/searKing/golang/go => ../../go

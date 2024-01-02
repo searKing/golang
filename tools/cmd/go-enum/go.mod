@@ -1,5 +1,18 @@
 module github.com/searKing/golang/tools/cmd/go-enum
 
-go 1.16
+go 1.21
 
-require github.com/searKing/golang/tools/go-enum v1.2.97
+toolchain go1.21.5
+
+require github.com/searKing/golang/tools/go-enum v1.2.112
+
+require (
+	github.com/searKing/golang/go v1.2.112 // indirect
+	github.com/searKing/golang/tools v1.2.112 // indirect
+	golang.org/x/mod v0.14.0 // indirect
+	golang.org/x/tools v0.16.1 // indirect
+)
+
+replace github.com/searKing/golang/tools/go-enum => ../../../tools/go-enum
+
+replace github.com/searKing/golang/tools => ../../../tools

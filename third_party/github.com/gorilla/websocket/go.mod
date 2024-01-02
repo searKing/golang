@@ -4,5 +4,7 @@ go 1.21
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/searKing/golang/go v1.2.99
+	github.com/searKing/golang/go v1.2.112
 )
+
+replace github.com/searKing/golang/go => ../../../../go
