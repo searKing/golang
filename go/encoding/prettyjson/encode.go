@@ -161,6 +161,7 @@ type encOpts struct {
 	truncateMap          int
 	truncateSliceOrArray int
 	truncateUrl          bool // truncate query and fragment in url
+	omitEmpty            bool
 }
 
 type encoderFunc func(e *encodeState, v reflect.Value, opts encOpts)
@@ -561,7 +562,8 @@ FieldLoop:
 			fv = fv.Field(i)
 		}
 
-		if f.omitEmpty && isEmptyValue(fv) {
+		// @diff
+		if (f.omitEmpty || opts.omitEmpty) && isEmptyValue(fv) {
 			continue
 		}
 		e.WriteByte(next)

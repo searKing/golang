@@ -93,3 +93,10 @@ func WithEncOptsTruncateUrl(v bool) EncOptsOption {
 		o.truncateUrl = v
 	})
 }
+
+// WithEncOptsOmitEmpty sets omitEmpty in encOpts.
+func WithEncOptsOmitEmpty(v bool) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.omitEmpty = v
+	})
+}
