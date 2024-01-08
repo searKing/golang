@@ -7,4 +7,4 @@ require (
 	golang.org/x/tools v0.16.1
 )
 
-replace github.com/searKing/golang/tools => ../../../tools
+retract v1.2.112

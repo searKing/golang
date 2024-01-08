@@ -15,6 +15,4 @@ require (
 	golang.org/x/tools v0.16.1 // indirect
 )
 
-replace github.com/searKing/golang/go => ../../../go
-
-replace github.com/searKing/golang/tools/go-import => ../../../tools/go-import
+retract v1.2.112

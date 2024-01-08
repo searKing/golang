@@ -11,4 +11,4 @@ require (
 
 require github.com/google/go-cmp v0.5.8 // indirect
 
-replace github.com/searKing/golang/go => ../../go
+retract v1.2.112
