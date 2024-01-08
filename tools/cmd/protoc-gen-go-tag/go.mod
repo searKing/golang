@@ -11,4 +11,4 @@ require (
 
 require github.com/searKing/golang/go v1.2.112 // indirect
 
-replace github.com/searKing/golang/tools/protoc-gen-go-tag => ../../../tools/protoc-gen-go-tag
+retract v1.2.112

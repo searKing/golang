@@ -14,6 +14,4 @@ require (
 	golang.org/x/tools v0.16.1 // indirect
 )
 
-replace github.com/searKing/golang/tools/go-option => ../../../tools/go-option
-
-replace github.com/searKing/golang/tools => ../../../tools
+retract v1.2.112

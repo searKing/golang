@@ -12,6 +12,4 @@ require (
 
 require golang.org/x/mod v0.14.0 // indirect
 
-replace github.com/searKing/golang/go => ../../../go
-
-replace github.com/searKing/golang/tools => ../../../tools
+retract v1.2.112
