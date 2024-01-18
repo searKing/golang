@@ -429,7 +429,7 @@ func stringEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 			if len(q) > 0 || len(f) > 0 {
 				u.RawQuery = ""
 				u.RawFragment = ""
-				st := u.RequestURI()
+				st := u.String()
 				st += fmt.Sprintf(" [(%d) truncated", len(s))
 				if len(q) > 0 {
 					st += fmt.Sprintf(" %d querys", len(q))
