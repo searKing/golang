@@ -128,6 +128,12 @@ func (e *encodeState) error(err error) {
 }
 
 func isEmptyValue(v reflect.Value) bool {
+	// @diff
+	defer func() {
+		if r := recover(); r != nil {
+			return
+		}
+	}()
 	switch v.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return v.Len() == 0
@@ -141,6 +147,8 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Pointer:
 		return v.IsNil()
+	default: // @diff
+		return v.IsZero()
 	}
 	return false
 }
@@ -420,25 +428,25 @@ func stringEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 	}
 	// @diff
 	s := v.String()
-
+	var isUrl bool
 	if opts.truncateUrl {
 		u, err := url.Parse(s)
-		if err == nil {
+		if err == nil && u.Scheme != "" {
+			isUrl = true
 			q := u.Query()
-			f := u.RawFragment
+			f := u.Fragment
+			u.Fragment = ""
 			if len(q) > 0 || len(f) > 0 {
 				u.RawQuery = ""
+				u.Fragment = ""
 				u.RawFragment = ""
 				st := u.String()
-				st += fmt.Sprintf(" [(%d) truncated", len(s))
+				st += fmt.Sprintf(" ...%d chars", len(s))
 				if len(q) > 0 {
-					st += fmt.Sprintf(" %d querys", len(q))
+					st += fmt.Sprintf(",%dQ", len(q))
 				}
 				if len(f) > 0 {
-					if len(q) > 0 {
-						st += fmt.Sprintf(" and")
-					}
-					st += fmt.Sprintf(" %d fragment chars", len(f))
+					st += fmt.Sprintf("%dF", len(f))
 				}
 				st += "]"
 				if len(st) < len(s) {
@@ -448,8 +456,8 @@ func stringEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 		}
 	}
 
-	if limit := opts.truncateString; limit > 0 && len(s) > limit {
-		st := strings_.Truncate(s, limit) + fmt.Sprintf(" [(%d)truncated %d chars]", len(s), len(s)-limit)
+	if limit := opts.truncateString; !isUrl && limit > 0 && len(s) > limit {
+		st := strings_.Truncate(s, limit) + fmt.Sprintf("...%d chars", len(s))
 		if len(st) < len(s) {
 			s = st
 		}
@@ -625,7 +633,7 @@ func (me mapEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	n := len(sv)
 	var m string
 	if limit := opts.truncateMap; limit > 0 && n > limit+1 {
-		m = fmt.Sprintf("[(%d)truncated %d elements]", n, n-limit)
+		m = fmt.Sprintf("...%d pairs", n)
 		n = limit
 	}
 
@@ -681,7 +689,7 @@ func encodeByteSlice(e *encodeState, v reflect.Value, opts encOpts) {
 	var encodedLenT int
 	encodedLenS := base64.StdEncoding.EncodedLen(len(s))
 	if limit := opts.truncateBytes; limit > 0 && len(s) > limit {
-		m = fmt.Sprintf(" [(%d)truncated %d bytes]", len(s), len(s)-limit)
+		m = fmt.Sprintf("...%d bytes", len(s))
 		st = bytes_.Truncate(s, limit)
 		encodedLenT = base64.StdEncoding.EncodedLen(len(st))
 	}
@@ -756,7 +764,7 @@ func (ae arrayEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	n := v.Len()
 	var m string
 	if limit := opts.truncateSliceOrArray; limit > 0 && n > limit+1 {
-		m = fmt.Sprintf(", \"[(%d)truncated %d elems]\"", n, n-limit)
+		m = fmt.Sprintf(", \"...%d elems\"", n)
 		n = limit
 	}
 	for i := 0; i < n; i++ {

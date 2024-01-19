@@ -51,8 +51,7 @@ var optionalsExpected = `{
  "fr": 0,
  "br": false,
  "ur": 0,
- "str": {},
- "sto": {}
+ "str": {}
 }`
 
 func TestOmitEmpty(t *testing.T) {
@@ -908,35 +907,35 @@ type marshalTruncate struct {
 }
 
 var truncateExpected = `{
- "sr": "abcdefghihklmnopqrstuvwxyz",
- "blr": "YWI= [(52)truncated 50 bytes]",
+ "sr": "ab...26 chars",
+ "blr": "YWI=...52 bytes",
  "slr": [
-  "0  [(28)truncated 26 chars]",
-  "1  [(54)truncated 52 chars]",
-  "[(7)truncated 5 elems]"
+  "0 ...28 chars",
+  "1 ...54 chars",
+  "...7 elems"
  ],
  "mr": {
   "a": {
-   "sr": "abcdefghihklmnopqrstuvwxyz",
-   "blr": "YWI= [(26)truncated 24 bytes]",
+   "sr": "ab...26 chars",
+   "blr": "YWI=...26 bytes",
    "slr": [
-    "0  [(28)truncated 26 chars]",
-    "1  [(54)truncated 52 chars]",
-    "[(7)truncated 5 elems]"
+    "0 ...28 chars",
+    "1 ...54 chars",
+    "...7 elems"
    ],
    "mr": null,
    "str": null
   },
   "b": null,
-  "[(4)truncated 2 elements]": "4"
+  "...4 pairs": "4"
  },
  "str": {
-  "sr": "abcdefghihklmnopqrstuvwxyz",
-  "blr": "YWI= [(26)truncated 24 bytes]",
+  "sr": "ab...26 chars",
+  "blr": "YWI=...26 bytes",
   "slr": [
-   "0  [(28)truncated 26 chars]",
-   "1  [(54)truncated 52 chars]",
-   "[(7)truncated 5 elems]"
+   "0 ...28 chars",
+   "1 ...54 chars",
+   "...7 elems"
   ],
   "mr": null,
   "str": null
