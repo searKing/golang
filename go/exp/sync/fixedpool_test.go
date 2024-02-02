@@ -21,13 +21,14 @@ import (
 )
 
 func caller() string {
-	function, file, line := runtime_.GetCallerFuncFileLine(2)
+	function, file, line := runtime_.GetCallerFuncFileLine(3)
 	return fmt.Sprintf("%s() %s:%d", path.Base(function), filepath.Base(file), line)
 }
 
 func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int) {
 	gotLen := p.Len()
 	gotCap := p.Cap()
+
 	if (gotLen != l && c >= 0) || (gotCap != c && c >= 0) {
 		t.Fatalf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
 	}
