@@ -176,7 +176,7 @@ func ExampleBurstLimiter_Reserve() {
 
 	for i := 0; i < n; i++ {
 		//fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
-		fmt.Printf("Reserve %03d\n", i)
+		//fmt.Printf("Reserve %03d\n", i)
 		r := &Reservation{
 			index: i,
 			r:     limiter.Reserve(ctx),
@@ -226,16 +226,6 @@ func ExampleBurstLimiter_Reserve() {
 	}
 	wg.Wait()
 	// Output:
-	// Reserve 000
-	// Reserve 001
-	// Reserve 002
-	// Reserve 003
-	// Reserve 004
-	// Reserve 005
-	// Reserve 006
-	// Reserve 007
-	// Reserve 008
-	// Reserve 009
 	// 000 Got 1 Token, tokens left: 0
 	// 001 Got 1 Token, tokens left: 0
 	// 002 Got 1 Token, tokens left: 0
