@@ -3,9 +3,10 @@
 // license that can be found in the LICENSE file.
 
 //go:build !cgo
-// +build !cgo
 
 package signal
+
+import "os"
 
 // setSig is fake for cgo
 func setSig(sigs ...os.Signal) {
@@ -24,8 +25,7 @@ func dumpPreviousStacktrace() {
 }
 
 // previousStacktrace is fake for cgo
-func previousStacktrace() string {
-}
+func previousStacktrace() string { return "" }
 
 // setSigInvokeChain is fake for cgo
 func setSigInvokeChain(from, to, wait, sleepInSeconds int) {

@@ -4,7 +4,6 @@
 
 package signal
 
-import "C"
 import (
 	"fmt"
 	"io/ioutil"
