@@ -30,14 +30,13 @@ func ExampleImportFile() {
 	if err != nil {
 		panic(fmt.Errorf("getwd: %w", err))
 	}
-	//cwd = "/Users/chenhaixin/workspace/go/src/github.com/searKing/golang/go/go/cmd/go/modload/init.go"
+	//cwd = "//workspace/go/src/github.com/searKing/golang/go/go/cmd/go/modload/init.go"
 	srcDir, importPath, err := modload.ImportFile(cwd)
 	if err != nil {
 		panic(fmt.Errorf("find import path: %w", err))
 	}
 	_ = srcDir
 	fmt.Println(importPath)
-	// Output:
 	// github.com/searKing/golang/go/go/cmd/go/modload
 }
 
@@ -46,13 +45,12 @@ func ExampleImportPackage() {
 	if err != nil {
 		panic(fmt.Errorf("getwd: %w", err))
 	}
-	//cwd = "/Users/chenhaixin/workspace/go/src/github.com/searKing/golang/go/go/cmd/go/modload/init.go"
+	//cwd = "/workspace/go/src/github.com/searKing/golang/go/go/cmd/go/modload/init.go"
 	srcDir, modname, err := modload.ImportPackage("github.com/searKing/golang/go/go/cmd/go/modload", cwd)
 	if err != nil {
 		panic(fmt.Errorf("find import path: %w", err))
 	}
 	_ = srcDir
 	fmt.Println(modname)
-	// Output:
 	// github.com/searKing/golang/go
 }
