@@ -55,6 +55,18 @@ func ExampleGroup() {
 	}
 	// ...
 	{
+		fmt.Printf("----json----\n")
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}))
+		logger.Info("finished",
+			slog.Group("req",
+				slog.String("method", r.Method),
+				slog.String("url", r.URL.String())),
+			slog.Int("status", http.StatusOK),
+			slog.Duration("duration", time.Second),
+			Error(err))
+	}
+	// ...
+	{
 		fmt.Printf("----glog----\n")
 		logger := slog.New(NewGlogHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}))
 		logger.Info("finished",
@@ -98,6 +110,8 @@ func ExampleGroup() {
 	// Output:
 	// ----text----
 	// level=INFO msg=finished req.method=GET req.url=localhost status=200 duration=1s error="test ExampleGroup: invalid argument"
+	// ----json----
+	// {"level":"INFO","msg":"finished","req":{"method":"GET","url":"localhost"},"status":200,"duration":1000000000,"error":"test ExampleGroup: invalid argument"}
 	// ----glog----
 	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
 	// ----glog_human----
@@ -107,4 +121,60 @@ func ExampleGroup() {
 	// {"level":"INFO","msg":"finished","req":{"method":"GET","url":"localhost"},"status":200,"duration":1000000000,"error":"test ExampleGroup: invalid argument"}
 	// I 0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
 	// [INFO ] [0] finished, req.method=GET, req.url=localhost, status=200, duration=1s, error=test ExampleGroup: invalid argument
+}
+
+func ExampleMultiHandler() {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
+
+	// ...
+	{
+		fmt.Printf("----text----\n")
+		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}))
+		logger.Info("text message")
+	}
+	// ...
+	{
+		fmt.Printf("----json----\n")
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}))
+		logger.Info("json message")
+	}
+	// ...
+	{
+		fmt.Printf("----glog----\n")
+		logger := slog.New(NewGlogHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}))
+		logger.Info("glog message")
+	}
+	// ...
+	{
+		fmt.Printf("----glog_human----\n")
+		logger := slog.New(NewGlogHumanHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}))
+		logger.Info("glog_human message")
+	}
+	// ...
+	{
+		fmt.Printf("----multi[text-json-glog-glog_human]----\n")
+		logger := slog.New(MultiHandler(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+			NewGlogHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+			NewGlogHumanHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: slogtest.RemoveTime}),
+		))
+		logger.Info("multi[text-json-glog-glog_human] message")
+	}
+
+	// Output:
+	// ----text----
+	// level=INFO msg="text message"
+	// ----json----
+	// {"level":"INFO","msg":"json message"}
+	// ----glog----
+	// I 0] glog message
+	// ----glog_human----
+	// [INFO ] [0] glog_human message
+	// ----multi[text-json-glog-glog_human]----
+	// level=INFO msg="multi[text-json-glog-glog_human] message"
+	// {"level":"INFO","msg":"multi[text-json-glog-glog_human] message"}
+	// I 0] multi[text-json-glog-glog_human] message
+	// [INFO ] [0] multi[text-json-glog-glog_human] message
 }
