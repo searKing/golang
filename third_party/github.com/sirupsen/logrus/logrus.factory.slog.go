@@ -7,7 +7,6 @@ package logrus
 import (
 	"io"
 	"log/slog"
-	"runtime"
 
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/sirupsen/logrus"
@@ -79,11 +78,4 @@ func (f Factory) Apply() error {
 		WithField("mute_directly_output", f.fc.MuteDirectlyOutput).
 		Info("add rotation wrapper for log")
 	return nil
-}
-
-// callerPC returns the program counter at the given stack depth.
-func callerPC(depth int) uintptr {
-	var pcs [1]uintptr
-	runtime.Callers(depth, pcs[:])
-	return pcs[0]
 }
