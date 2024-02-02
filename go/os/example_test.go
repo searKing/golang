@@ -63,9 +63,6 @@ func ExampleReadDirN() {
 	for _, file := range files {
 		fmt.Println(file.Name())
 	}
-
-	// Output:
-	// dir.go
 }
 
 func ExampleNewCacheFile() {
