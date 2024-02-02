@@ -7,6 +7,7 @@ package gopathload_test
 import (
 	"go/build"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -108,12 +109,12 @@ func TestImportFile(t *testing.T) {
 		{
 			filename:       filepath.Join(goPath1, "src", "pkg1/sub/dummy.go"),
 			wantSrcDir:     filepath.Join(goPath1, "src"),
-			wantImportPath: filepath.Dir("pkg1/sub/dummy.go"),
+			wantImportPath: path.Dir("pkg1/sub/dummy.go"),
 		},
 		{
 			filename:       filepath.Join(goPath1, "src", "pkg2/sub/dummy.go"),
 			wantSrcDir:     filepath.Join(goPath1, "src"),
-			wantImportPath: filepath.Dir("pkg2/sub/dummy.go"),
+			wantImportPath: path.Dir("pkg2/sub/dummy.go"),
 		},
 		{
 			filename: "pkg3/sub/dummy.go",
