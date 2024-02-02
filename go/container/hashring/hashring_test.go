@@ -93,7 +93,7 @@ func TestGetSingle(t *testing.T) {
 		if !has {
 			return false
 		}
-		t.Logf("s = %q, y = %q", s, y)
+		// t.Logf("s = %q, y = %q", s, y)
 		return y.String() == "abcdefg"
 	}
 	if err := quick.Check(f, nil); err != nil {
@@ -138,7 +138,7 @@ func TestGetMultipleQuick(t *testing.T) {
 		if !has {
 			return false
 		}
-		t.Logf("s = %q, y = %q", s, y)
+		// t.Logf("s = %q, y = %q", s, y)
 		return y.String() == "abcdefg" ||
 			y.String() == "hijklmn" ||
 			y.String() == "opqrstu"
@@ -198,7 +198,7 @@ func TestGetMultipleRemoveQuick(t *testing.T) {
 			t.Logf("missing node")
 			return false
 		}
-		t.Logf("s = %q, y = %q", s, y)
+		//t.Logf("s = %q, y = %q", s, y)
 		return y.String() == "abcdefg" || y.String() == "hijklmn"
 	}
 	if err := quick.Check(f, nil); err != nil {
@@ -454,7 +454,7 @@ func TestGetNMoreQuick(t *testing.T) {
 	x.AddNodes(StringNode("hijklmn"))
 	x.AddNodes(StringNode("opqrstu"))
 	f := func(s string) bool {
-		t.Log("check", s)
+		// t.Log("check", s)
 		members, has := x.GetN(s, 5)
 		if !has {
 			t.Logf("missing nodes")
