@@ -18,7 +18,7 @@ import (
 // enhance signal.Notify with stacktrace of cgo.
 // redirects signal log to stdout
 func init() {
-	DumpSignalTo(syscall.Stdout)
+	DumpSignalTo(int(syscall.Stdout))
 	// FIXME https://github.com/golang/go/issues/35814
 	//RegisterOnSignal(OnSignalHandlerFunc(func(signum os.Signal) {}))
 
