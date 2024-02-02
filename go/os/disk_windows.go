@@ -4,6 +4,8 @@
 
 //go:build windows
 
+// Code borrowed from https://github.com/minio/minio/blob/master/internal/disk/stat_windows.go
+
 package os
 
 import (
@@ -33,7 +35,7 @@ var (
 // It returns free space available to the user (including quota limitations)
 //
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa364937(v=vs.85).aspx
-func DiskUsage(path string) (total uint64, free uint64, avail uint64, inodes uint64, inodesFree uint64, err error) {
+func DiskUsage(path string) (total int64, free int64, avail int64, inodes int64, inodesFree int64, err error) {
 	// Stat to know if the path exists.
 	if _, err = os.Stat(path); err != nil {
 		return 0, 0, 0, 0, 0, err
@@ -80,5 +82,5 @@ func DiskUsage(path string) (total uint64, free uint64, avail uint64, inodes uin
 		uintptr(unsafe.Pointer(&lpNumberOfFreeClusters)),
 		uintptr(unsafe.Pointer(&lpTotalNumberOfClusters)))
 
-	return uint64(lpTotalNumberOfBytes), uint64(lpTotalNumberOfFreeBytes), lpFreeBytesAvailable, uint64(lpTotalNumberOfClusters), uint64(lpNumberOfFreeClusters), err
+	return lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes, lpFreeBytesAvailable, int64(lpTotalNumberOfClusters), int64(lpNumberOfFreeClusters), err
 }
