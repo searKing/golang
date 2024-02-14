@@ -101,8 +101,8 @@ func NewGlogHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 //
 // Example:
 //
-//	[INFO] [1103 11:57:31.739339] [24395] [google.cc:2341] Command line: ./some_prog
-//	[INFO] [1103 11:57:31.739403 24395] [google.cc:2342] Process id 24395
+//	[INFO ] [20081103 11:57:31.739339] [24395] [google.cc:2341](main) Command line: ./some_prog
+//	[INFO ] [20081103 11:57:31.739403] [24395] [google.cc:2342](main) Process id 24395
 func NewGlogHumanHandler(w io.Writer, opts *slog.HandlerOptions) *GlogHandler {
 	if opts == nil {
 		opts = &slog.HandlerOptions{
