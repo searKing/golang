@@ -8,8 +8,8 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/searKing/golang/go v1.2.115
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.112
-	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.112
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.115
+	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.115
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.62.0
 	google.golang.org/protobuf v1.32.0

@@ -7,7 +7,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
 	github.com/searKing/golang/go v1.2.115
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.112
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.115
 	google.golang.org/grpc v1.62.0
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v3 v3.0.1
