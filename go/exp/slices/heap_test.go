@@ -5,10 +5,10 @@
 package slices_test
 
 import (
+	"cmp"
 	"container/heap"
 	"fmt"
 
-	math_ "github.com/searKing/golang/go/exp/math"
 	"github.com/searKing/golang/go/exp/slices"
 )
 
@@ -46,7 +46,7 @@ func Example_maxHeap() {
 
 // This example inserts several ints into an Min Heap, checks the minimum,
 // and removes them in order of priority.
-func Example_HeapMin() {
+func Example_heapMin() {
 	h := slices.NewHeapMin([]int{2, 1, 5})
 	heap.Init(h)
 	heap.Push(h, 3)
@@ -62,7 +62,7 @@ func Example_HeapMin() {
 
 // This example inserts several ints into an Max Heap, checks the maximum,
 // and removes them in order of priority.
-func Example_HeapMax() {
+func Example_heapMax() {
 	h := slices.NewHeapMax([]int{2, 1, 5})
 	heap.Init(h)
 	heap.Push(h, 3)
@@ -78,8 +78,8 @@ func Example_HeapMax() {
 
 // This example inserts several ints into an Min Heap, checks the minimum,
 // and removes them in order of priority.
-func Example_HeapFunc() {
-	h := slices.NewHeapFunc([]int{2, 1, 5}, math_.Compare[int])
+func Example_heapFunc() {
+	h := slices.NewHeapFunc([]int{2, 1, 5}, cmp.Compare[int])
 	heap.Init(h)
 	heap.Push(h, 3)
 	fmt.Printf("minimum: %d\n", h.S[0])

@@ -5,11 +5,10 @@
 package types
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"reflect"
-
-	"golang.org/x/exp/constraints"
 )
 
 // Optional represents a Value that may be null.
@@ -50,7 +49,7 @@ func (o Optional[E]) ValueOr(e E) E {
 	return e
 }
 
-func CompareOptional[E constraints.Ordered](a, b Optional[E]) int {
+func CompareOptional[E cmp.Ordered](a, b Optional[E]) int {
 	if a.Valid && !b.Valid {
 		return 1
 	}

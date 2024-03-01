@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/searKing/golang/go/exp/container/queue"
-	math_ "github.com/searKing/golang/go/exp/math"
 	"github.com/searKing/golang/go/pragma"
 )
 
@@ -106,11 +105,10 @@ func (p *FixedPool[E]) Init() *FixedPool[E] {
 	if p.MaxResidentSize < 0 {
 		p.MaxCapacity = 0
 	} else {
-		p.MaxCapacity = math_.Max(p.MaxCapacity, p.MaxResidentSize, 0)
+		p.MaxCapacity = max(p.MaxCapacity, p.MaxResidentSize, 0)
 	}
 	p.pinChan = make(chan struct{})
-
-	p.localC = make(chan *FixedPoolElement[E], math_.Min(localCMaxSize, math_.Max(p.MaxResidentSize, 0)))
+	p.localC = make(chan *FixedPoolElement[E], min(localCMaxSize, max(p.MaxResidentSize, 0)))
 	if p.New != nil && p.factory.New == nil {
 		p.factory.New = func() any {
 			return newFixedPoolElement(p.New(), p)
@@ -344,9 +342,9 @@ func (p *FixedPool[E]) moveToVictimLocked() bool {
 	if p.isResidentUnLimited() {
 		return false
 	}
-	cap := p.Cap()
+	c := p.Cap()
 	// cap and resident both has limit
-	if cap > p.MaxResidentSize {
+	if c > p.MaxResidentSize {
 		return true
 	}
 	return false

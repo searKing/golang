@@ -5,6 +5,7 @@
 package math
 
 import (
+	"cmp"
 	"math"
 
 	constraints_ "github.com/searKing/golang/go/exp/constraints"
@@ -23,7 +24,8 @@ func Dim[T constraints_.Number](x, y T) T {
 }
 
 // Max returns the largest of s.
-func Max[T constraints.Ordered](s ...T) T {
+// Deprecated: Use [max] built-in instead since go1.21.
+func Max[T cmp.Ordered](s ...T) T {
 	if len(s) == 0 {
 		var zero T
 		return zero
@@ -38,7 +40,8 @@ func Max[T constraints.Ordered](s ...T) T {
 }
 
 // Min returns the smallest of s.
-func Min[T constraints.Ordered](s ...T) T {
+// Deprecated: Use [min] built-in instead since go1.21.
+func Min[T cmp.Ordered](s ...T) T {
 	if len(s) == 0 {
 		var zero T
 		return zero
@@ -55,7 +58,7 @@ func Min[T constraints.Ordered](s ...T) T {
 // Clamp returns the value between boundary [lo,hi], as v < lo ? v : hi > v : hi : v.
 // Reference to lo if v is less than lo, reference to hi if hi is less than v, otherwise reference to v.
 // If v compares equivalent to either bound, returns a reference to v, not the bound.
-func Clamp[T constraints.Ordered](v, lo, hi T) T {
+func Clamp[T cmp.Ordered](v, lo, hi T) T {
 	if lo > hi {
 		lo, hi = hi, lo
 	}

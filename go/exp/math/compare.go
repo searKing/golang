@@ -5,7 +5,7 @@
 package math
 
 import (
-	"golang.org/x/exp/constraints"
+	"cmp"
 )
 
 // Compare returns an integer comparing two elements.
@@ -13,7 +13,9 @@ import (
 // This implementation places NaN values before any others, by using:
 //
 //	a < b || (math.IsNaN(a) && !math.IsNaN(b))
-func Compare[E constraints.Ordered](a E, b E) int {
+//
+// Deprecated: Use [cmp.Compare] instead since go1.21.
+func Compare[E cmp.Ordered](a E, b E) int {
 	if a < b || IsNaN(a) && !IsNaN(b) {
 		return -1
 	}
@@ -25,13 +27,13 @@ func Compare[E constraints.Ordered](a E, b E) int {
 }
 
 // Reverse returns the reverse comparison for cmp, as cmp(b, a).
-func Reverse[E constraints.Ordered](cmp func(a E, b E) int) func(a E, b E) int {
+func Reverse[E cmp.Ordered](cmp func(a E, b E) int) func(a E, b E) int {
 	return func(a E, b E) int {
 		return cmp(b, a)
 	}
 }
 
 // IsNaN is a copy of math.IsNaN to avoid a dependency on the math package.
-func IsNaN[E constraints.Ordered](f E) bool {
+func IsNaN[E cmp.Ordered](f E) bool {
 	return f != f
 }

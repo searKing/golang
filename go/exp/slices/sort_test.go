@@ -5,6 +5,7 @@
 package slices_test
 
 import (
+	"cmp"
 	"slices"
 	"strconv"
 	"strings"
@@ -132,12 +133,12 @@ func TestLinearSearchInts(t *testing.T) {
 			}
 
 			{
-				cmp := math_.Compare[int]
-				pos, found := slices_.LinearSearchFunc(tt.data, tt.target, cmp)
+				compare := cmp.Compare[int]
+				pos, found := slices_.LinearSearchFunc(tt.data, tt.target, compare)
 				if pos != tt.wantPos || found != tt.wantFound {
 					t.Errorf("LinearSearchFunc got (%v, %v), want (%v, %v)", pos, found, tt.wantPos, tt.wantFound)
 				}
-				wantPos, wantFound := slices.BinarySearchFunc(tt.data, tt.target, cmp)
+				wantPos, wantFound := slices.BinarySearchFunc(tt.data, tt.target, compare)
 				if pos != wantPos || found != wantFound {
 					t.Errorf("LinearSearch got (%v, %v), BinarySearchFunc want (%v, %v)", pos, found, wantPos, wantFound)
 				}
@@ -171,7 +172,7 @@ func TestPartialSortInts(t *testing.T) {
 
 			{
 				data2 := slices.Clone(tt.data)
-				slices_.PartialSortFunc(data2, tt.k, math_.Compare[int])
+				slices_.PartialSortFunc(data2, tt.k, cmp.Compare[int])
 				if !slices_.IsPartialSorted(data2, tt.k) {
 					t.Errorf("partial sort func didn't sort")
 				}
@@ -203,7 +204,7 @@ func TestSearchMin(t *testing.T) {
 				}
 			}
 			{
-				got := slices_.SearchMinFunc(tt.data, math_.Compare[int])
+				got := slices_.SearchMinFunc(tt.data, cmp.Compare[int])
 				if got != tt.want {
 					t.Errorf("SearchMinFunc(%v, math_.Compare[int]) got (%v), want (%v)", tt.data, got, tt.want)
 				}
@@ -235,7 +236,7 @@ func TestSearchMax(t *testing.T) {
 				}
 			}
 			{
-				got := slices_.SearchMinFunc(tt.data, math_.Reverse(math_.Compare[int]))
+				got := slices_.SearchMinFunc(tt.data, math_.Reverse(cmp.Compare[int]))
 				if got != tt.want {
 					t.Errorf("SearchMinFunc(%v, math_.Reverse(math_.Compare[int])) got (%v), want (%v)", tt.data, got, tt.want)
 				}

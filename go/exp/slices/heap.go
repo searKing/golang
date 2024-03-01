@@ -5,12 +5,11 @@
 package slices
 
 import (
-	math_ "github.com/searKing/golang/go/exp/math"
-	"golang.org/x/exp/constraints"
+	"cmp"
 )
 
 // An MinHeap is a min-heap of slices.
-type MinHeap[E constraints.Ordered] []E
+type MinHeap[E cmp.Ordered] []E
 
 func (h MinHeap[E]) Len() int           { return len(h) }
 func (h MinHeap[E]) Less(i, j int) bool { return h[i] < h[j] }
@@ -31,7 +30,7 @@ func (h *MinHeap[E]) Pop() any {
 }
 
 // An MaxHeap is a max-heap of slices.
-type MaxHeap[E constraints.Ordered] []E
+type MaxHeap[E cmp.Ordered] []E
 
 func (h MaxHeap[E]) Len() int           { return len(h) }
 func (h MaxHeap[E]) Less(i, j int) bool { return h[i] > h[j] }
@@ -57,18 +56,18 @@ type Heap[S ~[]E, E any] struct {
 	Comparator func(v1 E, v2 E) int
 }
 
-func NewHeapMin[S ~[]E, E constraints.Ordered](s S) *Heap[S, E] {
+func NewHeapMin[S ~[]E, E cmp.Ordered](s S) *Heap[S, E] {
 	return &Heap[S, E]{
 		S:          s,
-		Comparator: math_.Compare[E],
+		Comparator: cmp.Compare[E],
 	}
 }
 
-func NewHeapMax[S ~[]E, E constraints.Ordered](s S) *Heap[S, E] {
+func NewHeapMax[S ~[]E, E cmp.Ordered](s S) *Heap[S, E] {
 	return &Heap[S, E]{
 		S: s,
 		Comparator: func(v1 E, v2 E) int {
-			return math_.Compare[E](v2, v1)
+			return cmp.Compare[E](v2, v1)
 		},
 	}
 }

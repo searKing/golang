@@ -5,11 +5,11 @@
 package slices
 
 import (
+	"cmp"
 	"container/heap"
 	"sort"
 
 	sort_ "github.com/searKing/golang/go/sort"
-	"golang.org/x/exp/constraints"
 )
 
 // LinearSearch searches for target in a sorted slice and returns the position
@@ -26,7 +26,7 @@ import (
 // The binary search wins for very large boundary sets, but
 // the linear search performs better up through arrays between
 // 256 and 512 elements, so we continue to prefer linear search.
-func LinearSearch[S ~[]E, E constraints.Ordered](x S, target E) (int, bool) {
+func LinearSearch[S ~[]E, E cmp.Ordered](x S, target E) (int, bool) {
 	// search returns the leftmost position where f returns true, or len(x) if f
 	// returns false for all x. This is the insertion position for target in x,
 	// and could point to an element that's either == target or not.
@@ -70,7 +70,7 @@ func search(n int, f func(int) bool) int {
 // (Note that the "not found" return value is not -1 as in, for instance,
 // strings.Index.)
 // SearchMin calls f(i) only for i in the range [0, n).
-func SearchMin[S ~[]E, E constraints.Ordered](s S) int {
+func SearchMin[S ~[]E, E cmp.Ordered](s S) int {
 	if len(s) == 0 {
 		return 0
 	}
@@ -111,7 +111,7 @@ func SearchMinFunc[S ~[]E, E any](s S, cmp func(E, E) int) int {
 // (Note that the "not found" return value is not -1 as in, for instance,
 // strings.Index.)
 // Search calls f(i) only for i in the range [0, n).
-func SearchMax[S ~[]E, E constraints.Ordered](s S) int {
+func SearchMax[S ~[]E, E cmp.Ordered](s S) int {
 	if len(s) == 0 {
 		return 0
 	}
@@ -135,7 +135,7 @@ func SearchMax[S ~[]E, E constraints.Ordered](s S) int {
 // may be reversed from their original order.
 //
 // PartialSort modifies the contents of the slice s; it does not create a new slice.
-func PartialSort[S ~[]E, E constraints.Ordered](s S, k int) {
+func PartialSort[S ~[]E, E cmp.Ordered](s S, k int) {
 	if s == nil {
 		return
 	}
@@ -239,14 +239,14 @@ func PartialSortFunc[S ~[]E, E any](s S, k int, cmp func(E, E) int) {
 }
 
 // IsPartialSorted reports whether data[:k] is partial sorted, as top k of data[:].
-func IsPartialSorted[S ~[]E, E constraints.Ordered](s S, k int) bool {
+func IsPartialSorted[S ~[]E, E cmp.Ordered](s S, k int) bool {
 	return sort_.IsPartialSorted(SortSlice[E](s), k)
 }
 
 // Convenience types for common cases
 
 // SortSlice attaches the methods of Interface to []E, sorting in increasing order.
-type SortSlice[E constraints.Ordered] []E
+type SortSlice[E cmp.Ordered] []E
 
 func (x SortSlice[E]) Len() int { return len(x) }
 
@@ -263,6 +263,6 @@ func (x SortSlice[E]) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 func (x SortSlice[E]) Sort() { sort.Sort(x) }
 
 // isNaN is a copy of math.IsNaN to avoid a dependency on the math package.
-func isNaN[E constraints.Ordered](f E) bool {
+func isNaN[E cmp.Ordered](f E) bool {
 	return f != f
 }
