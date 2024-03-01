@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.21 && !go1.22
+//go:build go1.22
 
 package slog
 
@@ -24,9 +24,9 @@ func ExampleTypedNil() {
 
 	// Output:
 	// level=INFO msg=[slog/text] attr_typed_nil=<nil> args_typed_nil=<nil>
-	// [slog/text] unexpected panic: value method github.com/searKing/golang/go/log/slog.text.MarshalText called using nil *text pointer
+	// level=INFO msg=[slog/text] attr_typed_nil=<nil> args_typed_nil=<nil>
 	// {"level":"INFO","msg":"[slog/json]","attr_typed_nil":null,"args_typed_nil":null}
-	// [slog/json] unexpected panic: value method github.com/searKing/golang/go/log/slog.text.Error called using nil *text pointer
+	// {"level":"INFO","msg":"[slog/json]","attr_typed_nil":"<nil>","args_typed_nil":"<nil>"}
 	// I 0] [slog/glog], attr_typed_nil=<nil>, args_typed_nil=<nil>
 	// I 0] [slog/glog], attr_typed_nil=<nil>, args_typed_nil=<nil>
 	// [INFO ] [0] [slog/glog_human], attr_typed_nil=<nil>, args_typed_nil=<nil>
