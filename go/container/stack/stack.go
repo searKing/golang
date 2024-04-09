@@ -15,17 +15,17 @@ type (
 	Element list.Element
 )
 
-// Create a new stack
+// New creates a new stack
 func New() *Stack {
 	return &Stack{}
 }
 
-// Return the number of items in the stack
+// Len returns the number of items in the stack
 func (s *Stack) Len() int {
 	return s.list.Len()
 }
 
-// View the top item on the stack
+// Peek view the top item on the stack
 func (s *Stack) Peek() *Element {
 	return (*Element)(s.list.Back())
 }
