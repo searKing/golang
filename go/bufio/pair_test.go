@@ -17,7 +17,7 @@ var pairTests = []string{
 	"{a[b]c}",
 	"}{abc}",
 }
-var espectedpairTests = []string{
+var expectedPairTests = []string{
 	"",
 	"{abc}",
 	"{abc}",
@@ -36,7 +36,7 @@ func TestPairScanner(t *testing.T) {
 			continue
 		}
 
-		if !bytes.Equal(p, []byte(espectedpairTests[n])) {
+		if !bytes.Equal(p, []byte(expectedPairTests[n])) {
 			t.Errorf("#%d: expected %q got %q", n, test, string(p))
 		}
 	}

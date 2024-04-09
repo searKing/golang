@@ -27,7 +27,7 @@ type DelimiterPair struct {
 // A PairScanner reads and decodes Pair wrapped values from an input stream, like a json、xml.
 type PairScanner struct {
 	r              io.Reader
-	discardLeading bool // discard any char until we meet a start delimeter at list
+	discardLeading bool // discard any char until we meet a start delimiter at list
 	buf            []byte
 	scanp          int   // start of unread data in buf
 	scanned        int64 // amount of data already scanned
@@ -37,7 +37,7 @@ type PairScanner struct {
 // NewPairScanner returns a new scanner that reads from r.
 //
 // The scanner introduces its own buffering and may
-// read data from r beyond the JSON values requested.
+// read data from r beyond the paired values requested.
 func NewPairScanner(r io.Reader) *PairScanner {
 	return &PairScanner{r: r}
 }
