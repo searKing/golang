@@ -45,6 +45,8 @@ func (c *LRU[K, V]) SetEvictCallback(onEvict EvictCallback[K, V]) *LRU[K, V] {
 }
 
 // SetEvictCallbackFunc sets a callback func when a cache entry is evicted
+//
+// Deprecated, use SetEvictCallback instead.
 func (c *LRU[K, V]) SetEvictCallbackFunc(onEvict func(key K, value V)) *LRU[K, V] {
 	c.onEvict = onEvict
 	return c

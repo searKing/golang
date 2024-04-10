@@ -35,14 +35,14 @@ func (c *LRU[K, V]) SetEvictCallback(onEvict EvictCallback[K, V]) *LRU[K, V] {
 	if onEvict == nil {
 		c.c.SetEvictCallback(nil)
 	} else {
-		c.c.SetEvictCallbackFunc(func(key K, value V) {
-			onEvict(key, value)
-		})
+		c.c.SetEvictCallback(lru.EvictCallback[K, V](onEvict))
 	}
 	return c
 }
 
 // SetEvictCallbackFunc sets a callback when a cache entry is evicted
+//
+// Deprecated, use SetEvictCallback instead.
 func (c *LRU[K, V]) SetEvictCallbackFunc(onEvict func(key K, value V)) *LRU[K, V] {
 	c.mu.Lock()
 	defer c.mu.Unlock()
