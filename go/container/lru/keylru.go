@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-// LRU takes advantage of list's sequence and map's efficient locate
+// KeyLRU takes advantage of list's sequence and map's efficient locate
 type KeyLRU struct {
 	ll   *list.List // list.Element.Value type is of interface{}
 	m    map[interface{}]*list.Element
