@@ -30,7 +30,7 @@ func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int
 	gotCap := p.Cap()
 
 	if (gotLen != l && c >= 0) || (gotCap != c && c >= 0) {
-		if gotLen < l || gotCap < l {
+		if gotLen < l || gotCap < c {
 			t.Fatalf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
 		} else {
 			// TODO: It seems like runtime.GC() may not do full GC?
