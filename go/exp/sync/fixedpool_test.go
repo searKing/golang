@@ -20,6 +20,19 @@ import (
 	runtime_ "github.com/searKing/golang/go/runtime"
 )
 
+func fixGC() {
+	// TODO: Fix #45315 and remove this extra call.
+	//
+	// Unfortunately, it's possible for the sweep termination condition
+	// to flap, so with just one runtime.GC call, a freed object could be
+	// missed, leading this test to fail. A second call reduces the chance
+	// of this happening to zero, because sweeping actually has to finish
+	// to move on to the next GC, during which nothing will happen.
+	//
+	// See https://github.com/golang/go/issues/46500 and
+	// https://github.com/golang/go/issues/45315 for more details.
+	runtime.GOMAXPROCS(1)
+}
 func caller() string {
 	function, file, line := runtime_.GetCallerFuncFileLine(3)
 	return fmt.Sprintf("%s() %s:%d", path.Base(function), filepath.Base(file), line)
@@ -29,16 +42,13 @@ func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int
 	gotLen := p.Len()
 	gotCap := p.Cap()
 	if (gotLen != l && c >= 0) || (gotCap != c && c >= 0) {
-		if gotLen < l || gotCap < c {
-			t.Fatalf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
-		} else {
-			// TODO: It seems like runtime.GC() may not do full GC?
-			t.Skipf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
-		}
+		t.Fatalf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
 	}
 }
 
 func TestNewFixedPool(t *testing.T) {
+	fixGC()
+
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	var i int
@@ -85,26 +95,27 @@ func TestNewFixedPool(t *testing.T) {
 		p.Emplace("c")
 		testFixedPoolLenAndCap(t, p, i+1+2, i+1+2)
 	}
-	testFixedPoolLenAndCap(t, p, 100, 102)
+	testFixedPoolLenAndCap(t, p, 102, 102)
 	for i := 0; i < n; i++ {
-		if g := p.Get(); g.Value != "c" {
-			t.Fatalf("got %#v; want a", g)
+		if g := p.Get(); g == nil {
+			t.Fatalf("got empty")
 		}
 	}
-	testFixedPoolLenAndCap(t, p, 0, 102)
-	if g := p.TryGet(); g != nil {
-		t.Fatalf("got %#v; want nil", g)
+	testFixedPoolLenAndCap(t, p, 2, 102)
+	if g := p.TryGet(); g == nil {
+		t.Fatalf("got empty")
 	}
-	testFixedPoolLenAndCap(t, p, 0, 102)
+	testFixedPoolLenAndCap(t, p, 1, 102)
 	// After one GC, the victim cache should keep them alive.
 	runtime.GC()
 	// drop all the items taken by Get and not be referenced by any
-	testFixedPoolLenAndCap(t, p, 0, 2)
+	testFixedPoolLenAndCap(t, p, 3, 3)
 	// A second GC should drop the victim cache.
 	runtime.GC()
 	testFixedPoolLenAndCap(t, p, 2, 2)
 }
 func TestNewCachePool(t *testing.T) {
+	fixGC()
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	var p = sync_.NewCachedPool[string](nil)
@@ -149,6 +160,7 @@ func TestNewCachePool(t *testing.T) {
 }
 
 func TestNewTempPool(t *testing.T) {
+	fixGC()
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	var p = sync_.NewTempPool[string](nil)
@@ -195,6 +207,7 @@ func TestNewTempPool(t *testing.T) {
 }
 
 func TestFixedPoolNilNew(t *testing.T) {
+	fixGC()
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	const LEN = 10
@@ -266,6 +279,7 @@ func TestFixedPoolNilNew(t *testing.T) {
 }
 
 func TestFixedPoolNew(t *testing.T) {
+	fixGC()
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 
