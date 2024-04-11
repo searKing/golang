@@ -28,7 +28,6 @@ func caller() string {
 func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int) {
 	gotLen := p.Len()
 	gotCap := p.Cap()
-
 	if (gotLen != l && c >= 0) || (gotCap != c && c >= 0) {
 		if gotLen < l || gotCap < c {
 			t.Fatalf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
@@ -39,6 +38,72 @@ func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int
 	}
 }
 
+func TestNewFixedPool(t *testing.T) {
+	// disable GC so we can control when it happens.
+	defer debug.SetGCPercent(debug.SetGCPercent(-1))
+	var i int
+	f := func() string {
+		defer func() { i++ }()
+		return strconv.Itoa(i)
+	}
+	var p = sync_.NewFixedPool[string](f, 2)
+	testFixedPoolLenAndCap(t, p, 2, 2)
+	if g := p.TryGet(); g == nil || g.Value != "0" {
+		t.Fatalf("got %#v; want 0", g)
+	}
+	testFixedPoolLenAndCap(t, p, 1, 2)
+	p.Emplace("a")
+	testFixedPoolLenAndCap(t, p, 2, 3)
+	p.Emplace("b")
+	testFixedPoolLenAndCap(t, p, 3, 4)
+	if g := p.TryGet(); g == nil || g.Value != "1" {
+		t.Fatalf("got %#v; want 1", g)
+	}
+	if g := p.Get(); g == nil || g.Value != "a" {
+		t.Fatalf("got %#v; want a", g)
+	}
+	testFixedPoolLenAndCap(t, p, 1, 4)
+	if g := p.Get(); g.Value != "b" {
+		t.Fatalf("got %#v; want b", g)
+	}
+	testFixedPoolLenAndCap(t, p, 0, 4)
+	if g := p.TryGet(); g != nil {
+		t.Fatalf("got %#v; want nil", g)
+	}
+	// After one GC, the victim cache should keep them alive.
+	runtime.GC()
+	// drop all the items taken by Get and not be referenced by any
+	testFixedPoolLenAndCap(t, p, 2, 2)
+	// A second GC should drop the victim cache.
+	runtime.GC()
+	testFixedPoolLenAndCap(t, p, 2, 2)
+
+	// Put in a large number of items, so they spill into
+	// stealable space.
+	n := 100
+	for i := 0; i < n; i++ {
+		p.Emplace("c")
+		testFixedPoolLenAndCap(t, p, i+1+2, i+1+2)
+	}
+	testFixedPoolLenAndCap(t, p, 100, 102)
+	for i := 0; i < n; i++ {
+		if g := p.Get(); g.Value != "c" {
+			t.Fatalf("got %#v; want a", g)
+		}
+	}
+	testFixedPoolLenAndCap(t, p, 0, 102)
+	if g := p.TryGet(); g != nil {
+		t.Fatalf("got %#v; want nil", g)
+	}
+	testFixedPoolLenAndCap(t, p, 0, 102)
+	// After one GC, the victim cache should keep them alive.
+	runtime.GC()
+	// drop all the items taken by Get and not be referenced by any
+	testFixedPoolLenAndCap(t, p, 0, 2)
+	// A second GC should drop the victim cache.
+	runtime.GC()
+	testFixedPoolLenAndCap(t, p, 2, 2)
+}
 func TestNewCachePool(t *testing.T) {
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))

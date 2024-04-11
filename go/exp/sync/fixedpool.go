@@ -17,7 +17,6 @@ import (
 
 const (
 	starvationThresholdNs = 1e6
-	localCMaxSize         = 16
 
 	UnlimitedResident = -1
 	UnlimitedCapacity = 0
@@ -38,13 +37,12 @@ type FixedPool[E any] struct {
 	capacity atomic.Int64 // items allocated
 
 	// fixed-size pool for keep-alive
-	// localC + localQ
+	// localC + localQ + localV
+	// [0, MaxResidentSize) + [MaxResidentSize, MaxCapSize) + [MaxCapSize, UnlimitedCapacity)
 	localC chan *FixedPoolElement[E] // fixed-size pool for keep-alive
 	mu     sync.Mutex
 	localQ queue.Queue[*FixedPoolElement[E]] // temporary pool for allocated, <keep-alive> excluded
-
-	factory       sync.Pool // specifies a function to generate a value
-	factoryVictim sync.Pool // A second GC should drop the victim cache, try put into local first.
+	localV sync.Pool                         // A second GC should drop the victim cache, try put into local first.
 
 	pinChan chan struct{} // bell for Put or New
 
@@ -53,7 +51,7 @@ type FixedPool[E any] struct {
 	// It may not be changed concurrently with calls to Get.
 	New func() E
 
-	// MinResidentSize controls the minimum number of keep-alive items. items will be prealloced.
+	// MinResidentSize controls the minimum number of keep-alive items. items will be preallocated.
 	MinResidentSize int
 	// MaxResidentSize controls the maximum number of keep-alive items. Negative means no limit.
 	MaxResidentSize int
@@ -108,25 +106,15 @@ func (p *FixedPool[E]) Init() *FixedPool[E] {
 		p.MaxCapacity = max(p.MaxCapacity, p.MaxResidentSize, 0)
 	}
 	p.pinChan = make(chan struct{})
-	p.localC = make(chan *FixedPoolElement[E], min(localCMaxSize, max(p.MaxResidentSize, 0)))
-	if p.New != nil && p.factory.New == nil {
-		p.factory.New = func() any {
-			return newFixedPoolElement(p.New(), p)
-		}
-	}
+	p.localC = make(chan *FixedPoolElement[E], max(p.MaxResidentSize, 0))
 
 	p.preallocAllResident()
 	return p
 }
 
-func (p *FixedPool[E]) Finalize() {
-	// no need for a finalizer anymore
-	runtime.SetFinalizer(p, nil)
-}
-
 func (p *FixedPool[E]) preallocAllResident() {
 	if p.New != nil {
-		var xs []*FixedPoolElement[E]
+		xs := make([]*FixedPoolElement[E], 0, p.MinResidentSize)
 		for i := 0; i < p.MinResidentSize; i++ {
 			x := p.TryGet()
 			// short circuit
@@ -135,8 +123,8 @@ func (p *FixedPool[E]) preallocAllResident() {
 			}
 			xs = append(xs, x)
 		}
-		for i := 0; i < len(xs); i++ {
-			p.Put(xs[i])
+		for _, x := range xs {
+			p.Put(x)
 		}
 	}
 }
@@ -144,9 +132,7 @@ func (p *FixedPool[E]) preallocAllResident() {
 func (p *FixedPool[E]) signal() {
 	select {
 	case p.pinChan <- struct{}{}:
-		break
 	default:
-		break
 	}
 }
 
@@ -158,9 +144,7 @@ func (p *FixedPool[E]) Len() int {
 
 // Cap returns the capacity of pool, that is object len allocated
 // The complexity is O(1).
-func (p *FixedPool[E]) Cap() int {
-	return int(p.capacity.Load())
-}
+func (p *FixedPool[E]) Cap() int { return int(p.capacity.Load()) }
 
 // Emplace adds x to the pool.
 // NOTE: Emplace may break through the len and cap boundaries, as x be allocated already.
@@ -173,6 +157,7 @@ func (p *FixedPool[E]) Put(x *FixedPoolElement[E]) (stored bool) {
 	return p.put(x, true)
 }
 
+// TryPut adds x to the pool, .
 func (p *FixedPool[E]) TryPut(x *FixedPoolElement[E]) (stored bool) {
 	return p.put(x, false)
 }
@@ -182,14 +167,19 @@ func (p *FixedPool[E]) put(x *FixedPoolElement[E], victim bool) (stored bool) {
 		return
 	}
 	x.markAvailable(true)
-	defer p.signal()
+	defer func() {
+		if stored {
+			p.signal()
+		} else {
+			x.markAvailable(false)
+		}
+	}()
 	select {
 	case p.localC <- x:
 		return true
 	default:
-		break
+		return p.putSlow(x, victim)
 	}
-	return p.putSlow(x, victim)
 }
 
 // Get selects an arbitrary item from the Pool, removes it from the
@@ -232,16 +222,13 @@ func (p *FixedPool[E]) get(ctx context.Context, maxIter int) (*FixedPoolElement[
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
+		p.mu.Lock()
 		if p.localQ.Next() {
-			p.mu.Lock()
-			if p.localQ.Next() {
-				e := p.localQ.PopFront()
-				p.mu.Unlock()
-				return e.markAvailable(false), nil
-			}
+			e := p.localQ.PopFront()
 			p.mu.Unlock()
+			return e.markAvailable(false), nil
 		}
-		break
+		p.mu.Unlock()
 	}
 	return p.getSlow(ctx, maxIter)
 }
@@ -250,49 +237,53 @@ func (p *FixedPool[E]) getSlow(ctx context.Context, maxIter int) (*FixedPoolElem
 	if ctx == nil {
 		panic("sync.FixedPool: nil Context")
 	}
-	timer := time.NewTimer(starvationThresholdNs)
-	defer timer.Stop()
+	var timer *time.Timer // for canceling TLS handshake
+	defer func() {
+		if timer != nil {
+			timer.Stop()
+		}
+	}()
 	iter := 0
 	for {
-		x, allocated := p.tryAllocate()
-		iter++
-		if allocated {
-			return x.markAvailable(false), nil
-		}
-
 		select {
 		case e := <-p.localC:
 			return e.markAvailable(false), nil
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
+			p.mu.Lock()
 			if p.localQ.Next() {
-				p.mu.Lock()
-				if p.localQ.Next() {
-					e := p.localQ.PopFront()
-					p.mu.Unlock()
-					return e.markAvailable(false), nil
-				}
+				e := p.localQ.PopFront()
 				p.mu.Unlock()
+				return e.markAvailable(false), nil
 			}
-			break
+			x, allocated := p.tryAllocateLocked()
+			if allocated {
+				p.mu.Unlock()
+				return x.markAvailable(false), nil
+			}
+			p.mu.Unlock()
 		}
+
+		iter++
 		if maxIter > 0 && iter >= maxIter {
 			return nil, nil
 		}
-		if !timer.Stop() {
-			<-timer.C
+		if timer != nil {
+			if !timer.Stop() {
+				<-timer.C
+			}
+			timer.Reset(starvationThresholdNs)
+		} else {
+			timer = time.NewTimer(starvationThresholdNs)
 		}
-		timer.Reset(starvationThresholdNs)
 		select {
 		case e := <-p.localC:
 			return e.markAvailable(false), nil
 		case <-p.pinChan:
-			break
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-timer.C:
-			break
 		}
 	}
 }
@@ -302,41 +293,47 @@ func (p *FixedPool[E]) putSlow(x *FixedPoolElement[E], victim bool) (stored bool
 		return true
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	x.markAvailable(true)
+	defer func() {
+		if !stored {
+			x.markAvailable(false)
+		}
+	}()
 	select {
 	case p.localC <- x:
 		return true
 	default:
-		break
 	}
 
+	p.mu.Lock()
 	move := p.moveToVictimLocked()
-	if move {
-		if victim {
+	p.mu.Unlock()
+
+	if move { // overcapacity
+		if victim { // drop this element into victim cache for reuse
 			// After one GC, the victim cache should keep them alive.
 			// A second GC should drop the victim cache.
-			p.factoryVictim.Put(x)
+			p.localV.Put(x)
 			return true
 		}
+		// drop this element directly as overcapacity
 		return false
 	}
+
+	// Try to put this element into localC or localQ if localC is full.
 	select {
 	case p.localC <- x:
 		return true
 	default:
+		p.mu.Lock()
+		defer p.mu.Unlock()
 		p.localQ.PushBack(x)
 		return true
 	}
 }
 
-func (p *FixedPool[E]) isCapacityUnLimited() bool {
-	return p.MaxCapacity <= UnlimitedCapacity
-}
-func (p *FixedPool[E]) isResidentUnLimited() bool {
-	return p.MaxResidentSize <= UnlimitedResident
-}
+func (p *FixedPool[E]) isCapacityUnLimited() bool { return p.MaxCapacity <= UnlimitedCapacity }
+func (p *FixedPool[E]) isResidentUnLimited() bool { return p.MaxResidentSize <= UnlimitedResident }
 func (p *FixedPool[E]) moveToVictimLocked() bool {
 	// resident no limit
 	if p.isResidentUnLimited() {
@@ -344,28 +341,23 @@ func (p *FixedPool[E]) moveToVictimLocked() bool {
 	}
 	c := p.Cap()
 	// cap and resident both has limit
-	if c > p.MaxResidentSize {
-		return true
-	}
-	return false
+	return c > p.MaxResidentSize
 }
 
-func (p *FixedPool[E]) tryAllocate() (x *FixedPoolElement[E], allocated bool) {
+func (p *FixedPool[E]) tryAllocateLocked() (x *FixedPoolElement[E], allocated bool) {
 	// Try to pop the head of the victim for temporal locality of
 	// reuse.
 	{
-		x := p.factoryVictim.Get()
+		x := p.localV.Get()
 		if x != nil {
 			return x.(*FixedPoolElement[E]), true
 		}
 	}
 
-	if p.MaxCapacity <= 0 || p.Cap() < p.MaxCapacity {
-		if p.Cap() < p.MaxCapacity {
-			x := p.factory.Get()
-			if x != nil {
-				return x.(*FixedPoolElement[E]), true
-			}
+	if p.isCapacityUnLimited() || p.Cap() < p.MaxCapacity {
+		if n := p.New; n != nil {
+			x := newFixedPoolElement(n(), p)
+			return x, true
 		}
 		return nil, true
 	}
@@ -376,7 +368,7 @@ type FixedPoolElement[E any] struct {
 	// The value stored with this element.
 	Value E
 
-	available bool
+	available bool // available as idle for the pool
 	pool      *FixedPool[E]
 }
 
