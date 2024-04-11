@@ -20,6 +20,8 @@ various libs or tools for Golang
       and [Rectangle[T]](https://pkg.go.dev/github.com/searKing/golang/go/exp/image#Rectangle) of any type.
     - [sync.LRU](https://pkg.go.dev/github.com/searKing/golang/go/exp/sync#LRU) implements a thread safe fixed size LRU
       cache, based on [not-thread safe lru](https://pkg.go.dev/github.com/searKing/golang/go@v1.2.82/exp/container/lru)
+    - [sync.FixedPool](https://pkg.go.dev/github.com/searKing/golang/go/exp/sync#FixedPool) is a set of resident and
+      temporary items that may be individually saved and retrieved.
     - [types.Optional](https://pkg.go.dev/github.com/searKing/golang/go/exp/types#Optional) represents a Value that may
       be null.
 * [slog](https://pkg.go.dev/github.com/searKing/log/slog) - `slog`
