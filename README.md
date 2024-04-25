@@ -60,10 +60,10 @@ various libs or tools for Golang
     - It implements a [Reorder Buffer](https://en.wikipedia.org/wiki/Re-order_buffer) allocated by `Reserve`
       or `ReserveN` into account when allowing future events and `Wait` or `WaitN` blocks until lim permits n events to
       happen.
-* [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator#Generator) — Generator behaves like
-  Generator in python or ES6, with yield and next statements.
-* [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal#Notify) — Signal enhances signal.Notify
-  with the stacktrace of cgo.
+* [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator#Generator) — Generator behaves
+  like `Generator` in python or ES6, with yield and next statements.
+* [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal#Notify) — Signal enhances signal.Notify with the
+  stacktrace of cgo.
 * [sql](https://pkg.go.dev/github.com/searKing/golang/go/database/sql#NullDuration) — Enhance go std sql.
     - NullDuration
         - ```NullDuration represents an interface that may be null. NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
@@ -91,12 +91,21 @@ various libs or tools for Golang
 * [hashring](https://pkg.go.dev/github.com/searKing/golang/go/container/hashring) — hashring provides a
   consistent hashing function, read more about consistent hashing on
   wikipedia:  [Consistent_hashing](http://en.wikipedia.org/wiki/Consistent_hashing).
-* [RotateFile](https://pkg.go.dev/github.com/searKing/golang/go/os) — RotateFile derived from os.File, and is
+* [RotateFile](https://pkg.go.dev/github.com/searKing/golang/go/os#RotateFile) — RotateFile derived from os.File, and is
   designed to ease administration of systems that generate large numbers of files. It allows automatic rotation,
   removal, and handler of files. Each file may be handled daily, weekly, monthly, strftimely, time_layoutly or when it
   grows too large.
-    - [WithRotate](https://pkg.go.dev/github.com/searKing/golang/third_party/github.com/sirupsen/logrus) —
-      WithRotate is an example of os.RotateFile register for logrus.
+    - [NewFactoryFromFile](https://pkg.go.dev/github.com/searKing/golang/third_party/github.com/sirupsen/logrus#NewFactoryFromFile) —
+      NewFactoryFromFile is an example of os.RotateFile register for logrus.
+* [CacheFile](https://pkg.go.dev/github.com/searKing/golang/go/os#CacheFile) - CacheFile is a package cache(Eventual
+  consistency, behaves like sync.LRU[string, *os.File]), backed by a file system directory tree. It is safe for multiple
+  processes on a single machine to use the
+  same cache directory in a local file system simultaneously. They will coordinate using operating system file locks and
+  may duplicate effort but will not corrupt the cache. It's usually used to support download cache, download if cache
+  file not hit.
+* [UnlinkOldestFiles](https://pkg.go.dev/github.com/searKing/golang/go/os#UnlinkOldestFilesFunc) - UnlinkOldestFiles
+  unlink old files if [DiskQuota](https://pkg.go.dev/github.com/searKing/golang/go/os#DiskQuota) exceeds. It's usually
+  used for disk clean.
 
 # GoGenerateTools
 
