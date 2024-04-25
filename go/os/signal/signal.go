@@ -6,7 +6,6 @@ package signal
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -22,7 +21,7 @@ func init() {
 	//RegisterOnSignal(OnSignalHandlerFunc(func(signum os.Signal) {}))
 
 	var dumpfile string
-	if f, err := ioutil.TempFile("", "*.stacktrace.dump"); err == nil {
+	if f, err := os.CreateTemp("", "*.stacktrace.dump"); err == nil {
 		dumpfile = f.Name()
 	} else {
 		dumpfile = filepath.Join(os.TempDir(), fmt.Sprintf("stacktrace.%d.dump", time.Now().UnixNano()))
