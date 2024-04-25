@@ -60,11 +60,11 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
       sigemptyset(&new_set);
       sigaddset(&new_set, wait);
       if (sigprocmask(SIG_BLOCK, &new_set, &old_set) < 0) {
-        write(signal_dump_to_fd_, "block Signal(", strlen("block Signal("));
-        WriteInt(signal_dump_to_fd_, wait);
-        write(signal_dump_to_fd_, ") for Signal(", strlen(") for Signal("));
-        WriteInt(signal_dump_to_fd_, signum);
-        write(signal_dump_to_fd_, ") failed.\n", strlen(") failed.\n"));
+        (void)!write(signal_dump_to_fd_, "block Signal(", strlen("block Signal("));
+        (void)!WriteInt(signal_dump_to_fd_, wait);
+        (void)!write(signal_dump_to_fd_, ") for Signal(", strlen(") for Signal("));
+        (void)!WriteInt(signal_dump_to_fd_, signum);
+        (void)!write(signal_dump_to_fd_, ") failed.\n", strlen(") failed.\n"));
         break;
       }
     }

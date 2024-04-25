@@ -41,9 +41,10 @@ class BaseSignalHandler : private boost::noncopyable,
 
   void WriteSignalStacktrace(int signum) {
     if (signal_dump_to_fd_ >= 0) {
-      write(signal_dump_to_fd_, "Signal received(", strlen("Signal received("));
-      WriteInt(signal_dump_to_fd_, signum);
-      write(signal_dump_to_fd_, ").\n", strlen(").\n"));
+      (void)!write(signal_dump_to_fd_, "Signal received(",
+                   strlen("Signal received("));
+      (void)!WriteInt(signal_dump_to_fd_, signum);
+      (void)!write(signal_dump_to_fd_, ").\n", strlen(").\n"));
       // binary format,not human readable.mute this.
       //    write(signal_dump_to_fd_, "stacktrace dumped in binary format:\n",
       //          strlen("stacktrace dumped in binary format:\n"));
@@ -53,11 +54,11 @@ class BaseSignalHandler : private boost::noncopyable,
 
     if (!stacktrace_dump_to_file_.empty()) {
       if (signal_dump_to_fd_ >= 0) {
-        write(signal_dump_to_fd_, "Stacktrace dumped to file: ",
-              strlen("Stacktrace dumped to file: "));
-        write(signal_dump_to_fd_, stacktrace_dump_to_file_.c_str(),
-              stacktrace_dump_to_file_.length());
-        write(signal_dump_to_fd_, ".\n", strlen(".\n"));
+        (void)!write(signal_dump_to_fd_, "Stacktrace dumped to file: ",
+                     strlen("Stacktrace dumped to file: "));
+        (void)!write(signal_dump_to_fd_, stacktrace_dump_to_file_.c_str(),
+                     stacktrace_dump_to_file_.length());
+        (void)!write(signal_dump_to_fd_, ".\n", strlen(".\n"));
       }
       boost::stacktrace::safe_dump_to(stacktrace_dump_to_file_.c_str());
     }
