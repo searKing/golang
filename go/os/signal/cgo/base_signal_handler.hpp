@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-// +build cgo
+//go:build cgo
 
 #ifndef GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_
 #define GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_

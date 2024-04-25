@@ -6,8 +6,8 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-// +build cgo
-// +build windows
+//go:build cgo
+//go:build windows
 
 #include "signal_handler_windows.hpp"
 
