@@ -6,8 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-//go:build cgo
-//go:build aix || darwin || dragonfly || freebsd || netbsd || openbsd || solaris
+//go:build cgo && unix && !linux
 
 #include <algorithm>
 
