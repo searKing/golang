@@ -64,7 +64,7 @@ func WithCacheFileBucketKeyFunc(v func(key string) string) CacheFileOption {
 }
 
 // WithCacheFileCacheMetaExt sets CacheMetaExt in CacheFile.
-// the file name extension used by path.
+// the file name extension used by path. ".cache" if empty
 func WithCacheFileCacheMetaExt(v string) CacheFileOption {
 	return CacheFileOptionFunc(func(o *CacheFile) {
 		o.CacheMetaExt = v
