@@ -6,7 +6,7 @@ package os
 
 import "os"
 
-// sort filename by mode time in increase order
+// FileModeTimeSlice sorts filenames by mode time in increase order
 type FileModeTimeSlice []string
 
 func (s FileModeTimeSlice) Len() int {
@@ -28,7 +28,7 @@ func (s FileModeTimeSlice) Less(i, j int) bool {
 	return fi.ModTime().Before(fj.ModTime())
 }
 
-// sort filename by mode time in decrease order
+// FileModeTimeDescSlice sorts filenames by mode time in decrease order
 type FileModeTimeDescSlice []string
 
 func (s FileModeTimeDescSlice) Len() int {
