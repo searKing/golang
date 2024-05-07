@@ -147,7 +147,7 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 
 	maxConns := maxParallelism() * 2
 	if v := query.Get("max_conns"); v != "" {
-		s, err := strconv.ParseInt(v, 10, 64)
+		s, err := strconv.ParseInt(v, 10, 32)
 		if err != nil {
 			logger.Warn(fmt.Sprintf(`Query parameter "max_conns" value %v could not be parsed to int, falling back to default value %d`, v, maxConns), slog_.Error(err))
 		} else {
@@ -157,7 +157,7 @@ func (db *DB) GetDatabase() (*sqlx.DB, error) {
 
 	maxIdleConns := maxParallelism()
 	if v := query.Get("max_idle_conns"); v != "" {
-		s, err := strconv.ParseInt(v, 10, 64)
+		s, err := strconv.ParseInt(v, 10, 32)
 		if err != nil {
 			logger.Warn(fmt.Sprintf("max_idle_conns value %s could not be parsed to int: %s", v, err))
 			logger.Warn(fmt.Sprintf(`Query parameter "max_idle_conns" value %v could not be parsed to int, falling back to default value %d`, v, maxIdleConns), slog_.Error(err))
