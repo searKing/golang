@@ -35,7 +35,7 @@ var expectTokensKey expectKeyType
 // Reorder Buffer
 // It allows instructions to be committed in-order.
 // - Allocated by `Reserve`  or `ReserveN` into account when allowing future events
-// - Wait by `Wait` or `WaitN` blocks until lim permits n events to happen.
+// - Wait by `Wait` or `WaitN` blocks until lim permits n events to happen
 // - Allow and Wait Complete by `PutToken` or `PutTokenN`
 // - Reserve Complete by `Cancel` of the Reservation self, GC Cancel supported
 // See https://en.wikipedia.org/wiki/Re-order_buffer for more about Reorder buffer.
@@ -82,7 +82,7 @@ func (lim *BurstLimiter) Tokens() int {
 	return lim.tokens
 }
 
-// NewFullBurstLimiter returns a new BurstLimiter inited with full tokens that allows
+// NewFullBurstLimiter returns a new BurstLimiter with full tokens that allows
 // events up to burst b and permits bursts of at most b tokens.
 func NewFullBurstLimiter(b int) *BurstLimiter {
 	return &BurstLimiter{
@@ -91,12 +91,24 @@ func NewFullBurstLimiter(b int) *BurstLimiter {
 	}
 }
 
-// NewEmptyBurstLimiter returns a new BurstLimiter inited with zero tokens that allows
+// NewEmptyBurstLimiter returns a new BurstLimiter with zero tokens that allows
 // events up to burst b and permits bursts of at most b tokens.
 func NewEmptyBurstLimiter(b int) *BurstLimiter {
 	return &BurstLimiter{
 		burst: b,
 	}
+}
+
+// NewReorderBuffer returns a new BurstLimiter with exactly only one token that allows
+// instructions to be committed in-order.
+// - Allocated by `Reserve` into account when allowing future events
+// - Wait by `Wait` blocks until lim permits n events to happen
+// - Allow and Wait Complete by `PutToken`
+// - Reserve Complete by `Cancel` of the Reservation self, GC Cancel supported
+// See https://en.wikipedia.org/wiki/Re-order_buffer for more about Reorder buffer.
+// See https://web.archive.org/web/20040724215416/http://lgjohn.okstate.edu/6253/lectures/reorder.pdf for more about Reorder buffer.
+func NewReorderBuffer() *BurstLimiter {
+	return NewFullBurstLimiter(1)
 }
 
 // SetBurst sets a new burst size for the limiter.

@@ -11,6 +11,55 @@ import (
 	"github.com/searKing/golang/go/time/rate"
 )
 
+func ExampleNewReorderBuffer() {
+	const n = 10
+	// See https://web.archive.org/web/20040724215416/http://lgjohn.okstate.edu/6253/lectures/reorder.pdf for more about Reorder buffer.
+	limiter := rate.NewReorderBuffer()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < n; i++ {
+		i := i
+
+		// Allocate: The dispatch stage reserves space in the reorder buffer for instructions in program order.
+		r := limiter.Reserve(ctx)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// Execute out of order
+			runtime.Gosched() // Increase probability of a race for out-of-order mock
+			//fmt.Printf("%03d Execute out of order\n", i)
+
+			defer r.PutToken()
+			//fmt.Printf("%03d Wait until in order\n", i)
+			// Wait: The complete stage must wait for instructions to finish execution.
+			err := r.Wait(ctx) // Commit in order
+			if err != nil {
+				fmt.Printf("err: %s\n", err.Error())
+				return
+			}
+			// Complete: Finished instructions are allowed to write results in order into the architected registers.
+			fmt.Printf("%03d Complete in order\n", i)
+		}()
+	}
+	wg.Wait()
+	// Output:
+	// 000 Complete in order
+	// 001 Complete in order
+	// 002 Complete in order
+	// 003 Complete in order
+	// 004 Complete in order
+	// 005 Complete in order
+	// 006 Complete in order
+	// 007 Complete in order
+	// 008 Complete in order
+	// 009 Complete in order
+
+}
+
 func ExampleNewFullBurstLimiter() {
 	const (
 		burst = 3
@@ -23,7 +72,7 @@ func ExampleNewFullBurstLimiter() {
 	limiter.PutToken()
 
 	for i := 0; ; i++ {
-		//fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
+		// fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
 		fmt.Printf("Wait %03d, tokens left: %d\n", i, limiter.Tokens())
 		err := limiter.Wait(ctx)
 		if err != nil {
@@ -88,7 +137,7 @@ func ExampleNewEmptyBurstLimiter() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			//fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
+			// fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
 			mu.Lock()
 			fmt.Printf("Wait 1 Token, tokens left: %d\n", limiter.Tokens())
 			mu.Unlock()
@@ -162,7 +211,7 @@ func ExampleBurstLimiter_Reserve() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
-	// expect dropped, as limiter is initialized with full tokens(3)
+	// expect dropped, as limiter is initialized with full tokens(1)
 	limiter.PutToken()
 
 	type Reservation struct {
@@ -175,8 +224,8 @@ func ExampleBurstLimiter_Reserve() {
 	var rs []*Reservation
 
 	for i := 0; i < n; i++ {
-		//fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
-		//fmt.Printf("Reserve %03d\n", i)
+		// fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
+		// fmt.Printf("Reserve %03d\n", i)
 		r := &Reservation{
 			index: i,
 			r:     limiter.Reserve(ctx),
@@ -188,8 +237,8 @@ func ExampleBurstLimiter_Reserve() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			//fmt.Printf("%03d %s\n", r.index, time.Now().Format(time.RFC3339))
-			//fmt.Printf("Wait %03d\n", r.index)
+			// fmt.Printf("%03d %s\n", r.index, time.Now().Format(time.RFC3339))
+			// fmt.Printf("Wait %03d\n", r.index)
 			err := r.r.Wait(ctx)
 			if err != nil {
 				mu.Lock()
@@ -209,8 +258,8 @@ func ExampleBurstLimiter_Reserve() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			//fmt.Printf("%03d %s\n", r.index, time.Now().Format(time.RFC3339))
-			//fmt.Printf("Wait %03d\n", r.index)
+			// fmt.Printf("%03d %s\n", r.index, time.Now().Format(time.RFC3339))
+			// fmt.Printf("Wait %03d\n", r.index)
 			err := r.r.Wait(ctx)
 			if err != nil {
 				mu.Lock()
