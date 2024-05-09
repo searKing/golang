@@ -19,25 +19,6 @@ func ExampleSniffReader() {
 	r := strings.NewReader("MSG:some io.Reader stream to be read\n")
 	sniff := io_.SniffReader(r)
 
-	printSniff := func(r io.Reader, n int) {
-		b := make([]byte, n)
-		_, err := r.Read(b)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%s", b)
-	}
-
-	printall := func(r io.Reader) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%s", b)
-	}
-
 	// start sniffing
 	sniff.Sniff(true)
 	// sniff "MSG:"
@@ -57,7 +38,7 @@ func ExampleSniffReader() {
 
 	// stop sniffing
 	sniff.Sniff(false)
-	printall(sniff)
+	printAll(sniff)
 
 	// Output:
 	// MSG:
@@ -69,45 +50,26 @@ func ExampleReplayReader() {
 	r := strings.NewReader("MSG:some io.Reader stream to be read")
 	replayR := io_.ReplayReader(r)
 
-	printReplay := func(r io.Reader, n int) {
-		b := make([]byte, n)
-		_, err := r.Read(b)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%s", b)
-	}
-
-	printall := func(r io.Reader) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%s", b)
-	}
-
 	// print "MSG:"
-	printReplay(replayR, len("MSG:"))
+	printSniff(replayR, len("MSG:"))
 	fmt.Printf("\n")
 
 	// start replay
 	replayR.Replay()
 	// print "MSG:"
-	printReplay(replayR, len("MSG:"))
+	printSniff(replayR, len("MSG:"))
 	fmt.Printf("\n")
 
 	// start replay
 	replayR.Replay()
 	// print "MSG:"
-	printall(replayR)
+	printAll(replayR)
 	fmt.Printf("\n")
 
 	// start replay
 	replayR.Replay()
 	// print "MSG:"
-	printall(replayR)
+	printAll(replayR)
 	fmt.Printf("\n")
 
 	// Output:
@@ -120,16 +82,7 @@ func ExampleReplayReader() {
 func ExampleEOFReader() {
 	r := io_.EOFReader()
 
-	printall := func(r io.Reader) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%s", b)
-	}
-
-	printall(r)
+	printAll(r)
 
 	// Output:
 	//
@@ -145,16 +98,7 @@ func ExampleWatchReader() {
 		return n, err
 	}))
 
-	printall := func(r io.Reader) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%s", b)
-	}
-
-	printall(watch)
+	printAll(watch)
 
 	// Output:
 	// some io.Reader stream to be read
@@ -290,4 +234,23 @@ func ExampleCountLines() {
 
 	// Output:
 	// cnt: 2
+}
+
+func printSniff(r io.Reader, n int) {
+	b := make([]byte, n)
+	_, err := r.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%s", b)
+}
+
+func printAll(r io.Reader) {
+	b, err := io.ReadAll(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%s", b)
 }
