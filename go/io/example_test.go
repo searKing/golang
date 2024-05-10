@@ -238,12 +238,12 @@ func ExampleCountLines() {
 
 func printSniff(r io.Reader, n int) {
 	b := make([]byte, n)
-	_, err := r.Read(b)
+	n, err := r.Read(b)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%s", b)
+	fmt.Printf("%s", b[:n])
 }
 
 func printAll(r io.Reader) {

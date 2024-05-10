@@ -10,9 +10,13 @@ import (
 )
 
 type sniffReader struct {
-	source         io.Reader
-	buffer         *bytes.Buffer
-	historyBuffers []io.Reader
+	// sniff start: read from [historyBuffers..., source] and buffered in buffer
+	// sniff stop: read from [buffer, historyBuffers..., source] and clean buffer and historyBuffers if meet EOF
+	source io.Reader
+
+	// virtual reader: buffer, historyBuffers..., source
+	buffer         *bytes.Buffer // latest read data
+	historyBuffers []io.Reader   // new, old, older read data
 
 	selectorF DynamicReaderFunc
 
@@ -23,7 +27,7 @@ func newSniffReader(r io.Reader) *sniffReader {
 	sr := &sniffReader{
 		source: r,
 	}
-	sr.resetSelector()
+	sr.stopSniff()
 	return sr
 }
 
@@ -36,20 +40,10 @@ func (sr *sniffReader) Sniff(sniffing bool) ReadSniffer {
 	}
 	sr.sniffing = sniffing
 	if sniffing {
-		sr.shrinkToHistory()
-		// We don't need the buffer anymore.
-		// Reset it to release the internal slice.
-		sr.buffer = &bytes.Buffer{}
-
-		readers := sr.historyBuffers
-		readers = append(readers, sr.source)
-		reader := io.TeeReader(io.MultiReader(readers...), sr.buffer)
-		sr.selectorF = func() io.Reader {
-			return reader
-		}
+		sr.startSniff()
 		return sr
 	}
-	sr.resetSelector()
+	sr.stopSniff()
 	return sr
 }
 
@@ -61,28 +55,34 @@ func (sr *sniffReader) shrinkToHistory() {
 			bufferReader := WatchReader(bytes.NewBuffer(sr.buffer.Bytes()), WatcherFunc(func(p []byte, n int, err error) (int, error) {
 				if err == io.EOF {
 					// historyBuffers is consumed head first, so can be cleared from head
-					sr.historyBuffers = sr.historyBuffers[1:] // recycle memory
+					sr.historyBuffers = sr.historyBuffers[1:] // remove head to recover space
 				}
 				return n, err
 			}))
-			var rs []io.Reader
-			rs = append(rs, bufferReader)
-			sr.historyBuffers = append(rs, sr.historyBuffers...)
+			sr.historyBuffers = append([]io.Reader{bufferReader}, sr.historyBuffers...)
 		}
 		sr.buffer = nil
 	}
 }
 
-// resetSelector stops sniff and return a MultiReader of history buffers and source
-func (sr *sniffReader) resetSelector() {
+// startSniff starts sniff and return a TeeReader that writes to buffer while reads from history buffers and source
+func (sr *sniffReader) startSniff() {
+	sr.shrinkToHistory()
+	// We don't need the buffer anymore.
+	// Reset it to release the internal slice.
+	sr.buffer = &bytes.Buffer{}
+
+	readers := append(sr.historyBuffers, sr.source)
+	reader := io.TeeReader(io.MultiReader(readers...), sr.buffer)
+	sr.selectorF = func() io.Reader { return reader }
+}
+
+// stopSniff stops sniff and return a MultiReader of history buffers and source
+func (sr *sniffReader) stopSniff() {
 	sr.shrinkToHistory()
 	readers := append(sr.historyBuffers, sr.source)
 	reader := io.MultiReader(readers...)
-	sr.selectorF = func() io.Reader {
-		return reader
-	}
+	sr.selectorF = func() io.Reader { return reader }
 }
 
-func (sr *sniffReader) Read(p []byte) (n int, err error) {
-	return sr.selectorF.Read(p)
-}
+func (sr *sniffReader) Read(p []byte) (n int, err error) { return sr.selectorF.Read(p) }

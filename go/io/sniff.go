@@ -11,6 +11,10 @@ import (
 // ReadSniffer is the interface that groups the basic Read and Sniff methods.
 type ReadSniffer interface {
 	io.Reader
+
+	// Sniff starts or stops sniffing, restarts if stop and start called one by one
+	// true to start sniffing all data unread actually
+	// false to return a multi reader with all data sniff buffered and source
 	Sniff(sniffing bool) ReadSniffer
 }
 
