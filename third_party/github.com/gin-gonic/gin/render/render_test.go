@@ -30,7 +30,7 @@ func TestRenderJSONPB(t *testing.T) {
 		t.Errorf("data=%q; %v", data.String(), err)
 		return
 	}
-	want := `{"foo":"bar", "html":"<b>"}`
+	want := `{"foo":"bar","html":"\u003cb\u003e"}`
 	if want != w.Body.String() {
 		t.Errorf("got %s, want %s", w.Body.String(), want)
 	}
