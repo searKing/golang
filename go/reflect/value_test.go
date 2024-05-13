@@ -17,34 +17,38 @@ type inputValue struct {
 	expect bool
 }
 
-func TestValueIsZeroValue(t *testing.T) {
+func TestIsEmptyValue(t *testing.T) {
 	ins := []inputValue{
-		//{
-		//	a:      reflect.ValueOf(nil),
-		//	expect: true,
-		//},
-		//{
-		//	a:      reflect.ValueOf(true),
-		//	expect: false,
-		//},
-		//{
-		//	a:      reflect.ValueOf(0),
-		//	expect: true,
-		//},
-		//{
-		//	a:      reflect.ValueOf(""),
-		//	expect: true,
-		//},
-		//{
-		//	a:      reflect.ValueOf(time.Now()),
-		//	expect: false,
-		//},
-		//{
-		//	a:      reflect.ValueOf(time.Time{}),
-		//	expect: true,
-		//},
+		{
+			a:      reflect.ValueOf(nil),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(true),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(0),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(""),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(time.Now()),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(time.Time{}),
+			expect: true,
+		},
 		{
 			a:      reflect.ValueOf([]byte{}),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf([]byte(nil)),
 			expect: true,
 		},
 		{
@@ -52,11 +56,97 @@ func TestValueIsZeroValue(t *testing.T) {
 			expect: true,
 		},
 		{
+			a:      reflect.ValueOf(map[int]string(nil)),
+			expect: true,
+		},
+		{
 			a:      reflect.ValueOf(interface{}([]byte{})),
 			expect: true,
 		},
 		{
+			a:      reflect.ValueOf(interface{}([]byte(nil))),
+			expect: true,
+		},
+		{
 			a:      reflect.ValueOf(interface{}(map[int]string{})),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(interface{}(map[int]string(nil))),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(struct{}{}),
+			expect: true,
+		},
+	}
+	for idx, in := range ins {
+		if IsEmptyValue(in.a) != in.expect {
+			t.Errorf("#%d expect %t", idx, in.expect)
+		}
+	}
+}
+
+func TestIsZeroValue(t *testing.T) {
+	ins := []inputValue{
+		{
+			a:      reflect.ValueOf(nil),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(true),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(0),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(1),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(""),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(time.Now()),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(time.Time{}),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf([]byte{}),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf([]byte(nil)),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(map[int]string{}),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(map[int]string(nil)),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(interface{}([]byte{})),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(interface{}([]byte(nil))),
+			expect: true,
+		},
+		{
+			a:      reflect.ValueOf(interface{}(map[int]string{})),
+			expect: false,
+		},
+		{
+			a:      reflect.ValueOf(interface{}(map[int]string(nil))),
 			expect: true,
 		},
 		{
@@ -70,7 +160,8 @@ func TestValueIsZeroValue(t *testing.T) {
 		}
 	}
 }
-func TestValueIsNilValue(t *testing.T) {
+
+func TestIsNilValue(t *testing.T) {
 	var nilTime *time.Time
 	ins := []inputValue{
 		{
@@ -94,7 +185,7 @@ func TestValueIsNilValue(t *testing.T) {
 			expect: false,
 		},
 		{
-			a:      reflect.ValueOf(nilTime),
+			a:      reflect.ValueOf(nilTime), // typed nil
 			expect: true,
 		},
 	}

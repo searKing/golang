@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"unsafe"
 
 	bytes_ "github.com/searKing/golang/go/bytes"
 	"github.com/searKing/golang/go/container/traversal"
@@ -15,60 +16,50 @@ import (
 
 const PtrSize = unsafe.Sizeof(uintptr(0)) // an ideal const, sizeof *void, as 4 << (^uintptr(0) >> 63)
 
+// IsEmptyValue reports whether v is empty value for its type.
+//
+// The zero value is:
+//
+// 0 for numeric types,
+// false for the boolean type, and
+// "" (the empty string) for strings, and
+// {} (the empty struct) for structs, and
+// untyped nil or typed nil or len == 0 for maps, slices, pointers, functions, interfaces, and channels.
+// Code borrowed from https://github.com/golang/go/blob/go1.22.0/src/encoding/json/encode.go#L306
 func IsEmptyValue(v reflect.Value) bool {
+	if !v.IsValid() {
+		return true
+	}
 	switch v.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64,
+		reflect.Interface, reflect.Pointer:
+		return v.IsZero()
+	default:
+		return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 	}
-	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
-// cmd/compile/internal/gc/dump.go
+// IsZeroValue reports whether v is zero value for its type.
+// Zero values are variables declared without an explicit initial value are given their zero value.
+//
+// The zero value is:
+//
+// 0 for numeric types,
+// false for the boolean type, and
+// "" (the empty string) for strings.
+// untyped nil or typed nil for maps, slices, pointers, functions, interfaces, and channels.
 func IsZeroValue(v reflect.Value) bool {
 	if !v.IsValid() {
 		return true
 	}
 
-	switch v.Kind() {
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Complex64, reflect.Complex128:
-		return v.Complex() == 0
-	case reflect.String:
-		return v.String() == ""
-	case reflect.UnsafePointer:
-		return v.Pointer() == 0
-	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
-		return v.Len() == 0
-	case reflect.Func:
-		return v.IsNil()
-	case reflect.Interface, reflect.Ptr:
-		if v.IsNil() {
-			return true
-		}
-		break
-	case reflect.Struct:
-		break
-	default:
-	}
-
-	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
+	// Use v.IsZero instead since go1.13.
+	return v.IsZero()
 }
 
 // IsNilValue reports whether v is untyped nil or typed nil for its type.
@@ -86,8 +77,9 @@ func IsNilValue(v reflect.Value) bool {
 	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.UnsafePointer,
 		reflect.Interface, reflect.Slice:
 		return v.IsNil()
+	default:
+		return false
 	}
-	return false
 }
 
 func FollowValuePointer(v reflect.Value) reflect.Value {
