@@ -3,26 +3,25 @@ module github.com/searKing/golang/third_party/github.com/open-telemetry/opentele
 go 1.21
 
 require (
-	github.com/searKing/golang/go v1.2.115
-	go.opentelemetry.io/contrib v1.24.0
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
-	go.opentelemetry.io/otel v1.24.0
-	go.opentelemetry.io/otel/metric v1.24.0
-	google.golang.org/grpc v1.62.0
-	google.golang.org/protobuf v1.32.0
+	github.com/searKing/golang/go v1.2.116
+	go.opentelemetry.io/contrib v1.26.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.51.0
+	go.opentelemetry.io/otel v1.26.0
+	go.opentelemetry.io/otel/metric v1.26.0
+	google.golang.org/grpc v1.63.2
+	google.golang.org/protobuf v1.34.1
 )
 
 require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
-	go.opentelemetry.io/otel/trace v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240509183442-62759503f434 // indirect
 )
 
 replace github.com/searKing/golang/go => ../../../../../../../../go
