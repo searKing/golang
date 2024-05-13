@@ -4,15 +4,15 @@ go 1.21
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	github.com/golang/protobuf v1.5.3
+	github.com/golang/protobuf v1.5.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/searKing/golang/go v1.2.115
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.115
-	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.115
+	github.com/searKing/golang/go v1.2.117
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.117
+	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.117
 	github.com/sirupsen/logrus v1.9.3
-	google.golang.org/grpc v1.62.0
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/grpc v1.63.2
+	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -38,9 +38,9 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240205150955-31a09d347014 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240221002015-b0ce06bbee7c // indirect
+	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240227224415-6ceb2ff114de // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240509183442-62759503f434 // indirect
 )
 
 replace (

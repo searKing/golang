@@ -6,8 +6,8 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
-	github.com/searKing/golang/go v1.2.116
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.115
+	github.com/searKing/golang/go v1.2.117
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.117
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1
