@@ -93,7 +93,6 @@ func (c *Channel) Clear(ctx context.Context) error {
 			return nil
 		}
 	}
-
 }
 
 // NewChannel returns a new Channel.

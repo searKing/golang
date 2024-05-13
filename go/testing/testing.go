@@ -6,45 +6,46 @@ package testing
 
 import (
 	"fmt"
+	"reflect"
 
-	"github.com/searKing/golang/go/util/object"
+	reflect_ "github.com/searKing/golang/go/reflect"
 )
 
 // Nil asserts that the specified object is nil.
 func Nil(v interface{}, a ...interface{}) (bool, string) {
-	return object.IsNil(v), fmt.Sprintf(fmt.Sprintf("Expected nil, but got: %#v; ", v), a...)
+	return reflect_.IsNil(v), fmt.Sprintf(fmt.Sprintf("expected nil, got: %#v; ", v), a...)
 }
 
 func Nilf(v interface{}, format string, a ...interface{}) (bool, string) {
-	return object.IsNil(v), fmt.Sprintf(fmt.Sprintf("Expected nil, but got: %#v; %s", v, format), a...)
+	return reflect_.IsNil(v), fmt.Sprintf(fmt.Sprintf("expected nil, got: %#v; %s", v, format), a...)
 }
 
 // NonNil asserts that the specified object is none nil.
 func NonNil(v interface{}, a ...interface{}) (bool, string) {
-	return !object.IsNil(v), fmt.Sprintf(fmt.Sprintf("Expected non-nil, but got: %#v; ", v), a...)
+	return !reflect_.IsNil(v), fmt.Sprintf(fmt.Sprintf("expected non-nil, got: %#v; ", v), a...)
 }
 
 func NonNilf(v interface{}, format string, a ...interface{}) (bool, string) {
-	return !object.IsNil(v), fmt.Sprintf(fmt.Sprintf("Expected non-nil, but got: %#v; %s", v, format), a...)
+	return !reflect_.IsNil(v), fmt.Sprintf(fmt.Sprintf("expected non-nil, got: %#v; %s", v, format), a...)
 }
 
 // Zero asserts that the specified object is zero.  I.e. nil, "", false, 0 or either
 // a slice or a channel with len == 0.
 func Zero(v interface{}, a ...interface{}) (bool, string) {
-	return object.IsZero(v), fmt.Sprintf(fmt.Sprintf("Expected zero value, but got: %#v; ", v), a...)
+	return reflect_.IsZeroValue(reflect.ValueOf(v)), fmt.Sprintf(fmt.Sprintf("expected zero value, got: %#v; ", v), a...)
 }
 
 func Zerof(v interface{}, format string, a ...interface{}) (bool, string) {
-	return object.IsZero(v), fmt.Sprintf(fmt.Sprintf("Expected zero value, but got: %#v; %s", v, format), a...)
+	return reflect_.IsZeroValue(reflect.ValueOf(v)), fmt.Sprintf(fmt.Sprintf("expected zero value, got: %#v; %s", v, format), a...)
 }
 
 // NonZero asserts that the specified object is none zero.
 func NonZero(v interface{}, a ...interface{}) (bool, string) {
-	return !object.IsZero(v), fmt.Sprintf(fmt.Sprintf("Expected non-zero value, but got: %#v; ", v), a...)
+	return !reflect_.IsZeroValue(reflect.ValueOf(v)), fmt.Sprintf(fmt.Sprintf("expected non-zero value, got: %#v; ", v), a...)
 }
 
 func NonZerof(v interface{}, format string, a ...interface{}) (bool, string) {
-	return !object.IsZero(v), fmt.Sprintf(fmt.Sprintf("Expected non-zero value, but got: %#v; %s", v, format), a...)
+	return !reflect_.IsZeroValue(reflect.ValueOf(v)), fmt.Sprintf(fmt.Sprintf("expected non-zero value, got: %#v; %s", v, format), a...)
 }
 
 // Error asserts that a function returned an error (i.e. not `nil`).
