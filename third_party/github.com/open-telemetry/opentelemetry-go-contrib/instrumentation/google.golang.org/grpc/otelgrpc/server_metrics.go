@@ -206,8 +206,8 @@ func (m *ServerMetrics) EnableServerStreamSendSizeHistogram(opts ...metric.Int64
 }
 
 // UnaryServerInterceptor is a gRPC server-side interceptor that provides Prometheus monitoring for Unary RPCs.
-func (m *ServerMetrics) UnaryServerInterceptor() func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (m *ServerMetrics) UnaryServerInterceptor() func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		monitor := newServerReporter(ctx, m, Unary, info.FullMethod, peerFromCtx(ctx), m.ServerHostport)
 		monitor.ReceivedMessage(ctx, req)
 		resp, err := handler(ctx, req)
@@ -221,8 +221,8 @@ func (m *ServerMetrics) UnaryServerInterceptor() func(ctx context.Context, req i
 }
 
 // StreamServerInterceptor is a gRPC server-side interceptor that provides Prometheus monitoring for Streaming RPCs.
-func (m *ServerMetrics) StreamServerInterceptor() func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func (m *ServerMetrics) StreamServerInterceptor() func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		monitor := newServerReporter(ss.Context(), m, streamRPCType(info), info.FullMethod, peerFromCtx(ss.Context()), m.ServerHostport)
 		err := handler(srv, &monitoredServerStream{ss, monitor})
 		st, _ := FromError(err)
@@ -258,7 +258,7 @@ type monitoredServerStream struct {
 	monitor *serverReporter
 }
 
-func (s *monitoredServerStream) SendMsg(m interface{}) error {
+func (s *monitoredServerStream) SendMsg(m any) error {
 	now := time.Now()
 	err := s.ServerStream.SendMsg(m)
 	s.monitor.SendMessageTimer(context.Background(), now)
@@ -268,7 +268,7 @@ func (s *monitoredServerStream) SendMsg(m interface{}) error {
 	return err
 }
 
-func (s *monitoredServerStream) RecvMsg(m interface{}) error {
+func (s *monitoredServerStream) RecvMsg(m any) error {
 	now := time.Now()
 	err := s.ServerStream.RecvMsg(m)
 	s.monitor.ReceiveMessageTimer(context.Background(), now)

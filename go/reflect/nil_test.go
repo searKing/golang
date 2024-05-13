@@ -12,7 +12,7 @@ import (
 func TestIsNil(t *testing.T) {
 	var nilTime *time.Time
 	tests := []struct {
-		a    interface{}
+		a    any
 		want bool
 	}{
 		{

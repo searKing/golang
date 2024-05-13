@@ -18,6 +18,7 @@ import (
 // handler behavior like locale or theme changes.
 // Its main purpose is to allow for factoring out repetitive handler code.
 // https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/HandlerInterceptor.html
+//
 //go:generate go-option -type "HandlerInterceptorChain"
 type HandlerInterceptorChain struct {
 	interceptors []internal.HandlerInterceptor

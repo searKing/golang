@@ -11,7 +11,7 @@ import (
 
 const permissions = 0666
 
-func WriteConfigFile(name string, v interface{}) error {
+func WriteConfigFile(name string, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err

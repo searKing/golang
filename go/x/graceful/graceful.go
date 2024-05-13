@@ -24,8 +24,9 @@ type ShutdownFunc func(context.Context) error
 // Graceful sets up graceful handling of context done, typically for an HTTP server.
 // When context is done, the shutdown handler will be invoked with a context.
 // Example:
-// 	ctx is wrapped WithShutdownSignal(ctx)
-// 	When signal is trapped, the shutdown handler will be invoked with a context.
+//
+//	ctx is wrapped WithShutdownSignal(ctx)
+//	When signal is trapped, the shutdown handler will be invoked with a context.
 func Graceful(ctx context.Context, handlers ...Handler) (err error) {
 	if len(handlers) == 0 {
 		return nil

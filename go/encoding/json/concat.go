@@ -34,7 +34,7 @@ func Join(bufa []byte, bufbs ...[]byte) ([]byte, error) {
 
 // MarshalConcat returns the JSON encoding of va, vbs...,
 // ignore conflict keys of json if meet later.
-func MarshalConcat(va interface{}, vbs ...interface{}) ([]byte, error) {
+func MarshalConcat(va any, vbs ...any) ([]byte, error) {
 	unique, err := marshalConcat(nil, va, vbs...)
 	if err != nil {
 		return nil, err
@@ -42,19 +42,19 @@ func MarshalConcat(va interface{}, vbs ...interface{}) ([]byte, error) {
 	return json.Marshal(unique)
 }
 
-func marshalConcat(unique map[string]interface{}, va interface{}, vbs ...interface{}) (map[string]interface{}, error) {
+func marshalConcat(unique map[string]any, va any, vbs ...any) (map[string]any, error) {
 	bufa, err := json.Marshal(va)
 	if err != nil {
 		return unique, err
 	}
 
 	// Marshal vbs and then append it to uniqueMap.
-	var mapa map[string]interface{}
+	var mapa map[string]any
 	if err := json.Unmarshal(bufa, &mapa); err != nil {
 		return unique, err
 	}
 	if unique == nil {
-		unique = map[string]interface{}{}
+		unique = map[string]any{}
 	}
 	// unique
 	for k, v := range mapa {
@@ -73,7 +73,7 @@ func marshalConcat(unique map[string]interface{}, va interface{}, vbs ...interfa
 	return marshalConcat(unique, vbs[0], vbs[1:])
 }
 
-func MarshalIndentConcat(va interface{}, prefix, indent string, vbs ...interface{}) ([]byte, error) {
+func MarshalIndentConcat(va any, prefix, indent string, vbs ...any) ([]byte, error) {
 	b, err := MarshalConcat(va, vbs)
 	if err != nil {
 		return nil, err
@@ -90,8 +90,8 @@ func MarshalIndentConcat(va interface{}, prefix, indent string, vbs ...interface
 // in the value pointed to by v. If v is nil or not a pointer,
 // Unmarshal returns an InvalidUnmarshalError.
 // ignore conflict keys of json if meet later.
-func UnmarshalConcat(data []byte, va interface{}, vbs ...interface{}) error {
-	var unique map[string]interface{}
+func UnmarshalConcat(data []byte, va any, vbs ...any) error {
+	var unique map[string]any
 	err := json.Unmarshal(data, &unique)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func UnmarshalConcat(data []byte, va interface{}, vbs ...interface{}) error {
 	return unmarshalConcat(unique, va, vbs...)
 }
 
-func unmarshalConcat(unique map[string]interface{}, va interface{}, vbs ...interface{}) error {
+func unmarshalConcat(unique map[string]any, va any, vbs ...any) error {
 	data, err := json.Marshal(unique)
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func unmarshalConcat(unique map[string]interface{}, va interface{}, vbs ...inter
 		return err
 	}
 
-	var mapa map[string]interface{}
+	var mapa map[string]any
 	if err := json.Unmarshal(dataa, &mapa); err != nil {
 		return err
 	}

@@ -14,14 +14,14 @@ import (
 func ExampleWalk() {
 
 	// chan WalkInfo
-	walkChan := make(chan interface{}, 0)
+	walkChan := make(chan any, 0)
 
 	p := sync.Walk{
 		Burst: 1,
 	}
 	defer p.Wait()
 
-	p.Walk(context.Background(), walkChan, func(name interface{}) error {
+	p.Walk(context.Background(), walkChan, func(name any) error {
 		fmt.Printf("%s\n", name)
 		return nil
 	})

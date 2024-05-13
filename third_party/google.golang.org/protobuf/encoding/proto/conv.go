@@ -12,7 +12,7 @@ import (
 )
 
 // ToGolangMap converts v into a Golang map proto.
-func ToGolangMap(pb proto.Message, options ...protojson.MarshalerOption) (map[string]interface{}, error) {
+func ToGolangMap(pb proto.Message, options ...protojson.MarshalerOption) (map[string]any, error) {
 	if pb == nil {
 		return nil, nil
 	}
@@ -21,7 +21,7 @@ func ToGolangMap(pb proto.Message, options ...protojson.MarshalerOption) (map[st
 	if err != nil {
 		return nil, err
 	}
-	var anyJson map[string]interface{}
+	var anyJson map[string]any
 	err = json.Unmarshal(data, &anyJson)
 	if err != nil {
 		return nil, err

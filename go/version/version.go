@@ -82,6 +82,7 @@ type Version struct {
 // String formats the version string for this module in semver format.
 //
 // Examples:
+//
 //	v1.20.1
 //	v1.21.0-rc.1
 func (ver Version) String() string {

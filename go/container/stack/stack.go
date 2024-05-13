@@ -41,6 +41,6 @@ func (s *Stack) Pop() *Element {
 }
 
 // Push a value onto the top of the stack
-func (s *Stack) Push(value interface{}) *Element {
+func (s *Stack) Push(value any) *Element {
 	return (*Element)(s.list.PushBack(value))
 }

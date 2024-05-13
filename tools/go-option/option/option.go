@@ -158,7 +158,7 @@ func (g *Generator) Reset() {
 }
 
 // Printf format & write to the buf in this generator
-func (g *Generator) Printf(format string, args ...interface{}) {
+func (g *Generator) Printf(format string, args ...any) {
 	_, _ = fmt.Fprintf(&g.buf, format, args...)
 }
 
@@ -166,7 +166,7 @@ func IsExported(arg reflect.Value) bool {
 	return ast.IsExported(arg.String())
 }
 
-func (g *Generator) Render(text string, arg interface{}) {
+func (g *Generator) Render(text string, arg any) {
 	tmpl, err := template.New("go-option").Funcs(template.FuncMap{"IsExported": IsExported}).Parse(text)
 	if err != nil {
 		panic(err)

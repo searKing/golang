@@ -13,7 +13,7 @@ import (
 
 // Deprecated: Use net_.ScoreAddr instead.
 func ScoreAddr(iface net.Interface, addr net.Addr) (int, net.IP) {
-	return net_.ScoreAddr(iface,addr)
+	return net_.ScoreAddr(iface, addr)
 }
 
 // Deprecated: Use net_.ExpectInterfaceNameFilter instead.

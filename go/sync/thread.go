@@ -100,7 +100,7 @@ func (t *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 		break
 	}
 
-	var r interface{}
+	var r any
 	defer func() {
 		if r != nil {
 			panic(r) // rethrow panic if panic in f

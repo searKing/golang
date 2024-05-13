@@ -24,14 +24,14 @@ func TestPanic_Recover(t *testing.T) {
 }
 
 func TestPanicWith(t *testing.T) {
-	var result interface{}
+	var result any
 	func() {
 		defer func() {
 			if x := recover(); x == nil {
 				t.Errorf("Expected a panic to recover from")
 			}
 		}()
-		defer runtime.HandlePanicWith(func(r interface{}) {
+		defer runtime.HandlePanicWith(func(r any) {
 			result = r
 		}).Recover()
 		panic("test")

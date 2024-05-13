@@ -9,8 +9,8 @@ import (
 var (
 	DefaultPanic     = Panic{}
 	NeverPanic       = Panic{IgnoreCrash: true}
-	LogPanic         = Panic{PanicHandlers: []func(interface{}){logPanic}}
-	NeverPanicButLog = Panic{IgnoreCrash: true, PanicHandlers: []func(interface{}){logPanic}}
+	LogPanic         = Panic{PanicHandlers: []func(any){logPanic}}
+	NeverPanicButLog = Panic{IgnoreCrash: true, PanicHandlers: []func(any){logPanic}}
 )
 
 // Panic simply catches a panic and logs an error. Meant to be called via
@@ -22,7 +22,7 @@ type Panic struct {
 	IgnoreCrash bool
 
 	// PanicHandlers for something like logging the panic message, shutting down go routines gracefully.
-	PanicHandlers []func(interface{})
+	PanicHandlers []func(any)
 }
 
 // Recover actually crashes if IgnoreCrash is false, after calling PanicHandlers.
@@ -39,12 +39,12 @@ func (p Panic) Recover() {
 	}
 }
 
-func (p *Panic) AppendHandler(handlers ...func(interface{})) *Panic {
+func (p *Panic) AppendHandler(handlers ...func(any)) *Panic {
 	p.PanicHandlers = append(p.PanicHandlers, handlers...)
 	return p
 }
 
-func HandlePanicWith(handlers ...func(interface{})) Panic {
+func HandlePanicWith(handlers ...func(any)) Panic {
 	p := Panic{}
 	p.AppendHandler(handlers...)
 	return p
@@ -74,7 +74,7 @@ func RecoverFromPanic(err error) error {
 }
 
 // logPanic logs the caller tree when a panic occurs (except in the special case of http.ErrAbortHandler).
-func logPanic(r interface{}) {
+func logPanic(r any) {
 	if r == http.ErrAbortHandler {
 		// honor the http.ErrAbortHandler sentinel panic value:
 		//   ErrAbortHandler is a sentinel panic value to abort a handler.

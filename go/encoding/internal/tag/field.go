@@ -51,7 +51,7 @@ func (m *fieldMap) Delete(type_ reflect.Type) {
 }
 
 func (m *fieldMap) Range(f func(type_ reflect.Type, fields []field) bool) {
-	m.fields.Range(func(type_, fields interface{}) bool {
+	m.fields.Range(func(type_, fields any) bool {
 		return f(type_.(reflect.Type), fields.([]field))
 	})
 }

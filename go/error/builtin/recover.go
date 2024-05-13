@@ -17,7 +17,7 @@ import (
 // panicking goroutine.
 // affect as recoverHandler(recover())
 // brokenPipeMsg is called when panic for broken pipe
-func Recover(writer io.Writer, recoverHandler func(err interface{}) interface{}, brokenPipeMsg func() string) interface{} {
+func Recover(writer io.Writer, recoverHandler func(err any) any, brokenPipeMsg func() string) any {
 	if err := recover(); err != nil {
 		// Check for a broken connection, as it is not really a
 		// condition that warrants a panic stack trace.
@@ -49,7 +49,7 @@ func timeFormat(t time.Time) string {
 	return timeString
 }
 
-func ErrorIsBrokenPipe(err interface{}) bool {
+func ErrorIsBrokenPipe(err any) bool {
 	var brokenPipe bool
 	if ne, ok := err.(*net.OpError); ok {
 		if se, ok := ne.Err.(*os.SyscallError); ok {

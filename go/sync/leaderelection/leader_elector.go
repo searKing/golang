@@ -106,7 +106,7 @@ type LeaderElector struct {
 	observedRecordLock sync.Mutex
 }
 
-func (le *LeaderElector) logf(format string, args ...interface{}) {
+func (le *LeaderElector) logf(format string, args ...any) {
 	if le.ErrorLog != nil {
 		le.ErrorLog.Printf(format, args...)
 	} else {
@@ -308,7 +308,8 @@ func (le *LeaderElector) tryAcquireOrRenew(ctx context.Context) bool {
 }
 
 // maybeReportTransition call OnNewLeader when the client observes a leader that is
-//  not the previously observed leader.
+//
+//	not the previously observed leader.
 func (le *LeaderElector) maybeReportTransition() {
 	if le.observedRecord.HolderIdentity == le.reportedLeader {
 		return

@@ -38,7 +38,7 @@ func namedParamsAttr(args []driver.NamedValue) []attribute.KeyValue {
 	return attrs
 }
 
-func argToAttr(key string, val interface{}) attribute.KeyValue {
+func argToAttr(key string, val any) attribute.KeyValue {
 	switch v := val.(type) {
 	case nil:
 		return attribute.String(key, "")

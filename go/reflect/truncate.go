@@ -17,8 +17,8 @@ import (
 // TruncateString reset string, useful for dump into log if some field is huge
 // v is truncated in place
 // return interface{} same as truncated v for stream-like api
-func TruncateString(v interface{}, n int) interface{} {
-	return Truncate(v, func(v interface{}) bool {
+func TruncateString(v any, n int) any {
+	return Truncate(v, func(v any) bool {
 		_, ok := v.(string)
 		return ok
 	}, n)
@@ -27,8 +27,8 @@ func TruncateString(v interface{}, n int) interface{} {
 // TruncateBytes reset bytes, useful for dump into log if some field is huge
 // v is truncated in place
 // return interface{} same as truncated v for stream-like api
-func TruncateBytes(v interface{}, n int) interface{} {
-	return Truncate(v, func(v interface{}) bool {
+func TruncateBytes(v any, n int) any {
+	return Truncate(v, func(v any) bool {
 		_, ok := v.([]byte)
 		return ok
 	}, n)
@@ -37,12 +37,12 @@ func TruncateBytes(v interface{}, n int) interface{} {
 // Truncate reset bytes and string at each run of value c satisfying f(c), useful for dump into log if some field is huge
 // v is truncated in place
 // return interface{} same as truncated v for stream-like api
-func Truncate(v interface{}, f func(v interface{}) bool, n int) interface{} {
+func Truncate(v any, f func(v any) bool, n int) any {
 	truncate(reflect.ValueOf(v), f, n)
 	return v
 }
 
-func truncate(v reflect.Value, f func(v interface{}) bool, n int) {
+func truncate(v reflect.Value, f func(v any) bool, n int) {
 	if !v.IsValid() {
 		return
 	}

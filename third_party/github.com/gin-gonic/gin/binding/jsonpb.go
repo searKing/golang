@@ -25,7 +25,7 @@ func (jsonpbBinding) Name() string {
 	return "jsonpb"
 }
 
-func (b jsonpbBinding) Bind(req *http.Request, obj interface{}) error {
+func (b jsonpbBinding) Bind(req *http.Request, obj any) error {
 	buf, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func (b jsonpbBinding) Bind(req *http.Request, obj interface{}) error {
 	return b.BindBody(buf, obj)
 }
 
-func (jsonpbBinding) BindBody(body []byte, obj interface{}) error {
+func (jsonpbBinding) BindBody(body []byte, obj any) error {
 	switch msg := obj.(type) {
 	case protov1.Message:
 		mm := jsonpb.Unmarshaler{AllowUnknownFields: true}

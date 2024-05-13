@@ -11,7 +11,7 @@ type tagOpts struct {
 }
 
 // Convert wrapper of convertState
-func Tag(v interface{}, tagHandler func(val reflect.Value, tag reflect.StructTag) error) error {
+func Tag(v any, tagHandler func(val reflect.Value, tag reflect.StructTag) error) error {
 	e := newTagState()
 	err := e.handle(v, tagOpts{tagHandler})
 	if err != nil {

@@ -18,7 +18,6 @@ import (
 
 // A mode value is a set of flags (or 0).
 // They control scanner behavior.
-//
 type Mode uint
 
 const (
@@ -31,13 +30,11 @@ const (
 // encountered and a handler was installed, the handler is called with a
 // position and an error message. The position points to the beginning of
 // the offending token.
-//
 type ErrorHandler func(pos token.Position, msg string)
 
 // A Scanner holds the scanner's internal state while processing
 // a given text. It can be allocated as part of another data
 // structure but must be initialized via Init before use.
-//
 type Scanner struct {
 	// immutable state
 	file *token.File  // source file handle
@@ -180,7 +177,6 @@ func (s *Scanner) PeekByte() byte {
 
 // Read the NextRune Unicode chars into s.ch.
 // s.ch < 0 means end-of-file.
-//
 func (s *Scanner) NextRunesN(n int) {
 	offsetBegin := s.rdOffset
 
@@ -192,7 +188,6 @@ func (s *Scanner) NextRunesN(n int) {
 
 // Read the NextRune Unicode chars into s.ch.
 // s.ch < 0 means end-of-file.
-//
 func (s *Scanner) NextRegexp(expectStrs ...string) {
 	match := s.PeekRegexpAny()
 	if match == "" {
@@ -299,7 +294,6 @@ func (s *Scanner) peekRegexpPerl(expectStrs ...string) string {
 //
 // Note that Init may call err if there is an error in the first character
 // of the file.
-//
 func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {

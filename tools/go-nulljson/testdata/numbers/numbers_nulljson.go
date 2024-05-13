@@ -33,7 +33,7 @@ type Numbers struct {
 }
 
 // Scan implements the sql.Scanner interface.
-func (nj *Numbers) Scan(src interface{}) error {
+func (nj *Numbers) Scan(src any) error {
 	if src == nil {
 		nj.Data, nj.Valid = _nil_Numbers_Value_value, false
 		return nil
@@ -44,7 +44,7 @@ func (nj *Numbers) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case string:
 		if len(src) > 0 {
-			var v interface{} = &nj.Data
+			var v any = &nj.Data
 			switch v := v.(type) {
 			default:
 				err = json.Unmarshal([]byte(src), v)
@@ -52,7 +52,7 @@ func (nj *Numbers) Scan(src interface{}) error {
 		}
 	case []byte:
 		if len(src) > 0 {
-			var v interface{} = &nj.Data
+			var v any = &nj.Data
 			switch v := v.(type) {
 			default:
 				err = json.Unmarshal(src, v)
@@ -60,7 +60,7 @@ func (nj *Numbers) Scan(src interface{}) error {
 		}
 	case time.Time:
 		srcBytes, _ := json.Marshal(src)
-		var v interface{} = &nj.Data
+		var v any = &nj.Data
 		switch v := v.(type) {
 		case proto.Message:
 		default:
@@ -71,7 +71,7 @@ func (nj *Numbers) Scan(src interface{}) error {
 		err = nil
 	default:
 		srcBytes, _ := json.Marshal(src)
-		var v interface{} = &nj.Data
+		var v any = &nj.Data
 		switch v := v.(type) {
 		default:
 			err = json.Unmarshal(srcBytes, v)
@@ -89,7 +89,7 @@ func (nj Numbers) Value() (driver.Value, error) {
 	if !nj.Valid {
 		return nil, nil
 	}
-	var v interface{} = &nj.Data
+	var v any = &nj.Data
 	switch v := v.(type) {
 	default:
 		return json.Marshal(v)

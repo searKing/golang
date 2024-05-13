@@ -6,17 +6,17 @@ package traversal
 
 type LeftNodes interface {
 	// Left returns the left node list or nil.
-	LeftNodes() []interface{}
+	LeftNodes() []any
 }
 
 type MiddleNodes interface {
 	// Middle returns the middle node list or nil.
-	MiddleNodes() []interface{}
+	MiddleNodes() []any
 }
 
 type RightNodes interface {
 	// Right returns the middle node list or nil.
-	RightNodes() []interface{}
+	RightNodes() []any
 }
 
 // a uniform node
@@ -28,7 +28,7 @@ type Node interface {
 
 // levelNode represents a single node with depth found in a structure.
 type levelNode struct {
-	node    interface{}
+	node    any
 	depth   int
 	visited bool
 }
@@ -70,7 +70,7 @@ func (n *levelNode) rightLevelNodes() []levelNode {
 }
 
 // children
-func (n *levelNode) leftNodes() []interface{} {
+func (n *levelNode) leftNodes() []any {
 	if n.node == nil {
 		return nil
 	}
@@ -81,7 +81,7 @@ func (n *levelNode) leftNodes() []interface{} {
 	return nil
 }
 
-func (n *levelNode) middleNodes() []interface{} {
+func (n *levelNode) middleNodes() []any {
 	if n.node == nil {
 		return nil
 	}
@@ -93,7 +93,7 @@ func (n *levelNode) middleNodes() []interface{} {
 
 }
 
-func (n *levelNode) rightNodes() []interface{} {
+func (n *levelNode) rightNodes() []any {
 	if n.node == nil {
 		return nil
 	}

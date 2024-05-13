@@ -53,6 +53,7 @@ func NamedTableInsertArgumentsCombined(table string, cols ...string) (arguments 
 //	columns, arguments := NamedTableInsertArguments("table", "foo", "bar")
 //	query := fmt.Sprintf("INSERT INTO table (%s) VALUES (%s)", columns, arguments)
 //	// INSERT INTO table (table.foo, table.bar) VALUES (:table.foo, :table.bar)
+//
 // Deprecated: Use NamedTableInsertArgumentsCombined instead.
 func NamedTableInsertArguments(table string, cols ...string) (columns string, arguments string) {
 	return JoinTableColumns(table, cols...), JoinNamedTableValues(table, cols...)

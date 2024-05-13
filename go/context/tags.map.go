@@ -10,17 +10,17 @@ import "net/textproto"
 type mapTags struct {
 	isMimeKey bool // represents a MIME-style key mapping
 
-	values map[string]interface{}
+	values map[string]any
 }
 
-func (t *mapTags) Set(key string, value interface{}) {
+func (t *mapTags) Set(key string, value any) {
 	if t.isMimeKey {
 		key = textproto.CanonicalMIMEHeaderKey(key)
 	}
 	t.values[key] = value
 }
 
-func (t *mapTags) Get(key string) (interface{}, bool) {
+func (t *mapTags) Get(key string) (any, bool) {
 	if t.isMimeKey {
 		key = textproto.CanonicalMIMEHeaderKey(key)
 	}
@@ -36,7 +36,7 @@ func (t *mapTags) Del(key string) {
 	delete(t.values, key)
 }
 
-func (t *mapTags) Values() map[string]interface{} {
+func (t *mapTags) Values() map[string]any {
 	return t.values
 }
 

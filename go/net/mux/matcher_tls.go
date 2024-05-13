@@ -14,7 +14,9 @@ import (
 //
 // By default, any TLS handshake packet is matched. An optional whitelist
 // of versions can be passed in to restrict the matcher, for example:
-//  TLS(tls.VersionTLS11, tls.VersionTLS12)
+//
+//	TLS(tls.VersionTLS11, tls.VersionTLS12)
+//
 // reverse of crypto/tls/conn.go func (c *Conn) readRecordOrCCS(expectChangeCipherSpec bool) error {
 // HandlerShake of TLS
 // type byte	// recordTypeHandshake

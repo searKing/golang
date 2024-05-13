@@ -21,12 +21,12 @@ type ProtoMarshaller struct {
 }
 
 // ContentType always returns "application/x-protobuf".
-func (*ProtoMarshaller) ContentType(_ interface{}) string {
+func (*ProtoMarshaller) ContentType(_ any) string {
 	return binding.MIMEPROTOBUF
 }
 
 // Marshal marshals "value" into Proto
-func (marshaller *ProtoMarshaller) Marshal(value interface{}) ([]byte, error) {
+func (marshaller *ProtoMarshaller) Marshal(value any) ([]byte, error) {
 	message, ok := value.(proto.Message)
 	if !ok {
 		return nil, errors.New("unable to marshal non proto field")
@@ -35,7 +35,7 @@ func (marshaller *ProtoMarshaller) Marshal(value interface{}) ([]byte, error) {
 }
 
 // Unmarshal unmarshals proto "data" into "value"
-func (marshaller *ProtoMarshaller) Unmarshal(data []byte, value interface{}) error {
+func (marshaller *ProtoMarshaller) Unmarshal(data []byte, value any) error {
 	message, ok := value.(proto.Message)
 	if !ok {
 		return errors.New("unable to unmarshal non proto field")
@@ -45,7 +45,7 @@ func (marshaller *ProtoMarshaller) Unmarshal(data []byte, value interface{}) err
 
 // NewDecoder returns a Decoder which reads proto stream from "reader".
 func (marshaller *ProtoMarshaller) NewDecoder(reader io.Reader) runtime.Decoder {
-	return runtime.DecoderFunc(func(value interface{}) error {
+	return runtime.DecoderFunc(func(value any) error {
 		buffer, err := io.ReadAll(reader)
 		if err != nil {
 			return err
@@ -56,7 +56,7 @@ func (marshaller *ProtoMarshaller) NewDecoder(reader io.Reader) runtime.Decoder 
 
 // NewEncoder returns an Encoder which writes proto stream into "writer".
 func (marshaller *ProtoMarshaller) NewEncoder(writer io.Writer) runtime.Encoder {
-	return runtime.EncoderFunc(func(value interface{}) error {
+	return runtime.EncoderFunc(func(value any) error {
 		buffer, err := marshaller.Marshal(value)
 		if err != nil {
 			return err

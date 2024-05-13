@@ -4,20 +4,20 @@
 
 package traversal
 
-type Order func(node interface{}, handler Handler)
+type Order func(node any, handler Handler)
 
 type Handler interface {
-	Handle(node interface{}, depth int) (goon bool)
+	Handle(node any, depth int) (goon bool)
 }
 
 // The HandlerFunc type is an adapter to allow the use of
 // ordinary functions as traversal handlers. If f is a function
 // with the appropriate signature, HandlerFunc(f) is a
 // Handler that calls f.
-type HandlerFunc func(node interface{}, depth int) (goon bool)
+type HandlerFunc func(node any, depth int) (goon bool)
 
 // ServeHTTP calls f(w, r).
-func (f HandlerFunc) Handle(node interface{}, depth int) (goon bool) {
+func (f HandlerFunc) Handle(node any, depth int) (goon bool) {
 	return f(node, depth)
 }
 

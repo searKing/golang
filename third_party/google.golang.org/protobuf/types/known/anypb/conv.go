@@ -12,7 +12,7 @@ import (
 
 // ToProtoAny converts v, which must marshal into a JSON object,
 // into a Google Any proto.
-func ToProtoAny(data interface{}) (*anypb.Any, error) {
+func ToProtoAny(data any) (*anypb.Any, error) {
 	if data == nil {
 		return &anypb.Any{}, nil
 	}

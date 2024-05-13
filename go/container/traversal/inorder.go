@@ -22,7 +22,7 @@ package traversal
 // Inorder traversals from node ele by In-order (LNR)
 // ele is a node which may have some interfaces implemented:
 // LeftNodes|MiddleNodes|RightNodes
-func Inorder(node interface{}, handler Handler) {
+func Inorder(node any, handler Handler) {
 	traversal(node, traversalerFunc(inorder), handler)
 }
 

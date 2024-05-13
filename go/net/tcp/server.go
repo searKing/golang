@@ -169,7 +169,7 @@ func (srv *Server) newConn(rwc net.Conn) *conn {
 	return c
 }
 
-func (srv *Server) logf(format string, args ...interface{}) {
+func (srv *Server) logf(format string, args ...any) {
 	if srv.ErrorLog != nil {
 		srv.ErrorLog.Printf(format, args...)
 	} else {

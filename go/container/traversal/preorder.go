@@ -22,7 +22,7 @@ package traversal
 // Preorder traversals from node ele by Pre-order (NLR)
 // ele is a node which may have some interfaces implemented:
 // LeftNodes|MiddleNodes|RightNodes
-func Preorder(node interface{}, handler Handler) {
+func Preorder(node any, handler Handler) {
 	traversal(node, traversalerFunc(preorder), handler)
 }
 

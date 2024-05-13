@@ -13,7 +13,7 @@ import (
 
 func TestMarshal(t *testing.T) {
 	tests := []struct {
-		v         interface{}
+		v         any
 		wantJson  []byte
 		wantError bool
 	}{
@@ -26,7 +26,7 @@ func TestMarshal(t *testing.T) {
 			wantError: false,
 		},
 		{
-			v: map[interface{}]string{
+			v: map[any]string{
 				"0": "alice",
 				"1": "bob",
 			},
@@ -34,7 +34,7 @@ func TestMarshal(t *testing.T) {
 			wantError: false,
 		},
 		{
-			v: map[interface{}]string{
+			v: map[any]string{
 				0: "alice",
 				1: "bob",
 			},

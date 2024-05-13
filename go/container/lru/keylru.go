@@ -13,7 +13,7 @@ import (
 // KeyLRU takes advantage of list's sequence and map's efficient locate
 type KeyLRU struct {
 	ll   *list.List // list.Element.Value type is of interface{}
-	m    map[interface{}]*list.Element
+	m    map[any]*list.Element
 	once sync.Once
 }
 
@@ -21,11 +21,11 @@ type KeyLRU struct {
 func (lru *KeyLRU) lazyInit() {
 	lru.once.Do(func() {
 		lru.ll = &list.List{}
-		lru.m = make(map[interface{}]*list.Element)
+		lru.m = make(map[any]*list.Element)
 	})
 }
-func (lru *KeyLRU) Keys() []interface{} {
-	var keys []interface{}
+func (lru *KeyLRU) Keys() []any {
+	var keys []any
 	for key := range lru.m {
 		keys = append(keys, key)
 	}
@@ -33,7 +33,7 @@ func (lru *KeyLRU) Keys() []interface{} {
 }
 
 // add adds Key to the head of the linked list.
-func (lru *KeyLRU) Add(key interface{}) error {
+func (lru *KeyLRU) Add(key any) error {
 	lru.lazyInit()
 	ele := lru.ll.PushFront(key)
 	if _, ok := lru.m[key]; ok {
@@ -42,24 +42,24 @@ func (lru *KeyLRU) Add(key interface{}) error {
 	lru.m[key] = ele
 	return nil
 }
-func (lru *KeyLRU) AddOrUpdate(key interface{}) error {
+func (lru *KeyLRU) AddOrUpdate(key any) error {
 	lru.Remove(key)
 	return lru.Add(key)
 }
 
-func (lru *KeyLRU) RemoveOldest() interface{} {
+func (lru *KeyLRU) RemoveOldest() any {
 	if lru.ll == nil {
 		return nil
 	}
 	ele := lru.ll.Back()
-	key := ele.Value.(interface{})
+	key := ele.Value.(any)
 	lru.ll.Remove(ele)
 	delete(lru.m, key)
 	return key
 }
 
 // Remove removes Key from cl.
-func (lru *KeyLRU) Remove(key interface{}) interface{} {
+func (lru *KeyLRU) Remove(key any) any {
 	if ele, ok := lru.m[key]; ok {
 		v := lru.ll.Remove(ele)
 		delete(lru.m, key)
@@ -68,12 +68,12 @@ func (lru *KeyLRU) Remove(key interface{}) interface{} {
 	return nil
 }
 
-func (lru *KeyLRU) Find(key interface{}) (interface{}, bool) {
+func (lru *KeyLRU) Find(key any) (any, bool) {
 	e, ok := lru.m[key]
 	return e, ok
 }
 
-func (lru *KeyLRU) Peek(key interface{}) (interface{}, bool) {
+func (lru *KeyLRU) Peek(key any) (any, bool) {
 	e, ok := lru.m[key]
 	if ok {
 		lru.Remove(key)

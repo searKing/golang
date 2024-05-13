@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func HttpGetHandler(v interface{}, w http.ResponseWriter, r *http.Request) {
+func HttpGetHandler(v any, w http.ResponseWriter, r *http.Request) {
 	body, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		body = []byte("[]")
@@ -26,7 +26,7 @@ func HttpGetHandler(v interface{}, w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
-func HttpPostHandler(v interface{}, w http.ResponseWriter, r *http.Request) (finished bool) {
+func HttpPostHandler(v any, w http.ResponseWriter, r *http.Request) (finished bool) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		if r.ContentLength == -1 {

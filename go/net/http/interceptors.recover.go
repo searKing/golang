@@ -14,7 +14,7 @@ import (
 )
 
 // Recover and dump HTTP request if broken pipe
-func Recover(writer io.Writer, req *http.Request, recoverHandler func(err interface{}) interface{}) interface{} {
+func Recover(writer io.Writer, req *http.Request, recoverHandler func(err any) any) any {
 	return builtin.Recover(writer, recoverHandler, func() string {
 		httpRequest, _ := httputil.DumpRequest(req, false)
 		headers := strings.Split(string(httpRequest), "\r\n")

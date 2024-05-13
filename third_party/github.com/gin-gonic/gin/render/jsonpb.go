@@ -17,7 +17,7 @@ import (
 
 // JSONPB contains the given interface object.
 type JSONPB struct {
-	Data interface{}
+	Data any
 }
 
 var jsonpbContentType = []string{"application/json; charset=utf-8"}
@@ -36,7 +36,7 @@ func (r JSONPB) WriteContentType(w http.ResponseWriter) {
 }
 
 // WriteJSONPB marshals the given interface object and writes it with custom ContentType.
-func WriteJSONPB(w http.ResponseWriter, obj interface{}) error {
+func WriteJSONPB(w http.ResponseWriter, obj any) error {
 	writeContentType(w, jsonpbContentType)
 	var jsonBytes []byte
 	var err error

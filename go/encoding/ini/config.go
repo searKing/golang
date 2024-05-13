@@ -30,7 +30,7 @@ func NewConfig() *Config {
 }
 
 /*
-   bool: true, false, 0, 1, or ""
+bool: true, false, 0, 1, or ""
 */
 func (c *Config) GetBool(key string) (bool, error) {
 	v, err := c.GetString(key)
@@ -50,13 +50,14 @@ func (c *Config) GetBool(key string) (bool, error) {
 }
 
 /*
-   int may be pure number or below format:
-       # 1k => 1000 bytes
-       # 1kb => 1024 bytes
-       # 1m => 1000000 bytes
-       # 1mb => 1024*1024 bytes
-       # 1g => 1000000000 bytes
-       # 1gb => 1024*1024*1024 bytes
+int may be pure number or below format:
+
+	# 1k => 1000 bytes
+	# 1kb => 1024 bytes
+	# 1m => 1000000 bytes
+	# 1mb => 1024*1024 bytes
+	# 1g => 1000000000 bytes
+	# 1gb => 1024*1024*1024 bytes
 */
 func (c *Config) GetInt64(key string) (int64, error) {
 	v, err := c.GetString(key)

@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func ReadConfigFile(name string, v interface{}) error {
+func ReadConfigFile(name string, v any) error {
 	data, err := os.ReadFile(name)
 	if err != nil {
 		return err

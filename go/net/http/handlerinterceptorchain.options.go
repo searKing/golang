@@ -41,7 +41,7 @@ func WithHandlerInterceptor(
 	// request - current HTTP request
 	// response - current HTTP response
 	// ex - any exception thrown on handler execution, if any; this does not include exceptions that have been handled through an exception resolverreturns a new server interceptors with recovery from panic.
-	afterCompletion func(w http.ResponseWriter, r *http.Request, err interface{}),
+	afterCompletion func(w http.ResponseWriter, r *http.Request, err any),
 ) HandlerInterceptorChainOption {
 	return HandlerInterceptorChainOptionFunc(func(chain *HandlerInterceptorChain) {
 		chain.interceptors = append(chain.interceptors, internal.HandlerInterceptor{

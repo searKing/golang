@@ -14,7 +14,7 @@ import (
 const TagDefault = "default"
 
 // Convert wrapper of convertState
-func Convert(val interface{}, unmarshal func(data []byte, v interface{}) error) error {
+func Convert(val any, unmarshal func(data []byte, v any) error) error {
 	return tag.Tag(val, func(val reflect.Value, tag reflect.StructTag) error {
 		fn := newTypeConverter(func(val reflect.Value, tag reflect.StructTag) (isUserDefined bool, err error) {
 			isUserDefined = false

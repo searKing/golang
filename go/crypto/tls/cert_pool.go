@@ -22,7 +22,7 @@ func LoadX509CertificatePool(
 	certPool *x509.CertPool,
 	certString string,
 	certFile string,
-	certs ...interface{},
+	certs ...any,
 ) (*x509.CertPool, error) {
 	var tlsCertBytes []byte
 	var err error
@@ -94,8 +94,8 @@ func LoadX509CertificatePool(
 	return certPool, nil
 }
 
-func of(certs ...interface{}) []interface{} {
-	var uniformedCerts []interface{}
+func of(certs ...any) []any {
+	var uniformedCerts []any
 	for _, cert := range certs {
 		switch cert.(type) {
 		case []*x509.Certificate:
@@ -118,8 +118,8 @@ func of(certs ...interface{}) []interface{} {
 			for _, cert_ := range tlsCerts {
 				uniformedCerts = append(uniformedCerts, cert_)
 			}
-		case []interface{}:
-			certs_ := cert.([]interface{})
+		case []any:
+			certs_ := cert.([]any)
 			uniformedCerts = append(uniformedCerts, certs_...)
 		default:
 			uniformedCerts = append(uniformedCerts, cert)

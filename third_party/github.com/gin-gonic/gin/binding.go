@@ -27,7 +27,7 @@ func DefaultBinding(ctx *gin.Context) binding.Binding {
 		return binding.Default(ctx.Request.Method, ctx.ContentType())
 	}
 }
-func Bind(ctx *gin.Context, obj interface{}) error {
+func Bind(ctx *gin.Context, obj any) error {
 	log.Println(`BindWith(\"interface{}, binding.Binding\") error is going to
 	be deprecated, please check issue #662 and either use MustBindWith() if you
 	want HTTP 400 to be automatically returned if any error occur, or use
@@ -37,13 +37,13 @@ func Bind(ctx *gin.Context, obj interface{}) error {
 
 // ShouldBind binds the passed struct pointer using the specified binding engine.
 // See the binding package.
-func ShouldBind(ctx *gin.Context, obj interface{}) error {
+func ShouldBind(ctx *gin.Context, obj any) error {
 	return ctx.ShouldBindWith(obj, DefaultBinding(ctx))
 }
 
 // MustBindWith binds the passed struct pointer using the specified binding engine.
 // It will abort the request with HTTP 400 if any error occurs.
 // See the binding package.
-func MustBind(ctx *gin.Context, obj interface{}) error {
+func MustBind(ctx *gin.Context, obj any) error {
 	return ctx.MustBindWith(obj, DefaultBinding(ctx))
 }

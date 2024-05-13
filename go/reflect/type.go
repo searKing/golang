@@ -33,9 +33,9 @@ type FieldTypeInfo struct {
 	index       []int
 }
 
-func (info FieldTypeInfo) MiddleNodes() []interface{} {
+func (info FieldTypeInfo) MiddleNodes() []any {
 	typ := info.structField.Type
-	var middles []interface{}
+	var middles []any
 	typ = FollowTypePointer(typ)
 	if IsNilType(typ) {
 		return nil
@@ -94,7 +94,7 @@ func WalkTypeBFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 		structField: reflect.StructField{
 			Type: typ,
 		},
-	}, traversal.HandlerFunc(func(node interface{}, depth int) (goon bool) {
+	}, traversal.HandlerFunc(func(node any, depth int) (goon bool) {
 		return handler.Handler(node.(FieldTypeInfo))
 	}))
 }
@@ -105,7 +105,7 @@ func WalkTypeDFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 		structField: reflect.StructField{
 			Type: typ,
 		},
-	}, traversal.HandlerFunc(func(node interface{}, depth int) (goon bool) {
+	}, traversal.HandlerFunc(func(node any, depth int) (goon bool) {
 		return handler.Handler(node.(FieldTypeInfo))
 	}))
 }

@@ -29,7 +29,7 @@ type NullDuration struct {
 }
 
 // Scan implements the sql.Scanner interface.
-func (nj *NullDuration) Scan(src interface{}) error {
+func (nj *NullDuration) Scan(src any) error {
 	if src == nil {
 		nj.Data, nj.Valid = nilTimeDurationValue, false
 		return nil

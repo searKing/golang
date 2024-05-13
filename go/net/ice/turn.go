@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//https://tools.ietf.org/html/rfc7065
+// https://tools.ietf.org/html/rfc7065
 package ice
 
 import (
@@ -10,9 +10,11 @@ import (
 	"net/url"
 )
 
-//https://tools.ietf.org/html/rfc7065 3.  Definitions of the "turn" and "turns" URI.
+// https://tools.ietf.org/html/rfc7065 3.  Definitions of the "turn" and "turns" URI.
 // turnURI       = scheme ":" host [ ":" port ]
-//                   [ "?transport=" transport ]
+//
+//	[ "?transport=" transport ]
+//
 // scheme        = "turn" / "turns"
 // transport     = "udp" / "tcp" / transport-ext
 // transport-ext = 1*unreserved

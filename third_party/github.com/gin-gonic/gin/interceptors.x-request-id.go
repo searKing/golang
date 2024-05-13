@@ -11,7 +11,7 @@ import (
 )
 
 // key is RequestID within Context if have
-func newContextForHandleRequestID(ctx *gin.Context, keys ...interface{}) {
+func newContextForHandleRequestID(ctx *gin.Context, keys ...any) {
 	requestID := fromGinContext(ctx, keys)
 	if requestID == "" {
 		requestID = uuid.New().String()
@@ -29,7 +29,7 @@ func setInOutMetadata(ctx *gin.Context, requestIDs ...string) {
 
 // parse request id from gin.Context
 // query | header | post form | context
-func fromGinContext(ctx *gin.Context, keys ...interface{}) string {
+func fromGinContext(ctx *gin.Context, keys ...any) string {
 	key := http.DefaultXRequestIDKey
 	if requestID := ctx.GetHeader(key); requestID != "" {
 		return requestID

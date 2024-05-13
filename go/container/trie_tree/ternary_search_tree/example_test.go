@@ -147,7 +147,7 @@ func ExampleTernarySearchTree_Traversal() {
 
 	found := false
 	tree.Traversal(traversal.Preorder, ternary_search_tree.HandlerFunc(
-		func(key []byte, val interface{}) bool {
+		func(key []byte, val any) bool {
 			if string(key) == "test" && val.(int) == 11 {
 				found = true
 				return false

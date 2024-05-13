@@ -8,13 +8,15 @@ import "time"
 
 // RatioFrom Example:
 // ratio, divide := RatioFrom(fromUnit, toUnit)
-// if divide {
-//   toDuration = fromDuration / ratio
-//   fromDuration = toDuration * ratio
-// } else {
-//   toDuration = fromDuration * ratio
-//   fromDuration = toDuration / ratio
-// }
+//
+//	if divide {
+//	  toDuration = fromDuration / ratio
+//	  fromDuration = toDuration * ratio
+//	} else {
+//
+//	  toDuration = fromDuration * ratio
+//	  fromDuration = toDuration / ratio
+//	}
 func RatioFrom(from time.Duration, to time.Duration) (ratio time.Duration, divide bool) {
 	if from >= to {
 		return from / to, false

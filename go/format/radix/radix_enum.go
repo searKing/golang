@@ -163,12 +163,12 @@ func (i *Radix) UnmarshalText(text []byte) error {
 //}
 
 // MarshalYAML implements a YAML Marshaler for Radix
-func (i Radix) MarshalYAML() (interface{}, error) {
+func (i Radix) MarshalYAML() (any, error) {
 	return i.String(), nil
 }
 
 // UnmarshalYAML implements a YAML Unmarshaler for Radix
-func (i *Radix) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *Radix) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -195,7 +195,7 @@ func (i Radix) Value() (driver.Value, error) {
 	return i.String(), nil
 }
 
-func (i *Radix) Scan(value interface{}) error {
+func (i *Radix) Scan(value any) error {
 	if value == nil {
 		return nil
 	}

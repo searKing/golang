@@ -7,7 +7,7 @@ package dispatch
 import "context"
 
 type ChanDispatch struct {
-	readerChan chan<- interface{}
+	readerChan chan<- any
 	*Dispatch
 }
 
@@ -18,10 +18,10 @@ func NewChanDispatch3(handler Handler, concurrentReadMax int, concurrentHandleMa
 	if concurrentReadMax < 0 {
 		return nil
 	}
-	readerChan := make(chan interface{}, concurrentReadMax)
+	readerChan := make(chan any, concurrentReadMax)
 	return &ChanDispatch{
 		readerChan: readerChan,
-		Dispatch: NewDispatch3(ReaderFunc(func(ctx context.Context) (interface{}, error) {
+		Dispatch: NewDispatch3(ReaderFunc(func(ctx context.Context) (any, error) {
 			select {
 			case msg := <-readerChan:
 				return msg, nil
@@ -31,7 +31,7 @@ func NewChanDispatch3(handler Handler, concurrentReadMax int, concurrentHandleMa
 		}), handler, concurrentHandleMax),
 	}
 }
-func (thiz *ChanDispatch) SendMessage(message interface{}) bool {
+func (thiz *ChanDispatch) SendMessage(message any) bool {
 	select {
 	case thiz.readerChan <- message:
 		return true

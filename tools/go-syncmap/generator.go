@@ -34,7 +34,7 @@ type Generator struct {
 }
 
 // Printf format & write to the buf in this generator
-func (g *Generator) Printf(format string, args ...interface{}) {
+func (g *Generator) Printf(format string, args ...any) {
 	_, _ = fmt.Fprintf(&g.buf, format, args...)
 }
 

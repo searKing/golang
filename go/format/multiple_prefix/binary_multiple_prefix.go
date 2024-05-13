@@ -18,14 +18,14 @@ type BinaryMultiplePrefix struct {
 
 // https://physics.nist.gov/cuu/Units/binary.html
 //
-// 				Prefixes for binary multiples
-// 	Factor 	Name 	Symbol 	Origin					Derivation
-// 	210		kibi	Ki		kilobinary: (2^10)^1	kilo: (10^3)^1
-// 	220		mebi	Mi		megabinary: (2^10)^2 	mega: (10^3)^2
-// 	230		gibi	Gi		gigabinary: (2^10)^3	giga: (10^3)^3
-// 	240		tebi	Ti		terabinary: (2^10)^4	tera: (10^3)^4
-// 	250		pebi	Pi		petabinary: (2^10)^5	peta: (10^3)^5
-// 	260		exbi	Ei		exabinary:  (2^10)^6	exa:  (10^3)^6
+//				Prefixes for binary multiples
+//	Factor 	Name 	Symbol 	Origin					Derivation
+//	210		kibi	Ki		kilobinary: (2^10)^1	kilo: (10^3)^1
+//	220		mebi	Mi		megabinary: (2^10)^2 	mega: (10^3)^2
+//	230		gibi	Gi		gigabinary: (2^10)^3	giga: (10^3)^3
+//	240		tebi	Ti		terabinary: (2^10)^4	tera: (10^3)^4
+//	250		pebi	Pi		petabinary: (2^10)^5	peta: (10^3)^5
+//	260		exbi	Ei		exabinary:  (2^10)^6	exa:  (10^3)^6
 var (
 	BinaryMultiplePrefixMin  = BinaryMultiplePrefixOne
 	BinaryMultiplePrefixOne  = BinaryMultiplePrefix{multiplePrefix{2, 0, "", ""}}        // BaseNumber^0	10^0

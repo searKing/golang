@@ -14,7 +14,7 @@ import (
 // ToGolangMap converts v into a Golang map proto.
 // Deprecated: use proto.ToGolangMap
 // in github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/proto instead.
-func ToGolangMap(pb proto.Message) (map[string]interface{}, error) {
+func ToGolangMap(pb proto.Message) (map[string]any, error) {
 	if pb == nil {
 		return nil, nil
 	}
@@ -24,7 +24,7 @@ func ToGolangMap(pb proto.Message) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var anyJson map[string]interface{}
+	var anyJson map[string]any
 	err = json.Unmarshal([]byte(pbStr), &anyJson)
 	if err != nil {
 		return nil, err

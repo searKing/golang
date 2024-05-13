@@ -26,12 +26,12 @@ type ConditionVariable struct {
 // typically cannot assume that the condition is true when
 // Wait returns. Instead, the caller should Wait in a loop:
 //
-//    c.L.Lock()
-//    for !condition() {
-//        c.Wait()
-//    }
-//    ... make use of condition ...
-//    c.L.Unlock()
+//	c.L.Lock()
+//	for !condition() {
+//	    c.Wait()
+//	}
+//	... make use of condition ...
+//	c.L.Unlock()
 //
 // Wait wait until notified
 func (c *ConditionVariable) Wait(lck sync.Locker) {
@@ -85,8 +85,10 @@ func (c *ConditionVariable) WaitUntil(lck sync.Locker, d time.Time) error {
 // (which is especially useful to check against spurious wake-up calls).
 // It behaves as if implemented as:
 // while (!pred())
-//  if ( wait_until(lck,abs_time) == cv_status::timeout)
-//    return pred();
+//
+//	if ( wait_until(lck,abs_time) == cv_status::timeout)
+//	  return pred();
+//
 // return true;
 func (c *ConditionVariable) WaitUntilPred(lck sync.Locker, d time.Time, pred func() bool) bool {
 	ctx, cancelCtx := context.WithDeadline(context.Background(), d)
@@ -120,8 +122,10 @@ func (c *ConditionVariable) WaitContext(ctx context.Context, lck sync.Locker) er
 // (which is especially useful to check against spurious wake-up calls).
 // It behaves as if implemented as:
 // while (!pred())
-//  if ( wait_until(ctx,lck) == cv_status::timeout)
-//    return pred();
+//
+//	if ( wait_until(ctx,lck) == cv_status::timeout)
+//	  return pred();
+//
 // return true;
 func (c *ConditionVariable) WaitPredContext(ctx context.Context, lck sync.Locker, pred func() bool) bool {
 	if pred == nil {

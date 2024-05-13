@@ -192,9 +192,9 @@ func (m SqlData) NonzeroTableColumnsIn(cols ...string) []string {
 
 // MarshalMap marshal themselves into or append a valid map
 // key is column name in db, from struct tag db:"xxxx"
-func (m SqlData) MarshalMap(valueByCol map[string]interface{}) map[string]interface{} {
+func (m SqlData) MarshalMap(valueByCol map[string]any) map[string]any {
 	if valueByCol == nil {
-		valueByCol = map[string]interface{}{}
+		valueByCol = map[string]any{}
 	}
 	valueByCol[m.ColumnId()] = m.Id
 	valueByCol[m.ColumnCreatedAt()] = m.CreatedAt
@@ -207,9 +207,9 @@ func (m SqlData) MarshalMap(valueByCol map[string]interface{}) map[string]interf
 
 // MarshalTableMap marshal themselves into or append a valid map
 // key is column name in db with table name, from struct tag db:"xxxx"
-func (m SqlData) MarshalTableMap(valueByCol map[string]interface{}) map[string]interface{} {
+func (m SqlData) MarshalTableMap(valueByCol map[string]any) map[string]any {
 	if valueByCol == nil {
-		valueByCol = map[string]interface{}{}
+		valueByCol = map[string]any{}
 	}
 	valueByCol[m.TableColumnId()] = m.Id
 	valueByCol[m.TableColumnCreatedAt()] = m.CreatedAt
@@ -223,7 +223,7 @@ func (m SqlData) MarshalTableMap(valueByCol map[string]interface{}) map[string]i
 // UnmarshalMap is the interface implemented by types
 // that can unmarshal a map description of themselves.
 // key is column name in db, from struct tag db:"xxxx"
-func (m *SqlData) UnmarshalMap(valueByCol map[string]interface{}) error {
+func (m *SqlData) UnmarshalMap(valueByCol map[string]any) error {
 	for col, val := range valueByCol {
 		switch col {
 		case m.ColumnId():
@@ -354,7 +354,7 @@ func (m *SqlData) UnmarshalMap(valueByCol map[string]interface{}) error {
 // UnmarshalTableMap is the interface implemented by types
 // that can unmarshal a map description of themselves.
 // key is column name with table name in db, from struct tag db:"xxxx"
-func (m *SqlData) UnmarshalTableMap(valueByCol map[string]interface{}) error {
+func (m *SqlData) UnmarshalTableMap(valueByCol map[string]any) error {
 	for col, val := range valueByCol {
 		switch col {
 		case m.MapColumnId():
@@ -1213,7 +1213,7 @@ func (arg SqlData) GetSqlDatasTemplate(ctx context.Context, db *sqlx.DB, limit, 
 
 	var resps []SqlData
 	for rows.Next() {
-		row := make(map[string]interface{})
+		row := make(map[string]any)
 		err := rows.MapScan(row)
 		if err != nil {
 			return nil, fmt.Errorf("%w, sql %q", err, query)
@@ -1323,7 +1323,7 @@ func (arg SqlData) GetSqlDatasTemplateWithTx(ctx context.Context, tx *sqlx.Tx, l
 
 	var resps []SqlData
 	for rows.Next() {
-		row := make(map[string]interface{})
+		row := make(map[string]any)
 		err := rows.MapScan(row)
 		if err != nil {
 			return nil, fmt.Errorf("%w, sql %q", err, query)

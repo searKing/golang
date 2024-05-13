@@ -366,7 +366,7 @@ func PutWithBackoff(ctx context.Context, url, contentType string, body io.Reader
 }
 
 // DoJson the same as HttpDo, but bind with json
-func DoJson(httpReq *http.Request, req, resp interface{}) error {
+func DoJson(httpReq *http.Request, req, resp any) error {
 	if req != nil {
 		data, err := json.Marshal(req)
 		if err != nil {
@@ -395,7 +395,7 @@ func DoJson(httpReq *http.Request, req, resp interface{}) error {
 }
 
 // DoJsonWithBackoff the same as DoWithBackoff, but bind with json
-func DoJsonWithBackoff(httpReq *http.Request, req, resp interface{}, opts ...DoWithBackoffOption) error {
+func DoJsonWithBackoff(httpReq *http.Request, req, resp any, opts ...DoWithBackoffOption) error {
 	if req != nil {
 		data, err := json.Marshal(req)
 		if err != nil {

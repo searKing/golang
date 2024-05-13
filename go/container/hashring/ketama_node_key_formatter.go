@@ -75,7 +75,9 @@ func NewKetamaNodeKeyFormatter(format Format) *KetamaNodeKeyFormatter {
 //
 // @param node The Node to use to form the unique identifier
 // @param repetition The repetition number for the particular node in question
-//          (0 is the first repetition)
+//
+//	(0 is the first repetition)
+//
 // @return The key that represents the specific repetition of the node
 func (f KetamaNodeKeyFormatter) getKeyForNode(node Node, repetition int) string {
 	// Carrried over from the DefaultKetamaNodeLocatorConfiguration:

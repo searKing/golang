@@ -9,7 +9,7 @@ import "net/http"
 var DefaultPreHandler = func(w http.ResponseWriter, r *http.Request) error { return nil }
 var DefaultWrapHandler = func(h http.Handler) http.Handler { return h }
 var DefaultPostHandler = func(w http.ResponseWriter, r *http.Request) {}
-var DefaultAfterCompletion = func(w http.ResponseWriter, r *http.Request, err interface{}) {
+var DefaultAfterCompletion = func(w http.ResponseWriter, r *http.Request, err any) {
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ type HandlerInterceptor struct {
 	// response - current HTTP response
 	// handler - the handler (or HandlerMethod) that started asynchronous execution, for type and/or instance examination
 	// ex - any exception thrown on handler execution, if any; this does not include exceptions that have been handled through an exception resolver
-	AfterCompletionFunc func(w http.ResponseWriter, r *http.Request, err interface{})
+	AfterCompletionFunc func(w http.ResponseWriter, r *http.Request, err any)
 }
 
 func (filter HandlerInterceptor) PreHandle(w http.ResponseWriter, r *http.Request) error {
@@ -74,7 +74,7 @@ func (filter HandlerInterceptor) PostHandle(w http.ResponseWriter, r *http.Reque
 	filter.PostHandleFunc(w, r)
 }
 
-func (filter HandlerInterceptor) AfterCompletion(w http.ResponseWriter, r *http.Request, err interface{}) {
+func (filter HandlerInterceptor) AfterCompletion(w http.ResponseWriter, r *http.Request, err any) {
 	if filter.AfterCompletionFunc == nil {
 		DefaultAfterCompletion(w, r, err)
 		return

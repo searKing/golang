@@ -17,7 +17,6 @@
 // get remapped.
 //
 // Read more about consistent hashing on wikipedia:  http://en.wikipedia.org/wiki/Consistent_hashing
-//
 package hashring
 
 import (
@@ -28,8 +27,9 @@ import (
 
 // {}	-> 127.0.0.1:11311 -> 127.0.0.1:11311-0 -> 1234
 // Node ->       Key       ->     IterateKey    -> HashKey
-//			               ->     IterateKey    -> HashKey
-//			               ->     IterateKey    -> HashKey
+//
+//	->     IterateKey    -> HashKey
+//	->     IterateKey    -> HashKey
 type Node interface {
 	// Get the SocketAddress of the server to which this node is connected.
 	fmt.Stringer
@@ -44,6 +44,7 @@ func (n StringNode) String() string {
 }
 
 // NodeLocator holds the information about the allNodes of the consistent hash nodes.
+//
 //go:generate go-option -type "NodeLocator"
 type NodeLocator struct {
 	// The List of nodes to use in the Ketama consistent hash continuum

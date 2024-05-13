@@ -11,10 +11,10 @@ import (
 
 // RecoveryServerInterceptor returns a new server interceptors with recovery from panic.
 // affect as recover{f()}; next()
-func RecoveryServerInterceptor(next http.Handler, out io.Writer, f func(w http.ResponseWriter, r *http.Request, err interface{})) http.Handler {
+func RecoveryServerInterceptor(next http.Handler, out io.Writer, f func(w http.ResponseWriter, r *http.Request, err any)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			Recover(out, r, func(err interface{}) interface{} {
+			Recover(out, r, func(err any) any {
 				if f == nil {
 					return nil
 				}

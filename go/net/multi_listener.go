@@ -58,7 +58,7 @@ func (l *MultiListener) Close() error {
 	return errors.Multi(errs...)
 }
 
-func (l *MultiListener) logf(format string, args ...interface{}) {
+func (l *MultiListener) logf(format string, args ...any) {
 	if l.ErrorLog != nil {
 		l.ErrorLog.Printf(format, args...)
 	} else {

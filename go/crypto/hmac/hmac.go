@@ -14,7 +14,7 @@ import (
 	"os"
 )
 
-func MySelf(hasher func() hash.Hash, key []byte, ) ([]byte, error) {
+func MySelf(hasher func() hash.Hash, key []byte) ([]byte, error) {
 	f, err := os.Open(os.Args[0])
 	if err != nil {
 		log.Fatal(err)

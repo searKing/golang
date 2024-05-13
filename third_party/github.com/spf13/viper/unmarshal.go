@@ -19,10 +19,10 @@ import (
 )
 
 //go:linkname decode github.com/spf13/viper.decode
-func decode(input interface{}, config *mapstructure.DecoderConfig) error
+func decode(input any, config *mapstructure.DecoderConfig) error
 
 //go:linkname defaultDecoderConfig github.com/spf13/viper.defaultDecoderConfig
-func defaultDecoderConfig(output interface{}, opts ...viper.DecoderConfigOption) *mapstructure.DecoderConfig
+func defaultDecoderConfig(output any, opts ...viper.DecoderConfigOption) *mapstructure.DecoderConfig
 
 // DecodeProtoJsonHook if set, will be called before any decoding and any
 // type conversion (if WeaklyTypedInput is on). This lets you modify
@@ -47,19 +47,19 @@ func DecodeProtoJsonHook(v proto.Message) viper.DecoderConfigOption {
 
 // UnmarshalKey takes a single key and unmarshalls it into a Struct.
 // use protojson to decode if rawVal is proto.Message
-func UnmarshalKey(key string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalKey(key string, rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalKeyViper(viper.GetViper(), key, rawVal, opts...)
 }
 
-func UnmarshalKeyViper(v *viper.Viper, key string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalKeyViper(v *viper.Viper, key string, rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalKeysViper(v, strings.Split(key, "."), rawVal, opts...)
 }
 
-func UnmarshalKeys(keys []string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalKeys(keys []string, rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalKeysViper(viper.GetViper(), keys, rawVal)
 }
 
-func UnmarshalKeysViper(v *viper.Viper, keys []string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalKeysViper(v *viper.Viper, keys []string, rawVal any, opts ...viper.DecoderConfigOption) error {
 	if val, ok := rawVal.(proto.Message); ok {
 		opts = append([]viper.DecoderConfigOption{DecodeProtoJsonHook(val)}, opts...)
 	}
@@ -81,22 +81,22 @@ func UnmarshalKeysViper(v *viper.Viper, keys []string, rawVal interface{}, opts 
 // Unmarshal unmarshalls the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
 // use protojson to decode if rawVal is proto.Message
-func Unmarshal(rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func Unmarshal(rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalKeys(nil, rawVal, opts...)
 }
 
-func UnmarshalViper(v *viper.Viper, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalViper(v *viper.Viper, rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalKeysViper(v, nil, rawVal, opts...)
 }
 
 // UnmarshalExact unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct.
 // use protojson to decode if rawVal is proto.Message
-func UnmarshalExact(rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalExact(rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalExactViper(viper.GetViper(), rawVal, opts...)
 }
 
-func UnmarshalKeysExactViper(v *viper.Viper, keys []string, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalKeysExactViper(v *viper.Viper, keys []string, rawVal any, opts ...viper.DecoderConfigOption) error {
 	if val, ok := rawVal.(proto.Message); ok {
 		opts = append([]viper.DecoderConfigOption{DecodeProtoJsonHook(val)}, opts...)
 	}
@@ -117,7 +117,7 @@ func UnmarshalKeysExactViper(v *viper.Viper, keys []string, rawVal interface{}, 
 	return decode(val, config)
 }
 
-func UnmarshalExactViper(v *viper.Viper, rawVal interface{}, opts ...viper.DecoderConfigOption) error {
+func UnmarshalExactViper(v *viper.Viper, rawVal any, opts ...viper.DecoderConfigOption) error {
 	return UnmarshalKeysExactViper(v, nil, rawVal, opts...)
 }
 
@@ -126,7 +126,7 @@ func UnmarshalExactViper(v *viper.Viper, rawVal interface{}, opts ...viper.Decod
 // Trick of protobuf, which generates json tag only
 // def is the default value of dst
 func UnmarshalProtoMessageHookFunc(def proto.Message) mapstructure.DecodeHookFunc {
-	return func(src reflect.Type, dst reflect.Type, data interface{}) (interface{}, error) {
+	return func(src reflect.Type, dst reflect.Type, data any) (any, error) {
 		dataProto, ok := reflect.New(dst).Interface().(proto.Message)
 		if !ok {
 			return data, nil

@@ -11,20 +11,20 @@ import (
 )
 
 type Reader interface {
-	Read(ctx context.Context) (msg interface{}, err error)
+	Read(ctx context.Context) (msg any, err error)
 }
-type ReaderFunc func(ctx context.Context) (msg interface{}, err error)
+type ReaderFunc func(ctx context.Context) (msg any, err error)
 
-func (f ReaderFunc) Read(ctx context.Context) (msg interface{}, err error) {
+func (f ReaderFunc) Read(ctx context.Context) (msg any, err error) {
 	return f(ctx)
 }
 
 type Handler interface {
-	Handle(ctx context.Context, msg interface{}) error
+	Handle(ctx context.Context, msg any) error
 }
-type HandlerFunc func(ctx context.Context, msg interface{}) error
+type HandlerFunc func(ctx context.Context, msg any) error
 
-func (f HandlerFunc) Handle(ctx context.Context, msg interface{}) error {
+func (f HandlerFunc) Handle(ctx context.Context, msg any) error {
 	return f(ctx, msg)
 }
 
@@ -80,7 +80,7 @@ func (d *Dispatch) done() bool {
 func (d *Dispatch) AllowHandleInGroutine() bool {
 	return d.handlerParallelChan != nil
 }
-func (d *Dispatch) Read() (interface{}, error) {
+func (d *Dispatch) Read() (any, error) {
 	return d.reader.Read(d.Context())
 }
 
@@ -104,7 +104,7 @@ func (d *Dispatch) PutHandleGoroutine() {
 	default:
 	}
 }
-func (d *Dispatch) Handle(msg interface{}) error {
+func (d *Dispatch) Handle(msg any) error {
 	fn := func(wg WaitGroup) error {
 		wg.Add(1)
 		defer wg.Done()

@@ -6,9 +6,9 @@ package main
 
 import "strings"
 
-//	SqlJsonType: NullJson type name
-//	ValueType: value type name
-//	NilValue: nil value of map type
+// SqlJsonType: NullJson type name
+// ValueType: value type name
+// NilValue: nil value of map type
 type SqlRender struct {
 	SqlJsonType string // NullJson type name
 	valueImport string // import path of the atomic.Value's value.

@@ -22,7 +22,7 @@ package traversal
 // Outorder traversals from node ele by Out-order (RNL)
 // ele is a node which may have some interfaces implemented:
 // LeftNodes|MiddleNodes|RightNodes
-func Outorder(node interface{}, handler Handler) {
+func Outorder(node any, handler Handler) {
 	traversal(node, traversalerFunc(outorder), handler)
 }
 

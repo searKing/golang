@@ -27,7 +27,7 @@ func SetInOutMetadata(ctx context.Context, w http.ResponseWriter, r *http.Reques
 // FromHTTPContext parse request id from gin.Context
 // query | header | post form | context
 // 从请求中提取request-id
-func FromHTTPContext(r *http.Request, keys ...interface{}) string {
+func FromHTTPContext(r *http.Request, keys ...any) string {
 	key := DefaultXRequestIDKey
 	if requestID := r.Header.Get(key); requestID != "" {
 		return requestID
@@ -57,7 +57,7 @@ func FromHTTPContext(r *http.Request, keys ...interface{}) string {
 }
 
 // fromContext takes out first value from context by keys
-func fromContext(ctx context.Context, keys ...interface{}) string {
+func fromContext(ctx context.Context, keys ...any) string {
 	for _, key := range keys {
 		val := ctx.Value(key)
 		switch val := val.(type) {

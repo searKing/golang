@@ -14,7 +14,7 @@ import (
 type PersistResource struct {
 	t        *LruPool
 	cacheKey targetKey
-	object   interface{}
+	object   any
 
 	// Both guarded by LruPool.idleMu:
 	idleAt    time.Time   // time it last become idle
@@ -26,7 +26,7 @@ type PersistResource struct {
 	reused bool       // whether resource has had successful request/response and is being reused.
 } // isBroken reports whether this resource is in a known broken state.
 
-func (pc *PersistResource) Get() interface{} {
+func (pc *PersistResource) Get() any {
 	if pc == nil {
 		return nil
 	}

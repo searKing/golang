@@ -21,17 +21,16 @@ import (
 // The caller typically cannot assume that the condition is true when
 // Subscribe chan returns. Instead, the caller should Wait in a loop:
 //
-//    time.After(timeout, c.PublishBroadcast()) // for timeout or periodic event
-//    c.PublishBroadcast() // for async notify event directly
-//    eventC, cancel := c.Subscribe()
-//    for !condition() {
-//        select{
-//        case event, closed := <- eventC:
-//            ... make use of event ...
-//        }
-//    }
-//    ... make use of condition ...
-//
+//	time.After(timeout, c.PublishBroadcast()) // for timeout or periodic event
+//	c.PublishBroadcast() // for async notify event directly
+//	eventC, cancel := c.Subscribe()
+//	for !condition() {
+//	    select{
+//	    case event, closed := <- eventC:
+//	        ... make use of event ...
+//	    }
+//	}
+//	... make use of condition ...
 type Subject struct {
 	noCopy pragma.DoNotCopy
 
@@ -43,7 +42,7 @@ type Subject struct {
 
 type subscriber struct {
 	mu   sync.Mutex // guard close of channel msgC
-	msgC chan interface{}
+	msgC chan any
 
 	once  sync.Once
 	doneC chan struct{} // closed when subscriber is in shutdown, like removed.
@@ -63,7 +62,7 @@ func (s *subscriber) Shutdown() {
 
 // publish wakes a listener waiting on c to consume the event.
 // event will be dropped if ctx is Done before event is received.
-func (s *subscriber) publish(ctx context.Context, event interface{}) error {
+func (s *subscriber) publish(ctx context.Context, event any) error {
 	// guard of msgC's close
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -94,9 +93,9 @@ func (s *subscriber) publish(ctx context.Context, event interface{}) error {
 // never be canceled. Successive calls to Subscribe return different values.
 // The close of the Subscribe channel may happen asynchronously,
 // after the cancel function returns.
-func (s *Subject) Subscribe() (<-chan interface{}, context.CancelFunc) {
+func (s *Subject) Subscribe() (<-chan any, context.CancelFunc) {
 	listener := &subscriber{
-		msgC:  make(chan interface{}),
+		msgC:  make(chan any),
 		doneC: make(chan struct{}),
 	}
 	s.trackChannel(listener, true)
@@ -107,7 +106,7 @@ func (s *Subject) Subscribe() (<-chan interface{}, context.CancelFunc) {
 
 // PublishSignal wakes one listener waiting on c, if there is any.
 // PublishSignal blocks until event is received or dropped.
-func (s *Subject) PublishSignal(ctx context.Context, event interface{}) error {
+func (s *Subject) PublishSignal(ctx context.Context, event any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var wg sync.WaitGroup
@@ -130,7 +129,7 @@ func (s *Subject) PublishSignal(ctx context.Context, event interface{}) error {
 // PublishBroadcast wakes all listeners waiting on c.
 // PublishBroadcast blocks until event is received or dropped.
 // event will be dropped if ctx is Done before event is received.
-func (s *Subject) PublishBroadcast(ctx context.Context, event interface{}) error {
+func (s *Subject) PublishBroadcast(ctx context.Context, event any) error {
 	var wg sync.WaitGroup
 	var errs []error
 	func() {

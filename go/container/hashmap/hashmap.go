@@ -10,11 +10,11 @@ import (
 
 // HashMap is an auto make map
 type HashMap struct {
-	m map[interface{}]interface{}
+	m map[any]any
 }
 type Pair struct {
-	Key   interface{}
-	Value interface{}
+	Key   any
+	Value any
 }
 
 func New() *HashMap {
@@ -23,7 +23,7 @@ func New() *HashMap {
 
 // Init initializes or clears map m.
 func (m *HashMap) Init() *HashMap {
-	m.m = make(map[interface{}]interface{})
+	m.m = make(map[any]any)
 	return m
 }
 
@@ -34,15 +34,15 @@ func (m *HashMap) lazyInit() {
 	}
 }
 
-func (m *HashMap) Keys() []interface{} {
-	var keys []interface{}
+func (m *HashMap) Keys() []any {
+	var keys []any
 	for key, _ := range m.m {
 		keys = append(keys, key)
 	}
 	return keys
 }
-func (m *HashMap) Values() []interface{} {
-	var values []interface{}
+func (m *HashMap) Values() []any {
+	var values []any
 	for _, value := range m.m {
 		values = append(values, value)
 	}
@@ -64,7 +64,7 @@ func (m *HashMap) AddPair(pair Pair) error {
 }
 
 // add adds Key to the head of the linked list.
-func (m *HashMap) Add(key, value interface{}) error {
+func (m *HashMap) Add(key, value any) error {
 	m.lazyInit()
 	if _, ok := m.m[key]; ok {
 		return errors.New("Key was already in HashMap")
@@ -73,13 +73,13 @@ func (m *HashMap) Add(key, value interface{}) error {
 	return nil
 }
 
-func (m *HashMap) AddOrUpdate(key interface{}, value interface{}) {
+func (m *HashMap) AddOrUpdate(key any, value any) {
 	m.Remove(key)
 	m.Add(key, value)
 }
 
 // Remove removes Key from cl.
-func (m *HashMap) Remove(key interface{}) interface{} {
+func (m *HashMap) Remove(key any) any {
 	if v, ok := m.m[key]; ok {
 		delete(m.m, key)
 		return v
@@ -90,17 +90,17 @@ func (m *HashMap) Remove(key interface{}) interface{} {
 func (m *HashMap) Clear() {
 	m.m = nil
 }
-func (m *HashMap) Find(key interface{}) (interface{}, bool) {
+func (m *HashMap) Find(key any) (any, bool) {
 	v, ok := m.m[key]
 	return v, ok
 }
 
-func (m *HashMap) Contains(key interface{}) bool {
+func (m *HashMap) Contains(key any) bool {
 	_, ok := m.m[key]
 	return ok
 }
 
-func (m *HashMap) Peek(key interface{}) (interface{}, bool) {
+func (m *HashMap) Peek(key any) (any, bool) {
 	v, ok := m.m[key]
 	if ok {
 		m.Remove(key)

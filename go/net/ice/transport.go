@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//https://tools.ietf.org/html/rfc7064 3.2.  URI Scheme Semantics
-//https://tools.ietf.org/html/rfc7065 3.2.  URI Scheme Semantics
+// https://tools.ietf.org/html/rfc7064 3.2.  URI Scheme Semantics
+// https://tools.ietf.org/html/rfc7065 3.2.  URI Scheme Semantics
 package ice
 
 import (
@@ -33,8 +33,8 @@ func ParseProto(s string) (Transport, error) {
 	return Transport(s), nil
 }
 
-//https://tools.ietf.org/html/rfc7065
-//transport-ext = 1*unreserved
+// https://tools.ietf.org/html/rfc7065
+// transport-ext = 1*unreserved
 func (t Transport) String() string {
 	if t == "" {
 		return errors.New("empty proto").Error()

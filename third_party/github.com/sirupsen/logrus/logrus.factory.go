@@ -14,8 +14,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate stringer -type=Format
 // Format 日志格式
+//
+//go:generate stringer -type=Format
 type Format int32
 
 const (

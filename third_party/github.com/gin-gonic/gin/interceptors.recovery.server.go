@@ -16,7 +16,7 @@ import (
 
 //go:generate go-option -type "recovery"
 type recovery struct {
-	recoveryHandler func(c *gin.Context, err interface{}) error
+	recoveryHandler func(c *gin.Context, err any) error
 }
 
 // Recovery returns a middleware that recovers from any panics and writes a 500 if there was one.
@@ -32,7 +32,7 @@ func RecoveryWithWriter(out io.Writer, opts ...RecoveryOption) gin.HandlerFunc {
 	opt.ApplyOptions(opts...)
 	return func(c *gin.Context) {
 		defer func() {
-			builtin.Recover(out, func(err interface{}) interface{} {
+			builtin.Recover(out, func(err any) any {
 				if opt.recoveryHandler != nil {
 					return opt.recoveryHandler(c, err)
 				}
@@ -53,7 +53,7 @@ func RecoveryWithWriter(out io.Writer, opts ...RecoveryOption) gin.HandlerFunc {
 	}
 }
 
-func RecoverHandler(c *gin.Context, err interface{}) error {
+func RecoverHandler(c *gin.Context, err any) error {
 	var brokenPipe = builtin.ErrorIsBrokenPipe(err)
 	// If the connection is dead, we can't write a status to it.
 	if brokenPipe {

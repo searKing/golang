@@ -11,16 +11,16 @@ type runtimeGenerator struct {
 	// fired func, as callback when supplierC is consumed successfully
 	// arg for msg receiver
 	// msg for msg to be delivered
-	f   func(ctx context.Context, arg interface{}, msg interface{})
-	arg interface{}
+	f   func(ctx context.Context, arg any, msg any)
+	arg any
 
 	ctx    context.Context
 	cancel context.CancelFunc
 
 	// data src
-	supplierC <-chan interface{}
+	supplierC <-chan any
 	// data dst
-	consumerC chan interface{}
+	consumerC chan any
 
 	// guard channels below
 }

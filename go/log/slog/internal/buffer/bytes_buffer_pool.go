@@ -12,7 +12,7 @@ import (
 
 // Having an initial size gives a dramatic speedup.
 var bufPool = sync.Pool{
-	New: func() interface{} { return new(Buffer) },
+	New: func() any { return new(Buffer) },
 }
 
 type Buffer struct {

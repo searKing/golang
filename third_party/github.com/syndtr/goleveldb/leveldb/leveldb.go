@@ -138,7 +138,7 @@ func (cdb *ConsistentDB) AllLevelDBNodeByPath() map[string]*leveldb.DB {
 // This is for convenience
 
 // Subscribe returns a channel that's closed when awoken by PublishSignal or PublishBroadcast in convenience function below.
-func (cdb *ConsistentDB) Subscribe() (<-chan interface{}, context.CancelFunc) {
+func (cdb *ConsistentDB) Subscribe() (<-chan any, context.CancelFunc) {
 	return cdb.subject.Subscribe()
 }
 
@@ -268,6 +268,7 @@ func (cdb *ConsistentDB) CompactRange(router string, r util.Range) error {
 // GetProperty returns value of the given property router.
 //
 // Property names:
+//
 //	leveldb.num-files-at-level{n}
 //		Returns the number of files at level 'n'.
 //	leveldb.stats

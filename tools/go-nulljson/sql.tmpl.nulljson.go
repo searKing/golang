@@ -1,6 +1,7 @@
 package main
 
 // Arguments to format are:
+//
 //	SqlJsonType: NullJson type name
 //	ValueType: value type name
 //	NilValue: nil value of map type

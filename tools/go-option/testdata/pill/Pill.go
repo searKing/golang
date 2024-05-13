@@ -23,7 +23,7 @@ type Pill[T comparable] struct {
 	arrayType     [5]T
 	pointerType   *[5]T
 	funcType      func()
-	interfaceType interface{}
+	interfaceType any
 	mapType       map[string]int64
 	sliceType     []int64
 }

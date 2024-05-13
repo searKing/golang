@@ -13,17 +13,17 @@ const DefaultChanBufferSize = 1
 
 // Channel wraps a generic channel and provides a timed receive operation.
 type Channel struct {
-	ch chan interface{}
+	ch chan any
 }
 
 // Send sends value on the underlying channel.
-func (c *Channel) Send(value interface{}) {
+func (c *Channel) Send(value any) {
 	c.ch <- value
 }
 
 // SendContext sends value on the underlying channel, or returns an error if
 // the context expires.
-func (c *Channel) SendContext(ctx context.Context, value interface{}) error {
+func (c *Channel) SendContext(ctx context.Context, value any) error {
 	select {
 	case c.ch <- value:
 		return nil
@@ -34,7 +34,7 @@ func (c *Channel) SendContext(ctx context.Context, value interface{}) error {
 
 // SendOrFail attempts to send value on the underlying channel.  Returns true
 // if successful or false if the channel was full.
-func (c *Channel) SendOrFail(value interface{}) bool {
+func (c *Channel) SendOrFail(value any) bool {
 	select {
 	case c.ch <- value:
 		return true
@@ -45,7 +45,7 @@ func (c *Channel) SendOrFail(value interface{}) bool {
 
 // ReceiveOrFail returns the value on the underlying channel and true, or nil
 // and false if the channel was empty.
-func (c *Channel) ReceiveOrFail() (interface{}, bool) {
+func (c *Channel) ReceiveOrFail() (any, bool) {
 	select {
 	case got := <-c.ch:
 		return got, true
@@ -56,7 +56,7 @@ func (c *Channel) ReceiveOrFail() (interface{}, bool) {
 
 // Receive returns the value received on the underlying channel, or the error
 // returned by ctx if it is closed or cancelled.
-func (c *Channel) Receive(ctx context.Context) (interface{}, error) {
+func (c *Channel) Receive(ctx context.Context) (any, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -70,7 +70,7 @@ func (c *Channel) Receive(ctx context.Context) (interface{}, error) {
 // It's expected to be used with a size-1 channel, to only keep the most
 // up-to-date item. This method is inherently racy when invoked concurrently
 // from multiple goroutines.
-func (c *Channel) Replace(value interface{}) {
+func (c *Channel) Replace(value any) {
 	for {
 		select {
 		case c.ch <- value:
@@ -102,5 +102,5 @@ func NewChannel() *Channel {
 
 // NewChannelWithSize returns a new Channel with a buffer of bufSize.
 func NewChannelWithSize(bufSize int) *Channel {
-	return &Channel{ch: make(chan interface{}, bufSize)}
+	return &Channel{ch: make(chan any, bufSize)}
 }

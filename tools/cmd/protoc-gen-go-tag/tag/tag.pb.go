@@ -188,7 +188,7 @@ func file_tag_proto_rawDescGZIP() []byte {
 
 var file_tag_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_tag_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_tag_proto_goTypes = []interface{}{
+var file_tag_proto_goTypes = []any{
 	(FieldTag_UpdateStrategy)(0),      // 0: google.protobuf.FieldTag.UpdateStrategy
 	(*FieldTag)(nil),                  // 1: google.protobuf.FieldTag
 	(*descriptorpb.FieldOptions)(nil), // 2: google.protobuf.FieldOptions
@@ -210,7 +210,7 @@ func file_tag_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_tag_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_tag_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*FieldTag); i {
 			case 0:
 				return &v.state

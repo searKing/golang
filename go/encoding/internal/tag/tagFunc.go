@@ -41,7 +41,7 @@ func (t *tagFuncMap) Delete(reflectType reflect.Type) {
 }
 
 func (t *tagFuncMap) Range(f func(reflectType reflect.Type, fn tagFunc) bool) {
-	t.tagFns.Range(func(reflectType, fn interface{}) bool {
+	t.tagFns.Range(func(reflectType, fn any) bool {
 		return f(reflectType.(reflect.Type), fn.(tagFunc))
 	})
 }

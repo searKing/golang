@@ -96,7 +96,8 @@ type BackOff interface {
 }
 
 // ZeroBackOff Fixed back-off policy whose back-off time is always zero, meaning that the operation is retried
-//  immediately without waiting.
+//
+//	immediately without waiting.
 const ZeroBackOff = NonSlidingBackOff(0)
 
 // StopBackOff Fixed back-off policy that always returns {@code #STOP} for {@link #NextBackOff()},
@@ -140,6 +141,7 @@ func (o *jitterBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 
 // ExponentialBackOff Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
 // src/main/java/com/google/api/client/util/ExponentialBackOff.java
+//
 //go:generate go-option -type "ExponentialBackOff"
 type ExponentialBackOff struct {
 	// The current retry interval.

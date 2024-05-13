@@ -103,7 +103,7 @@ func WithPillFuncType[T comparable](v func()) PillOption[T] {
 }
 
 // WithPillInterfaceType sets interfaceType in Pill[T].
-func WithPillInterfaceType[T comparable](v interface{}) PillOption[T] {
+func WithPillInterfaceType[T comparable](v any) PillOption[T] {
 	return PillOptionFunc[T](func(o *Pill[T]) {
 		o.interfaceType = v
 	})

@@ -22,7 +22,7 @@ package traversal
 // DepthFirstSearchOrder traversals from node ele by Depth-first search (DFS)
 // ele is a node which may have some interfaces implemented:
 // LeftNodes|MiddleNodes|RightNodes
-func DepthFirstSearchOrder(node interface{}, handler Handler) {
+func DepthFirstSearchOrder(node any, handler Handler) {
 	traversal(node, traversalerFunc(dfs), handler)
 }
 

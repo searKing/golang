@@ -19,10 +19,10 @@ type DispatchMsg struct {
 func ExampleDispatch() {
 	var conn chan DispatchMsg
 	dispatch.NewDispatch(
-		dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
+		dispatch.ReaderFunc(func(ctx context.Context) (any, error) {
 			return ReadMessage(conn)
 		}),
-		dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		dispatch.HandlerFunc(func(ctx context.Context, msg any) error {
 			m := msg.(*DispatchMsg)
 			return HandleMessage(m)
 		})).Start()
@@ -32,10 +32,10 @@ func ExampleDispatcher_Join() {
 	var conn chan DispatchMsg
 
 	workflow := dispatch.NewDispatch(
-		dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
+		dispatch.ReaderFunc(func(ctx context.Context) (any, error) {
 			return ReadMessage(conn)
 		}),
-		dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		dispatch.HandlerFunc(func(ctx context.Context, msg any) error {
 			m := msg.(*DispatchMsg)
 			return HandleMessage(m)
 		})).Joinable()
@@ -53,10 +53,10 @@ func ExampleDispatcher_Context() {
 	var conn chan DispatchMsg
 
 	workflow := dispatch.NewDispatch(
-		dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
+		dispatch.ReaderFunc(func(ctx context.Context) (any, error) {
 			return ReadMessage(conn)
 		}),
-		dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
+		dispatch.HandlerFunc(func(ctx context.Context, msg any) error {
 			m := msg.(*DispatchMsg)
 			return HandleMessage(m)
 		})).Joinable()
@@ -67,7 +67,7 @@ func ExampleDispatcher_Context() {
 	workflow.Join()
 }
 
-func ReadMessage(c <-chan DispatchMsg) (interface{}, error) {
+func ReadMessage(c <-chan DispatchMsg) (any, error) {
 	var msg DispatchMsg
 	var ok bool
 

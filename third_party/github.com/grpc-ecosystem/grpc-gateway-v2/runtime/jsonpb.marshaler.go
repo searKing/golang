@@ -26,7 +26,7 @@ type JSONPb struct {
 	runtime.JSONPb
 }
 
-func (j *JSONPb) Marshal(v interface{}) ([]byte, error) {
+func (j *JSONPb) Marshal(v any) ([]byte, error) {
 	// proto -> json
 	if _, ok := v.(proto.Message); ok {
 		return j.JSONPb.Marshal(v)
@@ -41,7 +41,7 @@ func (j *JSONPb) Marshal(v interface{}) ([]byte, error) {
 }
 
 // Unmarshal unmarshals JSON "data" into "v"
-func (j *JSONPb) Unmarshal(data []byte, v interface{}) error {
+func (j *JSONPb) Unmarshal(data []byte, v any) error {
 	return j.NewDecoder(bytes.NewReader(data)).Decode(v)
 }
 
@@ -59,7 +59,7 @@ func (j *JSONPb) NewEncoder(w io.Writer) runtime.Encoder {
 }
 
 // interface{} -> json
-func (j *JSONPb) marshalTo(w io.Writer, v interface{}) error {
+func (j *JSONPb) marshalTo(w io.Writer, v any) error {
 	marshal := func() ([]byte, error) {
 		if _, ok := v.(proto.Message); ok {
 			return j.JSONPb.Marshal(v)
@@ -84,7 +84,7 @@ type DecoderWrapper struct {
 
 // Decode wraps the embedded decoder's Decode method to support
 // protos using a jsonpb.Unmarshaler.
-func (d DecoderWrapper) Decode(v interface{}) error {
+func (d DecoderWrapper) Decode(v any) error {
 	if _, ok := v.(proto.Message); ok {
 		return d.decoderProto.Decode(v)
 	}

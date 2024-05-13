@@ -1,6 +1,8 @@
 // Deprecated: Use the "github.com/searKing/golang/third_party/google.golang.org/protobuf" module instead.
 module github.com/searKing/golang/third_party/github.com/golang/protobuf
 
-go 1.16
+go 1.18
 
 require github.com/golang/protobuf v1.5.3
+
+require google.golang.org/protobuf v1.26.0 // indirect

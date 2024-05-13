@@ -19,35 +19,35 @@ type node struct {
 	prefix   []byte
 	key      byte
 	hasKey   bool
-	value    interface{}
+	value    any
 	hasValue bool
 
 	left, middle, right *node
 	tree                *TernarySearchTree
 }
 
-func (n *node) LeftNodes() []interface{} {
+func (n *node) LeftNodes() []any {
 	left := n.Left()
 	if left == nil {
 		return nil
 	}
-	return []interface{}{left}
+	return []any{left}
 }
 
-func (n *node) MiddleNodes() []interface{} {
+func (n *node) MiddleNodes() []any {
 	middle := n.Middle()
 	if middle == nil {
 		return nil
 	}
-	return []interface{}{middle}
+	return []any{middle}
 }
 
-func (n *node) RightNodes() []interface{} {
+func (n *node) RightNodes() []any {
 	right := n.Right()
 	if right == nil {
 		return nil
 	}
-	return []interface{}{right}
+	return []any{right}
 }
 
 // Left returns the left list node or nil.
@@ -81,7 +81,7 @@ func (n *node) Traversal(order traversal.Order, handler Handler) {
 	if !n.hasKey {
 		return
 	}
-	order(n, traversal.HandlerFunc(func(ele interface{}, depth int) (goon bool) {
+	order(n, traversal.HandlerFunc(func(ele any, depth int) (goon bool) {
 		currentNode := ele.(*node)
 		if !currentNode.hasKey || !currentNode.hasValue {
 			return true
@@ -91,7 +91,7 @@ func (n *node) Traversal(order traversal.Order, handler Handler) {
 	return
 }
 
-func (n *node) Follow(prefix []byte) (key []byte, value interface{}, ok bool) {
+func (n *node) Follow(prefix []byte) (key []byte, value any, ok bool) {
 	graph := n.follow(prefix)
 	if len(graph) == 0 {
 		return nil, nil, false
@@ -100,7 +100,7 @@ func (n *node) Follow(prefix []byte) (key []byte, value interface{}, ok bool) {
 	return tail.prefix, tail.value, tail.hasValue
 }
 
-func (n *node) Load(prefix []byte) (value interface{}, ok bool) {
+func (n *node) Load(prefix []byte) (value any, ok bool) {
 	cur, _, _, has := n.search(prefix)
 	if !has {
 		return nil, false
@@ -131,12 +131,12 @@ const (
 	posRoot
 )
 
-func (n *node) Store(prefix []byte, value interface{}) {
+func (n *node) Store(prefix []byte, value any) {
 	// force update
-	n.CAS(prefix, nil, value, func(x, y interface{}) int { return 0 })
+	n.CAS(prefix, nil, value, func(x, y any) int { return 0 })
 }
 
-func (n *node) remove(prefix []byte, shrinkToFit bool, omitMiddle bool) (old interface{}, ok bool) {
+func (n *node) remove(prefix []byte, shrinkToFit bool, omitMiddle bool) (old any, ok bool) {
 	cur, last, lastPos, has := n.search(prefix)
 	if !has {
 		return nil, false
@@ -154,17 +154,17 @@ func (n *node) remove(prefix []byte, shrinkToFit bool, omitMiddle bool) (old int
 	return cur.value, true
 }
 
-func (n *node) Remove(prefix []byte, shrinkToFit bool) (old interface{}, ok bool) {
+func (n *node) Remove(prefix []byte, shrinkToFit bool) (old any, ok bool) {
 	return n.remove(prefix, shrinkToFit, false)
 }
 
-func (n *node) RemoveAll(prefix []byte) (value interface{}, ok bool) {
+func (n *node) RemoveAll(prefix []byte) (value any, ok bool) {
 	return n.remove(prefix, true, true)
 }
 
 func (n *node) String() string {
 	s := ""
-	n.Traversal(traversal.Inorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
+	n.Traversal(traversal.Inorder, HandlerFunc(func(prefix []byte, value any) (goon bool) {
 		s += fmt.Sprintf("%s:%v\n", string(prefix), value)
 		return true
 	}))
@@ -172,8 +172,8 @@ func (n *node) String() string {
 	return strings.TrimRight(s, "\n")
 }
 
-func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...func(x, y interface{}) int) bool {
-	newElement := func(prefix []byte, hasKey bool, key byte, hasValue bool, value interface{}) *node {
+func (n *node) CAS(prefix []byte, old, new any, cmps ...func(x, y any) int) bool {
+	newElement := func(prefix []byte, hasKey bool, key byte, hasValue bool, value any) *node {
 		var p = make([]byte, len(prefix))
 		copy(p, prefix)
 		return &node{
@@ -227,12 +227,12 @@ func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...func(x, y interf
 				cur.hasValue = true
 				return true
 			}
-			var cmp func(x, y interface{}) int
+			var cmp func(x, y any) int
 			if len(cmps) > 0 {
 				cmp = cmps[0]
 			}
 			if cmp == nil {
-				cmp = func(x, y interface{}) int {
+				cmp = func(x, y any) int {
 					if x == y {
 						return 0
 					}
@@ -260,7 +260,7 @@ func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...func(x, y interf
 // Depth return max len of all prefixs
 func (n *node) Depth() int {
 	var depth int
-	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
+	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value any) (goon bool) {
 		if depth < len(prefix) {
 			depth = len(prefix)
 		}
@@ -272,7 +272,7 @@ func (n *node) Depth() int {
 // shrinkToFit cutoff last node's children nodes if all children nodes are empty
 func (n *node) shrinkToFit(last *node, lastPos pos, omitMiddle bool) {
 	var has bool
-	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
+	n.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value any) (goon bool) {
 		has = true
 		return false
 	}))

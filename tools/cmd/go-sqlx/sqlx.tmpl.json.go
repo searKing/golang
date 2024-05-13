@@ -5,6 +5,7 @@
 package main
 
 // Arguments to format are:
+//
 //	StructType: NullJson type trimmedStructName
 //	TableName: value type trimmedStructName
 //	NilValue: nil value of map type

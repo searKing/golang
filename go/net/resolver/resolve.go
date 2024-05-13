@@ -12,7 +12,7 @@ import (
 )
 
 var resolverPool = sync_.LruPool{
-	New: func(ctx context.Context, req interface{}) (resp interface{}, err error) {
+	New: func(ctx context.Context, req any) (resp any, err error) {
 		target, ok := req.(string)
 		if !ok {
 			return nil, err

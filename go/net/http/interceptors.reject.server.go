@@ -47,7 +47,7 @@ func RejectInsecureServerInterceptor(next http.Handler, opts ...RejectInsecureOp
 	return r
 }
 
-func (m *rejectInsecure) logf(format string, args ...interface{}) {
+func (m *rejectInsecure) logf(format string, args ...any) {
 	if m.ErrorLog != nil {
 		m.ErrorLog.Printf(format, args...)
 	} else {

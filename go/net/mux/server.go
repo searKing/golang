@@ -23,8 +23,9 @@ import (
 var noTimeout time.Duration
 var noTimeoutDeadline time.Time
 
-//go:generate go-option -type "Server"
 // NewServer wraps NewServerWithContext using the background context.
+//
+//go:generate go-option -type "Server"
 func NewServer() *Server {
 	return NewServerWithContext(context.Background())
 }
@@ -103,7 +104,7 @@ func (srv *Server) Context() context.Context {
 	return context.Background()
 }
 
-func (srv *Server) logf(format string, args ...interface{}) {
+func (srv *Server) logf(format string, args ...any) {
 	if srv.errorLog != nil {
 		srv.errorLog.Printf(format, args...)
 	} else {

@@ -13,7 +13,7 @@ import (
 
 // DefaultRender returns the appropriate Binding instance based on the HTTP method
 // and the content type.
-func DefaultRender(ctx *gin.Context, obj interface{}) render.Render {
+func DefaultRender(ctx *gin.Context, obj any) render.Render {
 	switch ctx.ContentType() {
 	case binding.MIMEJSON:
 		return render_.JSONPB{Data: obj} // support proto3 if enabled
@@ -28,6 +28,6 @@ func DefaultRender(ctx *gin.Context, obj interface{}) render.Render {
 	case binding.MIMEMultipartPOSTForm, binding.MIMEPOSTForm:
 		fallthrough
 	default:
-		return render.String{Format: "%v", Data: []interface{}{obj}}
+		return render.String{Format: "%v", Data: []any{obj}}
 	}
 }

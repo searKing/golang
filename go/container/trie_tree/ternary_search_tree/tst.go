@@ -58,7 +58,7 @@ func (l *TernarySearchTree) Depth() int {
 // Count returns the number of elements of list l, excluding (this) sentinel node.
 func (l *TernarySearchTree) Count() int {
 	var len int
-	l.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value interface{}) (goon bool) {
+	l.Traversal(traversal.Preorder, HandlerFunc(func(prefix []byte, value any) (goon bool) {
 		len++
 		return true
 	}))
@@ -92,18 +92,18 @@ func (l *TernarySearchTree) Traversal(order traversal.Order, handler Handler) {
 }
 
 // Follow returns node info of longest subPrefix of prefix
-func (l *TernarySearchTree) Follow(prefix string) (key string, value interface{}, ok bool) {
+func (l *TernarySearchTree) Follow(prefix string) (key string, value any, ok bool) {
 	pre, val, ok := l.root.Follow([]byte(prefix))
 	return string(pre), val, ok
 }
 
 // Load loads value by key
-func (l *TernarySearchTree) Load(key string) (value interface{}, ok bool) {
+func (l *TernarySearchTree) Load(key string) (value any, ok bool) {
 	return l.root.Load([]byte(key))
 }
 
 // Store stores value by key
-func (l *TernarySearchTree) Store(key string, value interface{}) {
+func (l *TernarySearchTree) Store(key string, value any) {
 	l.root.Store([]byte(key), value)
 }
 
@@ -118,12 +118,12 @@ func (l *TernarySearchTree) ContainsPrefix(prefix string) bool {
 }
 
 // remove the node matched with key
-func (l *TernarySearchTree) Remove(key string, shrinkToFit bool) (old interface{}, ok bool) {
+func (l *TernarySearchTree) Remove(key string, shrinkToFit bool) (old any, ok bool) {
 	return l.root.Remove([]byte(key), shrinkToFit)
 }
 
 // remove all nodes started with key prefix
-func (l *TernarySearchTree) RemoveAll(prefix string) (old interface{}, ok bool) {
+func (l *TernarySearchTree) RemoveAll(prefix string) (old any, ok bool) {
 	return l.root.RemoveAll([]byte(prefix))
 }
 

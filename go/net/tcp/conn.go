@@ -146,7 +146,7 @@ func isCommonNetReadError(err error) bool {
 }
 
 // onMsgRead next request from connection.
-func (c *conn) readRequest(ctx context.Context) (req interface{}, err error) {
+func (c *conn) readRequest(ctx context.Context) (req any, err error) {
 
 	var (
 		wholeReqDeadline time.Time // or zero if none
@@ -212,7 +212,7 @@ func (c *conn) serve(ctx context.Context) {
 	c.w = &checkConnErrorWriter{c: c}
 
 	// read and handle the msg
-	dispatch.NewDispatch(dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
+	dispatch.NewDispatch(dispatch.ReaderFunc(func(ctx context.Context) (any, error) {
 		msg, err := c.readRequest(ctx)
 		if c.r.remain != c.server.initialReadLimitSize() {
 			// If we read any bytes off the wire, we're active.
@@ -227,7 +227,7 @@ func (c *conn) serve(ctx context.Context) {
 			return nil, err
 		}
 		return msg, nil
-	}), dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
+	}), dispatch.HandlerFunc(func(ctx context.Context, msg any) error {
 		return c.server.CheckError(c.w, c.r, c.server.onMsgHandleHandler.OnMsgHandle(c.w, msg))
 	})).WithContext(ctx).Start()
 	// after onMsgHandle, read all left data

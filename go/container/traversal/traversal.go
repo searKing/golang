@@ -5,7 +5,7 @@
 package traversal
 
 // TODO template in Go2.0 is expected
-func traversal(node interface{},
+func traversal(node any,
 	traversalOrder traversaler,
 	handler Handler) {
 	traversalOrder.traversal([]levelNode{{

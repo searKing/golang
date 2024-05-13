@@ -115,7 +115,7 @@ func file_config_proto_rawDescGZIP() []byte {
 }
 
 var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_config_proto_goTypes = []interface{}{
+var file_config_proto_goTypes = []any{
 	(*Config)(nil), // 0: github.com.searKing.golang.third_party.github.com.spf13.viper.testdata.Config
 	nil,            // 1: github.com.searKing.golang.third_party.github.com.spf13.viper.testdata.Config.CredentialsEntry
 }
@@ -134,7 +134,7 @@ func file_config_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_config_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*Config); i {
 			case 0:
 				return &v.state

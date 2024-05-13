@@ -32,7 +32,7 @@ type file struct {
 }
 
 // NewFactoryFromFile reads factory from file, parsed by unmarshal
-func NewFactoryFromFile(name string, unmarshal func(data []byte, v interface{}) error) (Factory, error) {
+func NewFactoryFromFile(name string, unmarshal func(data []byte, v any) error) (Factory, error) {
 	data, err := os.ReadFile(name)
 	if err != nil {
 		return Factory{}, err

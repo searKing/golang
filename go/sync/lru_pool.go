@@ -34,7 +34,7 @@ var DefaultLruPool = &LruPool{
 // MaxIdleResourcesPerBucket.
 const DefaultMaxIdleResourcesPerBucket = 2
 
-type targetKey interface{}
+type targetKey any
 
 // LruPool is an implementation of sync.Pool with LRU.
 //
@@ -51,7 +51,7 @@ type LruPool struct {
 	// New optionally specifies a function to generate
 	// a value when Get would otherwise return nil.
 	// It may not be changed concurrently with calls to Get.
-	New func(ctx context.Context, req interface{}) (resp interface{}, err error)
+	New func(ctx context.Context, req any) (resp any, err error)
 
 	idleMu           sync.Mutex
 	closeIdle        bool                             // user has requested to close all idle resources
@@ -91,7 +91,7 @@ type LruPool struct {
 
 // GetByKeyOrError creates a new PersistResource to the target as specified in the key.
 // If this doesn't return an error, the PersistResource is ready to write requests to.
-func (t *LruPool) GetByKeyOrError(ctx context.Context, key interface{}, req interface{}) (pc *PersistResource, err error) {
+func (t *LruPool) GetByKeyOrError(ctx context.Context, key any, req any) (pc *PersistResource, err error) {
 
 	w := &wantResource{
 		req:   req,
@@ -136,7 +136,7 @@ func (t *LruPool) GetByKeyOrError(ctx context.Context, key interface{}, req inte
 
 // GetByKey creates a new PersistResource to the target as specified in the key.
 // If this doesn't return an error, the PersistResource is ready to write requests to.
-func (t *LruPool) GetByKey(ctx context.Context, key interface{}, req interface{}) (v interface{}, put context.CancelFunc) {
+func (t *LruPool) GetByKey(ctx context.Context, key any, req any) (v any, put context.CancelFunc) {
 	pc, _ := t.GetByKeyOrError(ctx, key, req)
 	put = func() {
 		pc.Put()
@@ -146,7 +146,7 @@ func (t *LruPool) GetByKey(ctx context.Context, key interface{}, req interface{}
 
 // GetOrError creates a new PersistResource to the target as specified in the key.
 // If this doesn't return an error, the PersistResource is ready to write requests to.
-func (t *LruPool) GetOrError(ctx context.Context, req interface{}) (v interface{}, put context.CancelFunc, err error) {
+func (t *LruPool) GetOrError(ctx context.Context, req any) (v any, put context.CancelFunc, err error) {
 	pc, err := t.GetByKeyOrError(ctx, req, req)
 	put = func() {
 		pc.Put()
@@ -156,7 +156,7 @@ func (t *LruPool) GetOrError(ctx context.Context, req interface{}) (v interface{
 
 // Get creates a new PersistResource to the target as specified in the key.
 // If this doesn't return an error, the PersistResource is ready to write requests to.
-func (t *LruPool) Get(ctx context.Context, req interface{}) (v interface{}, put context.CancelFunc) {
+func (t *LruPool) Get(ctx context.Context, req any) (v any, put context.CancelFunc) {
 	return t.GetByKey(ctx, req, req)
 }
 
@@ -478,7 +478,7 @@ func (t *LruPool) decResourcesPerBucket(key targetKey) {
 	}
 }
 
-func (t *LruPool) buildResource(ctx context.Context, key interface{}, req interface{}) (presource *PersistResource, err error) {
+func (t *LruPool) buildResource(ctx context.Context, key any, req any) (presource *PersistResource, err error) {
 	presource = &PersistResource{
 		t:        t,
 		cacheKey: key,

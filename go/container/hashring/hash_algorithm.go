@@ -80,9 +80,12 @@ func crcPerlHash(k string) []uint32 {
 // reasonable collision rate.
 //
 // @see <a href="http://www.isthe.com/chongo/tech/comp/fnv/">fnv
-//      comparisons</a>
+//
+//	comparisons</a>
+//
 // @see <a href="http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash">fnv at
-//      wikipedia</a>
+//
+//	wikipedia</a>
 func fnv164Hash(k string) []uint32 {
 	hash := fnv.New64()
 	hash.Write([]byte(k))

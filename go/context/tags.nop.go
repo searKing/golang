@@ -6,11 +6,11 @@ package context
 
 type nopTags struct{}
 
-func (t *nopTags) Set(key string, value interface{}) {
+func (t *nopTags) Set(key string, value any) {
 	return
 }
 
-func (t *nopTags) Get(key string) (interface{}, bool) {
+func (t *nopTags) Get(key string) (any, bool) {
 	return nil, false
 }
 
@@ -18,6 +18,6 @@ func (t *nopTags) Get(key string) (interface{}, bool) {
 func (t *nopTags) Del(key string) {
 	return
 }
-func (t *nopTags) Values() map[string]interface{} {
+func (t *nopTags) Values() map[string]any {
 	return nil
 }

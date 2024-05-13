@@ -21,7 +21,7 @@ func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterc
 	for i := 0; i < b; i++ {
 		limiter <- struct{}{}
 	}
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if b > 0 {
 			var limiterCtx = ctx
 			var cancel context.CancelFunc

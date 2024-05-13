@@ -12,7 +12,7 @@ import (
 
 // Marshal returns the JSON encoding of v.
 // enhance json.Marshal with map's key type, not only string, like interface{}
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	{
 		data, err := json.Marshal(v)
 		if err == nil {
@@ -29,7 +29,7 @@ func Marshal(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	var d interface{}
+	var d any
 	err = yaml.Unmarshal(dataBytes, &d)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func Marshal(v interface{}) ([]byte, error) {
 }
 
 // ValueMarshalable translate key of map from interface{} to string
-func ValueMarshalable(v interface{}) interface{} {
+func ValueMarshalable(v any) any {
 	if _, err := json.Marshal(v); err == nil {
 		return v
 	}
@@ -52,7 +52,7 @@ func ValueMarshalable(v interface{}) interface{} {
 		return v
 	}
 
-	var d interface{}
+	var d any
 	err = yaml.Unmarshal(dataBytes, &d)
 	if err != nil {
 		return v

@@ -103,7 +103,7 @@ func WithNumberFuncType[T comparable](v func()) NumberOption[T] {
 }
 
 // WithNumberInterfaceType sets interfaceType in Number[T].
-func WithNumberInterfaceType[T comparable](v interface{}) NumberOption[T] {
+func WithNumberInterfaceType[T comparable](v any) NumberOption[T] {
 	return NumberOptionFunc[T](func(o *Number[T]) {
 		o.interfaceType = v
 	})

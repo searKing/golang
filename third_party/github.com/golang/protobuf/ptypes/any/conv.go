@@ -14,7 +14,7 @@ import (
 // ToProtoAny converts v, which must marshal into a JSON object,
 // into a Google Any proto.
 // Deprecated: use anypb.ToProtoAny instead.
-func ToProtoAny(data interface{}) (*any.Any, error) {
+func ToProtoAny(data any) (*any.Any, error) {
 	if data == nil {
 		return &any.Any{}, nil
 	}

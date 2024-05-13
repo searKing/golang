@@ -7,7 +7,7 @@ package gin
 import "github.com/gin-gonic/gin"
 
 // WithRecoveryHandler set a recover handler if panic
-func WithRecoveryHandler(f func(c *gin.Context, err interface{}) error) RecoveryOption {
+func WithRecoveryHandler(f func(c *gin.Context, err any) error) RecoveryOption {
 	return RecoveryOptionFunc(func(r *recovery) {
 		r.recoveryHandler = f
 	})

@@ -7,7 +7,7 @@ package gin
 import "github.com/gin-gonic/gin"
 
 // XRequestId returns a new server interceptors with x-request-id in context.
-func XRequestId(keys ...interface{}) gin.HandlerFunc {
+func XRequestId(keys ...any) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		newContextForHandleRequestID(ctx, keys...)
 		ctx.Next() // execute all the handlers

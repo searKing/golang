@@ -26,7 +26,7 @@ type Walk struct {
 //
 // In the case of an error, the info argument will be nil. If an error
 // is returned, processing stops.
-type WalkFunc func(task interface{}) error
+type WalkFunc func(task any) error
 
 // Walk will consume all tasks parallel and block until ctx.Done() or taskChan is closed.
 // Walk returns a channel that's closed when work done on behalf of this
@@ -34,7 +34,7 @@ type WalkFunc func(task interface{}) error
 // never be canceled. Successive calls to Done return the same value.
 // The close of the Done channel may happen asynchronously,
 // after the cancel function returns.
-func (p *Walk) Walk(ctx context.Context, taskChan <-chan interface{}, procFn WalkFunc) (doneC <-chan struct{}) {
+func (p *Walk) Walk(ctx context.Context, taskChan <-chan any, procFn WalkFunc) (doneC <-chan struct{}) {
 	done := make(chan struct{})
 	if p.Burst <= 0 {
 		p.Burst = 1

@@ -20,7 +20,7 @@ func TestLock(t *testing.T) {
 	g := goroutine.NewLock()
 	g.MustCheck()
 
-	sawPanic := make(chan interface{})
+	sawPanic := make(chan any)
 	go func() {
 		defer func() { sawPanic <- recover() }()
 		g.MustCheck() // should panic

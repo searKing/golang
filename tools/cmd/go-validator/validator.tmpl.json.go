@@ -5,6 +5,7 @@
 package main
 
 // Arguments to format are:
+//
 //	StructType: struct type name to validate
 const tmplValidator = `
 {{- range .Structs}}

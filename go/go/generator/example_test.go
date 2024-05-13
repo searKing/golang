@@ -62,7 +62,7 @@ func ExampleGenerator_Next() {
 func ExampleGeneratorWithSupplier() {
 	var g *generator.Generator
 
-	supplierC := make(chan interface{})
+	supplierC := make(chan any)
 	supplierF := func(i int) {
 		consumer := g.Yield(supplierC)
 		if !consumer(i) {
@@ -87,7 +87,7 @@ func ExampleGeneratorWithSupplier() {
 
 func ExampleGeneratorVariadicFunc() {
 	g := func(i int) *generator.Generator {
-		g := generator.GeneratorVariadicFunc(func(yield generator.Yield, args ...interface{}) {
+		g := generator.GeneratorVariadicFunc(func(yield generator.Yield, args ...any) {
 			i := (args[0]).(int)
 			if !yield(i) {
 				return

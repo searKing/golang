@@ -8,7 +8,7 @@ package log
 // ordinary functions as Printf handlers. If f is a function
 // with the appropriate signature, PrintfFunc(f) is a
 // Handler that calls f.
-type PrintfFunc func(format string, a ...interface{})
+type PrintfFunc func(format string, a ...any)
 
 // Write calls f(p).
 func (f PrintfFunc) Write(p []byte) (n int, err error) {

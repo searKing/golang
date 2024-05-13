@@ -4,9 +4,9 @@
 
 package main
 
-//	StructType: NullJson type trimmedStructName
-//	TableName: value type trimmedStructName
-//	NilValue: nil value of map type
+// StructType: NullJson type trimmedStructName
+// TableName: value type trimmedStructName
+// NilValue: nil value of map type
 type SqlxRender struct {
 	StructType string        // NullJson type trimmedStructName
 	TableName  string        // value type trimmedStructName

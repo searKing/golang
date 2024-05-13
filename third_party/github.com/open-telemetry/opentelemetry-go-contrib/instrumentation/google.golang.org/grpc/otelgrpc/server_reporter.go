@@ -52,7 +52,7 @@ func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time
 	return
 }
 
-func (r *serverReporter) ReceivedMessage(ctx context.Context, message interface{}) {
+func (r *serverReporter) ReceivedMessage(ctx context.Context, message any) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
 	r.metrics.serverStreamMsgReceived.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.serverStreamReceiveSizeHistogramEnabled {
@@ -73,7 +73,7 @@ func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Ti
 	return
 }
 
-func (r *serverReporter) SentMessage(ctx context.Context, message interface{}) {
+func (r *serverReporter) SentMessage(ctx context.Context, message any) {
 	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
 	r.metrics.serverStreamMsgSent.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.serverStreamSendSizeHistogramEnabled {

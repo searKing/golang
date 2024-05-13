@@ -32,7 +32,7 @@ func newTagState() *tagState {
 // can distinguish intentional panics from this package.
 type defaultError struct{ error }
 
-func (e *tagState) handle(v interface{}, opts tagOpts) (err error) {
+func (e *tagState) handle(v any, opts tagOpts) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if je, ok := r.(defaultError); ok {

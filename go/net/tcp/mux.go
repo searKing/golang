@@ -30,11 +30,11 @@ func (mux *ServeMux) OnOpen(conn net.Conn) error {
 	return mux.h.OnOpen(conn)
 }
 
-func (mux *ServeMux) OnMsgRead(r io.Reader) (req interface{}, err error) {
+func (mux *ServeMux) OnMsgRead(r io.Reader) (req any, err error) {
 	return mux.h.OnMsgRead(r)
 }
 
-func (mux *ServeMux) OnMsgHandle(w io.Writer, msg interface{}) error {
+func (mux *ServeMux) OnMsgHandle(w io.Writer, msg any) error {
 	return mux.h.OnMsgHandle(w, msg)
 }
 func (mux *ServeMux) OnClose(w io.Writer, r io.Reader) error {
@@ -67,9 +67,9 @@ type NotFound struct {
 	NopServer
 }
 
-func (notfound *NotFound) ReadMsg(b *bufio.Reader) (msg interface{}, err error) {
+func (notfound *NotFound) ReadMsg(b *bufio.Reader) (msg any, err error) {
 	return nil, ErrNotFound
 }
-func (notfound *NotFound) HandleMsg(b *bufio.Writer, msg interface{}) error {
+func (notfound *NotFound) HandleMsg(b *bufio.Writer, msg any) error {
 	return ErrServerClosed
 }

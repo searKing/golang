@@ -42,7 +42,7 @@ func (u *Until) Retry() {
 // - the current fn is nil
 // - the err returned by the current fn is not nil
 // When one of these situations happens, Do blocks until the Retry is called.
-func (u *Until) Do(ctx context.Context, fn func() (interface{}, error)) (val interface{}, err error) {
+func (u *Until) Do(ctx context.Context, fn func() (any, error)) (val any, err error) {
 	u.mu.Lock()
 	if u.blockingCh == nil {
 		u.blockingCh = make(chan struct{})

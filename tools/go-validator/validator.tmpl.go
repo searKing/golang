@@ -4,9 +4,9 @@
 
 package main
 
-//	StructType: NullJson type trimmedStructName
-//	Comment: value type trimmedStructName
-//	NilValue: nil value of map type
+// StructType: NullJson type trimmedStructName
+// Comment: value type trimmedStructName
+// NilValue: nil value of map type
 type ValidatorRender struct {
 	Structs []Struct
 }

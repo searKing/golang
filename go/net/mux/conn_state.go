@@ -6,6 +6,7 @@ package mux
 
 // A ConnState represents the state of a client connection to a server.
 // It's used by the optional Server.ConnStateHook hook.
+//
 //go:generate go-enum -type ConnState -trimprefix=ConnState
 type ConnState int
 

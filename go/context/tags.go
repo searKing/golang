@@ -17,19 +17,19 @@ var (
 // The default implementation is *not* thread safe, and should be handled only in the context of the request.
 type Tags interface {
 	// Set sets the given key in the metadata tags.
-	Set(key string, value interface{})
+	Set(key string, value any)
 	// Get gets if the metadata tags got by the given key exists.
-	Get(key string) (interface{}, bool)
+	Get(key string) (any, bool)
 	// Del deletes the values associated with key.
 	Del(key string)
 	// Values returns a map of key to values.
 	// Do not modify the underlying map, please use Set instead.
-	Values() map[string]interface{}
+	Values() map[string]any
 }
 
 // ExtractTags returns a pre-existing Tags object in the Context.
 // If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
-func ExtractTags(ctx context.Context, key interface{}) (tags Tags, has bool) {
+func ExtractTags(ctx context.Context, key any) (tags Tags, has bool) {
 	t, ok := ctx.Value(key).(Tags)
 	if !ok {
 		return NopTags, false
@@ -39,7 +39,7 @@ func ExtractTags(ctx context.Context, key interface{}) (tags Tags, has bool) {
 }
 
 // ExtractOrCreateTags extracts or create tags from context by key
-func ExtractOrCreateTags(ctx context.Context, key interface{}, options ...MapTagsOption) (
+func ExtractOrCreateTags(ctx context.Context, key any, options ...MapTagsOption) (
 	ctx_ context.Context, stags Tags) {
 	tags, has := ExtractTags(ctx, key)
 	if has {
@@ -49,12 +49,12 @@ func ExtractOrCreateTags(ctx context.Context, key interface{}, options ...MapTag
 	return WithTags(ctx, key, tags), tags
 }
 
-func WithTags(ctx context.Context, key interface{}, tags Tags) context.Context {
+func WithTags(ctx context.Context, key any, tags Tags) context.Context {
 	return context.WithValue(ctx, key, tags)
 }
 
 func NewMapTags(options ...MapTagsOption) Tags {
-	t := &mapTags{values: make(map[string]interface{})}
+	t := &mapTags{values: make(map[string]any)}
 	t.ApplyOptions(options...)
 	return t
 }

@@ -28,16 +28,16 @@ var (
 )
 
 // UnaryServerInterceptor returns a new unary server interceptors with tags in context.
-func UnaryServerInterceptor(key interface{}, values map[string]interface{}) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func UnaryServerInterceptor(key any, values map[string]any) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		newCtx := newContextTagsForCall(ctx, KindServer, info.FullMethod, key, values)
 		return handler(newCtx, req)
 	}
 }
 
 // StreamServerInterceptor returns a new streaming server interceptor with tags in context.
-func StreamServerInterceptor(key interface{}, values map[string]interface{}) grpc.StreamServerInterceptor {
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func StreamServerInterceptor(key any, values map[string]any) grpc.StreamServerInterceptor {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx := newContextTagsForCall(stream.Context(), KindServer, info.FullMethod, key, values)
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
@@ -45,7 +45,7 @@ func StreamServerInterceptor(key interface{}, values map[string]interface{}) grp
 	}
 }
 
-func newContextTagsForCall(ctx context.Context, kind Kind, fullMethodString string, key interface{}, values map[string]interface{}) context.Context {
+func newContextTagsForCall(ctx context.Context, kind Kind, fullMethodString string, key any, values map[string]any) context.Context {
 	service := path.Dir(fullMethodString)[1:]
 	method := path.Base(fullMethodString)
 	tags := context_.NewMapTags(context_.WithMapTagsMimeKey())

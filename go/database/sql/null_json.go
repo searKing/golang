@@ -17,13 +17,13 @@ import (
 // For more information, see:
 // https://godoc.org/github.com/searKing/golang/tools/go-nulljson
 type NullJson struct {
-	Data interface{} // must be set with a pointer to zero value of expect type
+	Data any // must be set with a pointer to zero value of expect type
 
 	Valid bool // Valid is true if Data is not NULL
 }
 
 // Scan implements the sql.Scanner interface.
-func (nj *NullJson) Scan(src interface{}) error {
+func (nj *NullJson) Scan(src any) error {
 	if src == nil {
 		nj.Data, nj.Valid = nil, false
 		return nil

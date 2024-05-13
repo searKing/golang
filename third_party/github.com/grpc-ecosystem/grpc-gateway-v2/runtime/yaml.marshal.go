@@ -19,13 +19,13 @@ type YamlMarshaller struct {
 }
 
 // Marshal marshals "v" into byte sequence.
-func (*YamlMarshaller) Marshal(v interface{}) ([]byte, error) {
+func (*YamlMarshaller) Marshal(v any) ([]byte, error) {
 	return yaml.Marshal(v)
 }
 
 // Unmarshal unmarshal "data" into "v".
 // "v" must be a pointer value.
-func (y *YamlMarshaller) Unmarshal(data []byte, v interface{}) error {
+func (y *YamlMarshaller) Unmarshal(data []byte, v any) error {
 	return y.NewDecoder(bytes.NewReader(data)).Decode(v)
 }
 
@@ -40,7 +40,7 @@ func (*YamlMarshaller) NewEncoder(w io.Writer) runtime.Encoder {
 }
 
 // ContentType returns the Content-Type which this marshaler is responsible for.
-func (*YamlMarshaller) ContentType(_ interface{}) string {
+func (*YamlMarshaller) ContentType(_ any) string {
 	return binding.MIMEYAML
 }
 
@@ -52,6 +52,6 @@ type YamlDecoderWrapper struct {
 
 // Decode wraps the embedded decoder's Decode method to support
 // protos using a jsonpb.Unmarshaler.
-func (d YamlDecoderWrapper) Decode(v interface{}) error {
+func (d YamlDecoderWrapper) Decode(v any) error {
 	return d.decoderYaml.Decode(v)
 }

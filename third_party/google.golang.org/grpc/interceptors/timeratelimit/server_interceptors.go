@@ -16,7 +16,7 @@ import (
 // UnaryServerInterceptor returns a new unary server interceptors that performs request rate limiting.
 func UnaryServerInterceptor(r rate.Limit, b int) grpc.UnaryServerInterceptor {
 	limiter := rate.NewLimiter(r, b)
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if limiter.Allow() {
 			return handler(ctx, req)
 		}
@@ -28,7 +28,7 @@ func UnaryServerInterceptor(r rate.Limit, b int) grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a new streaming server interceptor that performs rate limiting on the request.
 func StreamServerInterceptor(r rate.Limit, b int) grpc.StreamServerInterceptor {
 	limiter := rate.NewLimiter(r, b)
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if limiter.Allow() {
 			return handler(srv, stream)
 		}

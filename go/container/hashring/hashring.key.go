@@ -8,7 +8,9 @@ package hashring
 // NodeLocator algorithm.
 // @param node The Node to use to form the unique identifier
 // @param repetition The repetition number for the particular node in question
-//          (0 is the first repetition)
+//
+//	(0 is the first repetition)
+//
 // @return The key that represents the specific repetition of the node, such as “127.0.0.1:11311-0”
 func (c *NodeLocator) getIterateKeyForNode(node Node, repetition int) string {
 	return c.nodeKeyFormatter.getKeyForNode(node, repetition)

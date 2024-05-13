@@ -45,6 +45,7 @@ func TableInsertArgumentsCombined(table string, cols ...string) (arguments strin
 //	columns, arguments := TableInsertArguments("table", "foo", "bar")
 //	query := fmt.Sprintf("INSERT INTO table (%s) VALUES (%s)", columns, arguments)
 //	// INSERT INTO table (table.foo, table.bar) VALUES (?, ?)
+//
 // Deprecated: Use TableInsertArgumentsCombined instead.
 func TableInsertArguments(table string, cols ...string) (columns string, arguments string) {
 	return JoinTableColumns(table, cols...), JoinTableValues(cols...)

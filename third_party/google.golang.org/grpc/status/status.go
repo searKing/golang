@@ -30,7 +30,7 @@ func Errore(err error, c codes.Code, msg string) error {
 }
 
 // Errorfe returns Errore(c, fmt.Sprintf(format, a...)).
-func Errorfe(err error, c codes.Code, format string, a ...interface{}) error {
+func Errorfe(err error, c codes.Code, format string, a ...any) error {
 	return Errore(err, c, fmt.Sprintf(format, a...))
 }
 

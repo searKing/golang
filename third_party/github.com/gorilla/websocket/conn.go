@@ -90,7 +90,7 @@ func isCommonNetReadError(err error) bool {
 }
 
 // onMsgReadHandler next request from connection.
-func (c *conn) readRequest(ctx context.Context) (req interface{}, err error) {
+func (c *conn) readRequest(ctx context.Context) (req any, err error) {
 
 	var (
 		wholeReqDeadline time.Time // or zero if none
@@ -152,7 +152,7 @@ func (c *conn) serve(ctx context.Context) {
 	defer cancelCtx()
 
 	// read and handle the msg
-	dispatch.NewDispatch(dispatch.ReaderFunc(func(ctx context.Context) (interface{}, error) {
+	dispatch.NewDispatch(dispatch.ReaderFunc(func(ctx context.Context) (any, error) {
 		msg, err := c.readRequest(ctx)
 		if err = c.server.CheckError(c.rwc, err); err != nil {
 			if isCommonNetReadError(err) {
@@ -162,7 +162,7 @@ func (c *conn) serve(ctx context.Context) {
 		}
 		c.setState(c.rwc, StateActive)
 		return msg, nil
-	}), dispatch.HandlerFunc(func(ctx context.Context, msg interface{}) error {
+	}), dispatch.HandlerFunc(func(ctx context.Context, msg any) error {
 		return c.server.CheckError(c.rwc, c.server.onMsgHandleHandler.OnMsgHandle(checkConnErrorWebSocket{c: c}, msg))
 	})).WithContext(ctx).Start()
 	return
@@ -176,7 +176,7 @@ type WebSocketWriter interface {
 	//WriteControl(messageType int, data []byte, deadline time.Time) error
 	//WritePreparedMessage(pm *websocket.PreparedMessage) error
 	//WriteMessage(messageType int, data []byte) error
-	WriteJSON(v interface{}) error
+	WriteJSON(v any) error
 }
 type WebSocketCloser interface {
 	Close() error
@@ -220,7 +220,7 @@ func (w checkConnErrorWebSocket) WriteMessage(messageType int, data []byte) erro
 	}
 	return err
 }
-func (w checkConnErrorWebSocket) WriteJSON(v interface{}) (err error) {
+func (w checkConnErrorWebSocket) WriteJSON(v any) (err error) {
 	err = w.c.rwc.WriteJSON(v)
 	if err != nil && w.c.werr == nil {
 		w.c.werr = err
@@ -236,7 +236,7 @@ func (w checkConnErrorWebSocket) ReadMessage() (messageType int, p []byte, err e
 	}
 	return messageType, p, err
 }
-func (w checkConnErrorWebSocket) ReadJSON(v interface{}) error {
+func (w checkConnErrorWebSocket) ReadJSON(v any) error {
 	err := w.c.rwc.ReadJSON(v)
 	if err != nil && w.c.werr == nil {
 		w.c.werr = err

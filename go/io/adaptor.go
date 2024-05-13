@@ -10,7 +10,7 @@ func (f WriterFunc) Write(p []byte) (n int, err error) {
 	return f(p)
 }
 
-type WriterFuncPrintfLike func(format string, args ...interface{})
+type WriterFuncPrintfLike func(format string, args ...any)
 
 func (f WriterFuncPrintfLike) Write(p []byte) (n int, err error) {
 	f("%s", string(p))

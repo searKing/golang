@@ -28,7 +28,7 @@ package traversal
 // BreadthFirstSearchOrder traversals from node ele by Breadth-first search (BFS)
 // ele is a node which may have some interfaces implemented:
 // LeftNodes|MiddleNodes|RightNodes
-func BreadthFirstSearchOrder(node interface{}, handler Handler) {
+func BreadthFirstSearchOrder(node any, handler Handler) {
 	traversal(node, traversalerFunc(bfs), handler)
 }
 

@@ -161,12 +161,12 @@ func (i *Transform) UnmarshalText(text []byte) error {
 //}
 
 // MarshalYAML implements a YAML Marshaler for Transform
-func (i Transform) MarshalYAML() (interface{}, error) {
+func (i Transform) MarshalYAML() (any, error) {
 	return i.String(), nil
 }
 
 // UnmarshalYAML implements a YAML Unmarshaler for Transform
-func (i *Transform) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *Transform) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -193,7 +193,7 @@ func (i Transform) Value() (driver.Value, error) {
 	return i.String(), nil
 }
 
-func (i *Transform) Scan(value interface{}) error {
+func (i *Transform) Scan(value any) error {
 	if value == nil {
 		return nil
 	}

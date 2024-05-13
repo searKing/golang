@@ -7,6 +7,9 @@ require (
 	github.com/searKing/golang/go v1.2.115
 )
 
-require golang.org/x/net v0.21.0 // indirect
+require (
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
+	golang.org/x/net v0.25.0 // indirect
+)
 
 replace github.com/searKing/golang/go => ../../../../go

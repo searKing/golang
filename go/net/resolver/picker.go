@@ -15,6 +15,7 @@ var (
 )
 
 // Pick includes additional information for Pick.
+//
 //go:generate go-option -type "Pick"
 type Pick struct{}
 

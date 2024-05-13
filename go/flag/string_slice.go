@@ -48,7 +48,7 @@ func newStringSliceValue(val []string, p *[]string) *stringSliceValue {
 	return &stringSliceValue{vars: p}
 }
 
-func (ss *stringSliceValue) Get() interface{} { return *(ss.vars) }
+func (ss *stringSliceValue) Get() any { return *(ss.vars) }
 
 func (ss *stringSliceValue) String() string {
 	if ss.vars == nil {

@@ -11,7 +11,7 @@ import (
 
 // ExtractMIMIETags returns a pre-existing Tags object in the Context.
 // If the context wasn't set in a tag interceptor, a no-op Tag storage is returned that will *not* be propagated in context.
-func ExtractMIMIETags(ctx context.Context, key interface{}) (tags textproto.MIMEHeader, has bool) {
+func ExtractMIMIETags(ctx context.Context, key any) (tags textproto.MIMEHeader, has bool) {
 	t, ok := ctx.Value(key).(textproto.MIMEHeader)
 	if !ok {
 		return textproto.MIMEHeader{}, false
@@ -21,7 +21,7 @@ func ExtractMIMIETags(ctx context.Context, key interface{}) (tags textproto.MIME
 }
 
 // ExtractOrCreateMIMETags extracts or create tags from context by key
-func ExtractOrCreateMIMETags(ctx context.Context, key interface{}) (
+func ExtractOrCreateMIMETags(ctx context.Context, key any) (
 	ctx_ context.Context, stags textproto.MIMEHeader) {
 	tags, has := ExtractMIMIETags(ctx, key)
 	if has {
@@ -32,6 +32,6 @@ func ExtractOrCreateMIMETags(ctx context.Context, key interface{}) (
 }
 
 // WithMIMETags create tags from context by key
-func WithMIMETags(ctx context.Context, key interface{}, tags textproto.MIMEHeader) context.Context {
+func WithMIMETags(ctx context.Context, key any, tags textproto.MIMEHeader) context.Context {
 	return context.WithValue(ctx, key, tags)
 }

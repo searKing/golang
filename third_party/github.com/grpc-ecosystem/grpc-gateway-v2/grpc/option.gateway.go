@@ -181,7 +181,7 @@ func WithHttpPostHandler(
 }
 
 func WithHttpAfterCompletion(
-	afterCompletion func(w http.ResponseWriter, r *http.Request, err interface{})) GatewayOption {
+	afterCompletion func(w http.ResponseWriter, r *http.Request, err any)) GatewayOption {
 	return WithHttpHandlerInterceptor(
 		http_.WithHandlerInterceptor(nil, nil, nil, afterCompletion))
 }

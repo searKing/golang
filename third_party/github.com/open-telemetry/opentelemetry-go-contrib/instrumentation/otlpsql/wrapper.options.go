@@ -14,6 +14,7 @@ const defaultInstanceName = "default"
 // By default, all options are set to false intentionally when creating a wrapped
 // driver and provide the most sensible default with both performance and
 // security in mind.
+//
 //go:generate go-option -type=wrapper
 type wrapper struct {
 	// AllowRoot, if set to true, will allow otlpsql to create root spans in

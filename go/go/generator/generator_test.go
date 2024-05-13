@@ -20,8 +20,8 @@ func TestGeneratorFuncWithSupplier(t *testing.T) {
 	var i, j int
 	n := 10
 	c := make(chan bool)
-	supplierC := make(chan interface{})
-	f := func(msg interface{}) {
+	supplierC := make(chan any)
+	f := func(msg any) {
 		j++
 		if j == n {
 			c <- true
@@ -53,9 +53,9 @@ func TestGenerator_Stop(t *testing.T) {
 	n := 10
 	accept := 5
 	c := make(chan bool)
-	supplierC := make(chan interface{})
+	supplierC := make(chan any)
 	var g *generator.Generator
-	f := func(msg interface{}) {
+	f := func(msg any) {
 		j++
 		if j == accept {
 			g.Stop()
@@ -88,7 +88,7 @@ func TestGenerator_Next(t *testing.T) {
 	n := 10
 	accept := 5
 	c := make(chan bool)
-	supplierC := make(chan interface{})
+	supplierC := make(chan any)
 	go func() {
 		for {
 			i++
@@ -126,7 +126,7 @@ func TestGenerator_Next(t *testing.T) {
 func TestGenerator_Yield(t *testing.T) {
 	var g *generator.Generator
 
-	supplierC := make(chan interface{}, 100)
+	supplierC := make(chan any, 100)
 	supplierF := func(i int) {
 		yield := g.Yield(supplierC)
 		if !yield(i) {
@@ -146,7 +146,7 @@ func TestGenerator_Yield(t *testing.T) {
 }
 
 func TestGeneratorVariadicFunc(t *testing.T) {
-	g := generator.GeneratorVariadicFunc(func(yield generator.Yield, args ...interface{}) {
+	g := generator.GeneratorVariadicFunc(func(yield generator.Yield, args ...any) {
 		i := (args[0]).(int)
 		if !yield(i) {
 			return

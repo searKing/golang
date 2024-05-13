@@ -175,7 +175,7 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 	{
 		// recover
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p interface{}) (err error) {
+		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
 			slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
 			{
 				_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
@@ -185,7 +185,7 @@ func (f *Factory) New() (*WebServer, error) {
 			}
 			return status.Errorf(codes.Internal, "%s", p)
 		}))))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p interface{}) (err error) {
+		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
 			slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
 			{
 				_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))

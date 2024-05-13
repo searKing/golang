@@ -21,7 +21,7 @@ func UnaryServerInterceptor(b int, timeout time.Duration) grpc.UnaryServerInterc
 	for i := 0; i < b; i++ {
 		limiter <- struct{}{}
 	}
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if b > 0 {
 			var limiterCtx = ctx
 			var cancel context.CancelFunc
@@ -51,7 +51,7 @@ func StreamServerInterceptor(b int, timeout time.Duration) grpc.StreamServerInte
 	for i := 0; i < b; i++ {
 		limiter <- struct{}{}
 	}
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if b > 0 {
 			var limiterCtx = stream.Context()
 			var cancel context.CancelFunc

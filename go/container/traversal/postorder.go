@@ -22,7 +22,7 @@ package traversal
 // Postorder traversals from node ele by Post-order (LRN)
 // ele is a node which may have some interfaces implemented:
 // LeftNodes|MiddleNodes|RightNodes
-func Postorder(node interface{}, handler Handler) {
+func Postorder(node any, handler Handler) {
 	traversal(node, traversalerFunc(postorder), handler)
 }
 

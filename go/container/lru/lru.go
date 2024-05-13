@@ -13,31 +13,31 @@ import (
 // LRU takes advantage of list's sequence and map's efficient locate
 type LRU struct {
 	ll   *list.List // list.Element.Value type is of interface{}
-	m    map[interface{}]*list.Element
+	m    map[any]*list.Element
 	once sync.Once
 }
 type Pair struct {
-	Key   interface{}
-	Value interface{}
+	Key   any
+	Value any
 }
 
 // lazyInit lazily initializes a zero List value.
 func (lru *LRU) lazyInit() {
 	lru.once.Do(func() {
 		lru.ll = &list.List{}
-		lru.m = make(map[interface{}]*list.Element)
+		lru.m = make(map[any]*list.Element)
 	})
 }
 
-func (lru *LRU) Keys() []interface{} {
-	var keys []interface{}
+func (lru *LRU) Keys() []any {
+	var keys []any
 	for key := range lru.m {
 		keys = append(keys, key)
 	}
 	return keys
 }
-func (lru *LRU) Values() []interface{} {
-	var values []interface{}
+func (lru *LRU) Values() []any {
+	var values []any
 	for _, value := range lru.m {
 		values = append(values, value)
 	}
@@ -59,7 +59,7 @@ func (lru *LRU) AddPair(pair Pair) error {
 }
 
 // Add adds Key to the head of the linked list.
-func (lru *LRU) Add(key interface{}, value interface{}) error {
+func (lru *LRU) Add(key any, value any) error {
 	lru.lazyInit()
 	ele := lru.ll.PushFront(Pair{
 		Key:   key,
@@ -72,12 +72,12 @@ func (lru *LRU) Add(key interface{}, value interface{}) error {
 	return nil
 }
 
-func (lru *LRU) AddOrUpdate(key interface{}, value interface{}) error {
+func (lru *LRU) AddOrUpdate(key any, value any) error {
 	lru.Remove(key)
 	return lru.Add(key, value)
 }
 
-func (lru *LRU) RemoveOldest() interface{} {
+func (lru *LRU) RemoveOldest() any {
 	if lru.ll == nil {
 		return nil
 	}
@@ -89,7 +89,7 @@ func (lru *LRU) RemoveOldest() interface{} {
 }
 
 // Remove removes Key from cl.
-func (lru *LRU) Remove(key interface{}) interface{} {
+func (lru *LRU) Remove(key any) any {
 	if ele, ok := lru.m[key]; ok {
 		v := lru.ll.Remove(ele)
 		delete(lru.m, key)
@@ -98,7 +98,7 @@ func (lru *LRU) Remove(key interface{}) interface{} {
 	return nil
 }
 
-func (lru *LRU) Find(key interface{}) (interface{}, bool) {
+func (lru *LRU) Find(key any) (any, bool) {
 	e, ok := lru.m[key]
 	if !ok {
 		return nil, ok
@@ -106,7 +106,7 @@ func (lru *LRU) Find(key interface{}) (interface{}, bool) {
 	return e.Value.(Pair).Value, true
 }
 
-func (lru *LRU) Peek(key interface{}) (interface{}, bool) {
+func (lru *LRU) Peek(key any) (any, bool) {
 	e, ok := lru.m[key]
 	if ok {
 		lru.Remove(key)

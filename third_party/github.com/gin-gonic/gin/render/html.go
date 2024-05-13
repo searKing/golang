@@ -20,7 +20,7 @@ type TemplateHTML struct {
 
 	FuncMap template.FuncMap
 	Name    string // Data's Name in tmpl
-	Data    interface{}
+	Data    any
 
 	once   sync.Once
 	Delims *render.Delims

@@ -139,43 +139,43 @@ func (s SimpleStatements) NamedInsertStatement(update bool, appends ...string) s
 
 // NamedUpdateStatement returns a simple sql statement for SQL UPDATE statements based on columns.
 //
-//	statement := SimpleStatements{
-//		TableName: foo,
-//		Columns: []string{"foo", "bar"},
-//		Conditions: []string{"thud", "grunt"},
-//		Operator: SqlOperatorAnd,
-//	}
-//	query := statement.NamedUpdateStatement(false)
+//		statement := SimpleStatements{
+//			TableName: foo,
+//			Columns: []string{"foo", "bar"},
+//			Conditions: []string{"thud", "grunt"},
+//			Operator: SqlOperatorAnd,
+//		}
+//		query := statement.NamedUpdateStatement(false)
 //
-//	// UPDATE foo SET foo=:foo, bar=:bar WHERE thud=:thud AND grunt=:grunt
+//		// UPDATE foo SET foo=:foo, bar=:bar WHERE thud=:thud AND grunt=:grunt
 //
-//	query := statement.NamedUpdateStatement(true)
+//		query := statement.NamedUpdateStatement(true)
 //
-//	// INSERT INTO foo (foo, bar) VALUES (:foo, :bar) ON DUPLICATE KEY UPDATE foo=:foo, bar=:bar
+//		// INSERT INTO foo (foo, bar) VALUES (:foo, :bar) ON DUPLICATE KEY UPDATE foo=:foo, bar=:bar
 //
-//	statement := SimpleStatements{
-//		TableName: foo,
-//		Columns: []string{"foo"},
-//	}
-//	query := statement.NamedUpdateStatement(false)
+//		statement := SimpleStatements{
+//			TableName: foo,
+//			Columns: []string{"foo"},
+//		}
+//		query := statement.NamedUpdateStatement(false)
 //
-//	// UPDATE foo SET foo=:foo WHERE TRUE
+//		// UPDATE foo SET foo=:foo WHERE TRUE
 //
-//	query := statement.NamedUpdateStatement(true)
+//		query := statement.NamedUpdateStatement(true)
 //
-//	// INSERT INTO foo (foo) VALUES (:foo) ON DUPLICATE KEY UPDATE foo=:foo
+//		// INSERT INTO foo (foo) VALUES (:foo) ON DUPLICATE KEY UPDATE foo=:foo
 //
-//	statement := SimpleStatements{
-//		TableName: foo,
-//	}
-//	query := statement.NamedUpdateStatement(false)
+//		statement := SimpleStatements{
+//			TableName: foo,
+//		}
+//		query := statement.NamedUpdateStatement(false)
 //
-//  // Malformed SQL
-//	// UPDATE foo SET WHERE TRUE
+//	 // Malformed SQL
+//		// UPDATE foo SET WHERE TRUE
 //
-//	query := statement.NamedUpdateStatement(true)
+//		query := statement.NamedUpdateStatement(true)
 //
-//	// INSERT INTO foo DEFAULT VALUES
+//		// INSERT INTO foo DEFAULT VALUES
 func (s SimpleStatements) NamedUpdateStatement(insert bool, appends ...string) string {
 	if insert {
 		return s.NamedInsertStatement(true)

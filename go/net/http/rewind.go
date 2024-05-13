@@ -67,10 +67,12 @@ func BodyRewindableWithFile(file *os.File) (body io.ReadCloser, getBody func() (
 // A body with a type not ioutil.NopCloser(nil) may return error as the Body in Request will be closed before redirect automatically.
 // So you can close body by yourself to ensure rewindable always:
 // Examples:
-// 	body := req.Body
-// 	defer body.Close() // body will not be closed inside
-// 	req.Body = ioutil.NopCloser(body)
-// 	_ = RequestWithBodyRewindable(req)
+//
+//	body := req.Body
+//	defer body.Close() // body will not be closed inside
+//	req.Body = ioutil.NopCloser(body)
+//	_ = RequestWithBodyRewindable(req)
+//
 // // do http requests...
 //
 // See: https://github.com/golang/go/issues/7912

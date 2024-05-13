@@ -97,7 +97,7 @@ type FieldValueInfo struct {
 	index       []int
 }
 
-func (info FieldValueInfo) MiddleNodes() []interface{} {
+func (info FieldValueInfo) MiddleNodes() []any {
 
 	if !info.value.IsValid() {
 		return nil
@@ -110,7 +110,7 @@ func (info FieldValueInfo) MiddleNodes() []interface{} {
 		return nil
 	}
 
-	var middles []interface{}
+	var middles []any
 	// Scan typ for fields to include.
 	for i := 0; i < val.NumField(); i++ {
 		index := make([]int, len(info.index)+1)
@@ -178,7 +178,7 @@ func (f FieldValueInfoHandlerFunc) Handler(info FieldValueInfo) (goon bool) {
 func WalkValueDFS(val reflect.Value, handler FieldValueInfoHandler) {
 	traversal.DepthFirstSearchOrder(FieldValueInfo{
 		value: val,
-	}, traversal.HandlerFunc(func(node interface{}, depth int) (goon bool) {
+	}, traversal.HandlerFunc(func(node any, depth int) (goon bool) {
 		return handler.Handler(node.(FieldValueInfo))
 	}))
 }
@@ -186,7 +186,7 @@ func WalkValueDFS(val reflect.Value, handler FieldValueInfoHandler) {
 func WalkValueBFS(val reflect.Value, handler FieldValueInfoHandler) {
 	traversal.BreadthFirstSearchOrder(FieldValueInfo{
 		value: val,
-	}, traversal.HandlerFunc(func(node interface{}, depth int) (goon bool) {
+	}, traversal.HandlerFunc(func(node any, depth int) (goon bool) {
 		return handler.Handler(node.(FieldValueInfo))
 	}))
 }

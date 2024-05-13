@@ -60,19 +60,19 @@ func TestIsEmptyValue(t *testing.T) {
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(interface{}([]byte{})),
+			a:      reflect.ValueOf(any([]byte{})),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(interface{}([]byte(nil))),
+			a:      reflect.ValueOf(any([]byte(nil))),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(interface{}(map[int]string{})),
+			a:      reflect.ValueOf(any(map[int]string{})),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(interface{}(map[int]string(nil))),
+			a:      reflect.ValueOf(any(map[int]string(nil))),
 			expect: true,
 		},
 		{
@@ -134,19 +134,19 @@ func TestIsZeroValue(t *testing.T) {
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(interface{}([]byte{})),
+			a:      reflect.ValueOf(any([]byte{})),
 			expect: false,
 		},
 		{
-			a:      reflect.ValueOf(interface{}([]byte(nil))),
+			a:      reflect.ValueOf(any([]byte(nil))),
 			expect: true,
 		},
 		{
-			a:      reflect.ValueOf(interface{}(map[int]string{})),
+			a:      reflect.ValueOf(any(map[int]string{})),
 			expect: false,
 		},
 		{
-			a:      reflect.ValueOf(interface{}(map[int]string(nil))),
+			a:      reflect.ValueOf(any(map[int]string(nil))),
 			expect: true,
 		},
 		{

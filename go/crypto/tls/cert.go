@@ -33,7 +33,7 @@ var ErrInvalidCertificateConfiguration = errors.New("tls configuration is invali
 func LoadCertificates(
 	certString, keyString string,
 	certFile, keyFile string,
-	certs ...interface{},
+	certs ...any,
 ) ([]tls.Certificate, error) {
 	if certString == "" && keyString == "" && certFile == "" && keyFile == "" && len(certs) == 0 {
 		return nil, ErrNoCertificatesConfigured

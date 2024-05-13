@@ -19,7 +19,7 @@ import (
 )
 
 // PublicKey returns the public key for a given key or nul.
-func PublicKey(key interface{}) interface{} {
+func PublicKey(key any) any {
 	switch k := key.(type) {
 	case *rsa.PrivateKey:
 		return &k.PublicKey
@@ -32,7 +32,7 @@ func PublicKey(key interface{}) interface{} {
 
 // CreateSelfSignedTLSCertificate creates a self-signed TLS certificate.
 // key is parsed by PublicKey()
-func CreateSelfSignedTLSCertificate(key interface{}, organizations []string, commonName string) (*tls.Certificate, error) {
+func CreateSelfSignedTLSCertificate(key any, organizations []string, commonName string) (*tls.Certificate, error) {
 	c, err := CreateSelfSignedCertificate(key, organizations, commonName)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func CreateSelfSignedTLSCertificate(key interface{}, organizations []string, com
 
 // CreateSelfSignedCertificate creates a self-signed x509 certificate.
 // key is parsed by PublicKey()
-func CreateSelfSignedCertificate(key interface{}, organizations []string, commonName string) (cert *x509.Certificate, err error) {
+func CreateSelfSignedCertificate(key any, organizations []string, commonName string) (cert *x509.Certificate, err error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -96,7 +96,7 @@ func CreateSelfSignedCertificate(key interface{}, organizations []string, common
 
 // PEMBlockForKey returns a PEM-encoded block for key.
 // key is parsed by PublicKey()
-func PEMBlockForKey(key interface{}) (*pem.Block, error) {
+func PEMBlockForKey(key any) (*pem.Block, error) {
 	switch k := key.(type) {
 	case *rsa.PrivateKey:
 		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}, nil

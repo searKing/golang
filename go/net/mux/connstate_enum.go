@@ -169,12 +169,12 @@ func (i *ConnState) UnmarshalText(text []byte) error {
 //}
 
 // MarshalYAML implements a YAML Marshaler for ConnState
-func (i ConnState) MarshalYAML() (interface{}, error) {
+func (i ConnState) MarshalYAML() (any, error) {
 	return i.String(), nil
 }
 
 // UnmarshalYAML implements a YAML Unmarshaler for ConnState
-func (i *ConnState) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *ConnState) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -201,7 +201,7 @@ func (i ConnState) Value() (driver.Value, error) {
 	return i.String(), nil
 }
 
-func (i *ConnState) Scan(value interface{}) error {
+func (i *ConnState) Scan(value any) error {
 	if value == nil {
 		return nil
 	}

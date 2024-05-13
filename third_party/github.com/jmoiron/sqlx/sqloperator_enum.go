@@ -161,12 +161,12 @@ func (i *SqlOperator) UnmarshalText(text []byte) error {
 //}
 
 // MarshalYAML implements a YAML Marshaler for SqlOperator
-func (i SqlOperator) MarshalYAML() (interface{}, error) {
+func (i SqlOperator) MarshalYAML() (any, error) {
 	return i.String(), nil
 }
 
 // UnmarshalYAML implements a YAML Unmarshaler for SqlOperator
-func (i *SqlOperator) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *SqlOperator) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -193,7 +193,7 @@ func (i SqlOperator) Value() (driver.Value, error) {
 	return i.String(), nil
 }
 
-func (i *SqlOperator) Scan(value interface{}) error {
+func (i *SqlOperator) Scan(value any) error {
 	if value == nil {
 		return nil
 	}
