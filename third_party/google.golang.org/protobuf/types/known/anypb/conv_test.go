@@ -38,31 +38,31 @@ var (
 			}},
 		},
 		output: `{
- "@type":  "type.googleapis.com/google.protobuf.Struct",
- "value":  {
-  "Friends":  [
+ "@type": "type.googleapis.com/google.protobuf.Struct",
+ "value": {
+  "Friends": [
    "Bob",
    "Carol",
    "Dave"
   ],
-  "Name":  "Alice",
-  "Strangers":  [
+  "Name": "Alice",
+  "Strangers": [
    {
-    "Friends":  [
+    "Friends": [
      "Oscar"
     ],
-    "Name":  "Eve",
-    "Strangers":  [
+    "Name": "Eve",
+    "Strangers": [
      {
-      "Friends":  [
+      "Friends": [
        "Justin",
        "Trent",
        "Pat",
        "Victor",
        "Walter"
       ],
-      "Name":  "Isaac",
-      "Strangers":  null
+      "Name": "Isaac",
+      "Strangers": null
      }
     ]
    }
