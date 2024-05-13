@@ -7,23 +7,23 @@ package any
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
-	_struct "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
+	any_ "github.com/golang/protobuf/ptypes/any"
+	struct_ "github.com/searKing/golang/third_party/github.com/golang/protobuf/ptypes/struct"
 )
 
 // ToProtoAny converts v, which must marshal into a JSON object,
 // into a Google Any proto.
 // Deprecated: use anypb.ToProtoAny instead.
-func ToProtoAny(data any) (*any.Any, error) {
+func ToProtoAny(data any) (*any_.Any, error) {
 	if data == nil {
-		return &any.Any{}, nil
+		return &any_.Any{}, nil
 	}
 	var datapb proto.Message
 	switch data.(type) {
 	case proto.Message:
 		datapb = data.(proto.Message)
 	default:
-		dataStructpb, err := _struct.ToProtoStruct(data)
+		dataStructpb, err := struct_.ToProtoStruct(data)
 		if err != nil {
 			return nil, err
 		}
