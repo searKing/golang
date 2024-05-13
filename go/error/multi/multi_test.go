@@ -5,6 +5,7 @@
 package multi_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -24,7 +25,7 @@ func TestNew(t *testing.T) {
 
 	for _, tt := range tests {
 		got := multi.New(tt.errs...)
-		if got == tt.want {
+		if errors.Is(got, tt.want) {
 			continue
 		}
 		if got == nil || tt.want == nil || got.Error() != tt.want.Error() {
