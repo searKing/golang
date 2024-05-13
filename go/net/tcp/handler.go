@@ -54,8 +54,11 @@ var nopSC = &nopServerClient{}
 
 type NopServer struct{ nopServerClient }
 type NopClient struct{ nopServerClient }
-type nopServerClient struct {
-}
+
+var _ Handler = (*NopServer)(nil)
+var _ Handler = (*NopClient)(nil)
+
+type nopServerClient struct{}
 
 func (srv *nopServerClient) OnOpen(conn net.Conn) error { return nil }
 

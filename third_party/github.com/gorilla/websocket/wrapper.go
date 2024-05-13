@@ -8,10 +8,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/searKing/golang/go/util/object"
 )
 
-// make websocket concurrent safe
+// WebSocketConn makes websocket concurrent safe
 // see https://godoc.org/github.com/gorilla/websocket#hdr-Concurrency
 type WebSocketConn struct {
 	*websocket.Conn
@@ -20,7 +19,9 @@ type WebSocketConn struct {
 }
 
 func NewWebSocketConn(rw *websocket.Conn) *WebSocketConn {
-	object.RequireNonNil(rw)
+	if rw == nil {
+		panic("nil WebSocketConn")
+	}
 	return &WebSocketConn{
 		Conn: rw,
 	}

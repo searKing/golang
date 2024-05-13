@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	"github.com/searKing/golang/go/sync/atomic"
-	"github.com/searKing/golang/go/util/object"
 )
 
 type ServerHandler interface {
@@ -32,12 +32,12 @@ func NewServerFunc(onHandshake OnHandshakeHandler,
 	onClose OnCloseHandler,
 	onError OnErrorHandler) *Server {
 	return &Server{
-		onHandshakeHandler: object.RequireNonNullElse(onHandshake, NopOnHandshakeHandler).(OnHandshakeHandler),
-		onOpenHandler:      object.RequireNonNullElse(onOpen, NopOnOpenHandler).(OnOpenHandler),
-		onMsgReadHandler:   object.RequireNonNullElse(onMsgRead, NopOnMsgReadHandler).(OnMsgReadHandler),
-		onMsgHandleHandler: object.RequireNonNullElse(onMsgHandle, NopOnMsgHandleHandler).(OnMsgHandleHandler),
-		onCloseHandler:     object.RequireNonNullElse(onClose, NopOnCloseHandler).(OnCloseHandler),
-		onErrorHandler:     object.RequireNonNullElse(onError, NopOnErrorHandler).(OnErrorHandler),
+		onHandshakeHandler: slices_.FirstOrZero[OnHandshakeHandler](onHandshake, NopOnHandshakeHandler),
+		onOpenHandler:      slices_.FirstOrZero[OnOpenHandler](onOpen, NopOnOpenHandler),
+		onMsgReadHandler:   slices_.FirstOrZero[OnMsgReadHandler](onMsgRead, NopOnMsgReadHandler),
+		onMsgHandleHandler: slices_.FirstOrZero[OnMsgHandleHandler](onMsgHandle, NopOnMsgHandleHandler),
+		onCloseHandler:     slices_.FirstOrZero[OnCloseHandler](onClose, NopOnCloseHandler),
+		onErrorHandler:     slices_.FirstOrZero[OnErrorHandler](onError, NopOnErrorHandler),
 	}
 }
 func NewServer(h ServerHandler) *Server {

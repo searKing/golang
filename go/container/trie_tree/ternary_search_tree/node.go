@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/searKing/golang/go/container/traversal"
-	"github.com/searKing/golang/go/util"
 )
 
 const (
@@ -134,7 +133,7 @@ const (
 
 func (n *node) Store(prefix []byte, value interface{}) {
 	// force update
-	n.CAS(prefix, nil, value, util.AlwaysEqualComparator())
+	n.CAS(prefix, nil, value, func(x, y interface{}) int { return 0 })
 }
 
 func (n *node) remove(prefix []byte, shrinkToFit bool, omitMiddle bool) (old interface{}, ok bool) {
@@ -173,7 +172,7 @@ func (n *node) String() string {
 	return strings.TrimRight(s, "\n")
 }
 
-func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...util.Comparator) bool {
+func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...func(x, y interface{}) int) bool {
 	newElement := func(prefix []byte, hasKey bool, key byte, hasValue bool, value interface{}) *node {
 		var p = make([]byte, len(prefix))
 		copy(p, prefix)
@@ -228,14 +227,19 @@ func (n *node) CAS(prefix []byte, old, new interface{}, cmps ...util.Comparator)
 				cur.hasValue = true
 				return true
 			}
-			var cmp util.Comparator
+			var cmp func(x, y interface{}) int
 			if len(cmps) > 0 {
 				cmp = cmps[0]
 			}
 			if cmp == nil {
-				cmp = util.DefaultComparator()
+				cmp = func(x, y interface{}) int {
+					if x == y {
+						return 0
+					}
+					return -1
+				}
 			}
-			if cmp.Compare(cur.value, old) == 0 {
+			if cmp(cur.value, old) == 0 {
 				cur.value = new
 				cur.hasValue = true
 				return true

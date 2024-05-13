@@ -4,6 +4,8 @@
 
 package slices
 
+// https://en.wikipedia.org/wiki/Boolean_operation
+
 // OrFunc tests the slice satisfying f(c), or false if none do.
 // return true if len(s) == 0
 func OrFunc[S ~[]E, E any](s S, f func(E) bool) bool {

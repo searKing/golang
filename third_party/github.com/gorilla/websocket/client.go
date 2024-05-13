@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/searKing/golang/go/util/object"
+	slices_ "github.com/searKing/golang/go/exp/slices"
 )
 
 type ClientHandler interface {
@@ -34,7 +34,7 @@ func NewClientFunc(onHTTPRespHandler OnHTTPResponseHandler,
 	onErrorHandler OnErrorHandler) *Client {
 	return &Client{
 		Server:                NewServerFunc(nil, onOpenHandler, onMsgReadHandler, onMsgHandleHandler, onCloseHandler, onErrorHandler),
-		onHttpResponseHandler: object.RequireNonNullElse(onHTTPRespHandler, NopOnHTTPResponseHandler).(OnHTTPResponseHandler),
+		onHttpResponseHandler: slices_.FirstOrZero[OnHTTPResponseHandler](onHTTPRespHandler, NopOnHTTPResponseHandler),
 	}
 }
 func NewClient(h ClientHandler) *Client {
@@ -67,7 +67,7 @@ func (cli *Client) DialAndServe(urlStr string, requestHeader http.Header) error 
 	defer ws.Close()
 	ctx := context.WithValue(context.Background(), ClientContextKey, cli)
 
-	// takeover the connect
+	// takeover this connect
 	c := cli.Server.newConn(ws)
 	// Handle websocket On
 	err = cli.onOpenHandler.OnOpen(c.rwc)

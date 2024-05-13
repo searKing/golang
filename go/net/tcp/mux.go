@@ -9,8 +9,6 @@ import (
 	"io"
 	"net"
 	"sync"
-
-	"github.com/searKing/golang/go/util/object"
 )
 
 type ServeMux struct {
@@ -48,7 +46,9 @@ func (mux *ServeMux) OnError(w io.Writer, r io.Reader, err error) error {
 func (mux *ServeMux) Handle(handler Handler) {
 	mux.mu.Lock()
 	defer mux.mu.Unlock()
-	object.RequireNonNil(handler, "tcp: nil handler")
+	if handler == nil {
+		panic("tcp: nil handler")
+	}
 	mux.h = handler
 }
 func (mux *ServeMux) handle() Handler {
@@ -61,10 +61,9 @@ func (mux *ServeMux) handle() Handler {
 }
 func NotFoundHandler() Handler { return &NotFound{} }
 
-// NotFoundHandler returns a simple request handler
-// that replies to each request with a ``404 page not found'' reply.
+var _ Handler = (*NotFound)(nil)
+
 type NotFound struct {
-	Handler
 	NopServer
 }
 

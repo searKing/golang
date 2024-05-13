@@ -7,11 +7,12 @@ package flag_test
 import (
 	"flag"
 	"fmt"
+	"reflect"
 	"sort"
 	"testing"
 
 	flag_ "github.com/searKing/golang/go/flag"
-	"github.com/searKing/golang/go/util/object"
+	reflect_ "github.com/searKing/golang/go/reflect"
 )
 
 func TestEverything(t *testing.T) {
@@ -83,7 +84,7 @@ func TestGet(t *testing.T) {
 			}
 			switch f.Name {
 			case "test_[]string":
-				ok = object.DeepEquals(g.Get(), []string{"one", "two"})
+				ok = reflect.DeepEqual(g.Get(), []string{"one", "two"})
 			}
 			if !ok {
 				t.Errorf("Visit: bad value %T(%v) for %s", g.Get(), g.Get(), f.Name)
@@ -114,13 +115,13 @@ func testParse(f *flag.FlagSet, t *testing.T) {
 	if !f.Parsed() {
 		t.Error("f.Parse() = false after Parse")
 	}
-	if !object.DeepEquals(*stringSliceFlag, []string{"1", "2", "3"}) {
+	if !reflect.DeepEqual(*stringSliceFlag, []string{"1", "2", "3"}) {
 		t.Error("[]string flag should be [1 2 3], is ", *stringSliceFlag)
 	}
-	if !object.DeepEquals(*stringSlice2Flag, []string{"one"}) {
+	if !reflect.DeepEqual(*stringSlice2Flag, []string{"one"}) {
 		t.Error("[]string flag should be [one], is ", *stringSlice2Flag)
 	}
-	if object.IsNil(stringSlice3Flag) {
+	if reflect_.IsNil(stringSlice3Flag) {
 		t.Error("[]string flag should be [], is ", *stringSlice3Flag)
 	}
 	if len(f.Args()) != 1 {

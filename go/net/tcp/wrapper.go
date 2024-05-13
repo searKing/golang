@@ -7,8 +7,6 @@ package tcp
 import (
 	"bufio"
 	"sync"
-
-	"github.com/searKing/golang/go/util/object"
 )
 
 type TCPConn struct {
@@ -18,7 +16,9 @@ type TCPConn struct {
 }
 
 func NewTCPConn(rw *bufio.ReadWriter) *TCPConn {
-	object.RequireNonNil(rw)
+	if rw == nil {
+		panic("nil io.ReadWriter")
+	}
 	return &TCPConn{
 		ReadWriter: rw,
 	}

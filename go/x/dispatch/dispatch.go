@@ -8,8 +8,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-
-	"github.com/searKing/golang/go/error/exception"
 )
 
 type Reader interface {
@@ -88,7 +86,7 @@ func (d *Dispatch) Read() (interface{}, error) {
 
 func (d *Dispatch) GetHandleGoroutine() bool {
 	if !d.AllowHandleInGroutine() {
-		panic(exception.NewIllegalStateException1("unexpected operation"))
+		panic("unexpected operation")
 	}
 	select {
 	case d.handlerParallelChan <- struct{}{}:
@@ -99,7 +97,7 @@ func (d *Dispatch) GetHandleGoroutine() bool {
 }
 func (d *Dispatch) PutHandleGoroutine() {
 	if !d.AllowHandleInGroutine() {
-		panic(exception.NewIllegalStateException1("unexpected operation"))
+		panic("unexpected operation")
 	}
 	select {
 	case <-d.handlerParallelChan:

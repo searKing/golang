@@ -6,15 +6,16 @@ package tcp
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/searKing/golang/go/sync/atomic"
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	time_ "github.com/searKing/golang/go/time"
-	"github.com/searKing/golang/go/util/object"
 )
 
 type Handler interface {
@@ -32,11 +33,11 @@ func NewServerFunc(
 	onClose OnCloseHandler,
 	onError OnErrorHandler) *Server {
 	return &Server{
-		onOpenHandler:      object.RequireNonNullElse(onOpen, NopOnOpenHandler).(OnOpenHandler),
-		onMsgReadHandler:   object.RequireNonNullElse(onMsgRead, NopOnMsgReadHandler).(OnMsgReadHandler),
-		onMsgHandleHandler: object.RequireNonNullElse(onMsgHandle, NopOnMsgHandleHandler).(OnMsgHandleHandler),
-		onCloseHandler:     object.RequireNonNullElse(onClose, NopOnCloseHandler).(OnCloseHandler),
-		onErrorHandler:     object.RequireNonNullElse(onError, NopOnErrorHandler).(OnErrorHandler),
+		onOpenHandler:      slices_.FirstOrZero[OnOpenHandler](onOpen, NopOnOpenHandler),
+		onMsgReadHandler:   slices_.FirstOrZero[OnMsgReadHandler](onMsgRead, NopOnMsgReadHandler),
+		onMsgHandleHandler: slices_.FirstOrZero[OnMsgHandleHandler](onMsgHandle, NopOnMsgHandleHandler),
+		onCloseHandler:     slices_.FirstOrZero[OnCloseHandler](onClose, NopOnCloseHandler),
+		onErrorHandler:     slices_.FirstOrZero[OnErrorHandler](onError, NopOnErrorHandler),
 	}
 }
 func NewServer(h Handler) *Server {
@@ -116,7 +117,8 @@ func (srv *Server) Serve(l net.Listener) error {
 			default:
 			}
 			// retry if it's recoverable
-			if ne, ok := e.(net.Error); ok && ne.Temporary() {
+			var ne net.Error
+			if errors.As(e, &ne) && ne.Temporary() {
 				delay, ok := tempDelay.NextBackOff()
 				if !ok {
 					srv.logf("http: Accept error: %v; retried canceled as time exceed(%v)", e, tempDelay.GetMaxElapsedDuration())
@@ -132,7 +134,7 @@ func (srv *Server) Serve(l net.Listener) error {
 		}
 		tempDelay.Reset()
 
-		// takeover the connect
+		// takeover this connect
 		c := srv.newConn(rw)
 		// Handle websocket On
 		err := srv.onOpenHandler.OnOpen(c.rwc)
