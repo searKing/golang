@@ -13,7 +13,7 @@ import (
 	"github.com/searKing/golang/go/container/traversal"
 )
 
-const PtrSize = 4 << (^uintptr(0) >> 63) // unsafe.Sizeof(uintptr(0)) but an ideal const, sizeof *void
+const PtrSize = unsafe.Sizeof(uintptr(0)) // an ideal const, sizeof *void, as 4 << (^uintptr(0) >> 63)
 
 func IsEmptyValue(v reflect.Value) bool {
 	switch v.Kind() {
