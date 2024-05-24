@@ -18,6 +18,9 @@ message Http{
     string scheme = 1[json_name = "Scheme", (google.protobuf.field_tag) = {struct_tag: 'validate:"required" json:"schema_tag,omitempty"'}];
   }
 
+  string test_order_tag_form_v8n = 10[(google.protobuf.field_tag) = {struct_tag: 'form:"currency_uso,omitempty" v8n:"required"'}];
+  string test_order_tag_v8n_form = 11[(google.protobuf.field_tag) = {struct_tag: 'v8n:"required" form:"currency_uso,omitempty"'}];
+
   oneof test_oneof {
     string name = 6[json_name = "Name", (google.protobuf.field_tag) = {struct_tag: 'validate:"required" json:"name,omitempty"'}];
     string name_no_json_name = 7[(google.protobuf.field_tag) = {struct_tag: 'json:"name_no_json_name,omitempty"'}];

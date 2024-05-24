@@ -145,7 +145,7 @@ func (g *GoFile) genDecl(node ast.Node) bool {
 					_ = goTags.Set(goTag)
 				}
 
-				// struct tags: protobuf, json, other tags ordered by ascii
+				// the order rule of struct tags is: protobuf, json, other tags in the same order written in *.proto.
 				var keys = []string{"protobuf", "json"}
 				keys = append(keys, strings_.SliceTrim(goTags.OrderKeys(), "protobuf", "json")...)
 				newGoTag := goTags.SelectAstString(keys...)
