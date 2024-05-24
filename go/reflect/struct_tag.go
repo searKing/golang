@@ -66,6 +66,8 @@ func ParseStructTag(tag string) (*StructTag, error) {
 
 	// Code borrowed from golang.org/x/tools/go/analysis/passes/structtag/structtag.go
 	// Code borrowed from reflect/type.go
+
+	// This code is based on the StructTag.Get code in package reflect.
 	n := 0
 	for ; tag != ""; n++ {
 		if n > 0 && tag != "" && tag[0] != ' ' {
