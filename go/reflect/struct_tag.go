@@ -337,12 +337,12 @@ func (t StructTag) Tags() []SubStructTag {
 	return t.SelectedTags(t.Keys()...)
 }
 
-// OrderedTags returns a slice of subTags sorted by keys in increasing order.
+// SortedTags returns a slice of subTags sorted by keys in increasing order.
 func (t StructTag) SortedTags() []SubStructTag {
 	return t.SelectedTags(t.SortedKeys()...)
 }
 
-// Tags returns a slice of subTags with original order.
+// OrderedTags returns a slice of subTags with original order.
 func (t StructTag) OrderedTags() []SubStructTag {
 	return t.SelectedTags(t.OrderKeys()...)
 }
