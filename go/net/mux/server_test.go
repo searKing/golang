@@ -32,7 +32,8 @@ func TestTimeout(t *testing.T) {
 	defer leakcheck.Check(t)
 	loopbackLis := testListener(t)
 	defer loopbackLis.Close()
-	result := make(chan int, 5)
+	http1Result := make(chan int, 5)
+	anyResult := make(chan int, 5)
 	testDuration := time.Millisecond * 500
 	muxer := mux.NewServeMux()
 	muxer.SetReadTimeout(testDuration)
@@ -57,17 +58,17 @@ func TestTimeout(t *testing.T) {
 				return
 			default:
 			}
-			con, err := http1Listener.Accept()
+			conn, err := http1Listener.Accept()
 			if err != nil {
-				result <- handleHTTP1Close
+				http1Result <- handleHTTP1Close
 			} else {
-				_, _ = con.Write([]byte("http1Listener"))
-				result <- handleHTTP1Request
+				_, _ = conn.Write([]byte("http1Listener"))
+				http1Result <- handleHTTP1Request
 				select {
 				case <-ctx.Done():
 					break
 				}
-				_ = con.Close()
+				_ = conn.Close()
 			}
 			select {
 			case <-ctx.Done():
@@ -82,17 +83,17 @@ func TestTimeout(t *testing.T) {
 				return
 			default:
 			}
-			con, err := anyListener.Accept()
+			conn, err := anyListener.Accept()
 			if err != nil {
-				result <- handleAnyClose
+				anyResult <- handleAnyClose
 			} else {
-				_, err = con.Write([]byte("any"))
-				result <- handleAnyRequest
+				_, err = conn.Write([]byte("any"))
+				anyResult <- handleAnyRequest
 				select {
 				case <-ctx.Done():
 					break
 				}
-				_ = con.Close()
+				_ = conn.Close()
 			}
 		}
 	}()
@@ -103,9 +104,9 @@ func TestTimeout(t *testing.T) {
 	}
 	defer client.Close()
 	time.Sleep(testDuration / 2)
-	if len(result) != 0 {
+	if len(anyResult) != 0 {
 		log.Print("tcp ")
-		t.Fatal("testTimeout failed: accepted to fast: ", len(result))
+		t.Fatal("testTimeout failed: accepted to fast: ", len(anyResult))
 	}
 	//_ = client.SetReadDeadline(time.Now().Add(testDuration * 3))
 	buffer := make([]byte, 10)
@@ -121,14 +122,17 @@ func TestTimeout(t *testing.T) {
 		log.Print("testTimeout failed: response from wrong service ")
 	}
 	time.Sleep(testDuration * 2)
-	if len(result) != 2 {
-		t.Fatal("testTimeout failed: accepted to less: ", len(result))
+	if len(http1Result) != 1 {
+		t.Fatal("testTimeout failed: http1 accepted to less: ", len(http1Result))
 	}
-	if a := <-result; a != handleAnyRequest {
-		t.Fatal("testTimeout failed: anyListener rule did not match")
+	if len(anyResult) != 1 {
+		t.Fatal("testTimeout failed: any accepted to less: ", len(anyResult))
 	}
-	if a := <-result; a != handleHTTP1Close {
+	if a := <-http1Result; a != handleHTTP1Close {
 		t.Fatal("testTimeout failed: no close an http rule")
+	}
+	if a := <-anyResult; a != handleAnyRequest {
+		t.Fatal("testTimeout failed: anyListener rule did not match")
 	}
 }
 

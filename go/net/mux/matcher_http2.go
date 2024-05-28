@@ -43,6 +43,8 @@ func HTTP2HeaderField(sendSetting bool,
 }
 
 // helper functions
+
+// HTTP2HeaderFieldValue returns a matcher matching the header fields, registered with the match handler.
 func HTTP2HeaderFieldValue(sendSetting bool, match func(actualVal, expectVal string) bool, expects ...hpack.HeaderField) MatcherFunc {
 	return HTTP2HeaderField(sendSetting, func(actualHeaderByName, expectHeaderByName map[string]hpack.HeaderField) bool {
 		for name := range expectHeaderByName {
