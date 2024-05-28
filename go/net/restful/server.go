@@ -6,7 +6,7 @@ package restful
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -39,7 +39,7 @@ func HttpPostHandler(v any, w http.ResponseWriter, r *http.Request) (finished bo
 				return true
 			}
 
-			body, err := ioutil.ReadAll(r.Body)
+			body, err := io.ReadAll(r.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return true

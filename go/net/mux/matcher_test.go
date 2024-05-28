@@ -6,7 +6,6 @@ package mux_test
 
 import (
 	"io"
-	"io/ioutil"
 	"net"
 	"strings"
 	"sync"
@@ -55,10 +54,10 @@ func test(t *testing.T, matcher mux.Matcher, payload string, mult int) {
 		_ = writer.Close()
 
 	}()
-	if !matcher.Match(ioutil.Discard, reader) {
+	if !matcher.Match(io.Discard, reader) {
 		t.Errorf("expect false but accept true")
 	}
-	_, _ = ioutil.ReadAll(reader)
+	_, _ = io.ReadAll(reader)
 
 	wg.Wait()
 }

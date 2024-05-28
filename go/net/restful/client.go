@@ -7,7 +7,6 @@ package restful
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -29,7 +28,7 @@ func httpMethod(req *http.Request) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

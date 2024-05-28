@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"go/build"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -207,7 +206,7 @@ func runTestHTTPClient(t *testing.T, proto string, addr net.Addr) {
 		}
 	}()
 
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

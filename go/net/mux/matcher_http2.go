@@ -6,7 +6,6 @@ package mux
 
 import (
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"golang.org/x/net/http2/hpack"
@@ -31,7 +30,7 @@ func HTTP2HeaderField(sendSetting bool,
 	expects ...hpack.HeaderField) MatcherFunc {
 	return func(w io.Writer, r io.Reader) bool {
 		if !sendSetting {
-			w = ioutil.Discard
+			w = io.Discard
 		}
 		return http2_.MatchHTTP2Header(w, r, nil, func(parsedHeader map[string]hpack.HeaderField) bool {
 			var expectMap = map[string]hpack.HeaderField{}
