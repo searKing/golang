@@ -3,7 +3,7 @@ module github.com/searKing/golang/third_party/github.com/gorilla/websocket
 go 1.21
 
 require (
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.2
 	github.com/searKing/golang/go v1.2.117
 )
 
