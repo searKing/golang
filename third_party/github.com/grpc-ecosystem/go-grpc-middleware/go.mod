@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/searKing/golang/go v1.2.117
+	github.com/searKing/golang/go v1.2.118
 	google.golang.org/grpc v1.63.2
 )
 
