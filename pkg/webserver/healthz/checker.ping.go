@@ -12,11 +12,7 @@ var PingHealthzCheck HealthChecker = ping{}
 // ping implements the simplest possible healthz checker.
 type ping struct{}
 
-func (ping) Name() string {
-	return "ping"
-}
+func (ping) Name() string { return "ping" }
 
 // Check is a health check that returns true.
-func (ping) Check(_ *http.Request) error {
-	return nil
-}
+func (ping) Check(_ *http.Request) error { return nil }

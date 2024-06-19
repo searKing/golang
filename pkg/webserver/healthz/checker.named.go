@@ -19,10 +19,6 @@ type namedHealthChecker struct {
 
 var _ HealthChecker = &namedHealthChecker{}
 
-func (c *namedHealthChecker) Name() string {
-	return c.name
-}
+func (c *namedHealthChecker) Name() string { return c.name }
 
-func (c *namedHealthChecker) Check(r *http.Request) error {
-	return c.check(r)
-}
+func (c *namedHealthChecker) Check(r *http.Request) error { return c.check(r) }
