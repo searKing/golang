@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const DateTime = "2006/01/02 - 15:04:05"
+const DateTime = time.DateTime
 
 // LogFormatter is the log format function [gin.Logger] middleware uses.
 func LogFormatter(layout string) func(param gin.LogFormatterParams) string {
@@ -21,6 +21,7 @@ func LogFormatter(layout string) func(param gin.LogFormatterParams) string {
 // LogFormatterWithExtra is the log format function [gin.Logger] middleware uses with extra append {path}.
 func LogFormatterWithExtra(layout string, getExtra func(param gin.LogFormatterParams) string) func(param gin.LogFormatterParams) string {
 	return func(param gin.LogFormatterParams) string {
+		// code borrowed from https://github.com/gin-gonic/gin/blob/v1.10.0/logger.go#L141
 		var statusColor, methodColor, resetColor string
 		if param.IsOutputColor() {
 			statusColor = param.StatusCodeColor()
