@@ -23,9 +23,7 @@ type log struct {
 	lastVerified atomic.Value
 }
 
-func (l *log) Name() string {
-	return "log"
-}
+func (l *log) Name() string { return "log" }
 
 func (l *log) Check(_ *http.Request) error {
 	l.startOnce.Do(func() {

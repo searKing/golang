@@ -18,13 +18,9 @@ type healthzCheck struct {
 
 var _ HealthChecker = &healthzCheck{}
 
-func (c *healthzCheck) Name() string {
-	return c.name
-}
+func (c *healthzCheck) Name() string { return c.name }
 
-func (c *healthzCheck) Check(r *http.Request) error {
-	return c.check(r)
-}
+func (c *healthzCheck) Check(r *http.Request) error { return c.check(r) }
 
 // getExcludedChecks extracts the health check names to be excluded from the query param
 func getExcludedChecks(r *http.Request) map[string]struct{} {
