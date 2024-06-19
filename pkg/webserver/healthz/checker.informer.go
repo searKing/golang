@@ -27,9 +27,7 @@ func NewInformerSyncHealthz(cacheSyncWaiter cacheSyncWaiter) HealthChecker {
 	}
 }
 
-func (i *informerSync) Name() string {
-	return "informer-sync"
-}
+func (i *informerSync) Name() string { return "informer-sync" }
 
 func (i *informerSync) Check(_ *http.Request) error {
 	stopCh := make(chan struct{})

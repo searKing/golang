@@ -65,8 +65,7 @@ func InstallPathHandlerWithHealthyFunc(mux Muxer, path string, firstTimeHealthy 
 	slog.Info(fmt.Sprintf("Installing health checkers for (%v): %v", path, formatQuoted(checkerNames(checks...)...)))
 
 	name := strings.Split(strings.TrimPrefix(path, "/"), "/")[0]
-	mux.Handle(path,
-		handleRootHealth(name, firstTimeHealthy, checks...))
+	mux.Handle(path, handleRootHealth(name, firstTimeHealthy, checks...))
 	for _, check := range checks {
 		mux.Handle(fmt.Sprintf("%s/%v", path, check.Name()), adaptCheckToHandler(check.Check))
 	}
