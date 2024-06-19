@@ -77,6 +77,11 @@ type Muxer interface {
 }
 
 // handleRootHealth returns an http.HandlerFunc that serves the provided checks.
+//
+// URL query:
+//
+//	verbose responds with detailed check output.
+//	exclude=foo&exclude=bar&exclude=baz will bypass checking "foo", "bar" and "baz".
 func handleRootHealth(name string, firstTimeHealthy func(), checks ...HealthChecker) http.HandlerFunc {
 	var notifyOnce sync.Once
 	return func(w http.ResponseWriter, r *http.Request) {
