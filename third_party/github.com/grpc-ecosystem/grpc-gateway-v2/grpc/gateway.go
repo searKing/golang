@@ -225,14 +225,12 @@ func (gw *Gateway) preServe(opts ...GatewayOption) {
 	if tlsConfig != nil {
 		creds := credentials.NewTLS(tlsConfig)
 		// for grpc server
-		gw.opt.grpcServerOpts.opts = append(gw.opt.grpcServerOpts.opts, grpc.Creds(creds))
+		gw.opt.grpcServerOpts.opts = append([]grpc.ServerOption{grpc.Creds(creds)}, gw.opt.grpcServerOpts.opts...)
 		// for grpc client to server
-		gw.opt.grpcClientDialOpts = append(gw.opt.grpcClientDialOpts, grpc.WithTransportCredentials(creds))
+		gw.opt.grpcClientDialOpts = append([]grpc.DialOption{grpc.WithTransportCredentials(creds)}, gw.opt.grpcClientDialOpts...)
 	} else {
 		// disables transport security
-		var opts []grpc.DialOption
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		gw.opt.grpcClientDialOpts = append(opts, gw.opt.grpcClientDialOpts...)
+		gw.opt.grpcClientDialOpts = append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, gw.opt.grpcClientDialOpts...)
 	}
 
 	gw.opt.srvMuxOpts = append(gw.opt.srvMuxOpts,
