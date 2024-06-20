@@ -339,7 +339,7 @@ func (f *Factory) ResolveLocalIp() string {
 	resolver := f.fc.LocalIpResolver
 	if resolver != nil {
 		ip, err := net_.ServeIP(resolver.Networks, resolver.Addresses, resolver.Timeout)
-		if err != nil && len(ip) > 0 {
+		if err == nil && len(ip) > 0 {
 			return ip.String()
 		}
 	}
