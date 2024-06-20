@@ -122,9 +122,6 @@ func WithStreamErrorHandler(fn runtime.StreamErrorHandlerFunc) GatewayOption {
 // You can set a custom function to this variable to customize error format.
 func WithHTTPErrorHandler(fn HTTPErrorHandler) GatewayOption {
 	return WithGrpcServeMuxOption(runtime.WithErrorHandler(fn.HandleHTTPError))
-	//return GatewayOptionFunc(func(gateway *Gateway) {
-	//	runtime.HTTPError = fn.HandleHTTPError
-	//})
 }
 
 func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption {
