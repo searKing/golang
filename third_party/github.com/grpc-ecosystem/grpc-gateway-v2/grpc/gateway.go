@@ -279,9 +279,6 @@ func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx c
 // registerGrpcReflection registers the server reflection service on the given gRPC server.
 // can be called once, recommend being called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
 func (gateway *Gateway) registerGrpcReflection() {
-	if gateway.grpcServer == nil || !gateway.opt.grpcServerOpts.withReflectionService {
-		return
-	}
 	// grpcurl -plaintext localhost:1234 list
 	// -plaintext: avoid Failed to dial target host "localhost:1234": tls: first record does not look like a TLS handshake
 	// avoid: Failed to list services: server does not support the reflection API
@@ -290,8 +287,7 @@ func (gateway *Gateway) registerGrpcReflection() {
 }
 
 func (gateway *Gateway) preServe() {
-	if gateway == nil {
-		return
+	if gateway.opt.grpcServerOpts.withReflectionService {
+		gateway.registerGrpcReflection()
 	}
-	gateway.registerGrpcReflection()
 }
