@@ -14,7 +14,7 @@ import (
 )
 
 // GrpcOrDefaultHandler returns a http.Handler that delegates to grpcServer on incoming gRPC
-// connections or otherHandler otherwise. Copied from cockroachdb.
+// connections or defaultHandler otherwise. Copied from cockroachdb.
 func GrpcOrDefaultHandler(grpcServer *grpc.Server, defaultHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This is a partial recreation of gRPC's internal checks https://github.com/grpc/grpc-go/blob/v1.64.0/internal/transport/handler_server.go#L53
