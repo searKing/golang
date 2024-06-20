@@ -3,13 +3,6 @@
 
 package grpc
 
-import (
-	"net/http"
-
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc"
-)
-
 // A GatewayOption sets options.
 type GatewayOption interface {
 	apply(*Gateway)
@@ -49,32 +42,9 @@ func WithGateway(v Gateway) GatewayOption {
 	})
 }
 
-// WithGatewayOpt sets opt in Gateway.
-// options
-func WithGatewayOpt(v gatewayOption) GatewayOption {
-	return GatewayOptionFunc(func(o *Gateway) {
-		o.opt = v
-	})
-}
-
-// WithGatewayHttpMuxToGrpc sets httpMuxToGrpc in Gateway.
-func WithGatewayHttpMuxToGrpc(v *runtime.ServeMux) GatewayOption {
-	return GatewayOptionFunc(func(o *Gateway) {
-		o.httpMuxToGrpc = v
-	})
-}
-
-// WithGatewayHandler sets Handler in Gateway.
-func WithGatewayHandler(v http.Handler) GatewayOption {
-	return GatewayOptionFunc(func(o *Gateway) {
-		o.Handler = v
-	})
-}
-
-// WithGatewayGrpcServer sets grpcServer in Gateway.
-// runtime
-func WithGatewayGrpcServer(v *grpc.Server) GatewayOption {
-	return GatewayOptionFunc(func(o *Gateway) {
-		o.grpcServer = v
+// sample code for option, default for nothing to change
+func _GatewayOptionWithDefault() GatewayOption {
+	return GatewayOptionFunc(func(*Gateway) {
+		// nothing to change
 	})
 }

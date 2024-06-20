@@ -24,15 +24,15 @@ import (
 //go:generate go-option -type=Gateway
 type Gateway struct {
 	// options
-	opt gatewayOption
-	http.Server
+	opt         gatewayOption `option:"-"`
+	http.Server `option:"-"`
 
-	httpMuxToGrpc *runtime.ServeMux
-	Handler       http.Handler
+	httpMuxToGrpc *runtime.ServeMux `option:"-"`
+	Handler       http.Handler      `option:"-"`
 
 	// runtime
-	grpcServer *grpc.Server
-	listenAddr *net.TCPAddr //  addr actually listen, useful for :0 or port not specified.
+	grpcServer *grpc.Server `option:"-"`
+	listenAddr *net.TCPAddr `option:"-"` //  addr actually listen, useful for :0 or port not specified.
 
 	once sync.Once `option:"-"`
 }
