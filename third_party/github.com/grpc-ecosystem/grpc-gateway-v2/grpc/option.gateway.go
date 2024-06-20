@@ -133,7 +133,7 @@ func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption
 	})
 }
 
-func WithDefaultMarsherOption() []GatewayOption {
+func WithDefaultMarshalerOption() []GatewayOption {
 	return []GatewayOption{
 		WithMarshalerOption(runtime.MIMEWildcard, runtime_.NewHTTPBodyJsonMarshaler()),
 		WithMarshalerOption(binding.MIMEJSON, runtime_.NewHTTPBodyJsonMarshaler()),
@@ -143,9 +143,14 @@ func WithDefaultMarsherOption() []GatewayOption {
 	}
 }
 
+// Deprecated: Use WithDefaultMarshalerOption instead.
+func WithDefaultMarsherOption() []GatewayOption {
+	return WithDefaultMarshalerOption()
+}
+
 func WithDefault() []GatewayOption {
 	var opts []GatewayOption
-	opts = append(opts, WithDefaultMarsherOption()...)
+	opts = append(opts, WithDefaultMarshalerOption()...)
 	opts = append(opts, WithGrpcReflectionService(true))
 	return opts
 }
