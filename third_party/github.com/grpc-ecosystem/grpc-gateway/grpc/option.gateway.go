@@ -139,14 +139,18 @@ func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption
 	})
 }
 
-func WithDefaultMarsherOption() []GatewayOption {
+func WithDefaultMarshalerOption() []GatewayOption {
 	return []GatewayOption{
 		WithMarshalerOption(runtime.MIMEWildcard, runtime_.NewHTTPBodyJsonMarshaler()),
 		WithMarshalerOption(binding.MIMEJSON, runtime_.NewHTTPBodyJsonMarshaler()),
 		WithMarshalerOption(binding.MIMEPROTOBUF, runtime_.NewHTTPBodyProtoMarshaler()),
 		WithMarshalerOption(binding.MIMEYAML, runtime_.NewHTTPBodyYamlMarshaler()),
 	}
+}
 
+// Deprecated: Use WithDefaultMarshalerOption instead.
+func WithDefaultMarsherOption() []GatewayOption {
+	return WithDefaultMarshalerOption()
 }
 
 func WithFastMode(fastMode bool) GatewayOption {
