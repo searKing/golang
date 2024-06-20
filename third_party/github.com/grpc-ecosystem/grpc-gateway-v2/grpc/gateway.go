@@ -208,6 +208,28 @@ func (gw *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx contex
 	return gw.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
 }
 
+func (gw *Gateway) preServe(opts ...GatewayOption) {
+	gw.ApplyOptions(opts...)
+
+	gw.resolveListenAddrLater()
+
+	gw.installTlsConfig()
+
+	// gRPC to JSON proxy generator following the gRPC HTTP spec
+	gw.installNotFoundHandler() // --> srvMuxOpts
+	gw.httpMuxToGrpc = runtime.NewServeMux(gw.opt.srvMuxOpts...)
+
+	// a gRPC server to serve RPC requests.
+	gw.grpcServer = grpc.NewServer(gw.opt.ServerOptions()...)
+	// register the server reflection service on the given gRPC server.
+	if gw.opt.grpcServerOpts.withReflectionService {
+		gw.registerGrpcReflection()
+	}
+
+	// delegate to grpcServer on incoming gRPC connections or HTTP connections otherwise.
+	gw.Server.Handler = grpc_.GrpcOrDefaultHandler(gw.grpcServer, &serverHandler{gateway: gw})
+}
+
 // registerGrpcReflection registers the server reflection service on the given gRPC server.
 // can be called once, recommend being called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
 func (gw *Gateway) registerGrpcReflection() {
@@ -218,9 +240,7 @@ func (gw *Gateway) registerGrpcReflection() {
 	reflection.Register(gw.grpcServer)
 }
 
-func (gw *Gateway) preServe(opts ...GatewayOption) {
-	gw.ApplyOptions(opts...)
-
+func (gw *Gateway) installTlsConfig() {
 	tlsConfig := gw.TLSConfig
 	if tlsConfig != nil {
 		creds := credentials.NewTLS(tlsConfig)
@@ -232,7 +252,9 @@ func (gw *Gateway) preServe(opts ...GatewayOption) {
 		// disables transport security
 		gw.opt.grpcClientDialOpts = append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, gw.opt.grpcClientDialOpts...)
 	}
+}
 
+func (gw *Gateway) installNotFoundHandler() {
 	// Not Found Handler
 	gw.opt.srvMuxOpts = append(gw.opt.srvMuxOpts,
 		runtime.WithRoutingErrorHandler(
@@ -247,29 +269,20 @@ func (gw *Gateway) preServe(opts ...GatewayOption) {
 				}
 				runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, httpStatus)
 			}))
+}
 
-	gw.grpcServer = grpc.NewServer(gw.opt.ServerOptions()...)
-	gw.httpMuxToGrpc = runtime.NewServeMux(gw.opt.srvMuxOpts...)
-
-	{
-		ctx := gw.Server.BaseContext
-		gw.Server.BaseContext = func(lis net.Listener) context.Context {
-			slog.Info(fmt.Sprintf("Serve() passed a net.Listener on %s", lis.Addr().String()))
-			if addr, ok := lis.Addr().(*net.TCPAddr); !ok {
-				slog.Warn(fmt.Sprintf("GatewayServer expects listener to return a net.TCPAddr. Got %T", lis.Addr()))
-			} else {
-				gw.listenAddr = addr
-			}
-			if ctx == nil {
-				return context.Background()
-			}
-			return ctx(lis)
+func (gw *Gateway) resolveListenAddrLater() {
+	ctx := gw.Server.BaseContext
+	gw.Server.BaseContext = func(lis net.Listener) context.Context {
+		slog.Info(fmt.Sprintf("Serve() passed a net.Listener on %s", lis.Addr().String()))
+		if addr, ok := lis.Addr().(*net.TCPAddr); !ok {
+			slog.Warn(fmt.Sprintf("GatewayServer expects listener to return a net.TCPAddr. Got %T", lis.Addr()))
+		} else {
+			gw.listenAddr = addr
 		}
-	}
-
-	gw.Server.Handler = grpc_.GrpcOrDefaultHandler(gw.grpcServer, &serverHandler{gateway: gw})
-
-	if gw.opt.grpcServerOpts.withReflectionService {
-		gw.registerGrpcReflection()
+		if ctx == nil {
+			return context.Background()
+		}
+		return ctx(lis)
 	}
 }
