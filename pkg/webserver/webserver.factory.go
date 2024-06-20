@@ -91,6 +91,7 @@ func (fc *FactoryConfig) SetDefaults() {
 			http.MethodPatch,
 			http.MethodDelete},
 		AllowedHeaders: []string{"*"},
+		Logger:         slog.NewLogLogger(slog.Default().Handler(), slog.LevelDebug),
 	}
 }
 
@@ -174,40 +175,38 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 	{
 		// recover
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
-			slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
-			{
-				_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
-				debug.PrintStack()
-				_, _ = os.Stderr.Write([]byte(" [recovered]"))
-				_, _ = os.Stderr.Write([]byte("\n"))
-			}
-			return status.Errorf(codes.Internal, "%s", p)
-		}))))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
-			slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
-			{
-				_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
-				debug.PrintStack()
-				_, _ = os.Stderr.Write([]byte(" [recovered]"))
-				_, _ = os.Stderr.Write([]byte("\n"))
-			}
-			return status.Errorf(codes.Internal, "%s", p)
-		}))))
+		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(
+			grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
+				slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
+				{
+					_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
+					debug.PrintStack()
+					_, _ = os.Stderr.Write([]byte(" [recovered]"))
+					_, _ = os.Stderr.Write([]byte("\n"))
+				}
+				return status.Errorf(codes.Internal, "%s", p)
+			}))))
+		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(
+			grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
+				slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
+				{
+					_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
+					debug.PrintStack()
+					_, _ = os.Stderr.Write([]byte(" [recovered]"))
+					_, _ = os.Stderr.Write([]byte("\n"))
+				}
+				return status.Errorf(codes.Internal, "%s", p)
+			}))))
 	}
 	{
 		// handle request timeout
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(
-			timeoutlimit.UnaryServerInterceptor(f.fc.HandledTimeoutUnary)))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(
-			timeoutlimit.StreamServerInterceptor(f.fc.HandledTimeoutStream)))
+		opts = append(opts, grpc_.WithGrpcUnaryServerChain(timeoutlimit.UnaryServerInterceptor(f.fc.HandledTimeoutUnary)))
+		opts = append(opts, grpc_.WithGrpcStreamServerChain(timeoutlimit.StreamServerInterceptor(f.fc.HandledTimeoutStream)))
 	}
 	{
 		// burst limit
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(
-			burstlimit.UnaryServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary)))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(
-			burstlimit.StreamServerInterceptor(f.fc.MaxConcurrencyStream, f.fc.BurstLimitTimeoutStream)))
+		opts = append(opts, grpc_.WithGrpcUnaryServerChain(burstlimit.UnaryServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary)))
+		opts = append(opts, grpc_.WithGrpcStreamServerChain(burstlimit.StreamServerInterceptor(f.fc.MaxConcurrencyStream, f.fc.BurstLimitTimeoutStream)))
 	}
 
 	// cors
