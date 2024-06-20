@@ -155,7 +155,6 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 	{
 		// 设置GRPC最大消息大小
-		opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithNoProxy()))
 		// http -> grpc client -> grpc server
 		if f.fc.MaxReceiveMessageSizeInBytes > 0 {
 			opts = append(opts, grpc_.WithGrpcServerOption(grpc.MaxRecvMsgSize(f.fc.MaxReceiveMessageSizeInBytes)))
