@@ -30,7 +30,7 @@ type Gateway struct {
 	http.Server `option:"-"`  // Gateway is a HTTP server, actually.
 
 	httpMuxToGrpc *runtime.ServeMux `option:"-"` // gRPC to JSON proxy generator following the gRPC HTTP spec
-	Handler       http.Handler      `option:"-"` // HTTP Handler
+	Handler       http.Handler      `option:"-"` // Not Found HTTP Handler
 
 	// runtime
 	grpcServer *grpc.Server `option:"-"` // a gRPC server to serve RPC requests.
@@ -233,20 +233,19 @@ func (gw *Gateway) preServe(opts ...GatewayOption) {
 		gw.opt.grpcClientDialOpts = append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, gw.opt.grpcClientDialOpts...)
 	}
 
+	// Not Found Handler
 	gw.opt.srvMuxOpts = append(gw.opt.srvMuxOpts,
 		runtime.WithRoutingErrorHandler(
-			func(ctx context.Context, mux *runtime.ServeMux,
-				marshaler runtime.Marshaler,
-				w http.ResponseWriter, r *http.Request, code int) {
-				httpHandler := gw.Handler
-				if httpHandler == nil {
-					httpHandler = http.DefaultServeMux
-				}
-				if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
-					httpHandler.ServeHTTP(w, r)
+			func(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, httpStatus int) {
+				if httpStatus == http.StatusNotFound || httpStatus == http.StatusMethodNotAllowed {
+					notFoundHandler := gw.Handler
+					if notFoundHandler == nil {
+						notFoundHandler = http.DefaultServeMux
+					}
+					notFoundHandler.ServeHTTP(w, r)
 					return
 				}
-				runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
+				runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, httpStatus)
 			}))
 
 	gw.grpcServer = grpc.NewServer(gw.opt.ServerOptions()...)
