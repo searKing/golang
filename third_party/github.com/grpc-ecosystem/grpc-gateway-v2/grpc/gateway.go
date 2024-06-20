@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
@@ -21,20 +20,21 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+// A Gateway defines parameters for running an HTTP+gRPC-Gateway+gRPC server.
+// The zero value for Gateway is a valid configuration.
+//
 //go:generate go-option -type=Gateway
 type Gateway struct {
 	// options
 	opt         gatewayOption `option:"-"`
-	http.Server `option:"-"`
+	http.Server `option:"-"`  // Gateway is a HTTP server, actually.
 
-	httpMuxToGrpc *runtime.ServeMux `option:"-"`
-	Handler       http.Handler      `option:"-"`
+	httpMuxToGrpc *runtime.ServeMux `option:"-"` // gRPC to JSON proxy generator following the gRPC HTTP spec
+	Handler       http.Handler      `option:"-"` // HTTP Handler
 
 	// runtime
-	grpcServer *grpc.Server `option:"-"`
-	listenAddr *net.TCPAddr `option:"-"` //  addr actually listen, useful for :0 or port not specified.
-
-	once sync.Once `option:"-"`
+	grpcServer *grpc.Server `option:"-"` // a gRPC server to serve RPC requests.
+	listenAddr *net.TCPAddr `option:"-"` // addr actually listen, useful for :0 or port not specified.
 }
 
 func NewGateway(addr string, opts ...GatewayOption) *Gateway {
@@ -123,70 +123,9 @@ func ServeTLS(l net.Listener, handler http.Handler, certFile, keyFile string, op
 	return srv.ApplyOptions(opts...).ServeTLS(l, certFile, keyFile)
 }
 
-func (gateway *Gateway) lazyInit(opts ...GatewayOption) {
-	gateway.once.Do(func() {
-		gateway.ApplyOptions(opts...)
-
-		tlsConfig := gateway.TLSConfig
-		if tlsConfig != nil {
-			// for grpc server
-			gateway.opt.grpcServerOpts.opts = append(gateway.opt.grpcServerOpts.opts,
-				grpc.Creds(credentials.NewTLS(tlsConfig)))
-			// for grpc client to server
-			gateway.opt.grpcClientDialOpts = append(gateway.opt.grpcClientDialOpts,
-				grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-		} else {
-			// disables transport security
-			var opts []grpc.DialOption
-			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-			gateway.opt.grpcClientDialOpts = append(opts, gateway.opt.grpcClientDialOpts...)
-		}
-
-		gateway.opt.srvMuxOpts = append(gateway.opt.srvMuxOpts,
-			runtime.WithRoutingErrorHandler(
-				func(ctx context.Context, mux *runtime.ServeMux,
-					marshaler runtime.Marshaler,
-					w http.ResponseWriter, r *http.Request, code int) {
-					httpHandler := gateway.Handler
-					if httpHandler == nil {
-						httpHandler = http.DefaultServeMux
-					}
-					if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
-						httpHandler.ServeHTTP(w, r)
-						return
-					}
-					runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
-				}))
-
-		gateway.grpcServer = grpc.NewServer(gateway.opt.ServerOptions()...)
-		gateway.httpMuxToGrpc = runtime.NewServeMux(gateway.opt.srvMuxOpts...)
-
-		{
-			ctx := gateway.Server.BaseContext
-			gateway.Server.BaseContext = func(lis net.Listener) context.Context {
-				slog.Info(fmt.Sprintf("Serve() passed a net.Listener on %s", lis.Addr().String()))
-				if addr, ok := lis.Addr().(*net.TCPAddr); !ok {
-					slog.Warn(fmt.Sprintf("GatewayServer expects listener to return a net.TCPAddr. Got %T", lis.Addr()))
-				} else {
-					gateway.listenAddr = addr
-				}
-				if ctx == nil {
-					return context.Background()
-				}
-				return ctx(lis)
-			}
-		}
-
-		gateway.Server.Handler = grpc_.GrpcOrDefaultHandler(gateway.grpcServer, &serverHandler{
-			gateway: gateway,
-		})
-	})
-}
-
-func (gateway *Gateway) Serve(l net.Listener) error {
-	gateway.lazyInit()
-	gateway.preServe()
-	return gateway.Server.Serve(l)
+func (gw *Gateway) Serve(l net.Listener) error {
+	gw.preServe()
+	return gw.Server.Serve(l)
 }
 
 // ServeTLS accepts incoming connections on the Listener l, creating a
@@ -202,10 +141,9 @@ func (gateway *Gateway) Serve(l net.Listener) error {
 //
 // ServeTLS always returns a non-nil error. After Shutdown or Close, the
 // returned error is ErrServerClosed.
-func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error {
-	gateway.lazyInit()
-	gateway.preServe()
-	return gateway.Server.ServeTLS(l, certFile, keyFile)
+func (gw *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error {
+	gw.preServe()
+	return gw.Server.ServeTLS(l, certFile, keyFile)
 }
 
 // ListenAndServe listens on the TCP network address srv.Addr and then
@@ -216,10 +154,9 @@ func (gateway *Gateway) ServeTLS(l net.Listener, certFile, keyFile string) error
 //
 // ListenAndServe always returns a non-nil error. After Shutdown or Close,
 // the returned error is ErrServerClosed.
-func (gateway *Gateway) ListenAndServe() error {
-	gateway.lazyInit()
-	gateway.preServe()
-	return gateway.Server.ListenAndServe()
+func (gw *Gateway) ListenAndServe() error {
+	gw.preServe()
+	return gw.Server.ListenAndServe()
 }
 
 // ListenAndServeTLS listens on the TCP network address srv.Addr and
@@ -237,57 +174,105 @@ func (gateway *Gateway) ListenAndServe() error {
 //
 // ListenAndServeTLS always returns a non-nil error. After Shutdown or
 // Close, the returned error is ErrServerClosed.
-func (gateway *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
-	gateway.lazyInit()
-	gateway.preServe()
-	return gateway.Server.ListenAndServeTLS(certFile, keyFile)
+func (gw *Gateway) ListenAndServeTLS(certFile, keyFile string) error {
+	gw.preServe()
+	return gw.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
 // BindAddr returns actual addr bind after a net.Listener on
-func (gateway *Gateway) BindAddr() string {
-	if gateway.listenAddr != nil {
-		return gateway.listenAddr.String()
+func (gw *Gateway) BindAddr() string {
+	if gw.listenAddr != nil {
+		return gw.listenAddr.String()
 	}
-	return gateway.Server.Addr
+	return gw.Server.Addr
 }
 
 // RegisterGRPCHandler registers grpc handler of the gateway
-func (gateway *Gateway) RegisterGRPCHandler(handler GRPCHandler) {
-	gateway.lazyInit()
-	handler.Register(gateway.grpcServer)
+func (gw *Gateway) RegisterGRPCHandler(handler GRPCHandler) {
+	handler.Register(gw.grpcServer)
 }
 
 // RegisterHTTPHandler registers http handler of the gateway
-func (gateway *Gateway) RegisterHTTPHandler(ctx context.Context, handler HTTPHandler) error {
-	gateway.lazyInit()
+func (gw *Gateway) RegisterHTTPHandler(ctx context.Context, handler HTTPHandler) error {
 	//scheme://authority/endpoint
-	return handler.Register(ctx, gateway.httpMuxToGrpc, "passthrough:///"+gateway.Server.Addr, gateway.opt.ClientDialOpts())
+	return handler.Register(ctx, gw.httpMuxToGrpc, "passthrough:///"+gw.Server.Addr, gw.opt.ClientDialOpts())
 }
 
 // RegisterGRPCFunc registers grpc handler of the gateway
-func (gateway *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
-	gateway.lazyInit()
-	gateway.RegisterGRPCHandler(GRPCHandlerFunc(handler))
+func (gw *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
+	gw.RegisterGRPCHandler(GRPCHandlerFunc(handler))
 }
 
 // RegisterHTTPFunc registers http handler of the gateway
-func (gateway *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error) error {
-	gateway.lazyInit()
-	return gateway.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
+func (gw *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error) error {
+	return gw.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
 }
 
 // registerGrpcReflection registers the server reflection service on the given gRPC server.
 // can be called once, recommend being called before Serve, ServeTLS, ListenAndServe or ListenAndServeTLS and so on.
-func (gateway *Gateway) registerGrpcReflection() {
+func (gw *Gateway) registerGrpcReflection() {
 	// grpcurl -plaintext localhost:1234 list
 	// -plaintext: avoid Failed to dial target host "localhost:1234": tls: first record does not look like a TLS handshake
 	// avoid: Failed to list services: server does not support the reflection API
 	// Register reflection service on gRPC server.
-	reflection.Register(gateway.grpcServer)
+	reflection.Register(gw.grpcServer)
 }
 
-func (gateway *Gateway) preServe() {
-	if gateway.opt.grpcServerOpts.withReflectionService {
-		gateway.registerGrpcReflection()
+func (gw *Gateway) preServe(opts ...GatewayOption) {
+	gw.ApplyOptions(opts...)
+
+	tlsConfig := gw.TLSConfig
+	if tlsConfig != nil {
+		creds := credentials.NewTLS(tlsConfig)
+		// for grpc server
+		gw.opt.grpcServerOpts.opts = append(gw.opt.grpcServerOpts.opts, grpc.Creds(creds))
+		// for grpc client to server
+		gw.opt.grpcClientDialOpts = append(gw.opt.grpcClientDialOpts, grpc.WithTransportCredentials(creds))
+	} else {
+		// disables transport security
+		var opts []grpc.DialOption
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		gw.opt.grpcClientDialOpts = append(opts, gw.opt.grpcClientDialOpts...)
+	}
+
+	gw.opt.srvMuxOpts = append(gw.opt.srvMuxOpts,
+		runtime.WithRoutingErrorHandler(
+			func(ctx context.Context, mux *runtime.ServeMux,
+				marshaler runtime.Marshaler,
+				w http.ResponseWriter, r *http.Request, code int) {
+				httpHandler := gw.Handler
+				if httpHandler == nil {
+					httpHandler = http.DefaultServeMux
+				}
+				if code == http.StatusNotFound || code == http.StatusMethodNotAllowed {
+					httpHandler.ServeHTTP(w, r)
+					return
+				}
+				runtime.DefaultRoutingErrorHandler(ctx, mux, marshaler, w, r, code)
+			}))
+
+	gw.grpcServer = grpc.NewServer(gw.opt.ServerOptions()...)
+	gw.httpMuxToGrpc = runtime.NewServeMux(gw.opt.srvMuxOpts...)
+
+	{
+		ctx := gw.Server.BaseContext
+		gw.Server.BaseContext = func(lis net.Listener) context.Context {
+			slog.Info(fmt.Sprintf("Serve() passed a net.Listener on %s", lis.Addr().String()))
+			if addr, ok := lis.Addr().(*net.TCPAddr); !ok {
+				slog.Warn(fmt.Sprintf("GatewayServer expects listener to return a net.TCPAddr. Got %T", lis.Addr()))
+			} else {
+				gw.listenAddr = addr
+			}
+			if ctx == nil {
+				return context.Background()
+			}
+			return ctx(lis)
+		}
+	}
+
+	gw.Server.Handler = grpc_.GrpcOrDefaultHandler(gw.grpcServer, &serverHandler{gateway: gw})
+
+	if gw.opt.grpcServerOpts.withReflectionService {
+		gw.registerGrpcReflection()
 	}
 }

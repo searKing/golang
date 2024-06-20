@@ -25,14 +25,14 @@ func (f GatewayOptionFunc) apply(do *Gateway) {
 }
 
 // ApplyOptions call apply() for all options one by one
-func (o *Gateway) ApplyOptions(options ...GatewayOption) *Gateway {
+func (gw *Gateway) ApplyOptions(options ...GatewayOption) *Gateway {
 	for _, opt := range options {
 		if opt == nil {
 			continue
 		}
-		opt.apply(o)
+		opt.apply(gw)
 	}
-	return o
+	return gw
 }
 
 // WithGateway sets Gateway.
