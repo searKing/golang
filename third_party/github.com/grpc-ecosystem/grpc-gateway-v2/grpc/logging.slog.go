@@ -7,11 +7,15 @@ package grpc
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	runtime_ "github.com/searKing/golang/go/runtime"
 	grpclog_ "github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/grpclog"
 )
+
+const d = 3
 
 func WithSlogLogger(logger slog.Handler) []GatewayOption {
 	return WithSlogLoggerConfig(logger, nil)
@@ -22,7 +26,13 @@ func WithSlogLogger(logger slog.Handler) []GatewayOption {
 func interceptorSlogLogger(h slog.Handler) logging.Logger {
 	l := slog.New(h)
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
-		l.Log(ctx, slog.Level(lvl), msg, fields...)
+		//l.Log(ctx, slog.Level(lvl), msg, fields...)
+		if l.Enabled(ctx, slog.Level(lvl)) {
+			pc := runtime_.GetCallerFrame(d).PC
+			r := slog.NewRecord(time.Now(), slog.Level(lvl), msg, pc)
+			r.Add(fields...)
+			_ = h.WithGroup("grpc-gateway").Handle(ctx, r)
+		}
 	})
 }
 
