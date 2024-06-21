@@ -23,6 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/rs/cors"
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	net_ "github.com/searKing/golang/go/net"
 	"github.com/searKing/golang/pkg/webserver/healthz"
@@ -176,8 +177,9 @@ func (f *Factory) New() (*WebServer, error) {
 	{
 		// recover
 		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(
-			grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
-				slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
+			grpcrecovery.WithRecoveryHandlerContext(func(ctx context.Context, p any) (err error) {
+				slog.With(slices_.MapFunc(extractLoggingAttrs(ctx), func(e slog.Attr) any { return e })...).
+					Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
 				{
 					_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
 					debug.PrintStack()
@@ -187,8 +189,9 @@ func (f *Factory) New() (*WebServer, error) {
 				return status.Errorf(codes.Internal, "%s", p)
 			}))))
 		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(
-			grpcrecovery.WithRecoveryHandler(func(p any) (err error) {
-				slog.Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
+			grpcrecovery.WithRecoveryHandlerContext(func(ctx context.Context, p any) (err error) {
+				slog.With(slices_.MapFunc(extractLoggingAttrs(ctx), func(e slog.Attr) any { return e })...).
+					Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
 				{
 					_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
 					debug.PrintStack()
