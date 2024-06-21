@@ -136,7 +136,6 @@ func WithDefaultMarshalerOption() []GatewayOption {
 		WithMarshalerOption(binding.MIMEJSON, runtime_.NewHTTPBodyJsonMarshaler()),
 		WithMarshalerOption(binding.MIMEPROTOBUF, runtime_.NewHTTPBodyProtoMarshaler()),
 		WithMarshalerOption(binding.MIMEYAML, runtime_.NewHTTPBodyYamlMarshaler()),
-		WithGrpcReflectionService(true),
 	}
 }
 
