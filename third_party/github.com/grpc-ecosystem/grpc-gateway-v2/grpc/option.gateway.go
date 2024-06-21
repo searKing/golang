@@ -158,6 +158,12 @@ func WithDefault() []GatewayOption {
 //	})
 //}
 
+func WithForwardResponseMessageHandler(fn ForwardResponseOptionHandler) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		WithGrpcServeMuxOption(runtime.WithForwardResponseOption(fn.ForwardResponseOption))
+	})
+}
+
 func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		gateway.opt.interceptors.ApplyOptions(opts...)
