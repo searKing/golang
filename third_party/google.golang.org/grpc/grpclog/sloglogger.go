@@ -99,7 +99,7 @@ func (g *slogger) log(ctx context.Context, level slog.Level, args ...any) {
 	if h.Enabled(ctx, level) {
 		pc := runtime_.GetCallerFrame(d + 1).PC
 		r := slog.NewRecord(time.Now(), level, fmt.Sprint(args...), pc)
-		_ = h.WithGroup("grpc").Handle(ctx, r)
+		_ = h.Handle(ctx, r)
 	}
 }
 
@@ -111,7 +111,7 @@ func (g *slogger) logln(ctx context.Context, level slog.Level, args ...any) {
 	if h.Enabled(ctx, level) {
 		pc := runtime_.GetCallerFrame(d + 1).PC
 		r := slog.NewRecord(time.Now(), level, fmt.Sprintln(args...), pc)
-		_ = h.WithGroup("grpc").Handle(ctx, r)
+		_ = h.Handle(ctx, r)
 	}
 }
 
@@ -123,7 +123,7 @@ func (g *slogger) logf(ctx context.Context, level slog.Level, format string, arg
 	if h.Enabled(ctx, level) {
 		pc := runtime_.GetCallerFrame(d + 1).PC
 		r := slog.NewRecord(time.Now(), level, fmt.Sprintf(format, args...), pc)
-		_ = h.WithGroup("grpc").Handle(ctx, r)
+		_ = h.Handle(ctx, r)
 	}
 }
 
@@ -135,7 +135,7 @@ func (g *slogger) logDepth(ctx context.Context, level slog.Level, depth int, arg
 	if h.Enabled(ctx, level) {
 		pc := runtime_.GetCallerFrame(d + depth).PC
 		r := slog.NewRecord(time.Now(), level, fmt.Sprint(args...), pc)
-		_ = h.WithGroup("grpc").Handle(ctx, r)
+		_ = h.Handle(ctx, r)
 	}
 }
 
