@@ -217,7 +217,6 @@ func (f *Factory) New() (*WebServer, error) {
 	opts = append(opts, f.fc.GatewayOptions...)
 	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...))...)
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
-	grpcBackend.ApplyOptions()
 	{
 		l := slog.NewLogLogger(slog.Default().Handler(), slog.LevelError)
 		l.SetFlags(log.Lshortfile)
