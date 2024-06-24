@@ -31,7 +31,7 @@ func interceptorSlogLogger(h slog.Handler) logging.Logger {
 			pc := runtime_.GetCallerFrame(d).PC
 			r := slog.NewRecord(time.Now(), slog.Level(lvl), msg, pc)
 			r.Add(fields...)
-			_ = h.WithGroup("grpc-gateway").Handle(ctx, r)
+			_ = h.Handle(ctx, r)
 		}
 	})
 }
