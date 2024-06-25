@@ -45,8 +45,8 @@ func RetryAfter(resp *http.Response, err error, defaultBackoff time.Duration) (b
 	backoff = defaultBackoff
 	if resp != nil {
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
-			if sleepInSeconds, err := strconv.ParseInt(resp.Header.Get("Retry-After"), 10, 64); err == nil {
-				backoff = time.Second * time.Duration(sleepInSeconds)
+			if sleep, has := parseRetryAfter(resp.Header.Get("Retry-After")); has {
+				backoff = sleep
 			}
 		}
 	}
