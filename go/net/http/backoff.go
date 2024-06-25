@@ -6,21 +6,19 @@ package http
 
 import (
 	"bytes"
-	"context"
+	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	time_ "github.com/searKing/golang/go/time"
 )
+
+// Borrowed from: https://github.com/hashicorp/go-retryablehttp/blob/main/client.go
 
 var (
 	// A regular expression to match the error returned by net/http when the
@@ -32,6 +30,16 @@ var (
 	// scheme specified in the URL is invalid. This error isn't typed
 	// specifically so we resort to matching on the error string.
 	schemeErrorRe = regexp.MustCompile(`unsupported protocol scheme`)
+
+	// A regular expression to match the error returned by net/http when a
+	// request header or value is invalid. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	invalidHeaderErrorRe = regexp.MustCompile(`invalid header`)
+
+	// A regular expression to match the error returned by net/http when the
+	// TLS certificate is not trusted. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	notTrustedErrorRe = regexp.MustCompile(`certificate is not trusted`)
 )
 
 // RetryAfter tries to parse Retry-After response header when a http.StatusTooManyRequests
@@ -63,9 +71,24 @@ func RetryAfter(resp *http.Response, err error, defaultBackoff time.Duration) (b
 				return backoff, false
 			}
 
-			// Don't retry if the error was due to TLS cert verification failure.
-			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+			// Don't retry if the error was due to an invalid header.
+			if invalidHeaderErrorRe.MatchString(v.Error()) {
 				return backoff, false
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if notTrustedErrorRe.MatchString(v.Error()) {
+				return backoff, false
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			{
+				if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+					return backoff, false
+				}
+				if _, ok := v.Err.(*tls.CertificateVerificationError); ok {
+					return backoff, false
+				}
 			}
 		}
 
@@ -221,203 +244,4 @@ func (o *doWithBackoff) Complete() {
 		}
 	}
 	o.clientInterceptor = chainedInt
-}
-
-// DoWithBackoff will retry by exponential backoff if failed.
-// If request is not rewindable, retry wil be skipped.
-func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
-	var opt doWithBackoff
-	opt.SetDefault()
-	opt.ApplyOptions(opts...)
-	if opt.RetryAfter == nil {
-		opt.RetryAfter = RetryAfter
-	}
-	opt.Complete()
-
-	var option []time_.ExponentialBackOffOption
-	option = append(option, time_.WithExponentialBackOffOptionMaxElapsedCount(3))
-	option = append(option, opt.ExponentialBackOffOption...)
-	backoff := time_.NewDefaultExponentialBackOff(option...)
-	rewindableErr := RequestWithBodyRewindable(httpReq)
-	var retries int
-	var errs []error
-	defer func() {
-		if resp != nil {
-			if err := errors.Join(errs...); err != nil {
-				if resp.Header == nil {
-					resp.Header = make(http.Header)
-				}
-				resp.Header.Add("Warning", Warn{
-					Warn:     err.Error(),
-					WarnCode: WarnMiscellaneousWarning,
-				}.String())
-			}
-		}
-	}()
-	for {
-		if retries > 0 && httpReq.GetBody != nil {
-			newBody, err := httpReq.GetBody()
-			if err != nil {
-				errs = append(errs, err)
-				return nil, errors.Join(errs...)
-			}
-			httpReq.Body = newBody
-		}
-		var do = opt.DoRetryHandler
-		httpDo := do
-		if opt.clientInterceptor != nil {
-			httpDo = func(req *http.Request, retry int) (*http.Response, error) {
-				return opt.clientInterceptor(req, retry, do, opts...)
-			}
-		}
-		resp, err = httpDo(httpReq, retries)
-		errs = append(errs, err)
-
-		wait, ok := backoff.NextBackOff()
-		if !ok {
-			if err != nil {
-				return nil, fmt.Errorf("http do reach backoff limit after retries %d: %w", retries, errors.Join(errs...))
-			} else {
-				return resp, nil
-			}
-		}
-
-		wait, retry := opt.RetryAfter(resp, err, wait)
-		if !retry {
-			if err != nil {
-				return nil, fmt.Errorf("http do reach server limit after retries %d: %w", retries, errors.Join(errs...))
-			} else {
-				return resp, nil
-			}
-		}
-
-		if rewindableErr != nil {
-			if err != nil {
-				return nil, fmt.Errorf("http do cannot rewindbody after retries %d: %w", retries, errors.Join(errs...))
-			} else {
-				resp.Header.Add("Warning", Warn{
-					Warn:     errors.Join(errs...).Error(),
-					WarnCode: WarnMiscellaneousWarning,
-				}.String())
-				return resp, nil
-			}
-		}
-
-		timer := time.NewTimer(wait)
-		select {
-		case <-timer.C:
-			retries++
-			continue
-		case <-httpReq.Context().Done():
-			timer.Stop()
-			if err != nil {
-				return nil, fmt.Errorf("http do canceled after retries %d: %w", retries, errors.Join(errs...))
-			} else {
-				return resp, nil
-			}
-		}
-	}
-}
-
-func HeadWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodHead, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	return DoWithBackoff(req, opts...)
-}
-
-func GetWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	return DoWithBackoff(req, opts...)
-}
-
-func PostWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodPost, url, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-	return DoWithBackoff(req, opts...)
-}
-
-func PostFormWithBackoff(ctx context.Context, url string, data url.Values, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
-	return PostWithBackoff(ctx, url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()), opts...)
-}
-
-func PutWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodPut, url, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-	return DoWithBackoff(req, opts...)
-}
-
-// DoJson the same as HttpDo, but bind with json
-func DoJson(httpReq *http.Request, req, resp any) error {
-	if req != nil {
-		data, err := json.Marshal(req)
-		if err != nil {
-			return err
-		}
-		reqBody := bytes.NewReader(data)
-		httpReq.Header.Set("Content-Type", "application/json")
-		ReplaceHttpRequestBody(httpReq, reqBody)
-	}
-
-	httpResp, err := DefaultClientDoRetryHandler(httpReq, 0)
-	if err != nil {
-		return err
-	}
-	defer httpResp.Body.Close()
-	if resp == nil {
-		return nil
-	}
-
-	body, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(body, resp)
-}
-
-// DoJsonWithBackoff the same as DoWithBackoff, but bind with json
-func DoJsonWithBackoff(httpReq *http.Request, req, resp any, opts ...DoWithBackoffOption) error {
-	if req != nil {
-		data, err := json.Marshal(req)
-		if err != nil {
-			return err
-		}
-		reqBody := bytes.NewReader(data)
-		httpReq.Header.Set("Content-Type", "application/json")
-		ReplaceHttpRequestBody(httpReq, reqBody)
-	}
-	httpResp, err := DoWithBackoff(httpReq, opts...)
-
-	if err != nil {
-		return err
-	}
-	defer httpResp.Body.Close()
-	if resp == nil {
-		return nil
-	}
-
-	body, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(body, resp)
 }
