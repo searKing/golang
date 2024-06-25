@@ -321,28 +321,28 @@ func DoWithBackoff(httpReq *http.Request, opts ...DoWithBackoffOption) (resp *ht
 
 func HeadWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodHead, url, nil)
-	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	return DoWithBackoff(req, opts...)
 }
 
 func GetWithBackoff(ctx context.Context, url string, opts ...DoWithBackoffOption) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
-	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	return DoWithBackoff(req, opts...)
 }
 
 func PostWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodPost, url, body)
-	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
@@ -355,10 +355,10 @@ func PostFormWithBackoff(ctx context.Context, url string, data url.Values, opts 
 
 func PutWithBackoff(ctx context.Context, url, contentType string, body io.Reader, opts ...DoWithBackoffOption) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodPut, url, body)
-	req = req.WithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
