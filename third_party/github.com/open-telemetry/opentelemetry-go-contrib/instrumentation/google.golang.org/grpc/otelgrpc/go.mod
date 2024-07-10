@@ -1,3 +1,5 @@
+// Deprecated: Use the "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc" module instead.
+// Deprecated: Use the "google.golang.org/grpc/stats/opentelemetry" module instead.
 module github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc
 
 go 1.21
