@@ -13,11 +13,14 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// ProtoMarshaller []byte -> proto|interface{}
+var _ runtime.Marshaler = (*ProtoMarshaller)(nil)
+
+// ProtoMarshaller is a Marshaller which marshals/unmarshals into/from serialize proto bytes
+// ProtoMarshaller same as runtime.ProtoMarshaller,
+// but with a custom proto.MarshalOptions and proto.UnmarshalOptions.
 type ProtoMarshaller struct {
 	proto.MarshalOptions
 	proto.UnmarshalOptions
-	// runtime.ProtoMarshaller
 }
 
 // ContentType always returns "application/x-protobuf".
