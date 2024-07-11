@@ -11,7 +11,6 @@ import (
 	"go/token"
 	"go/types"
 	"strings"
-	"unicode"
 
 	reflect_ "github.com/searKing/golang/go/reflect"
 )
@@ -20,13 +19,6 @@ const (
 	TagOption          = "option"
 	TagOptionFlagShort = "short" // `option:",short"`
 )
-
-func isPublicName(name string) bool {
-	for _, c := range name {
-		return unicode.IsUpper(c)
-	}
-	return false
-}
 
 // FormatTypeParams turns TypeParamList into its Go representation, such as:
 // [T, Y]. Note that it does not print constraints as this is mainly used for
@@ -173,7 +165,7 @@ func (f *File) genDecl(node ast.Node) bool {
 			}
 			if len(field.Names) != 0 { // pick first exported Name
 				for _, field := range field.Names {
-					if !*flagSkipPrivateFields || isPublicName(field.Name) {
+					if !*flagSkipPrivateFields || ast.IsExported(field.Name) {
 						fieldName = field.Name
 						break
 					}
