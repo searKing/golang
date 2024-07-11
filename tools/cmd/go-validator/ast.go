@@ -9,7 +9,6 @@ import (
 	"go/ast"
 	"go/token"
 	"strings"
-	"unicode"
 
 	"github.com/searKing/golang/go/reflect"
 	strings_ "github.com/searKing/golang/go/strings"
@@ -18,13 +17,6 @@ import (
 const (
 	TagValidator = "validate"
 )
-
-func isPublicName(name string) bool {
-	for _, c := range name {
-		return unicode.IsUpper(c)
-	}
-	return false
-}
 
 // genDecl processes one declaration clause.
 func (f *File) genDecl(node ast.Node) bool {
@@ -71,7 +63,7 @@ func (f *File) genDecl(node ast.Node) bool {
 			fieldName := ""
 			if len(field.Names) != 0 { // pick first exported Name
 				for _, field := range field.Names {
-					if !*flagSkipPrivateFields || isPublicName(field.Name) {
+					if !*flagSkipPrivateFields || ast.IsExported(field.Name) {
 						fieldName = field.Name
 						break
 					}
