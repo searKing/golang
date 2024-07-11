@@ -8,14 +8,23 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/gin-gonic/gin/binding"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"gopkg.in/yaml.v3"
 )
 
-// YamlMarshaller []byte -> proto|interface{}
-type YamlMarshaller struct {
-	runtime.ProtoMarshaller
+var _ runtime.Marshaler = (*YamlMarshaller)(nil)
+
+// YamlMarshaller is a Marshaler which marshals/unmarshals into/from YAML
+// with the "gopkg.in/yaml.v3" marshaler.
+// It supports the full functionality of protobuf unlike JSONBuiltin.
+//
+// The NewDecoder method returns a DecoderWrapper, so the underlying
+// *yaml.Decoder methods can be used.
+type YamlMarshaller struct{}
+
+// ContentType returns the Content-Type which this marshaler is responsible for.
+func (*YamlMarshaller) ContentType(_ any) string {
+	return "application/yaml"
 }
 
 // Marshal marshals "v" into byte sequence.
@@ -37,11 +46,6 @@ func (*YamlMarshaller) NewDecoder(r io.Reader) runtime.Decoder {
 // NewEncoder returns an Encoder which writes bytes sequence into "w".
 func (*YamlMarshaller) NewEncoder(w io.Writer) runtime.Encoder {
 	return yaml.NewEncoder(w)
-}
-
-// ContentType returns the Content-Type which this marshaler is responsible for.
-func (*YamlMarshaller) ContentType(_ any) string {
-	return binding.MIMEYAML
 }
 
 // YamlDecoderWrapper is a wrapper around a *json.Decoder that adds
