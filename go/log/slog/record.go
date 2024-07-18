@@ -33,19 +33,9 @@ func source(r slog.Record) *slog.Source {
 func ShortSource(r slog.Record) *slog.Source {
 	fs := runtime.CallersFrames([]uintptr{r.PC})
 	f, _ := fs.Next()
-
-	function := path.Base(f.Function)
-	slash := strings.LastIndex(function, ".")
-	if slash >= 0 && slash+1 < len(function) {
-		function = function[slash+1:]
-	}
-	file := path.Base(f.File)
-	if file == "" {
-		file = "???"
-	}
 	return &slog.Source{
-		Function: function,
-		File:     path.Base(f.File),
+		Function: shortFunction(f.Function),
+		File:     shortFile(f.File),
 		Line:     f.Line,
 	}
 }
@@ -54,9 +44,32 @@ func ShortSource(r slog.Record) *slog.Source {
 // file keys in the data when ReportCaller is activated.
 // INFO[0000] main.go:23 main() hello world
 var ShortCallerPrettyfier = func(f *runtime.Frame) (function string, file string) {
-	funcname := path.Base(f.Function)
-	filename := path.Base(f.File)
+	funcname := shortFunction(f.Function)
+	filename := shortFile(f.File)
 	return fmt.Sprintf("%s()", funcname), fmt.Sprintf("%s:%d", filename, f.Line)
+}
+
+func shortFunction(function string) string {
+	function = path.Base(function)
+	prefix := function
+	// the shape name in generic function is replaced with "..."
+	// See: https://github.com/golang/go/blob/go1.22.5/src/runtime/traceback.go#L755
+	if i := strings.Index(function, "[...]"); i >= 0 {
+		prefix = function[:i]
+	}
+	slash := strings.LastIndex(prefix, ".")
+	if slash < 0 {
+		return function
+	}
+	return function[slash+1:]
+}
+
+func shortFile(file string) string {
+	_, name := path.Split(file)
+	if name == "" {
+		name = "???"
+	}
+	return name
 }
 
 // attrs returns the non-zero fields of s as a slice of attrs.
