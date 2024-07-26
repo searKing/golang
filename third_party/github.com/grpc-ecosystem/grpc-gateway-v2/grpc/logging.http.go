@@ -33,13 +33,9 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 			cost.Start()
 			var attrs []any
 			attrs = append(attrs, slog.String(SystemTag[0], SystemTag[1]))
-			if slog.Default().Enabled(r.Context(), slog.LevelDebug) {
-				attrs = append(attrs, slog.Time("http.start_time", time.Now()))
-			}
+			attrs = append(attrs, slog.Time("http.start_time", time.Now()))
 			attrs = append(attrs, extractLoggingFieldsFromHttpRequest(r)...)
-			if slog.Default().Enabled(r.Context(), slog.LevelDebug) {
-				l.Log(r.Context(), logging.LevelDebug, fmt.Sprintf("http request received"), attrs...)
-			}
+			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("http request received"), attrs...)
 
 			rw := http_.NewRecordResponseWriter(w)
 			handler.ServeHTTP(rw, r)
