@@ -11,6 +11,17 @@ type HandlerDecorator interface {
 	WrapHandler(rt http.Handler) http.Handler
 }
 
+// The HandlerDecoratorFunc type is an adapter to allow the use of
+// ordinary functions as HTTP handler decorators. If f is a function
+// with the appropriate signature, HandlerDecoratorFunc(f) is a
+// [HandlerDecorator] that calls f.
+type HandlerDecoratorFunc func(rt http.Handler) http.Handler
+
+// WrapHandler calls f(rt).
+func (f HandlerDecoratorFunc) WrapHandler(rt http.Handler) http.Handler {
+	return f(rt)
+}
+
 // HandlerDecorators defines a HandlerDecorator slice.
 type HandlerDecorators []HandlerDecorator
 
