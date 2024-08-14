@@ -22,6 +22,13 @@ func WithHTTPErrorHandler(fn HTTPErrorHandler) GatewayOption {
 	return WithGrpcServeMuxOption(runtime.WithErrorHandler(fn.HandleHTTPError))
 }
 
+// WithHttpMiddlewares sets gRPC-Gateway server middleware for all registered handlers.
+// This is useful as an alternative to gRPC interceptors when using the direct-to-implementation registration methods
+// and cannot rely on gRPC interceptors. It's recommended to use gRPC interceptors instead if possible.
+func WithHttpMiddlewares(m ...runtime.Middleware) GatewayOption {
+	return WithGrpcServeMuxOption(runtime.WithMiddlewares(m...))
+}
+
 func WithMarshalerOption(mime string, marshaler runtime.Marshaler) GatewayOption {
 	return WithGrpcServeMuxOption(runtime.WithMarshalerOption(mime, marshaler))
 }
