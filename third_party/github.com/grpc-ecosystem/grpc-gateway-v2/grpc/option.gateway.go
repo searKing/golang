@@ -158,6 +158,13 @@ func WithDefault() []GatewayOption {
 //	})
 //}
 
+func WithForwardResponseOptionHandler(fn ForwardResponseOptionHandler) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		WithGrpcServeMuxOption(runtime.WithForwardResponseOption(fn.ForwardResponseOption))
+	})
+}
+
+// Deprecated: Use WithForwardResponseOptionHandler instead.
 func WithForwardResponseMessageHandler(fn ForwardResponseOptionHandler) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		WithGrpcServeMuxOption(runtime.WithForwardResponseOption(fn.ForwardResponseOption))
