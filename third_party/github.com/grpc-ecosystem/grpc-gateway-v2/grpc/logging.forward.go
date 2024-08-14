@@ -17,12 +17,11 @@ func FieldsFromContextWithForward(ctx context.Context) logging.Fields {
 	const xForwardedFor = "X-Forwarded-For"
 	const xForwardedHost = "X-Forwarded-Host"
 
-	var fields logging.Fields
+	fields := logging.Fields{}
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		for _, key := range []string{strings.ToLower(xForwardedFor), strings.ToLower(xForwardedHost)} {
-			fwd := md.Get(key)
-			if len(fwd) > 0 {
+			if fwd := md.Get(key); len(fwd) > 0 {
 				fields = fields.AppendUnique(logging.Fields{"grpc." + strings.ToLower(key), fwd})
 			}
 		}
