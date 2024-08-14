@@ -10,6 +10,9 @@ import (
 	http_ "github.com/searKing/golang/go/net/http"
 )
 
+// WithHttpHandlerInterceptor sets gRPC-Gateway server middleware for all handlers.
+// This is useful as an alternative to gRPC interceptors when using the direct-to-implementation registration methods
+// and can rely on gRPC interceptors.
 func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
 		gateway.opt.interceptors.ApplyOptions(opts...)
