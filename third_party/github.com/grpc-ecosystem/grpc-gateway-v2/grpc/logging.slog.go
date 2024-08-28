@@ -49,10 +49,10 @@ func WithSlogLoggerConfig(h slog.Handler, slogOpts []logging.Option) []GatewayOp
 	l := interceptorSlogLogger(h)
 
 	var opts []GatewayOption
+	opts = append(opts, WithHttpWrapper(HttpInterceptor(l)))
 	opts = append(opts, WithGrpcStreamServerChain(logging.StreamServerInterceptor(l, loggerOpts...)))
 	opts = append(opts, WithGrpcUnaryServerChain(logging.UnaryServerInterceptor(l, loggerOpts...)))
 	opts = append(opts, WithGrpcStreamClientChain(logging.StreamClientInterceptor(l, loggerOpts...)))
 	opts = append(opts, WithGrpcUnaryClientChain(logging.UnaryClientInterceptor(l, loggerOpts...)))
-	opts = append(opts, WithHttpWrapper(HttpInterceptor(l)))
 	return opts
 }
