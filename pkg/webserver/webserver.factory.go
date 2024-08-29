@@ -21,6 +21,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/cors"
+	"github.com/searKing/golang/pkg/webserver/pkg/stats"
 	"google.golang.org/grpc"
 
 	slog_ "github.com/searKing/golang/go/log/slog"
@@ -67,6 +68,7 @@ type FactoryConfig struct {
 	HandledTimeoutStream         time.Duration // for max handing time of unary server, The default is 0 (no limit is given)
 	MaxReceiveMessageSizeInBytes int           // sets the maximum message size in bytes the grpc server can receive, The default is 0 (no limit is given).
 	MaxSendMessageSizeInBytes    int           // sets the maximum message size in bytes the grpc server can send, The default is 0 (no limit is given).
+	StatsHandling                bool          // log for the related stats handling (e.g., RPCs, connections).
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
@@ -185,6 +187,11 @@ func (f *Factory) New() (*WebServer, error) {
 		// burst limit
 		opts = append(opts, grpc_.WithGrpcUnaryServerChain(burstlimit.UnaryServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary)))
 		opts = append(opts, grpc_.WithGrpcStreamServerChain(burstlimit.StreamServerInterceptor(f.fc.MaxConcurrencyStream, f.fc.BurstLimitTimeoutStream)))
+	}
+	if f.fc.StatsHandling {
+		// log for the related stats handling (e.g., RPCs, connections).
+		opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithStatsHandler(&stats.ClientHandler{})))
+		opts = append(opts, grpc_.WithGrpcServerOption(grpc.StatsHandler(&stats.ServerHandler{})))
 	}
 
 	// cors
