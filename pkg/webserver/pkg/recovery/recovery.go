@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
-	slices_ "github.com/searKing/golang/go/exp/slices"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/pkg/logging"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
@@ -52,7 +51,7 @@ func recoveryLogHandler(ctx context.Context, p any) (err error) {
 		debug.PrintStack()
 		_, _ = os.Stderr.Write([]byte(" [recovered]\n"))
 	}
-	logger := slog.With(slices_.MapFunc(logging.Attrs(ctx), func(e slog.Attr) any { return e })...)
+	logger := slog.With(logging.Attrs[any](ctx)...)
 	logger.With(slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack()))).Error("recovered in grpc")
 	return status.Errorf(codes.Internal, "%s", p)
 }
