@@ -32,7 +32,7 @@ func (mux *ginMuxer) Handle(pattern string, handler http.Handler) {
 func GinLogFormatter(layout string) func(param gin.LogFormatterParams) string {
 	return gin_.LogFormatterWithExtra(layout, func(param gin.LogFormatterParams) string {
 		if param.Request != nil {
-			attrs := logging.Attrs(param.Request.Context())
+			attrs := logging.Attrs[slog.Attr](param.Request.Context())
 			if len(attrs) > 0 {
 				extra := strings.Join(slices_.MapFunc(attrs, func(e slog.Attr) string { return e.String() }), ", ")
 				return fmt.Sprintf(" | %v", extra)

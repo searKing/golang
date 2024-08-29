@@ -11,16 +11,16 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
-func Attrs(ctx context.Context) []slog.Attr {
-	return fieldsToAttrSlice(logging.ExtractFields(ctx))
+func Attrs[T slog.Attr | any](ctx context.Context) []T {
+	return fieldsToAttrSlice[T](logging.ExtractFields(ctx))
 }
 
-func fieldsToAttrSlice(fields logging.Fields) []slog.Attr {
-	var attrs []slog.Attr
+func fieldsToAttrSlice[T slog.Attr | any](fields logging.Fields) []T {
+	var attrs []T
 	i := fields.Iterator()
 	for i.Next() {
 		k, v := i.At()
-		attrs = append(attrs, slog.Any(k, v))
+		attrs = append(attrs, (any(slog.Any(k, v))).(T))
 	}
 	return attrs
 }
