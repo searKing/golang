@@ -13,16 +13,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// UnaryClientInterceptor returns a new unary client interceptor that performs request burst limiting.
+// UnaryClientInterceptor returns a new unary client interceptor that performs request burst limiting on the request on the client side.
+// This can be helpful for clients that want to limit the number of requests they send concurrently, potentially saving cost.
 // b bucket size, take effect if b > 0
 // timeout ResourceExhausted if cost more than timeout to get a token, take effect if timeout > 0
 func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterceptor {
-	limiter := make(chan struct{}, b)
-	for i := 0; i < b; i++ {
-		limiter <- struct{}{}
-	}
+	limiter := fullChan(b)
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if b > 0 {
+		if limiter != nil {
 			var limiterCtx = ctx
 			var cancel context.CancelFunc
 			if timeout > 0 {
@@ -31,9 +29,7 @@ func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterc
 			}
 			select {
 			case <-limiter:
-				defer func() {
-					limiter <- struct{}{}
-				}()
+				defer func() { limiter <- struct{}{} }()
 			case <-limiterCtx.Done():
 				return status.Errorf(codes.ResourceExhausted,
 					"%s is rejected by burstlimit unary client middleware, please retry later: %s", method, limiterCtx.Err())
@@ -43,16 +39,14 @@ func UnaryClientInterceptor(b int, timeout time.Duration) grpc.UnaryClientInterc
 	}
 }
 
-// StreamClientInterceptor returns a new streaming client interceptor that performs burst limiting on the request.
+// StreamClientInterceptor returns a new streaming client interceptor that performs burst limiting on the request on the client side.
+// This can be helpful for clients that want to limit the number of requests they send concurrently, potentially saving cost.
 // b bucket size, take effect if b > 0
 // timeout ResourceExhausted if cost more than timeout to get a token, take effect if timeout > 0
 func StreamClientInterceptor(b int, timeout time.Duration) grpc.StreamClientInterceptor {
-	limiter := make(chan struct{}, b)
-	for i := 0; i < b; i++ {
-		limiter <- struct{}{}
-	}
+	limiter := fullChan(b)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		if b > 0 {
+		if limiter != nil {
 			var limiterCtx = ctx
 			var cancel context.CancelFunc
 			if timeout > 0 {
@@ -61,9 +55,7 @@ func StreamClientInterceptor(b int, timeout time.Duration) grpc.StreamClientInte
 			}
 			select {
 			case <-limiter:
-				defer func() {
-					limiter <- struct{}{}
-				}()
+				defer func() { limiter <- struct{}{} }()
 			case <-limiterCtx.Done():
 				return nil, status.Errorf(codes.ResourceExhausted,
 					"%s is rejected by burstlimit stream client middleware, please retry later: %s", method, limiterCtx.Err())
