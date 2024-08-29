@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package webserver
+package logging
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
-func extractLoggingAttrs(ctx context.Context) []slog.Attr {
+func Attrs(ctx context.Context) []slog.Attr {
 	return fieldsToAttrSlice(logging.ExtractFields(ctx))
 }
 

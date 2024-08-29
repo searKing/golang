@@ -16,24 +16,21 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/rs/cors"
-	slices_ "github.com/searKing/golang/go/exp/slices"
+	"google.golang.org/grpc"
+
 	slog_ "github.com/searKing/golang/go/log/slog"
 	net_ "github.com/searKing/golang/go/net"
 	"github.com/searKing/golang/pkg/webserver/healthz"
+	"github.com/searKing/golang/pkg/webserver/pkg/recovery"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // FactoryConfigFunc is an alias for a function that will take in a pointer to an FactoryConfig and modify it
@@ -176,30 +173,8 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 	{
 		// recover
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(grpcrecovery.UnaryServerInterceptor(
-			grpcrecovery.WithRecoveryHandlerContext(func(ctx context.Context, p any) (err error) {
-				slog.With(slices_.MapFunc(extractLoggingAttrs(ctx), func(e slog.Attr) any { return e })...).
-					Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
-				{
-					_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
-					debug.PrintStack()
-					_, _ = os.Stderr.Write([]byte(" [recovered]"))
-					_, _ = os.Stderr.Write([]byte("\n"))
-				}
-				return status.Errorf(codes.Internal, "%s", p)
-			}))))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(grpcrecovery.StreamServerInterceptor(
-			grpcrecovery.WithRecoveryHandlerContext(func(ctx context.Context, p any) (err error) {
-				slog.With(slices_.MapFunc(extractLoggingAttrs(ctx), func(e slog.Attr) any { return e })...).
-					Error("recovered in grpc", slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack())))
-				{
-					_, _ = os.Stderr.Write([]byte(fmt.Sprintf("panic: %s", p)))
-					debug.PrintStack()
-					_, _ = os.Stderr.Write([]byte(" [recovered]"))
-					_, _ = os.Stderr.Write([]byte("\n"))
-				}
-				return status.Errorf(codes.Internal, "%s", p)
-			}))))
+		opts = append(opts, grpc_.WithGrpcUnaryServerChain(recovery.UnaryServerInterceptor()))
+		opts = append(opts, grpc_.WithGrpcStreamServerChain(recovery.StreamServerInterceptor()))
 	}
 	{
 		// handle request timeout
