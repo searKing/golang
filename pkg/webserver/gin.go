@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	slices_ "github.com/searKing/golang/go/exp/slices"
 	"github.com/searKing/golang/pkg/webserver/healthz"
+	"github.com/searKing/golang/pkg/webserver/pkg/logging"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 )
 
@@ -31,7 +32,7 @@ func (mux *ginMuxer) Handle(pattern string, handler http.Handler) {
 func GinLogFormatter(layout string) func(param gin.LogFormatterParams) string {
 	return gin_.LogFormatterWithExtra(layout, func(param gin.LogFormatterParams) string {
 		if param.Request != nil {
-			attrs := extractLoggingAttrs(param.Request.Context())
+			attrs := logging.Attrs(param.Request.Context())
 			if len(attrs) > 0 {
 				extra := strings.Join(slices_.MapFunc(attrs, func(e slog.Attr) string { return e.String() }), ", ")
 				return fmt.Sprintf(" | %v", extra)
