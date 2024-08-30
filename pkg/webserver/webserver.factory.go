@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/cors"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/healthz"
@@ -55,15 +56,16 @@ type FactoryConfig struct {
 	PreferRegisterHTTPFromEndpoint bool             // prefer register http handler from endpoint
 
 	// grpc middlewares
-	MaxConcurrencyUnary          int           // for concurrent parallel requests of unary server, The default is 0 (no limit is given)
-	MaxConcurrencyStream         int           // for concurrent parallel requests of stream server, The default is 0 (no limit is given)
-	BurstLimitTimeoutUnary       time.Duration // for concurrent parallel requests of unary server, The default is 0 (no limit is given)
-	BurstLimitTimeoutStream      time.Duration // for concurrent parallel requests of stream server, The default is 0 (no limit is given)
-	HandledTimeoutUnary          time.Duration // for max handing time of unary server, The default is 0 (no limit is given)
-	HandledTimeoutStream         time.Duration // for max handing time of unary server, The default is 0 (no limit is given)
-	MaxReceiveMessageSizeInBytes int           // sets the maximum message size in bytes the grpc server can receive, The default is 0 (no limit is given).
-	MaxSendMessageSizeInBytes    int           // sets the maximum message size in bytes the grpc server can send, The default is 0 (no limit is given).
-	StatsHandling                bool          // log for the related stats handling (e.g., RPCs, connections).
+	MaxConcurrencyUnary          int                 // for concurrent parallel requests of unary server, The default is 0 (no limit is given)
+	MaxConcurrencyStream         int                 // for concurrent parallel requests of stream server, The default is 0 (no limit is given)
+	BurstLimitTimeoutUnary       time.Duration       // for concurrent parallel requests of unary server, The default is 0 (no limit is given)
+	BurstLimitTimeoutStream      time.Duration       // for concurrent parallel requests of stream server, The default is 0 (no limit is given)
+	HandledTimeoutUnary          time.Duration       // for max handing time of unary server, The default is 0 (no limit is given)
+	HandledTimeoutStream         time.Duration       // for max handing time of unary server, The default is 0 (no limit is given)
+	MaxReceiveMessageSizeInBytes int                 // sets the maximum message size in bytes the grpc server can receive, The default is 0 (no limit is given).
+	MaxSendMessageSizeInBytes    int                 // sets the maximum message size in bytes the grpc server can send, The default is 0 (no limit is given).
+	StatsHandling                bool                // log for the related stats handling (e.g., RPCs, connections).
+	Validator                    *validator.Validate // for value validations for structs and individual fields based on tags (e.g., request).
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
