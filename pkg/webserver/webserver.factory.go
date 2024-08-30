@@ -18,17 +18,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/cors"
-	"github.com/searKing/golang/pkg/webserver/pkg/stats"
-	"google.golang.org/grpc"
-
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/healthz"
-	"github.com/searKing/golang/pkg/webserver/pkg/recovery"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
-	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
-	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
 )
+
+// ClientMaxReceiveMessageSize use 4GB as the default message size limit.
+// grpc library default is 4MB
+var defaultMaxReceiveMessageSize = math.MaxInt32 // 1024 * 1024 * 1024 * 4
+var defaultMaxSendMessageSize = math.MaxInt32
 
 // FactoryConfigFunc is an alias for a function that will take in a pointer to an FactoryConfig and modify it
 type FactoryConfigFunc func(os *FactoryConfig) error
@@ -147,52 +146,24 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 
 	opts := grpc_.WithDefault()
-	if f.fc.NoGrpcProxy {
-		opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithNoProxy()))
-	}
 	{
-		// 设置GRPC最大消息大小
+		// connection options
 		// http -> grpc client -> grpc server
-		if f.fc.MaxReceiveMessageSizeInBytes > 0 {
-			opts = append(opts, grpc_.WithGrpcServerOption(grpc.MaxRecvMsgSize(f.fc.MaxReceiveMessageSizeInBytes)))
-			opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(f.fc.MaxReceiveMessageSizeInBytes))))
-		} else {
-			opts = append(opts, grpc_.WithGrpcServerOption(grpc.MaxRecvMsgSize(defaultMaxReceiveMessageSize)))
-			opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaultMaxReceiveMessageSize))))
-		}
-		// http <- grpc client <- grpc server
-		if f.fc.MaxSendMessageSizeInBytes > 0 {
-			opts = append(opts, grpc_.WithGrpcServerOption(grpc.MaxSendMsgSize(f.fc.MaxSendMessageSizeInBytes)))
-			opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(f.fc.MaxSendMessageSizeInBytes))))
-		} else {
-			opts = append(opts, grpc_.WithGrpcServerOption(grpc.MaxSendMsgSize(defaultMaxSendMessageSize)))
-			opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMaxSendMessageSize))))
-		}
+		opts = append(opts, grpc_.WithGrpcServerOption(f.ServerOptions()...))
+		opts = append(opts, grpc_.WithGrpcDialOption(f.DialOptions()...))
 	}
 	{
-		// recover
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(recovery.UnaryServerInterceptor()))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(recovery.StreamServerInterceptor()))
+		// grpc interceptors
+		opts = append(opts, grpc_.WithGrpcUnaryServerChain(f.UnaryServerInterceptors()...))
+		opts = append(opts, grpc_.WithGrpcStreamServerChain(f.StreamServerInterceptors()...))
 	}
 	{
-		// handle request timeout
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(timeoutlimit.UnaryServerInterceptor(f.fc.HandledTimeoutUnary)))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(timeoutlimit.StreamServerInterceptor(f.fc.HandledTimeoutStream)))
-	}
-	{
-		// burst limit
-		opts = append(opts, grpc_.WithGrpcUnaryServerChain(burstlimit.UnaryServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary)))
-		opts = append(opts, grpc_.WithGrpcStreamServerChain(burstlimit.StreamServerInterceptor(f.fc.MaxConcurrencyStream, f.fc.BurstLimitTimeoutStream)))
-	}
-	if f.fc.StatsHandling {
-		// log for the related stats handling (e.g., RPCs, connections).
-		opts = append(opts, grpc_.WithGrpcDialOption(grpc.WithStatsHandler(&stats.ClientHandler{})))
-		opts = append(opts, grpc_.WithGrpcServerOption(grpc.StatsHandler(&stats.ServerHandler{})))
+		// http interceptors
+		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpServerInterceptors()...))
 	}
 
-	// cors
-	opts = append(opts, grpc_.WithHttpWrapper(cors.New(f.fc.Cors).Handler))
 	opts = append(opts, f.fc.GatewayOptions...)
+	// log
 	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...))...)
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	{
@@ -262,8 +233,3 @@ func (f *Factory) New() (*WebServer, error) {
 
 	return s, nil
 }
-
-// ClientMaxReceiveMessageSize use 4GB as the default message size limit.
-// grpc library default is 4MB
-var defaultMaxReceiveMessageSize = math.MaxInt32 // 1024 * 1024 * 4
-var defaultMaxSendMessageSize = math.MaxInt32

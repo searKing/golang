@@ -18,7 +18,6 @@ import (
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/pkg/logging"
-	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 )
 
 // UnaryServerInterceptor returns a new unary server interceptor that performs recovering from a panic.
@@ -31,15 +30,14 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return grpcrecovery.StreamServerInterceptor(grpcrecovery.WithRecoveryHandlerContext(recoveryLogHandler))
 }
 
-// WrapRecovery returns a new unary server interceptor that performs recovering from a panic.
-func WrapRecovery[REQ any, RESP any](handler grpc_.UnaryHandler[REQ, RESP]) grpc_.UnaryHandler[REQ, RESP] {
-	return func(ctx context.Context, req REQ) (_ RESP, err error) {
+// UnaryHandler returns a new unary server handler that performs recovering from a panic.
+func UnaryHandler(handler grpc.UnaryHandler) grpc.UnaryHandler {
+	return func(ctx context.Context, req any) (_ any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				err = recoveryLogHandler(ctx, r)
 			}
 		}()
-
 		resp, err := handler(ctx, req)
 		return resp, err
 	}
