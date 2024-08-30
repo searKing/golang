@@ -9,16 +9,22 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
+	"unicode"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/searKing/golang/pkg/webserver"
 )
 
 func TestNewWebServer(t *testing.T) {
+
 	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
 		Name:        "MockWebServer",
 		BindAddress: ":8080",
+		Validator:   getValidator(t),
 	})
 	if err != nil {
 		t.Fatalf("create web server failed: %s", err)
@@ -46,4 +52,23 @@ func TestNewWebServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run web server failed: %s", err)
 	}
+}
+
+func isStrNotContainSpace(fl validator.FieldLevel) bool {
+	field := fl.Field()
+	switch field.Kind() {
+	case reflect.String:
+		return strings.IndexFunc(field.String(), unicode.IsSpace) < 0
+	default:
+		panic(fmt.Sprintf("Bad field type %T", field.Interface()))
+	}
+}
+
+func getValidator(t *testing.T) *validator.Validate {
+	v := validator.New()
+	err := v.RegisterValidation("str_not_contain_space", isStrNotContainSpace)
+	if err != nil {
+		t.Fatalf("register validation failed: %s", err)
+	}
+	return v
 }

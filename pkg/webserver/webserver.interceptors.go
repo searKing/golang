@@ -10,6 +10,7 @@ import (
 
 	http_ "github.com/searKing/golang/go/net/http"
 	"github.com/searKing/golang/pkg/webserver/pkg/recovery"
+	validator_ "github.com/searKing/golang/pkg/webserver/pkg/validator"
 	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
@@ -22,6 +23,10 @@ import (
 func (f *Factory) UnaryHandler(handlers ...grpc_.UnaryHandlerDecorator) []grpc_.UnaryHandlerDecorator {
 	// recover
 	handlers = append(handlers, grpc_.UnaryHandlerDecoratorFunc(recovery.UnaryHandler))
+	// validate
+	if v := f.fc.Validator; v != nil {
+		handlers = append(handlers, validator_.UnaryHandlerDecorator(v))
+	}
 	return handlers
 }
 
@@ -32,6 +37,10 @@ func (f *Factory) UnaryServerInterceptors(interceptors ...grpc.UnaryServerInterc
 	interceptors = append(interceptors, timeoutlimit.UnaryServerInterceptor(f.fc.HandledTimeoutUnary))
 	// burst limit
 	interceptors = append(interceptors, burstlimit.UnaryServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// validate
+	if v := f.fc.Validator; v != nil {
+		interceptors = append(interceptors, validator_.UnaryServerInterceptor(v))
+	}
 	return interceptors
 }
 
@@ -42,6 +51,10 @@ func (f *Factory) StreamServerInterceptors(interceptors ...grpc.StreamServerInte
 	interceptors = append(interceptors, timeoutlimit.StreamServerInterceptor(f.fc.HandledTimeoutUnary))
 	// burst limit
 	interceptors = append(interceptors, burstlimit.StreamServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// validate
+	if v := f.fc.Validator; v != nil {
+		interceptors = append(interceptors, validator_.StreamServerInterceptor(v))
+	}
 	return interceptors
 }
 
