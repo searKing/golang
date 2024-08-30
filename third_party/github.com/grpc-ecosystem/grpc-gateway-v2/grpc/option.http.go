@@ -7,8 +7,21 @@ package grpc
 import (
 	"net/http"
 
+	slices_ "github.com/searKing/golang/go/exp/slices"
 	http_ "github.com/searKing/golang/go/net/http"
 )
+
+// WithHttpHandlerDecorators sets gRPC-Gateway server middlewares for all handlers.
+// This is useful as an alternative to gRPC interceptors when using the direct-to-implementation registration methods
+// and can rely on gRPC interceptors.
+func WithHttpHandlerDecorators(decorators ...http_.HandlerDecorator) GatewayOption {
+	return WithHttpHandlerInterceptor(
+		slices_.MapFunc(decorators, func(e http_.HandlerDecorator) http_.HandlerInterceptorChainOption {
+			return http_.WithHandlerInterceptor(nil, e.WrapHandler, nil, nil)
+		})...)
+}
+
+// below here for advance usage only
 
 // WithHttpHandlerInterceptor sets gRPC-Gateway server middleware for all handlers.
 // This is useful as an alternative to gRPC interceptors when using the direct-to-implementation registration methods
