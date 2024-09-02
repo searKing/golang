@@ -67,6 +67,7 @@ type FactoryConfig struct {
 	StatsHandling                bool                // log for the related stats handling (e.g., RPCs, connections).
 	Validator                    *validator.Validate // for value validations for structs and individual fields based on tags (e.g., request).
 	FillRequestId                bool                // for the field "RequestId" filling in Request and Response.
+	EnableOpenTelemetry          bool                // captures traces and metrics and send them to an observability platform by OpenTelemetry.
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
@@ -154,6 +155,7 @@ func (f *Factory) New() (*WebServer, error) {
 		// http -> grpc client -> grpc server
 		opts = append(opts, grpc_.WithGrpcServerOption(f.ServerOptions()...))
 		opts = append(opts, grpc_.WithGrpcDialOption(f.DialOptions()...))
+		opts = append(opts, grpc_.WithGrpcServeMuxOption(f.ServeMuxOptions()...))
 	}
 	{
 		// grpc interceptors
@@ -162,7 +164,7 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 	{
 		// http interceptors
-		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpServerInterceptors()...))
+		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpHandlerDecorators()...))
 	}
 
 	opts = append(opts, f.fc.GatewayOptions...)
