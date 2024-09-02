@@ -5,11 +5,9 @@
 package webserver
 
 import (
-	"github.com/rs/cors"
 	"github.com/searKing/golang/pkg/webserver/pkg/requestid"
 	"google.golang.org/grpc"
 
-	http_ "github.com/searKing/golang/go/net/http"
 	"github.com/searKing/golang/pkg/webserver/pkg/recovery"
 	validator_ "github.com/searKing/golang/pkg/webserver/pkg/validator"
 	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
@@ -69,10 +67,4 @@ func (f *Factory) StreamServerInterceptors(interceptors ...grpc.StreamServerInte
 		interceptors = append(interceptors, requestid.StreamServerInterceptor())
 	}
 	return interceptors
-}
-
-func (f *Factory) HttpServerInterceptors(decorators ...http_.HandlerDecorator) []http_.HandlerDecorator {
-	// cors
-	decorators = append(decorators, http_.HandlerDecoratorFunc(cors.New(f.fc.Cors).Handler))
-	return decorators
 }
