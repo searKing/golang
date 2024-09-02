@@ -68,3 +68,27 @@ func (f *Factory) StreamServerInterceptors(interceptors ...grpc.StreamServerInte
 	}
 	return interceptors
 }
+
+func (f *Factory) UnaryClientInterceptors(interceptors ...grpc.UnaryClientInterceptor) []grpc.UnaryClientInterceptor {
+	// handle request timeout
+	interceptors = append(interceptors, timeoutlimit.UnaryClientInterceptor(f.fc.HandledTimeoutUnary))
+	// burst limit
+	interceptors = append(interceptors, burstlimit.UnaryClientInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// request id
+	if f.fc.FillRequestId {
+		interceptors = append(interceptors, requestid.UnaryClientInterceptor())
+	}
+	return interceptors
+}
+
+func (f *Factory) StreamClientInterceptors(interceptors ...grpc.StreamClientInterceptor) []grpc.StreamClientInterceptor {
+	// handle request timeout
+	interceptors = append(interceptors, timeoutlimit.StreamClientInterceptor(f.fc.HandledTimeoutUnary))
+	// burst limit
+	interceptors = append(interceptors, burstlimit.StreamClientInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// request id
+	if f.fc.FillRequestId {
+		interceptors = append(interceptors, requestid.StreamClientInterceptor())
+	}
+	return interceptors
+}
