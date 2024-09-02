@@ -47,5 +47,7 @@ func (f *Factory) DialOptions(opts ...grpc.DialOption) []grpc.DialOption {
 	if f.fc.EnableOpenTelemetry {
 		opts = append(opts, otel.DialOptions()...)
 	}
+	opts = append(opts, grpc.WithChainUnaryInterceptor(f.UnaryClientInterceptors()...))
+	opts = append(opts, grpc.WithChainStreamInterceptor(f.StreamClientInterceptors()...))
 	return opts
 }
