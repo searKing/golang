@@ -6,6 +6,7 @@ package webserver
 
 import (
 	"github.com/rs/cors"
+	"github.com/searKing/golang/pkg/webserver/pkg/requestid"
 	"google.golang.org/grpc"
 
 	http_ "github.com/searKing/golang/go/net/http"
@@ -27,6 +28,10 @@ func (f *Factory) UnaryHandler(handlers ...grpc_.UnaryHandlerDecorator) []grpc_.
 	if v := f.fc.Validator; v != nil {
 		handlers = append(handlers, validator_.UnaryHandlerDecorator(v))
 	}
+	// request id
+	if f.fc.FillRequestId {
+		handlers = append(handlers, grpc_.UnaryHandlerDecoratorFunc(requestid.UnaryHandler))
+	}
 	return handlers
 }
 
@@ -41,6 +46,10 @@ func (f *Factory) UnaryServerInterceptors(interceptors ...grpc.UnaryServerInterc
 	if v := f.fc.Validator; v != nil {
 		interceptors = append(interceptors, validator_.UnaryServerInterceptor(v))
 	}
+	// request id
+	if f.fc.FillRequestId {
+		interceptors = append(interceptors, requestid.UnaryServerInterceptor())
+	}
 	return interceptors
 }
 
@@ -54,6 +63,10 @@ func (f *Factory) StreamServerInterceptors(interceptors ...grpc.StreamServerInte
 	// validate
 	if v := f.fc.Validator; v != nil {
 		interceptors = append(interceptors, validator_.StreamServerInterceptor(v))
+	}
+	// request id
+	if f.fc.FillRequestId {
+		interceptors = append(interceptors, requestid.StreamServerInterceptor())
 	}
 	return interceptors
 }

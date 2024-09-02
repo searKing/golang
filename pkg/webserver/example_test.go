@@ -20,7 +20,6 @@ import (
 )
 
 func TestNewWebServer(t *testing.T) {
-
 	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
 		Name:        "MockWebServer",
 		BindAddress: ":8080",
@@ -40,11 +39,13 @@ func TestNewWebServer(t *testing.T) {
 		url := "http://localhost:8080/healthz"
 		resp, err := http.Get(url)
 		if err != nil {
-			t.Fatalf("GET %q failed: %s", url, err)
+			t.Errorf("GET %q failed: %s", url, err)
+			return
 		}
 		data, err := httputil.DumpResponse(resp, true)
 		if err != nil {
-			t.Fatalf("dump response failed: %s", err)
+			t.Errorf("dump response failed: %s", err)
+			return
 		}
 		fmt.Printf("GET %s\n: %s\n", url, string(data))
 	}()

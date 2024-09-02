@@ -66,6 +66,7 @@ type FactoryConfig struct {
 	MaxSendMessageSizeInBytes    int                 // sets the maximum message size in bytes the grpc server can send, The default is 0 (no limit is given).
 	StatsHandling                bool                // log for the related stats handling (e.g., RPCs, connections).
 	Validator                    *validator.Validate // for value validations for structs and individual fields based on tags (e.g., request).
+	FillRequestId                bool                // for the field "RequestId" filling in Request and Response.
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
