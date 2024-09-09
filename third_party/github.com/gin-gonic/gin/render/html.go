@@ -29,7 +29,7 @@ type TemplateHTML struct {
 var htmlContentType = []string{"text/html; charset=utf-8"}
 
 // Render (TemplateHTML) executes template and writes its result with custom ContentType for response.
-func (r TemplateHTML) Render(w http.ResponseWriter) error {
+func (r *TemplateHTML) Render(w http.ResponseWriter) error {
 	r.WriteContentType(w)
 	r.once.Do(func() {
 		if r.Template == nil {
@@ -59,6 +59,6 @@ func (r TemplateHTML) Render(w http.ResponseWriter) error {
 }
 
 // WriteContentType (TemplateHTML) writes TemplateHTML ContentType.
-func (r TemplateHTML) WriteContentType(w http.ResponseWriter) {
+func (r *TemplateHTML) WriteContentType(w http.ResponseWriter) {
 	writeContentType(w, htmlContentType)
 }
