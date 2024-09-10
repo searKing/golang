@@ -15,8 +15,10 @@ import (
 // TemplateHTML contains template reference and its name with given interface object.
 type TemplateHTML struct {
 	Template *template.Template
-	Files    []string
-	Glob     string
+
+	Texts []string
+	Files []string
+	Glob  string
 
 	FuncMap template.FuncMap
 	Name    string // Data's Name in tmpl
@@ -37,13 +39,16 @@ func (r *TemplateHTML) Render(w http.ResponseWriter) error {
 		}
 
 		if r.Delims != nil {
-			r.Template.Delims(r.Delims.Left, r.Delims.Right)
+			r.Template = r.Template.Delims(r.Delims.Left, r.Delims.Right)
 		}
 
 		if r.FuncMap != nil {
-			r.Template.Funcs(r.FuncMap)
+			r.Template = r.Template.Funcs(r.FuncMap)
 		}
 
+		for _, text := range r.Texts {
+			r.Template = template.Must(r.Template.Parse(text))
+		}
 		if len(r.Files) > 0 {
 			r.Template = template.Must(r.Template.ParseFiles(r.Files...))
 		}
