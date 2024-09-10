@@ -22,7 +22,12 @@ func (f UnaryHandlerGeneric[REQ, RESP]) UnaryHandler() grpc.UnaryHandler {
 func NewUnaryHandlerGeneric[REQ any, RESP any](handler grpc.UnaryHandler) UnaryHandlerGeneric[REQ, RESP] {
 	return func(ctx context.Context, req REQ) (resp RESP, err error) {
 		resp_, err := handler(ctx, req)
-		resp, _ = resp_.(RESP)
-		return resp, err
+		return RESP(resp_), err
+	}
+}
+
+func WithUnaryHandlerDecorators[REQ any, RESP any](h UnaryHandlerGeneric[REQ, RESP], decorators ...UnaryHandlerDecorator) UnaryHandlerGeneric[REQ, RESP] {
+	return func(ctx context.Context, req REQ) (resp RESP, err error) {
+		return NewUnaryHandlerGeneric[REQ, RESP](UnaryHandlerDecorators(decorators).WrapUnaryHandler(h.UnaryHandler()))(ctx, req)
 	}
 }
