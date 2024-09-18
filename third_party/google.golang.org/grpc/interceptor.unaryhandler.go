@@ -22,7 +22,8 @@ func (f UnaryHandlerGeneric[REQ, RESP]) UnaryHandler() grpc.UnaryHandler {
 func NewUnaryHandlerGeneric[REQ any, RESP any](handler grpc.UnaryHandler) UnaryHandlerGeneric[REQ, RESP] {
 	return func(ctx context.Context, req REQ) (resp RESP, err error) {
 		resp_, err := handler(ctx, req)
-		return RESP(resp_), err
+		resp, _ = resp_.(RESP)
+		return resp, err
 	}
 }
 
