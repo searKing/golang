@@ -640,22 +640,22 @@ func WriteRenameAllFrom(filename string, r io.Reader) error {
 // If the dir does not exist, WriteRenameFileAllFrom creates it with permissions dirperm
 // (before umask); otherwise WriteRenameFileAllFrom truncates it before writing, without changing permissions.
 func WriteRenameFileAllFrom(filename string, r io.Reader, dirperm os.FileMode) error {
-	tempDir := filepath.Dir(filename)
-	if tempDir != "" {
-		// mkdir -p dir
-		if err := os.MkdirAll(tempDir, dirperm); err != nil {
-			return err
-		}
+	dir, file := filepath.Split(filename)
+	if dir == "" {
+		dir = "."
 	}
-
-	tempFile, err := os.CreateTemp(tempDir, "")
+	pattern := ".*.rename"
+	if file != "" {
+		pattern = fmt.Sprintf(".%s.*.rename", file)
+	}
+	tempFile, err := TempAll(dir, pattern)
 	if err != nil {
 		return err
 	}
 	defer tempFile.Close()
 
 	tempFilePath := tempFile.Name()
-	defer os.Remove(tempFilePath)
+	defer os.Remove(tempFilePath) // remove if rename failed
 	_, err = tempFile.ReadFrom(r)
 	if err != nil {
 		return err
