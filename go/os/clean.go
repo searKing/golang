@@ -45,7 +45,7 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 
 	now := time.Now()
 
-	// find old files
+	// find all expired files
 	var filesNotExpired []string
 	filesExpired, err := filepath_.GlobFunc(pattern, func(name string) bool {
 		fi, err := os.Stat(name)
@@ -77,19 +77,15 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 	}
 
 	var filesExceedMaxCount []string
-	var filesLeft = filesNotExpired
-	if quora.MaxCount > 0 && len(filesNotExpired) > 0 {
-		removeCount := len(filesNotExpired) - quora.MaxCount
-		if removeCount < 0 {
-			removeCount = 0
-		}
-		sort.Sort(rotateFileSlice(filesNotExpired))
-		filesExceedMaxCount = filesNotExpired[:removeCount]
-		filesLeft = filesNotExpired[removeCount:]
-	}
-	if f == nil {
-		f = func(name string) bool {
-			return true
+	var filesLeftOrdered = filesNotExpired
+
+	// prefer to delete files ordered by ModTime from oldest to newest.
+	sort.Sort(rotateFileSlice(filesLeftOrdered))
+	if quora.MaxCount > 0 && len(filesLeftOrdered) > 0 {
+		removeCount := len(filesLeftOrdered) - quora.MaxCount
+		if removeCount > 0 {
+			filesExceedMaxCount = filesLeftOrdered[:removeCount]
+			filesLeftOrdered = filesLeftOrdered[removeCount:]
 		}
 	}
 
@@ -128,7 +124,7 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		return false
 	}
 
-	for _, path := range filesLeft {
+	for _, path := range filesLeftOrdered {
 		if !needGC(path) {
 			return nil
 		}
