@@ -72,7 +72,7 @@ func (f *CacheFile) Get(name string) (cacheFilePath, cacheMetaPath string, hit b
 	cacheFilePath = filepath.Join(f.BucketRootDir, f.BucketKey(name))
 	cacheMetaPath = cacheFilePath + f.CacheMetaExt
 
-	cacheFilePath, cacheMetaPath, err = f.getCacheMeta(name, cacheFilePath+".*"+f.CacheMetaExt)
+	cacheFilePath, cacheMetaPath, err = f.createCacheMetaIfNotExist(name, cacheFilePath+".*"+f.CacheMetaExt)
 	if err != nil {
 		return "", "", false, err
 	}
@@ -83,18 +83,8 @@ func (f *CacheFile) Get(name string) (cacheFilePath, cacheMetaPath string, hit b
 	// <protect> 2. cache removed by other process or goroutine -- not controllable
 	// 3. refresh cache's ModTime
 	{
-		info, err_ := os.Stat(cacheMetaPath)
-		if err_ != nil {
-			hit = false
-			return
-		}
-		// violate cache file if cache expired
-		expired := time.Since(info.ModTime()) > f.CacheExpiredAfter
-		if expired {
-			hit = false
-			return
-		}
-		info, err_ = os.Stat(cacheFilePath)
+		// violate cache file if it's empty
+		info, err_ := os.Stat(cacheFilePath)
 		if err_ != nil {
 			hit = false
 			return
@@ -113,7 +103,7 @@ func (f *CacheFile) Get(name string) (cacheFilePath, cacheMetaPath string, hit b
 }
 
 func (f *CacheFile) Put(name string, r io.Reader) (cacheFilePath string, refreshed bool, err error) {
-	cacheFilePath, cacheMetaPath, hit, err := f.Get(name)
+	cacheFilePath, _, hit, err := f.Get(name)
 	if err != nil {
 		return "", false, err
 	}
@@ -125,28 +115,25 @@ func (f *CacheFile) Put(name string, r io.Reader) (cacheFilePath string, refresh
 	if err != nil {
 		return "", false, fmt.Errorf("failed to create cache file: %w", err)
 	}
-	err = WriteRenameAll(cacheMetaPath, []byte(name))
-	if err != nil {
-		_ = os.Remove(cacheFilePath)
-		return "", false, fmt.Errorf("failed to create cache meta: %w", err)
-	}
 	return cacheFilePath, true, nil
 }
 
-func (f *CacheFile) getCacheMeta(key, cacheMetaPathPattern string) (cacheFilePath, cacheMetaPath string, err error) {
+func (f *CacheFile) createCacheMetaIfNotExist(key, cacheMetaPathPattern string) (cacheFilePath, cacheMetaPath string, err error) {
 	var hitMeta bool
 
-	// STEP1 clean expired cache file
+	now := time.Now()
+	// STEP1 clean expired cache file and cache meta file
 	_ = filepath_.WalkGlob(cacheMetaPathPattern, func(path string) error {
 		cacheMetaPath = path
 		cacheFilePath = strings.TrimSuffix(cacheMetaPath, f.CacheMetaExt)
 		info, err := os.Stat(cacheMetaPath)
 		if err == nil {
 			// violate cache file if cache expired
-			expired := time.Since(info.ModTime()) > f.CacheExpiredAfter
+			expired := now.Sub(info.ModTime()) > f.CacheExpiredAfter
 			if expired {
-				_ = os.Remove(cacheFilePath)
-				_ = os.Remove(cacheMetaPath)
+				_ = os.Truncate(cacheMetaPath, 0) // make cache meta file not available
+				_ = os.Remove(cacheFilePath)      // clear cache file if exists, atomic operation as cache meta file is locked.
+				_ = os.Remove(cacheMetaPath)      // invalidate cache meta file
 				return nil
 			}
 		}
@@ -172,19 +159,19 @@ func (f *CacheFile) getCacheMeta(key, cacheMetaPathPattern string) (cacheFilePat
 
 	// STEP3 add new cache file to cache open list
 	// foo.txt.* -> foo.txt.[0,1,2,...], which exists and seq is max
-	nf, _, err := NextFile(cacheMetaPathPattern, 0)
+	nextFile, _, err := NextFile(cacheMetaPathPattern, 0)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to open next cache meta: %w", err)
 	}
-	defer nf.Close()
+	defer nextFile.Close()
 	// STEP3 cache url not conflict, refresh ModTime of cache file and cache file's metadata
-	cacheMetaPath = nf.Name()
+	cacheMetaPath = nextFile.Name()
 	cacheFilePath = strings.TrimSuffix(cacheMetaPath, f.CacheMetaExt)
-	_, err = nf.WriteString(key)
+	_ = os.Remove(cacheFilePath)       // clear cache file if exists, atomic operation as cache meta file is locked.
+	_, err = nextFile.WriteString(key) // make cache meta file available
 	if err != nil {
 		return "", "", fmt.Errorf("failed to write next cache meta: %w", err)
 	}
-	_ = os.Remove(cacheFilePath)
 	return
 }
 
