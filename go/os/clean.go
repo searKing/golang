@@ -83,19 +83,29 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		return false
 	})
 	if err != nil {
-		return err
+		return errors.Join(append(errs, err)...)
+	}
+
+	if len(filesNotExpired) == 0 {
+		return errors.Join(append(errs, err)...)
 	}
 
 	var filesExceedMaxCount []string
 	var filesLeftOrdered = filesNotExpired
 
-	// prefer to delete files ordered by ModTime from oldest to newest.
-	sort.Sort(rotateFileSlice(filesLeftOrdered))
-	if quora.MaxCount > 0 && len(filesLeftOrdered) > 0 {
-		removeCount := len(filesLeftOrdered) - quora.MaxCount
-		if removeCount > 0 {
-			filesExceedMaxCount = filesLeftOrdered[:removeCount]
-			filesLeftOrdered = filesLeftOrdered[removeCount:]
+	if quora.MaxCount > 0 && len(filesNotExpired) <= quora.MaxCount {
+		// special case: no need to order files.
+		filesExceedMaxCount = filesLeftOrdered
+		filesLeftOrdered = nil
+	} else {
+		// prefer to delete files ordered by ModTime from oldest to newest.
+		sort.Sort(rotateFileSlice(filesLeftOrdered))
+		if quora.MaxCount > 0 {
+			removeCount := len(filesLeftOrdered) - quora.MaxCount
+			if removeCount > 0 {
+				filesExceedMaxCount = filesLeftOrdered[:removeCount]
+				filesLeftOrdered = filesLeftOrdered[removeCount:]
+			}
 		}
 	}
 
