@@ -47,7 +47,9 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 
 	// find all expired files
 	var filesNotExpired []string
-	filesExpired, err := filepath_.GlobFunc(pattern, func(name string) bool {
+
+	var errs []error
+	_, err := filepath_.GlobFunc(pattern, func(name string) bool {
 		fi, err := os.Stat(name)
 		if err != nil {
 			return false
@@ -70,7 +72,15 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		if fl.Mode()&os.ModeSymlink == os.ModeSymlink {
 			return false
 		}
-		return true
+
+		// this file is expired, delete it inplace.
+		if f(name) {
+			err = os.Remove(name)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+		return false
 	})
 	if err != nil {
 		return err
@@ -89,15 +99,6 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		}
 	}
 
-	var errs []error
-	for _, path := range filesExpired {
-		if f(path) {
-			err = os.Remove(path)
-			if err != nil {
-				errs = append(errs, err)
-			}
-		}
-	}
 	for _, path := range filesExceedMaxCount {
 		if f(path) {
 			err = os.Remove(path)
