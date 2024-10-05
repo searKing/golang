@@ -129,16 +129,44 @@ func WithPillMapTypeReplace[T comparable](v map[string]int64) PillOption[T] {
 	})
 }
 
-// WithPillSliceType appends sliceType in Pill[T].
-func WithPillSliceType[T comparable](v ...int64) PillOption[T] {
+// WithPillIndentSliceType appends indentSliceType in Pill[T].
+func WithPillIndentSliceType[T comparable](v ...int64) PillOption[T] {
 	return PillOptionFunc[T](func(o *Pill[T]) {
-		o.sliceType = append(o.sliceType, v...)
+		o.indentSliceType = append(o.indentSliceType, v...)
 	})
 }
 
-// WithPillSliceTypeReplace sets sliceType in Pill[T].
-func WithPillSliceTypeReplace[T comparable](v ...int64) PillOption[T] {
+// WithPillIndentSliceTypeReplace sets indentSliceType in Pill[T].
+func WithPillIndentSliceTypeReplace[T comparable](v ...int64) PillOption[T] {
 	return PillOptionFunc[T](func(o *Pill[T]) {
-		o.sliceType = v
+		o.indentSliceType = v
+	})
+}
+
+// WithPillSelectorSliceType appends selectorSliceType in Pill[T].
+func WithPillSelectorSliceType[T comparable](v ...time_.Time) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.selectorSliceType = append(o.selectorSliceType, v...)
+	})
+}
+
+// WithPillSelectorSliceTypeReplace sets selectorSliceType in Pill[T].
+func WithPillSelectorSliceTypeReplace[T comparable](v ...time_.Time) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.selectorSliceType = v
+	})
+}
+
+// WithPillStarSelectorSliceType appends starSelectorSliceType in Pill[T].
+func WithPillStarSelectorSliceType[T comparable](v ...*time_.Time) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.starSelectorSliceType = append(o.starSelectorSliceType, v...)
+	})
+}
+
+// WithPillStarSelectorSliceTypeReplace sets starSelectorSliceType in Pill[T].
+func WithPillStarSelectorSliceTypeReplace[T comparable](v ...*time_.Time) PillOption[T] {
+	return PillOptionFunc[T](func(o *Pill[T]) {
+		o.starSelectorSliceType = v
 	})
 }

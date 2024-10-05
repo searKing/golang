@@ -107,10 +107,8 @@ func FilterTypeName(exp ast.Expr) (fieldType string, fieldIsMap bool, fieldSlice
 	fieldType = types.ExprString(exp)
 	switch t := exp.(type) {
 	case *ast.ArrayType:
-		if ident, ok := t.Elt.(*ast.Ident); ok {
-			if t.Len == nil {
-				fieldSliceElt = ident.String()
-			}
+		if t.Len == nil { // slice
+			fieldSliceElt = types.ExprString(t.Elt)
 		}
 	case *ast.MapType:
 		fieldIsMap = true

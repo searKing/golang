@@ -22,15 +22,17 @@ type Number[T comparable] struct {
 	Address   string `option:"-"`
 	NameAlias string `option:"Title,"`
 
-	genericType   GenericType[T]
-	pointerType   *[5]T
-	structType    time_.Time
-	arrayType     [5]T
-	funcType      func()
-	interfaceType any
-	mapType       map[string]int64
-	sliceType     []int64
-	stringType    string
+	genericType           GenericType[T]
+	pointerType           *[5]T
+	structType            time_.Time
+	arrayType             [5]T
+	funcType              func()
+	interfaceType         any
+	stringType            string
+	mapType               map[string]int64
+	indentSliceType       []int64
+	selectorSliceType     []time_.Time
+	starSelectorSliceType []*time_.Time
 }
 
 type GenericType[T any] struct{}
