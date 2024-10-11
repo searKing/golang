@@ -10,60 +10,104 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	http_ "github.com/searKing/golang/go/net/http"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+
+	http_ "github.com/searKing/golang/go/net/http"
 )
 
+// Both of HTTP and gRPC transfer caller's trace by HTTP Header "traceparent".
+//
+// HTTP transfers injected tracer keys into HTTP Request's Header and Context by otelhttp.
+// gRPC transfers injected tracer keys into HTTP Request's Header and Context by otelgrpc.
+// injected tracer keys: "tracestate", "baggage", "traceparent" and so on.
+//
+// HTTP: Context
+// gRPC: IncomingContext<Recv Req>、OutgoingContext<send Req>、ServerMetadataContext<Send or Recv Resp>
+//
+// middlewares:
+// 1) otelhttp:
+// 1.1) HTTP Req Header -> Context<send or recv Req>
+// 2) otelgrpc:
+// 2.1) gRPC Req Header -> IncomingContext<recv Req>
+// 2.2) gRPC OutgoingContext<send Req> -> gRPC Req Header
+// 3) otelhttp2grpc:
+// 3.1) HTTP Req Context -> gRPC Req Header
+// 4) gRPC Gateway:
+// 4.1) otelhttp2grpc-endpoint:
+//   HTTP Req Header -> gRPC OutgoingContext
+// 4.2) otelhttp2grpc-no endpoint:
+//   HTTP Req Header -> gRPC IncomingContext
+
 func DialOptions() []grpc.DialOption {
+	// 2.1) gRPC OutgoingContext<send Req> -> gRPC Req Header
 	return []grpc.DialOption{grpc.WithStatsHandler(otelgrpc.NewClientHandler())}
 }
 
 func ServerOptions() []grpc.ServerOption {
+	// 2.2) gRPC Req Header -> IncomingContext<recv Req>
 	return []grpc.ServerOption{grpc.StatsHandler(otelgrpc.NewServerHandler())}
+}
+
+func tracerHeaderMatcher(key string) (string, bool) {
+	if alias := http.CanonicalHeaderKey(key); slices.ContainsFunc(
+		otel.GetTextMapPropagator().Fields(), func(s string) bool { return http.CanonicalHeaderKey(s) == alias }) {
+		return alias, true
+	}
+	return runtime.DefaultHeaderMatcher(key)
 }
 
 func ServeMuxOptions() []runtime.ServeMuxOption {
 	// Trace Header Matcher From HTTP To gRPC!
-	return []runtime.ServeMuxOption{runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
-		// HTTP Server -> gRPC Server
-		if alias := http.CanonicalHeaderKey(key); slices.ContainsFunc(
-			otel.GetTextMapPropagator().Fields(), func(s string) bool { return http.CanonicalHeaderKey(s) == alias }) {
-			return alias, true
-		}
-		return runtime.DefaultHeaderMatcher(key)
-	})}
+	return []runtime.ServeMuxOption{
+		// 2.1) gRPC Req Header -> IncomingContext<recv Req>
+		runtime.WithIncomingHeaderMatcher(tracerHeaderMatcher),
+		// 2.2) gRPC OutgoingContext<send Req> -> gRPC Req Header
+		runtime.WithOutgoingHeaderMatcher(tracerHeaderMatcher)}
 }
 
+// HttpHandlerDecorators adds metrics and tracing to requests if the incoming request is sampled.
 func HttpHandlerDecorators() []http_.HandlerDecorator {
 	return []http_.HandlerDecorator{
-		// Root Span of HTTP!
-		http_.HandlerDecoratorFunc(
-			func(handler http.Handler) http.Handler {
-				return otelhttp.NewHandler(handler, "gRPC-Gateway",
-					otelhttp.WithMeterProvider(otel.GetMeterProvider()),
-					otelhttp.WithTracerProvider(otel.GetTracerProvider()),
-					otelhttp.WithPropagators(otel.GetTextMapPropagator()),
-					otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
-						if operation == "" {
-							operation = "HTTP"
-						}
-						return operation + "." + r.Method + "." + r.URL.Path
-					}))
-			}),
-		// Trace Header From HTTP To gRPC!
+
+		// 1.1) HTTP Req Header -> Context<send or recv Req>
+		http_.HandlerDecoratorFunc(func(handler http.Handler) http.Handler {
+			wrappedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Add the http.target attribute to the otelhttp span
+				// Workaround for https://github.com/open-telemetry/opentelemetry-go-contrib/issues/3743
+				if r.URL != nil {
+					trace.SpanFromContext(r.Context()).SetAttributes(semconv.HTTPTarget(r.URL.RequestURI()))
+				}
+				handler.ServeHTTP(w, r)
+			})
+			// With Noop TracerProvider, the otelhttp still handles context propagation.
+			// See https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/examples/passthrough
+			return otelhttp.NewHandler(wrappedHandler, "gRPC-Gateway",
+				otelhttp.WithPublicEndpoint(),
+				otelhttp.WithMeterProvider(otel.GetMeterProvider()),
+				otelhttp.WithTracerProvider(otel.GetTracerProvider()),
+				otelhttp.WithPropagators(otel.GetTextMapPropagator()),
+				otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+					if operation == "" {
+						operation = "HTTP"
+					}
+					return operation + " " + r.Method + " " + r.URL.Path
+				}))
+		}),
+
+		// 3.1) HTTP Req Context -> gRPC Req Header
 		http_.HandlerDecoratorFunc(func(handler http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Inject set cross-cutting concerns from the Context into the carrier.
-				// HTTP Server -> [gRPC Client] -> gRPC Server
 				otel.GetTextMapPropagator().Inject(r.Context(), propagation.HeaderCarrier(r.Header))
 				handler.ServeHTTP(w, r)
 			})
 		}),
+
 		// Inject "trace_id" and "span_id" into logging fields!
 		http_.HandlerDecoratorFunc(func(handler http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
