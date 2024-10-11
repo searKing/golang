@@ -8,8 +8,10 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	http_ "github.com/searKing/golang/go/net/http"
 	"google.golang.org/grpc"
+
+	http_ "github.com/searKing/golang/go/net/http"
+	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
 )
 
 type gatewayOption struct {
@@ -21,13 +23,19 @@ type gatewayOption struct {
 		withReflectionService bool // registers the server reflection service on the given gRPC server.
 	}
 
+	// for http handler to call grpc service function directly.
+	// as gRPC-Gateway does not support gRPC interceptors when call gRPC's service handler in process.
+	// See: https://github.com/grpc-ecosystem/grpc-gateway/issues/1043
+	httpNoForwardInterceptors grpc_.UnaryHandlerDecorators
+
 	// for http client to redirect to grpc server
 	grpcClientDialOpts []grpc.DialOption
 
-	srvMuxOpts []runtime.ServeMuxOption
+	// for gateway
+	srvMuxOpts       []runtime.ServeMuxOption
+	httpInterceptors http_.HandlerInterceptorChain
 
-	interceptors http_.HandlerInterceptorChain
-	loggingOpts  []logging.Option
+	loggingOpts []logging.Option
 }
 
 func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
@@ -38,7 +46,8 @@ func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
 	var unaryInterceptors []grpc.UnaryServerInterceptor
 	unaryInterceptors = append(unaryInterceptors, grpcrecovery.UnaryServerInterceptor())
 	unaryInterceptors = append(unaryInterceptors, opt.grpcServerOpts.unaryInterceptors...)
-	return append(opt.grpcServerOpts.opts, grpc.ChainStreamInterceptor(streamInterceptors...),
+	return append(opt.grpcServerOpts.opts,
+		grpc.ChainStreamInterceptor(streamInterceptors...),
 		grpc.ChainUnaryInterceptor(unaryInterceptors...))
 }
 

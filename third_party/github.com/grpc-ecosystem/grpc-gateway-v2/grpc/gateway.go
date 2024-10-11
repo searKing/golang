@@ -198,6 +198,12 @@ func (gw *Gateway) RegisterHTTPHandler(ctx context.Context, handler HTTPHandler)
 	return handler.Register(ctx, gw.httpMuxToGrpc, "passthrough:///"+gw.Server.Addr, gw.opt.ClientDialOpts())
 }
 
+// RegisterHTTPNoProxyHandler registers grpc handler decorator of the gateway, when call grpc service function directly.
+func (gw *Gateway) RegisterHTTPNoProxyHandler(ctx context.Context, handler HTTPNoForwardHandler) error {
+	//scheme://authority/endpoint
+	return handler.Register(ctx, gw.httpMuxToGrpc, gw.opt.httpNoForwardInterceptors...)
+}
+
 // RegisterGRPCFunc registers grpc handler of the gateway
 func (gw *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
 	gw.RegisterGRPCHandler(GRPCHandlerFunc(handler))
@@ -206,6 +212,11 @@ func (gw *Gateway) RegisterGRPCFunc(handler func(srv *grpc.Server)) {
 // RegisterHTTPFunc registers http handler of the gateway
 func (gw *Gateway) RegisterHTTPFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error) error {
 	return gw.RegisterHTTPHandler(ctx, HTTPHandlerFunc(handler))
+}
+
+// RegisterHTTPNoForwardFunc registers no forward http handler of the gateway
+func (gw *Gateway) RegisterHTTPNoForwardFunc(ctx context.Context, handler func(ctx context.Context, mux *runtime.ServeMux, decorators ...grpc_.UnaryHandlerDecorator) error) error {
+	return gw.RegisterHTTPNoProxyHandler(ctx, HTTPNoForwardHandlerFunc(handler))
 }
 
 func (gw *Gateway) preServe(opts ...GatewayOption) {

@@ -28,7 +28,7 @@ func WithHttpHandlerDecorators(decorators ...http_.HandlerDecorator) GatewayOpti
 // and can rely on gRPC interceptors.
 func WithHttpHandlerInterceptor(opts ...http_.HandlerInterceptorChainOption) GatewayOption {
 	return GatewayOptionFunc(func(gateway *Gateway) {
-		gateway.opt.interceptors.ApplyOptions(opts...)
+		gateway.opt.httpInterceptors.ApplyOptions(opts...)
 	})
 }
 

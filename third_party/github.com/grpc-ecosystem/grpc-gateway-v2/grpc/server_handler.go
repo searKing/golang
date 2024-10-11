@@ -13,5 +13,5 @@ type serverHandler struct {
 }
 
 func (s *serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.gateway.opt.interceptors.InjectHttpHandler(s.gateway.httpMuxToGrpc).ServeHTTP(w, r)
+	s.gateway.opt.httpInterceptors.InjectHttpHandler(s.gateway.httpMuxToGrpc).ServeHTTP(w, r)
 }

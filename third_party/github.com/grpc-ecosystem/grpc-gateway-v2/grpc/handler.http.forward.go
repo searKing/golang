@@ -19,13 +19,3 @@ type HTTPHandlerFunc func(ctx context.Context, mux *runtime.ServeMux, endpoint s
 func (f HTTPHandlerFunc) Register(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return f(ctx, mux, endpoint, opts)
 }
-
-type GRPCHandler interface {
-	Register(srv *grpc.Server)
-}
-
-type GRPCHandlerFunc func(srv *grpc.Server)
-
-func (f GRPCHandlerFunc) Register(srv *grpc.Server) {
-	f(srv)
-}
