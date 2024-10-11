@@ -15,11 +15,11 @@ import (
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
 )
 
-// UnaryHandler returns a new unary server handler.
+// UnaryHandlers returns new unary server handlers.
 //
 // gRPC-Gateway does not support gRPC interceptors when call gRPC's service handler in process.
 // See: https://github.com/grpc-ecosystem/grpc-gateway/issues/1043
-func (f *Factory) UnaryHandler(handlers ...grpc_.UnaryHandlerDecorator) []grpc_.UnaryHandlerDecorator {
+func (f *Factory) UnaryHandlers(handlers ...grpc_.UnaryHandlerDecorator) []grpc_.UnaryHandlerDecorator {
 	// recover
 	handlers = append(handlers, grpc_.UnaryHandlerDecoratorFunc(recovery.UnaryHandler))
 	// validate

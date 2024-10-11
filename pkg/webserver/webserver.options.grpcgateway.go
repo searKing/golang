@@ -11,7 +11,7 @@ import (
 )
 
 func (f *Factory) ServeMuxOptions(opts ...runtime.ServeMuxOption) []runtime.ServeMuxOption {
-	if f.fc.EnableOpenTelemetry {
+	if f.fc.OtelHandling {
 		opts = append(opts, otel.ServeMuxOptions()...)
 	}
 	return opts

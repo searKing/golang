@@ -22,7 +22,7 @@ func (f *Factory) ServerOptions(opts ...grpc.ServerOption) []grpc.ServerOption {
 		// log for the related stats handling (e.g., RPCs, connections).
 		opts = append(opts, grpc.StatsHandler(&stats.ServerHandler{}))
 	}
-	if f.fc.EnableOpenTelemetry {
+	if f.fc.OtelHandling {
 		opts = append(opts, otel.ServerOptions()...)
 	}
 	return opts
@@ -44,7 +44,7 @@ func (f *Factory) DialOptions(opts ...grpc.DialOption) []grpc.DialOption {
 		// log for the related stats handling (e.g., RPCs, connections).
 		opts = append(opts, grpc.WithStatsHandler(&stats.ClientHandler{}))
 	}
-	if f.fc.EnableOpenTelemetry {
+	if f.fc.OtelHandling {
 		opts = append(opts, otel.DialOptions()...)
 	}
 	opts = append(opts, grpc.WithChainUnaryInterceptor(f.UnaryClientInterceptors()...))

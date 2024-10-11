@@ -13,7 +13,7 @@ import (
 
 func (f *Factory) HttpHandlerDecorators(decorators ...http_.HandlerDecorator) []http_.HandlerDecorator {
 	// otel
-	if f.fc.EnableOpenTelemetry {
+	if f.fc.OtelHandling {
 		decorators = append(decorators, otel.HttpHandlerDecorators()...)
 	}
 
