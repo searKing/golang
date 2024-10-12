@@ -26,6 +26,8 @@ var (
 // provides extra information about the response.
 // It is recommended that middleware handlers use this construct to wrap a [http.ResponseWriter]
 // if the functionality calls for it.
+//
+// Deprecated: Use NewResponseWriterDelegator instead.
 func NewRecordResponseWriter(rw http.ResponseWriter) *recordResponseWriter {
 	return &recordResponseWriter{
 		ResponseWriter: rw,

@@ -37,13 +37,13 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 			attrs = append(attrs, extractLoggingFieldsFromHttpRequest(r)...)
 			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("http request received"), attrs...)
 
-			rw := http_.NewRecordResponseWriter(w)
+			rw := http_.NewResponseWriterDelegator(w)
 			handler.ServeHTTP(rw, r)
 
 			attrs = append(attrs, slog.String("http.status_code", slices_.FirstOrZero(http.StatusText(rw.Status()), "CODE("+strconv.FormatInt(int64(rw.Status()), 10)+")")),
 				slog.Duration("cost", cost.Elapse()),
 				slog.Int64("http.request_body_size", r.ContentLength),
-				slog.Int("http.response_body_size", rw.Size()))
+				slog.Int64("http.response_body_size", rw.Written()))
 			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with code %d", rw.Status()), attrs...)
 		})
 	}
