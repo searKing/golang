@@ -37,9 +37,7 @@ if [[ -n "$args_tag" ]]; then
   if [ "${args_clean_only}"x = "ON"x ]; then
     git_args=(-d)
   fi
-  # cmd="path=\$\(dirname \"\${1#./}\"\);if [ \"\$path\" == \".\" ]; then git tag ${git_args[*]} \"\${TAG}"; else git tag ${git_args[*]} \"\$\{path\}/\$\{TAG\}\"\; fi\;"
   cmd="path=\$(dirname \"\${1#./}\");if [ \"\$path\" == \".\" ]; then git tag ${git_args[*]} \"\${TAG}\"; else git tag ${git_args[*]} \"\${path}/\${TAG}\"; fi;"
-  echo "$cmd"
   TAG="${args_tag}" find "${args_dir}" -type f -name "go.mod" -not -path "./.*" -not -path "./*/testdata/*" -exec bash -c "$cmd" sh {} \;
   if [ "${args_clean_only}"x = "ON"x ]; then
     echo "'$args_tag' tag deleted finished."
