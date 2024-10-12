@@ -9,10 +9,10 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/rs/cors v1.11.1
-	github.com/searKing/golang/go v1.2.119
-	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.118
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.118
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.118
+	github.com/searKing/golang/go v1.2.120
+	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.120
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.120
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.120
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.55.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0
 	go.opentelemetry.io/otel v1.31.0

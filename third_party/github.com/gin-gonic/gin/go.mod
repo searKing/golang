@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
-	github.com/searKing/golang/go v1.2.118
+	github.com/searKing/golang/go v1.2.120
 	google.golang.org/protobuf v1.34.1
 )
 
