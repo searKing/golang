@@ -158,13 +158,13 @@ func (f *Factory) New() (*WebServer, error) {
 		opts = append(opts, grpc_.WithGrpcServeMuxOption(f.ServeMuxOptions()...))
 	}
 	{
+		// http interceptors
+		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpHandlerDecorators()...))
 		// grpc interceptors, when grpc service is called by http forward or gRPC.
 		opts = append(opts, grpc_.WithGrpcUnaryServerChain(f.UnaryServerInterceptors()...))
 		opts = append(opts, grpc_.WithGrpcStreamServerChain(f.StreamServerInterceptors()...))
 		// grpc interceptors, when grpc service function is called directly, using the direct-to-implementation registration methods.
 		opts = append(opts, grpc_.WithHttpNoForwardHandlerInterceptor(f.UnaryHandlers()...))
-		// http interceptors
-		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpHandlerDecorators()...))
 	}
 
 	opts = append(opts, f.fc.GatewayOptions...)
