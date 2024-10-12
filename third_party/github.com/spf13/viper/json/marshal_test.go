@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"testing"
 
-	json_ "github.com/searKing/golang/go/encoding/json"
+	json_ "github.com/searKing/golang/third_party/github.com/spf13/viper/json"
 )
 
 func TestMarshal(t *testing.T) {
