@@ -3,6 +3,7 @@ module github.com/searKing/golang/third_party/github.com/spf13/viper
 go 1.21
 
 require (
+	github.com/google/go-cmp v0.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/searKing/golang/go v1.2.120
 	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.120
