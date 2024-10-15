@@ -148,8 +148,23 @@ func (f *File) genDecl(node ast.Node) bool {
 		}
 		sExpr, ok := tspec.Type.(*ast.StructType)
 		if !ok {
-			f.structs = append(f.structs, v)
-			continue
+			// looking for alias target.
+			iExpr, ok := tspec.Type.(*ast.Ident)
+			if !ok || iExpr.Obj == nil || iExpr.Obj.Decl == nil {
+				f.structs = append(f.structs, v)
+				continue
+			}
+			ts, ok := iExpr.Obj.Decl.(*ast.TypeSpec)
+			if !ok {
+				f.structs = append(f.structs, v)
+				continue
+			}
+			se, ok := ts.Type.(*ast.StructType)
+			if !ok {
+				f.structs = append(f.structs, v)
+				continue
+			}
+			sExpr = se
 		}
 
 		for _, field := range sExpr.Fields.List {
