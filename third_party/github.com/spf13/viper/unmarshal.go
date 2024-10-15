@@ -5,7 +5,6 @@
 package viper
 
 import (
-	"bytes"
 	"reflect"
 	"strings"
 	_ "unsafe" // for go:linkname
@@ -13,7 +12,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	maps_ "github.com/searKing/golang/go/exp/maps"
 	json_ "github.com/searKing/golang/third_party/github.com/spf13/viper/json"
-	"github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
+	protojson_ "github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
 	"github.com/spf13/viper"
 	"google.golang.org/protobuf/proto"
 )
@@ -131,52 +130,22 @@ func UnmarshalProtoMessageHookFunc(def proto.Message) mapstructure.DecodeHookFun
 		if !ok {
 			return data, nil
 		}
-
 		// trick(json): error decoding '': json: unsupported type: map[interface {}]interface {}
 		dataBytes, err := json_.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
+		err = protojson_.Unmarshal(dataBytes, dataProto)
+		if err != nil {
+			return nil, err
+		}
 
-		// trick: transfer data to the same format as def, that is proto.Message
 		if def == nil {
-			err = protojson.Unmarshal(dataBytes, dataProto)
-			if err != nil {
-				return nil, err
-			}
 			return dataProto, nil
 		}
 
-		// trick: transfer data to the same format as def, that is proto.Message
-		// TODO replace merge trick below of merge option for protojson.Unmarshal
-		// See https://github.com/protocolbuffers/protobuf/issues/8263
-		defBytes, err := protojson.Marshal(def,
-			protojson.WithMarshalUseProtoNames(true), // compatible with TextName
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		v := viper.New()
-		v.SetConfigType("json")
-		err = v.MergeConfig(bytes.NewReader(defBytes))
-		if err != nil {
-			return nil, err
-		}
-		err = v.MergeConfig(bytes.NewReader(dataBytes))
-		if err != nil {
-			return nil, err
-		}
-
-		// fix(json): error decoding '': json: unsupported type: map[interface {}]interface {}
-		allBytes, err := json_.Marshal(v.AllSettings())
-		if err != nil {
-			return nil, err
-		}
-		err = protojson.Unmarshal(allBytes, dataProto)
-		if err != nil {
-			return nil, err
-		}
-		return dataProto, nil
+		allProto := proto.Clone(def)
+		proto.Merge(allProto, dataProto)
+		return allProto, nil
 	}
 }
