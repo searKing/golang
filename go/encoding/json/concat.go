@@ -86,7 +86,7 @@ func MarshalIndentConcat(va any, prefix, indent string, vbs ...any) ([]byte, err
 	return buf.Bytes(), nil
 }
 
-// Unmarshal parses the JSON-encoded data and stores the result
+// UnmarshalConcat parses the JSON-encoded data and stores the result
 // in the value pointed to by v. If v is nil or not a pointer,
 // Unmarshal returns an InvalidUnmarshalError.
 // ignore conflict keys of json if meet later.
