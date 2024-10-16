@@ -99,6 +99,8 @@ func truncate(v reflect.Value, f func(v any) bool, n int) {
 		}
 	case reflect.Ptr:
 		truncate(reflect.Indirect(v), f, n)
+	default:
+		break
 	}
 	return
 }

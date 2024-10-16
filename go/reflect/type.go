@@ -13,21 +13,22 @@ import (
 	"github.com/searKing/golang/go/container/traversal"
 )
 
-// nil, unknown type
-func IsNilType(v reflect.Type) (result bool) {
-	return v == nil
-}
-func FollowTypePointer(v reflect.Type) reflect.Type {
-	if IsNilType(v) {
-		return v
-	}
-	if v.Kind() == reflect.Ptr {
-		return FollowTypePointer(v.Elem())
-	}
-	return v
+// IsNilType reports whether t is untyped nil or typed nil for its type.
+func IsNilType(t reflect.Type) (result bool) {
+	return t == nil || IsNilValue(reflect.ValueOf(t))
 }
 
-// A field represents a single field found in a struct.
+func FollowTypePointer(t reflect.Type) reflect.Type {
+	if IsNilType(t) {
+		return t
+	}
+	if t.Kind() == reflect.Ptr {
+		return FollowTypePointer(t.Elem())
+	}
+	return t
+}
+
+// FieldTypeInfo represents a single field found in a struct.
 type FieldTypeInfo struct {
 	structField reflect.StructField
 	index       []int
@@ -88,7 +89,7 @@ func (f FieldTypeInfoHandlerFunc) Handler(info FieldTypeInfo) (goon bool) {
 	return f(info)
 }
 
-// Breadth First Search
+// WalkTypeBFS Breadth First Search
 func WalkTypeBFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 	traversal.BreadthFirstSearchOrder(FieldTypeInfo{
 		structField: reflect.StructField{
@@ -99,7 +100,7 @@ func WalkTypeBFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 	}))
 }
 
-// Wid First Search
+// WalkTypeDFS Wid First Search
 func WalkTypeDFS(typ reflect.Type, handler FieldTypeInfoHandler) {
 	traversal.DepthFirstSearchOrder(FieldTypeInfo{
 		structField: reflect.StructField{
