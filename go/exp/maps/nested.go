@@ -81,10 +81,8 @@ func (m NestedMap[K]) LoadOrStore(keys []K, value any) (actual any, loaded bool)
 			if ok {
 				return m2, true
 			}
-			if !ok {
-				nm[k] = value
-				return value, false
-			}
+			nm[k] = value
+			return value, false
 		}
 		if !ok {
 			// intermediate key does not exist
