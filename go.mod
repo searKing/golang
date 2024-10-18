@@ -1,8 +1,6 @@
 module github.com/searKing/golang
 
-go 1.22.0
-
-toolchain go1.23.2
+go 1.23.0
 
 require (
 	github.com/searKing/golang/go v1.2.120

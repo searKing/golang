@@ -8,8 +8,22 @@ import (
 	"bytes"
 	"math"
 	"math/rand"
+	"strings"
 	"testing"
 )
+
+func indentNewlines(s string) string {
+	return strings.Join(strings.Split(s, "\n"), "\n\t")
+}
+
+func stripWhitespace(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == ' ' || r == '\n' || r == '\r' || r == '\t' {
+			return -1
+		}
+		return r
+	}, s)
+}
 
 var validTests = []struct {
 	data string
