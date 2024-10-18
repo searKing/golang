@@ -4,7 +4,10 @@
 
 package prettyjson
 
-import "io"
+import (
+	"encoding/json"
+	"io"
+)
 
 // An Encoder writes JSON values to an output stream.
 type Encoder struct {
@@ -99,3 +102,5 @@ func (enc *Encoder) SetTruncate(n int) {
 	enc.truncateSlice = n
 	enc.truncateArray = n
 }
+
+type RawMessage = json.RawMessage
