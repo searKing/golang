@@ -180,12 +180,54 @@ type encOpts struct {
 	// escapeHTML causes '<', '>', and '&' to be escaped in JSON strings.
 	escapeHTML bool
 
-	truncateBytes        int
-	truncateString       int
-	truncateMap          int
-	truncateSliceOrArray int
-	truncateUrl          bool // truncate query and fragment in url
-	omitEmpty            bool
+	truncateBytes                  int  // truncate bytes to this length
+	truncateBytesIfMoreThan        int  // truncate bytes to this length if more than this length
+	truncateString                 int  // truncate string to this length
+	truncateStringIfMoreThan       int  // truncate string to this length if more than this length
+	truncateMap                    int  // truncate map to this length
+	truncateMapIfMoreThan          int  // truncate map to this length if more than this length
+	truncateSliceOrArray           int  // truncate slice or array to this length
+	truncateSliceOrArrayIfMoreThan int  // truncate slice or array to this length if more than this length
+	truncateUrl                    bool // truncate query and fragment in url
+	omitEmpty                      bool
+}
+
+func truncateTo(limit, limitIfMoreThan int) (int, int) {
+	if limit == 0 {
+		limit = limitIfMoreThan
+	}
+	if limitIfMoreThan == 0 {
+		limitIfMoreThan = limit
+	}
+	return limit, limitIfMoreThan
+}
+
+func truncateUrl(s string) (st string, isUrl bool) {
+	u, err := url.Parse(s)
+	if err != nil || u.Scheme == "" {
+		return s, false
+	}
+	q := u.Query()
+	f := u.Fragment
+	u.Fragment = ""
+	if len(q) > 0 || len(f) > 0 {
+		u.RawQuery = ""
+		u.Fragment = ""
+		u.RawFragment = ""
+		st := u.String()
+		st += fmt.Sprintf(" ...%d chars", len(s))
+		if len(q) > 0 {
+			st += fmt.Sprintf(",%dQ", len(q))
+		}
+		if len(f) > 0 {
+			st += fmt.Sprintf("%dF", len(f))
+		}
+		st += "]"
+		if len(st) < len(s) {
+			s = st
+		}
+	}
+	return s, true
 }
 
 type encoderFunc func(e *encodeState, v reflect.Value, opts encOpts)
@@ -445,39 +487,19 @@ func stringEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 	// @diff
 	s := v.String()
 	var isUrl bool
-	if opts.truncateUrl {
-		u, err := url.Parse(s)
-		if err == nil && u.Scheme != "" {
-			isUrl = true
-			q := u.Query()
-			f := u.Fragment
-			u.Fragment = ""
-			if len(q) > 0 || len(f) > 0 {
-				u.RawQuery = ""
-				u.Fragment = ""
-				u.RawFragment = ""
-				st := u.String()
-				st += fmt.Sprintf(" ...%d chars", len(s))
-				if len(q) > 0 {
-					st += fmt.Sprintf(",%dQ", len(q))
-				}
-				if len(f) > 0 {
-					st += fmt.Sprintf("%dF", len(f))
-				}
-				st += "]"
-				if len(st) < len(s) {
-					s = st
-				}
-			}
+	if limit, limitIfMoreThan := truncateTo(opts.truncateString, opts.truncateStringIfMoreThan); limitIfMoreThan > 0 && len(s) > limitIfMoreThan {
+		var st string
+		if opts.truncateUrl {
+			st, isUrl = truncateUrl(s)
 		}
-	}
-
-	if limit := opts.truncateString; !isUrl && limit > 0 && len(s) > limit {
-		st := strings_.Truncate(s, limit) + fmt.Sprintf("...%d chars", len(s))
+		if !isUrl {
+			st = strings_.Truncate(s, limit) + fmt.Sprintf("...%d chars", len(s))
+		}
 		if len(st) < len(s) {
 			s = st
 		}
 	}
+
 	if opts.quoted {
 		b := appendString(nil, s, opts.escapeHTML)
 		e.Write(appendString(e.AvailableBuffer(), b, false)) // no need to escape again since it is already escaped
@@ -662,10 +684,12 @@ func (me mapEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	// @diff
 	n := len(sv)
 	var m string
-	if limit := opts.truncateMap; limit > 0 && n > limit+1 {
+
+	if limit, limitIfMoreThan := truncateTo(opts.truncateMap, opts.truncateMapIfMoreThan); limitIfMoreThan > 0 && n >= limitIfMoreThan && n > limit {
 		m = fmt.Sprintf("...%d pairs", n)
 		n = limit
 	}
+
 	var j int
 	for i, kv := range sv {
 		if j >= n {
@@ -683,9 +707,10 @@ func (me mapEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 		if n > 0 {
 			e.WriteByte(',')
 		}
-		e.Write(appendString(e.AvailableBuffer(), m, opts.escapeHTML))
+		kv := sv[j]
+		e.Write(appendString(e.AvailableBuffer(), kv.ks+" "+m, opts.escapeHTML))
 		e.WriteByte(':')
-		e.Write(appendString(e.AvailableBuffer(), fmt.Sprintf("%d", len(sv)), opts.escapeHTML))
+		me.elemEnc(e, kv.v, opts)
 	}
 	e.WriteByte('}')
 	e.ptrLevel--
@@ -718,7 +743,7 @@ func encodeByteSlice(e *encodeState, v reflect.Value, opts encOpts) {
 	var st []byte
 	var encodedLenT int
 	encodedLenS := base64.StdEncoding.EncodedLen(len(s))
-	if limit := opts.truncateBytes; limit > 0 && len(s) > limit {
+	if limit, limitIfMoreThan := truncateTo(opts.truncateBytes, opts.truncateBytesIfMoreThan); limitIfMoreThan > 0 && len(s) > limitIfMoreThan {
 		m = fmt.Sprintf("...%d bytes", len(s))
 		st = bytes_.Truncate(s, limit)
 		encodedLenT = base64.StdEncoding.EncodedLen(len(st))
@@ -793,10 +818,11 @@ func (ae arrayEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	n := v.Len()
 	// @diff
 	var m string
-	if limit := opts.truncateSliceOrArray; limit > 0 && n > limit+1 {
+	if limit, limitIfMoreThan := truncateTo(opts.truncateSliceOrArray, opts.truncateSliceOrArrayIfMoreThan); limitIfMoreThan > 0 && n > limitIfMoreThan+1 {
 		m = fmt.Sprintf(", \"...%d elems\"", n)
 		n = limit
 	}
+
 	for i := 0; i < n; i++ {
 		if i > 0 {
 			e.WriteByte(',')

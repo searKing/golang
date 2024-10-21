@@ -59,30 +59,66 @@ func WithEncOptsEscapeHTML(v bool) EncOptsOption {
 }
 
 // WithEncOptsTruncateBytes sets truncateBytes in encOpts.
+// truncate bytes to this length
 func WithEncOptsTruncateBytes(v int) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.truncateBytes = v
 	})
 }
 
+// WithEncOptsTruncateBytesIfMoreThan sets truncateBytesIfMoreThan in encOpts.
+// truncate bytes to this length if more than this length
+func WithEncOptsTruncateBytesIfMoreThan(v int) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.truncateBytesIfMoreThan = v
+	})
+}
+
 // WithEncOptsTruncateString sets truncateString in encOpts.
+// truncate string to this length
 func WithEncOptsTruncateString(v int) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.truncateString = v
 	})
 }
 
+// WithEncOptsTruncateStringIfMoreThan sets truncateStringIfMoreThan in encOpts.
+// truncate string to this length if more than this length
+func WithEncOptsTruncateStringIfMoreThan(v int) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.truncateStringIfMoreThan = v
+	})
+}
+
 // WithEncOptsTruncateMap sets truncateMap in encOpts.
+// truncate map to this length
 func WithEncOptsTruncateMap(v int) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.truncateMap = v
 	})
 }
 
+// WithEncOptsTruncateMapIfMoreThan sets truncateMapIfMoreThan in encOpts.
+// truncate map to this length if more than this length
+func WithEncOptsTruncateMapIfMoreThan(v int) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.truncateMapIfMoreThan = v
+	})
+}
+
 // WithEncOptsTruncateSliceOrArray sets truncateSliceOrArray in encOpts.
+// truncate slice or array to this length
 func WithEncOptsTruncateSliceOrArray(v int) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.truncateSliceOrArray = v
+	})
+}
+
+// WithEncOptsTruncateSliceOrArrayIfMoreThan sets truncateSliceOrArrayIfMoreThan in encOpts.
+// truncate slice or array to this length if more than this length
+func WithEncOptsTruncateSliceOrArrayIfMoreThan(v int) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.truncateSliceOrArrayIfMoreThan = v
 	})
 }
 
