@@ -189,7 +189,8 @@ type encOpts struct {
 	truncateSliceOrArray           int  // truncate slice or array to this length
 	truncateSliceOrArrayIfMoreThan int  // truncate slice or array to this length if more than this length
 	truncateUrl                    bool // truncate query and fragment in url
-	omitEmpty                      bool
+	forceLongUrl                   bool // force long url
+	omitEmpty                      bool // omit empty value
 }
 
 func truncateTo(limit, limitIfMoreThan int) (int, int) {
@@ -491,6 +492,9 @@ func stringEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 		var st string
 		if opts.truncateUrl {
 			st, isUrl = truncateUrl(s)
+			if isUrl && opts.forceLongUrl {
+				st = s // do not truncate url, force long url
+			}
 		}
 		if !isUrl {
 			st = strings_.Truncate(s, limit) + fmt.Sprintf("...%d chars", len(s))

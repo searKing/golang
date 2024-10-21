@@ -130,7 +130,16 @@ func WithEncOptsTruncateUrl(v bool) EncOptsOption {
 	})
 }
 
+// WithEncOptsForceLongUrl sets forceLongUrl in encOpts.
+// force long url
+func WithEncOptsForceLongUrl(v bool) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.forceLongUrl = v
+	})
+}
+
 // WithEncOptsOmitEmpty sets omitEmpty in encOpts.
+// omit empty value
 func WithEncOptsOmitEmpty(v bool) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.omitEmpty = v
