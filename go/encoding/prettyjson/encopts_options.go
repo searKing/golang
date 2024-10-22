@@ -145,3 +145,11 @@ func WithEncOptsOmitEmpty(v bool) EncOptsOption {
 		o.omitEmpty = v
 	})
 }
+
+// WithEncOptsOmitStatistics sets omitStatistics in encOpts.
+// omit statistics info
+func WithEncOptsOmitStatistics(v bool) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.omitStatistics = v
+	})
+}

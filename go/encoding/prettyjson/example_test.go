@@ -31,7 +31,7 @@ func ExampleMarshal() {
 		Name:          "Reds",
 		LongName:      "The quick brown fox jumps over the lazy dog",
 		Colors:        []string{"The quick brown fox jumps over the lazy dog", "Crimson", "Red", "Ruby", "Maroon"},
-		ColorById:     map[string]string{"0": "red", "1": "green", "2": "blue", "3": "while"},
+		ColorById:     map[string]string{"0": "red", "1": "green", "2": "blue", "3": "white"},
 		ColorEnumById: map[string]int{"0": 0, "1": 1, "2": 2, "3": 3},
 		Url:           "https://example.com/tests/1?foo=1&bar=baz",
 		LongUrl:       "https://example.com/tests/1.html?foo=1&bar=baz&a=0&b=1&c=2&d=3#paragraph",
@@ -72,24 +72,7 @@ func ExampleMarshal() {
 		_, _ = os.Stdout.Write([]byte("\n"))
 	}
 
-	{
-		group := ColorGroup{
-			Url:     "https://example.com/tests/1?foo=1&bar=baz",
-			LongUrl: "https://example.com/tests/1.html?foo=1&bar=baz&a=0&b=1&c=2&d=3#paragraph",
-		}
-		b, err := prettyjson.Marshal(group,
-			prettyjson.WithEncOptsTruncateUrl(true),
-			prettyjson.WithEncOptsEscapeHTML(false),
-			prettyjson.WithEncOptsForceLongUrl(true),
-			prettyjson.WithEncOptsOmitEmpty(true))
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-		_, _ = os.Stdout.Write(b)
-	}
-
 	// Output:
-	// {"ID":1,"Name":"Reds","LongName":"The quick ...43 chars","Colors":["The quick ...43 chars","Crimson", "...5 elems"],"ColorById":{"0":"red","1":"green","2 ...4 pairs":"blue"},"ColorEnumById":{"0":0,"1":1,"2 ...4 pairs":2},"Url":"https://example.com/tests/1?foo=1&bar=baz","LongUrl":"https://example.com/tests/1.html ...72 chars,6Q9F]"}
-	// {"ID":1,"Name":"Reds","LongName":"The quick brown fox ...43 chars","Colors":["The quick brown fox ...43 chars","Crimson","Red","Ruby", "...5 elems"],"ColorById":{"0":"red","1":"green","2":"blue","3":"while"},"ColorEnumById":{"0":0,"1":1,"2":2,"3":3},"Url":"https://example.com/tests/1?foo=1&bar=baz","LongUrl":"https://example.com/tests/1.html ...72 chars,6Q9F]"}
-	// {"Url":"https://example.com/tests/1?foo=1&bar=baz","LongUrl":"https://example.com/tests/1.html?foo=1&bar=baz&a=0&b=1&c=2&d=3#paragraph"}
+	// {"ID":1,"Name":"Reds","LongName":"The quick ...43 chars","Colors":["The quick ...43 chars","Crimson","...5 elems"],"ColorById":{"0":"red","1":"green","2...4 pairs":"blue"},"ColorEnumById":{"0":0,"1":1,"2...4 pairs":2},"Url":"https://example.com/tests/1?foo=1&bar=baz","LongUrl":"https://example.com/tests/1.html...72 chars,6Q9F]"}
+	// {"ID":1,"Name":"Reds","LongName":"The quick brown fox ...43 chars","Colors":["The quick brown fox ...43 chars","Crimson","Red","Ruby","...5 elems"],"ColorById":{"0":"red","1":"green","2":"blue","3":"white"},"ColorEnumById":{"0":0,"1":1,"2":2,"3":3},"Url":"https://example.com/tests/1?foo=1&bar=baz","LongUrl":"https://example.com/tests/1.html...72 chars,6Q9F]"}
 }
