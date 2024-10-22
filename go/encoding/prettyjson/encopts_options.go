@@ -42,14 +42,6 @@ func withEncOpts(v encOpts) EncOptsOption {
 	})
 }
 
-// WithEncOptsQuoted sets quoted in encOpts.
-// quoted causes primitive fields to be encoded inside JSON strings.
-func WithEncOptsQuoted(v bool) EncOptsOption {
-	return EncOptsOptionFunc(func(o *encOpts) {
-		o.quoted = v
-	})
-}
-
 // WithEncOptsEscapeHTML sets escapeHTML in encOpts.
 // escapeHTML causes '<', '>', and '&' to be escaped in JSON strings.
 func WithEncOptsEscapeHTML(v bool) EncOptsOption {
