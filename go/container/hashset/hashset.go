@@ -36,11 +36,11 @@ func (m *HashSet) Keys() []any {
 	return keys
 }
 
-// add adds Key to the head of the linked list.
+// Add adds Key to the head of the linked list.
 func (m *HashSet) Add(key any) error {
 	m.lazyInit()
 	if _, ok := m.m[key]; ok {
-		return errors.New("Key was already in HashSet")
+		return errors.New("key was already in HashSet")
 	}
 	m.m[key] = struct{}{}
 	return nil
