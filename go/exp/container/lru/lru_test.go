@@ -429,6 +429,34 @@ func TestLRU_Range(t *testing.T) {
 	}
 }
 
+func TestLRU_All(t *testing.T) {
+	evictCounter := 0
+	onEvicted := func(k int, v int) { evictCounter++ }
+
+	l := lru.New[int, int](2).SetEvictCallback(onEvicted)
+	l.Add(1, 1)
+	l.Add(2, 2)
+	l.Add(3, 3)
+
+	// Verify LRU iteration can be stopped.
+	var keys, vals []int
+	for k, v := range l.All() {
+		if len(keys) == 2 {
+			// Found enough values, break early.
+			break
+		}
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+
+	if !slices.Equal(l.Keys()[:2], keys) {
+		t.Fatalf("bad key order: %v", l.Keys())
+	}
+	if !slices.Equal(keys, vals) {
+		t.Fatalf("mismatched kv pairs: %v:%v", keys, vals)
+	}
+}
+
 func TestLRU_GetOldest(t *testing.T) {
 	l := lru.New[int, int](128)
 

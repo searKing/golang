@@ -6,6 +6,7 @@ package lru
 
 import (
 	"container/list"
+	"iter"
 )
 
 // EvictCallback is used to get a callback when a cache entry is evicted
@@ -257,6 +258,12 @@ func (c *LRU[K, V]) Keys() []K {
 		i++
 	}
 	return keys
+}
+
+// All is an iterator over sequences of key-value pairs in LRU[K,V].
+// If c is empty, the sequence is empty: there is no empty key-value pairs in the sequence.
+func (c *LRU[K, V]) All() iter.Seq2[K, V] {
+	return c.Range
 }
 
 // Range calls f sequentially for each key and value present in the lru from oldest to newest.
