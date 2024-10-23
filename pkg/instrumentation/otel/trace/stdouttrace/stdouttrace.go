@@ -6,9 +6,10 @@ package stdouttrace
 
 import (
 	"github.com/searKing/golang/pkg/instrumentation/otel/trace"
+	"github.com/searKing/golang/pkg/instrumentation/otel/trace/driver"
 )
 
-var _ trace.ExporterURLOpener = (*URLOpener)(nil)
+var _ driver.ExporterURLOpener = (*URLOpener)(nil)
 
 func init() {
 	trace.Register(&URLOpener{})

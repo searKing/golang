@@ -6,9 +6,10 @@ package otlpmetricgrpc
 
 import (
 	"github.com/searKing/golang/pkg/instrumentation/otel/metric"
+	"github.com/searKing/golang/pkg/instrumentation/otel/metric/driver"
 )
 
-var _ metric.ReaderURLOpener = (*URLOpener)(nil)
+var _ driver.ReaderURLOpener = (*URLOpener)(nil)
 
 func init() {
 	metric.Register(&URLOpener{})
