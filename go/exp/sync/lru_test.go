@@ -40,7 +40,7 @@ func TestLRU(t *testing.T) {
 		t.Fatalf("bad evict count: %v", evictCounter)
 	}
 
-	for i, k := range l.Keys() {
+	for i, k := range slices.Collect(l.Keys()) {
 		if v, ok := l.Get(k); !ok || v != k || v != i+128 {
 			t.Fatalf("bad key: %v", k)
 		}
@@ -77,7 +77,7 @@ func TestLRU(t *testing.T) {
 
 	l.Get(192) // expect 192 to be last key in l.Keys()
 
-	for i, k := range l.Keys() {
+	for i, k := range slices.Collect(l.Keys()) {
 		if (i < 63 && k != i+193) || (i == 63 && k != 192) {
 			t.Fatalf("out of order key: %v", k)
 		}
@@ -403,12 +403,12 @@ func TestLRU_Keys(t *testing.T) {
 	l.Add(2, 2)
 	l.Add(3, 3)
 
-	if !slices.Equal(l.Keys(), []int{2, 3}) {
-		t.Fatalf("bad key order: %v", l.Keys())
+	if !slices.Equal(slices.Collect(l.Keys()), []int{2, 3}) {
+		t.Fatalf("bad key order: %v", slices.Collect(l.Keys()))
 	}
 }
 
-func TestLRU_Range(t *testing.T) {
+func TestLRU_All(t *testing.T) {
 	evictCounter := 0
 	onEvicted := func(k int, v int) { evictCounter++ }
 
@@ -418,14 +418,13 @@ func TestLRU_Range(t *testing.T) {
 	l.Add(3, 3)
 
 	var keys, vals []int
-	l.Range(func(key int, value int) bool {
-		keys = append(keys, key)
-		vals = append(vals, value)
-		return true
-	})
+	for k, v := range l.All() {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
 
-	if !slices.Equal(l.Keys(), keys) {
-		t.Fatalf("bad key order: %v", l.Keys())
+	if !slices.Equal(slices.Collect(l.Keys()), keys) {
+		t.Fatalf("bad key order: %v", slices.Collect(l.Keys()))
 	}
 	if !slices.Equal(keys, vals) {
 		t.Fatalf("mismatched kv pairs: %v:%v", keys, vals)
@@ -543,7 +542,7 @@ func TestLRU_RemoveOldest(t *testing.T) {
 	}
 }
 
-func TestConcurrentRange(t *testing.T) {
+func TestConcurrentAll(t *testing.T) {
 	const lruSize = 1 << 10
 
 	m := sync_.NewLRU[int64, int64](lruSize)
@@ -586,20 +585,18 @@ func TestConcurrentRange(t *testing.T) {
 	for n := iters; n > 0; n-- {
 		seen := make(map[int64]bool, lruSize)
 
-		m.Range(func(ki, vi int64) bool {
-			k, v := ki, vi
+		for k, v := range m.All() {
 			if v%k != 0 {
-				t.Fatalf("while Storing multiples of %v, Range saw value %v", k, v)
+				t.Fatalf("while Storing multiples of %v, All saw value %v", k, v)
 			}
 			if seen[k] {
-				t.Fatalf("Range visited key %v twice", k)
+				t.Fatalf("All visited key %v twice", k)
 			}
 			seen[k] = true
-			return true
-		})
+		}
 
 		if len(seen) != lruSize {
-			t.Fatalf("Range visited %v elements of %v-element Map", len(seen), lruSize)
+			t.Fatalf("All visited %v elements of %v-element Map", len(seen), lruSize)
 		}
 	}
 }

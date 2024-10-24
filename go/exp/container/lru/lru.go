@@ -248,19 +248,31 @@ func (c *LRU[K, V]) CompareAndDelete(key K, old V) (deleted bool) {
 	return false
 }
 
-// Keys returns a slice of the keys in the cache, from oldest to newest.
+// Keys returns an iterator that yields the keys in the cache, from oldest to newest.
 // Without updating the "recently used"-ness of the key.
-func (c *LRU[K, V]) Keys() []K {
-	keys := make([]K, len(c.items))
-	i := 0
-	for e := c.evictList.Back(); e != nil; e = e.Prev() {
-		keys[i] = e.Value.(*entry[K, V]).key
-		i++
+func (c *LRU[K, V]) Keys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k, _ := range c.All() {
+			if !yield(k) {
+				return
+			}
+		}
 	}
-	return keys
 }
 
-// All is an iterator over sequences of key-value pairs in LRU[K,V].
+// Values returns an iterator that yields the values in the cache, from oldest to newest.
+// Without updating the "recently used"-ness of the key.
+func (c *LRU[K, V]) Values() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range c.All() {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// All is an iterator over sequences of key-value pairs in the cache, from oldest to newest.
 // If c is empty, the sequence is empty: there is no empty key-value pairs in the sequence.
 func (c *LRU[K, V]) All() iter.Seq2[K, V] {
 	return c.Range
@@ -270,7 +282,6 @@ func (c *LRU[K, V]) All() iter.Seq2[K, V] {
 // If f returns false, range stops the iteration.
 // Without updating the "recently used"-ness of the key.
 func (c *LRU[K, V]) Range(f func(key K, value V) bool) {
-	// Iterate through list and print its contents.
 	for e := c.evictList.Back(); e != nil; e = e.Prev() {
 		if !f(e.Value.(*entry[K, V]).key, e.Value.(*entry[K, V]).value) {
 			break

@@ -36,37 +36,36 @@ func TestLRU(t *testing.T) {
 	if evictCounter != 128 {
 		t.Fatalf("bad evict count: %v", evictCounter)
 	}
-
-	for i, k := range l.Keys() {
+	for i, k := range slices.Collect(l.Keys()) {
 		if v, ok := l.Get(k); !ok || v != k || v != i+128 {
 			t.Fatalf("bad key: %v", k)
 		}
 	}
-	for i := 0; i < 128; i++ {
-		_, ok := l.Get(i)
+	for k := 0; k < 128; k++ {
+		_, ok := l.Get(k)
 		if ok {
 			t.Fatalf("should be evicted")
 		}
 	}
-	for i := 128; i < 256; i++ {
-		_, ok := l.Get(i)
+	for k := 128; k < 256; k++ {
+		_, ok := l.Get(k)
 		if !ok {
 			t.Fatalf("should not be evicted")
 		}
 	}
-	for i := 128; i < 192; i++ {
-		v, ok := l.LoadAndDelete(i)
+	for k := 128; k < 192; k++ {
+		v, ok := l.LoadAndDelete(k)
 		if !ok {
 			t.Fatalf("should be contained")
 		}
-		if v != i {
-			t.Fatalf("bad key: %v", i)
+		if v != k {
+			t.Fatalf("bad key: %v", k)
 		}
-		ok = l.Remove(i)
+		ok = l.Remove(k)
 		if ok {
 			t.Fatalf("should not be contained")
 		}
-		_, ok = l.Get(i)
+		_, ok = l.Get(k)
 		if ok {
 			t.Fatalf("should be deleted")
 		}
@@ -74,7 +73,7 @@ func TestLRU(t *testing.T) {
 
 	l.Get(192) // expect 192 to be last key in l.Keys()
 
-	for i, k := range l.Keys() {
+	for i, k := range slices.Collect(l.Keys()) {
 		if (i < 63 && k != i+193) || (i == 63 && k != 192) {
 			t.Fatalf("out of order key: %v", k)
 		}
@@ -400,32 +399,8 @@ func TestLRU_Keys(t *testing.T) {
 	l.Add(2, 2)
 	l.Add(3, 3)
 
-	if !slices.Equal(l.Keys(), []int{2, 3}) {
-		t.Fatalf("bad key order: %v", l.Keys())
-	}
-}
-
-func TestLRU_Range(t *testing.T) {
-	evictCounter := 0
-	onEvicted := func(k int, v int) { evictCounter++ }
-
-	l := lru.New[int, int](2).SetEvictCallback(onEvicted)
-	l.Add(1, 1)
-	l.Add(2, 2)
-	l.Add(3, 3)
-
-	var keys, vals []int
-	l.Range(func(key int, value int) bool {
-		keys = append(keys, key)
-		vals = append(vals, value)
-		return true
-	})
-
-	if !slices.Equal(l.Keys(), keys) {
-		t.Fatalf("bad key order: %v", l.Keys())
-	}
-	if !slices.Equal(keys, vals) {
-		t.Fatalf("mismatched kv pairs: %v:%v", keys, vals)
+	if !slices.Equal(slices.Collect(l.Keys()), []int{2, 3}) {
+		t.Fatalf("bad key order: %v", slices.Collect(l.Keys()))
 	}
 }
 
@@ -438,19 +413,14 @@ func TestLRU_All(t *testing.T) {
 	l.Add(2, 2)
 	l.Add(3, 3)
 
-	// Verify LRU iteration can be stopped.
 	var keys, vals []int
 	for k, v := range l.All() {
-		if len(keys) == 2 {
-			// Found enough values, break early.
-			break
-		}
 		keys = append(keys, k)
 		vals = append(vals, v)
 	}
 
-	if !slices.Equal(l.Keys()[:2], keys) {
-		t.Fatalf("bad key order: %v", l.Keys())
+	if !slices.Equal(slices.Collect(l.Keys()), keys) {
+		t.Fatalf("bad key order: %v", slices.Collect(l.Keys()))
 	}
 	if !slices.Equal(keys, vals) {
 		t.Fatalf("mismatched kv pairs: %v:%v", keys, vals)

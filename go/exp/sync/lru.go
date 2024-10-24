@@ -5,6 +5,7 @@
 package sync
 
 import (
+	"iter"
 	"sync"
 
 	"github.com/searKing/golang/go/exp/container/lru"
@@ -16,8 +17,8 @@ type EvictCallback[K comparable, V any] lru.EvictCallback[K, V]
 
 // LRU is like a Go map[K]V but implements a thread safe fixed size LRU cache.
 // Loads, stores, and deletes run in amortized constant time.
-// A LRU is safe for use by multiple goroutines simultaneously.
-// A LRU must not be copied after first use.
+// LRU is safe for use by multiple goroutines simultaneously.
+// LRU must not be copied after first use.
 type LRU[K comparable, V any] struct {
 	c  *lru.LRU[K, V]
 	mu sync.Mutex
@@ -189,11 +190,38 @@ func (c *LRU[K, V]) CompareAndDelete(key K, old V) (deleted bool) {
 	return c.c.CompareAndDelete(key, old)
 }
 
-// Keys returns a slice of the keys in the cache, from oldest to newest.
-func (c *LRU[K, V]) Keys() []K {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.c.Keys()
+// Keys returns an iterator that yields the keys in the cache, from oldest to newest.
+// Without updating the "recently used"-ness of the key.
+func (c *LRU[K, V]) Keys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		for k, _ := range c.c.All() {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+// Values returns an iterator that yields the values in the cache, from oldest to newest.
+// Without updating the "recently used"-ness of the key.
+func (c *LRU[K, V]) Values() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		for _, v := range c.c.All() {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// All is an iterator over sequences of key-value pairs in the cache, from oldest to newest.
+// If c is empty, the sequence is empty: there is no empty key-value pairs in the sequence.
+func (c *LRU[K, V]) All() iter.Seq2[K, V] {
+	return c.Range
 }
 
 // Range calls f sequentially for each key and value present in the lru from oldest to newest.
