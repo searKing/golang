@@ -17,10 +17,10 @@ func dump(t *testing.T, r *queue.Queue[int]) {
 		return
 	}
 	var i int
-	r.Do(func(e int) {
+	for e := range r.Values() {
 		t.Logf("%4d: %d\n", i, e)
 		i++
-	})
+	}
 	t.Logf("\n")
 }
 
@@ -34,10 +34,10 @@ func verify(t *testing.T, r *queue.Queue[int], N int, sum int) {
 	// iteration
 	n = 0
 	s := 0
-	r.Do(func(p int) {
+	for p := range r.Values() {
 		n++
 		s += p
-	})
+	}
 	if n != N {
 		t.Errorf("number of forward iterations == %d; expected %d", n, N)
 	}
@@ -61,12 +61,12 @@ func TestCornerCases(t *testing.T) {
 	verify(t, &r0, 1, 1)
 	verify(t, &r1, 0, 0)
 	// Insert
-	r1.PushBackQueue(&r0)
+	r1.PushBackSeq(r0.Values())
 	r1.ShrinkToFit()
 	verify(t, &r0, 1, 1)
 	verify(t, &r1, 1, 1)
 	// Insert
-	r1.PushBackQueue(&r0)
+	r1.PushBackSeq(r0.Values())
 	r1.ShrinkToFit()
 	verify(t, &r0, 1, 1)
 	verify(t, &r1, 2, 2)
@@ -82,8 +82,8 @@ func TestCornerCases(t *testing.T) {
 	verify(t, &r1, 0, 0)
 }
 
-func makeN(n int) *queue.Queue[int] {
-	r := queue.New[int]()
+func makeN(n int) queue.Queue[int] {
+	var r queue.Queue[int]
 	for i := 1; i <= n; i++ {
 		r.PushBack(i)
 	}
@@ -94,11 +94,11 @@ func sumN(n int) int { return (n*n + n) / 2 }
 
 func TestNew(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		r := queue.New[int]()
-		verify(t, r, 0, -1)
+		var r queue.Queue[int]
+		verify(t, &r, 0, -1)
 	}
 	for i := 0; i < 10; i++ {
 		r := makeN(i)
-		verify(t, r, i, sumN(i))
+		verify(t, &r, i, sumN(i))
 	}
 }

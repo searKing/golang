@@ -12,30 +12,30 @@ import (
 
 func Example() {
 	// Create a new list and put some numbers in it.
-	l := queue.New[int]()
+	var l queue.Queue[int]
 	l.PushBack(1)
 	l.PushBack(2)
 	l.PushBack(3)
 	l.PushBack(4)
 
-	l2 := queue.New[int]()
+	var l2 queue.Queue[int]
 	l2.PushBack(5)
 	l2.PushBack(6)
 	l2.PushBack(7)
 	l2.PushBack(8)
 
-	l.PushBackQueue(l2)
+	l.PushBackSeq(l2.Values())
 
 	l2.TrimFrontFunc(func(e int) bool {
 		return e%2 == 1
 	})
 	// Iterate through list and print its contents.
-	l.Do(func(e int) {
+	for e := range l.Values() {
 		fmt.Println(e)
-	})
-	l2.Do(func(e int) {
+	}
+	for e := range l2.Values() {
 		fmt.Println(e)
-	})
+	}
 
 	// Output:
 	// 1
