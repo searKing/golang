@@ -9,6 +9,8 @@ import (
 )
 
 // HashMap is an auto make map
+//
+// Deprecated: please use map directly instead.
 type HashMap struct {
 	m map[any]any
 }
@@ -63,11 +65,11 @@ func (m *HashMap) AddPair(pair Pair) error {
 	return m.Add(pair.Key, pair.Value)
 }
 
-// add adds Key to the head of the linked list.
+// Add adds Key to the head of the linked list.
 func (m *HashMap) Add(key, value any) error {
 	m.lazyInit()
 	if _, ok := m.m[key]; ok {
-		return errors.New("Key was already in HashMap")
+		return errors.New("key was already in HashMap")
 	}
 	m.m[key] = value
 	return nil
