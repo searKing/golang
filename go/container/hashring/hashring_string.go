@@ -44,7 +44,7 @@ func (c *StringNodeLocator) AddNodes(nodes ...string) {
 	c.nl.AddNodes(stringsToNodes(nodes...)...)
 }
 
-// Remove removes nodes from the consistent hash cycle...
+// RemoveNodes removes nodes from the consistent hash cycle...
 func (c *StringNodeLocator) RemoveNodes(nodes ...string) {
 	c.nl.RemoveNodes(stringsToNodes(nodes...)...)
 }
