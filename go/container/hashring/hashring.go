@@ -21,6 +21,7 @@ package hashring
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"slices"
 )
@@ -87,11 +88,7 @@ func New(opts ...NodeLocatorOption) *NodeLocator {
 
 // GetAllNodes returns all available nodes
 func (c *NodeLocator) GetAllNodes() []Node {
-	var nodes []Node
-	for node := range c.allNodes {
-		nodes = append(nodes, node)
-	}
-	return nodes
+	return slices.Collect(maps.Keys(c.allNodes))
 }
 
 // GetPrimaryNode returns the first available node for a name, such as “127.0.0.1:11311-0” for "Alice"
@@ -441,10 +438,7 @@ func (c *NodeLocator) updateSortedNodes() {
 }
 
 func sliceContainsMember(set []Node, member Node) bool {
-	for _, m := range set {
-		if m.String() == member.String() {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(set, func(n Node) bool {
+		return n.String() == member.String()
+	})
 }
