@@ -280,7 +280,7 @@ func (c *NodeLocator) addNodeWithoutSort(node Node, numReps int) {
 	c.allNodes[node] = struct{}{}
 }
 
-// Remove removes nodes from the consistent hash cycle...
+// RemoveNodes removes nodes from the consistent hash cycle...
 func (c *NodeLocator) RemoveNodes(nodes ...Node) {
 	if c.isWeighted {
 		c.removeWeightNodes(nodes...)
