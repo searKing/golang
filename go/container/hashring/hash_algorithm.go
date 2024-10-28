@@ -132,7 +132,7 @@ func fnv1a128Hash(k string) []uint32 {
 	_, _ = hash.Write([]byte(k))
 	bKey := hash.Sum(nil)
 	rv := binary.LittleEndian.Uint32(bKey)
-	return []uint32{uint32(rv & 0xffffffff)} // Truncate to 32-bits
+	return []uint32{rv & 0xffffffff} // Truncate to 32-bits
 }
 
 // MD5-based hash algorithm used by ketama.
