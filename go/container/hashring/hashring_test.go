@@ -6,7 +6,7 @@ package hashring
 
 import (
 	"runtime"
-	"sort"
+	"slices"
 	"strconv"
 	"testing"
 	"testing/quick"
@@ -36,7 +36,7 @@ func TestAdd(t *testing.T) {
 	if len(x.sortedKeys) != numReps {
 		t.Errorf("got %d, want %d", len(x.sortedKeys), numReps)
 	}
-	if sort.IsSorted(x.sortedKeys) == false {
+	if !slices.IsSorted(x.sortedKeys) {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
 	x.AddNodes(StringNode("qwer"))
@@ -47,7 +47,7 @@ func TestAdd(t *testing.T) {
 	if len(x.sortedKeys) != 2*numReps {
 		t.Errorf("got %d, want %d", len(x.nodeByKey), 2*numReps)
 	}
-	if sort.IsSorted(x.sortedKeys) == false {
+	if !slices.IsSorted(x.sortedKeys) {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
 }

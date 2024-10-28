@@ -22,16 +22,17 @@ package hashring
 import (
 	"fmt"
 	"math"
-	"sort"
+	"slices"
 )
 
+// Node is a node in the consistent hash ring.
 // {}	-> 127.0.0.1:11311 -> 127.0.0.1:11311-0 -> 1234
 // Node ->       Key       ->     IterateKey    -> HashKey
 //
 //	->     IterateKey    -> HashKey
 //	->     IterateKey    -> HashKey
 type Node interface {
-	// Get the SocketAddress of the server to which this node is connected.
+	// Stringer returns the SocketAddress of the server to which this node is connected.
 	fmt.Stringer
 }
 
@@ -48,9 +49,18 @@ func (n StringNode) String() string {
 //go:generate go-option -type "NodeLocator"
 type NodeLocator struct {
 	// The List of nodes to use in the Ketama consistent hash continuum
-	// 模拟一致性哈希环的环状结构，存放的都是可用节点
-	// 一致性Hash环
-	sortedKeys uint32Slice       // []HashKey, Index for nodes binary search
+	//
+	// This simulates the structure of keys used in the Ketama consistent hash ring,
+	// which stores the virtual node HashKeys on the physical nodes.
+	// All nodes in the cluster are topped by virtual nodes.
+	// In principle, it is a brute-force search to find the first complete HashKey
+	//
+	// For example,
+	// Node ->       Key       ->      IterateKey     -> HashKey
+	// {}	-> 127.0.0.1:11311 -> 127.0.0.1:11311-0   ->  1234
+	// {}	-> 127.0.0.1:11311 -> 127.0.0.1:11311-160 ->  256
+	// {}	-> 127.0.0.1:11311 -> 127.0.0.1:11311-320 ->  692
+	sortedKeys []uint32          // []HashKey, Index for nodes binary search
 	nodeByKey  map[uint32]Node   // <HashKey,Node>
 	allNodes   map[Node]struct{} // <Node>
 
@@ -329,16 +339,13 @@ func (c *NodeLocator) removeNoWeightNodes(nodes ...Node) {
 
 // tailSearch returns the first available node since iterateHashKey's Index, such as Index(HASH(“127.0.0.1:11311-0”))
 func (c *NodeLocator) tailSearch(key uint32) (i int, found bool) {
-	found = true
-	f := func(x int) bool {
-		return c.sortedKeys[x] >= key
-	}
 	// Search uses binary search to find and return the smallest index since iterateHashKey's Index
-	i = sort.Search(len(c.sortedKeys), f)
-	if i >= len(c.sortedKeys) {
-		found = false
-	}
-	return
+	return slices.BinarySearchFunc(c.sortedKeys, key, func(v uint32, key uint32) int {
+		if v >= key {
+			return 0
+		}
+		return -1
+	})
 }
 
 // Get returns an element close to where name hashes to in the nodes.
@@ -435,7 +442,7 @@ func (c *NodeLocator) updateSortedNodes() {
 	for k := range c.nodeByKey {
 		hashes = append(hashes, k)
 	}
-	sort.Sort(hashes)
+	slices.Sort(hashes)
 	c.sortedKeys = hashes
 }
 

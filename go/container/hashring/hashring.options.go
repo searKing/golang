@@ -4,26 +4,28 @@
 
 package hashring
 
+type KetamaNodeLocatorOptionFunc = NodeLocatorOptionFunc
+
 func WithNumberNodeRepetitions(n int) NodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
+	return NodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.numReps = n
 	})
 }
 
 func WithHashAlg(hashAlg HashAlgorithm) NodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
+	return NodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.hashAlg = hashAlg
 	})
 }
 
 func WithFormatter(formatter *KetamaNodeKeyFormatter) NodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
+	return NodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.nodeKeyFormatter = formatter
 	})
 }
 
 func WithWeights(weights map[Node]int) NodeLocatorOption {
-	return KetamaNodeLocatorOptionFunc(func(l *NodeLocator) {
+	return NodeLocatorOptionFunc(func(l *NodeLocator) {
 		l.weightByNode = weights
 		l.isWeighted = len(weights) > 0
 	})
