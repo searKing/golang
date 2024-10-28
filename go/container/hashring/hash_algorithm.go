@@ -11,9 +11,9 @@ import (
 	"hash/fnv"
 )
 
-// Intents to provide hash for locating a server for a key.
+// HashAlgorithm intents to provide hash for locating a server for a key.
 type HashAlgorithm interface {
-	// Compute the hash for the given key.
+	// Hash computes the hash for the given key.
 	// @return a positive integer hash
 	Hash(k string) []uint32
 }
@@ -35,28 +35,28 @@ var (
 	// across multiple API users as well as java versions, but is mostly likely
 	// significantly slower.
 	CRCPerlHash = HashFunc(crcPerlHash)
+
 	// FNV hashes are designed to be fast while maintaining a low collision rate.
 	// The FNV speed allows one to quickly hash lots of data while maintaining a
 	// reasonable collision rate.
 	//
-	// @see <a href="http://www.isthe.com/chongo/tech/comp/fnv/">fnv
-	//      comparisons</a>
-	// @see <a href="http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash">fnv at
-	//      wikipedia</a>
-	// 32-bit FNV1.
+	// See http://www.isthe.com/chongo/tech/comp/fnv/
+	// See "http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash"
+
+	// FNV132Hash hash algorithm by 32-bit FNV1.
 	FNV132Hash = HashFunc(fnv132Hash)
-	// Variation of FNV.
+	// FNV1a32Hash hash algorithm by Variation of FNV.
 	// 32-bit FNV1a.
 	FNV1a32Hash = HashFunc(fnv1a32Hash)
-	// 64-bit FNV1.
+	// FNV164Hash hash algorithm by 64-bit FNV1.
 	FNV164Hash = HashFunc(fnv164Hash)
-	// 64-bit FNV1a.
+	// FNV1a64Hash hash algorithm by FNV1a.
 	FNV1a64Hash = HashFunc(fnv1a64Hash)
-	// 128-bit FNV1.
+	// FNV1128Hash hash algorithm by 128-bit FNV1.
 	FNV1128Hash = HashFunc(fnv1128Hash)
-	// 128-bit FNV1a.
+	// FNV1a128Hash hash algorithm by 128-bit FNV1a.
 	FNV1a128Hash = HashFunc(fnv1a128Hash)
-	// MD5-based hash algorithm used by ketama.
+	// KetamaHash hash algorithm by MD5-based hash algorithm used by ketama.
 	KetamaHash = HashFunc(ketamaHash)
 )
 
@@ -88,7 +88,7 @@ func crcPerlHash(k string) []uint32 {
 //	wikipedia</a>
 func fnv164Hash(k string) []uint32 {
 	hash := fnv.New64()
-	hash.Write([]byte(k))
+	_, _ = hash.Write([]byte(k))
 	rv := hash.Sum64()
 	return []uint32{uint32(rv & 0xffffffff)} // Truncate to 32-bits
 }
@@ -96,7 +96,7 @@ func fnv164Hash(k string) []uint32 {
 // Variation of FNV.
 func fnv1a64Hash(k string) []uint32 {
 	hash := fnv.New64a()
-	hash.Write([]byte(k))
+	_, _ = hash.Write([]byte(k))
 	rv := (hash.Sum64() >> 16) & 0x7fff
 	return []uint32{uint32(rv & 0xffffffff)} // Truncate to 32-bits
 }
@@ -104,7 +104,7 @@ func fnv1a64Hash(k string) []uint32 {
 // 32-bit FNV1.
 func fnv132Hash(k string) []uint32 {
 	hash := fnv.New32()
-	hash.Write([]byte(k))
+	_, _ = hash.Write([]byte(k))
 	rv := (hash.Sum32() >> 16) & 0x7fff
 	return []uint32{rv & 0xffffffff} // Truncate to 32-bits
 }
@@ -112,7 +112,7 @@ func fnv132Hash(k string) []uint32 {
 // 32-bit FNV1a.
 func fnv1a32Hash(k string) []uint32 {
 	hash := fnv.New32a()
-	hash.Write([]byte(k))
+	_, _ = hash.Write([]byte(k))
 	rv := (hash.Sum32() >> 16) & 0x7fff
 	return []uint32{rv & 0xffffffff} // Truncate to 32-bits
 }
@@ -120,7 +120,7 @@ func fnv1a32Hash(k string) []uint32 {
 // 128-bit FNV1.
 func fnv1128Hash(k string) []uint32 {
 	hash := fnv.New128()
-	hash.Write([]byte(k))
+	_, _ = hash.Write([]byte(k))
 	bKey := hash.Sum(nil)
 	rv := binary.LittleEndian.Uint32(bKey)
 	return []uint32{rv & 0xffffffff} // Truncate to 32-bits
@@ -129,7 +129,7 @@ func fnv1128Hash(k string) []uint32 {
 // 128-bit FNV1a.
 func fnv1a128Hash(k string) []uint32 {
 	hash := fnv.New128a()
-	hash.Write([]byte(k))
+	_, _ = hash.Write([]byte(k))
 	bKey := hash.Sum(nil)
 	rv := binary.LittleEndian.Uint32(bKey)
 	return []uint32{uint32(rv & 0xffffffff)} // Truncate to 32-bits
@@ -138,7 +138,7 @@ func fnv1a128Hash(k string) []uint32 {
 // MD5-based hash algorithm used by ketama.
 func ketamaHash(k string) []uint32 {
 	h := md5.New()
-	h.Write([]byte(k))
+	_, _ = h.Write([]byte(k))
 	digest := h.Sum(nil)
 	var rvs []uint32
 	// 16B -> [4B, 4B, 4B, 4B]

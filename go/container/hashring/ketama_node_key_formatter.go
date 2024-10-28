@@ -9,39 +9,21 @@ import (
 	"strings"
 )
 
-// Known key formats used in Ketama for assigning nodes around the ring
+// Format describes known key formats used in Ketama for assigning nodes around the ring
 type Format int
 
 const (
 	// SpyMemcached uses the format traditionally used by spymemcached to map
 	// nodes to names. The format is HOSTNAME/IP:PORT-ITERATION
 	//
-	// <p>
 	// This default implementation uses the socket-address of the Node
 	// and concatenates it with a hyphen directly against the repetition number
 	// for example a key for a particular server's first repetition may look like:
-	// <p>
+	// "myhost/10.0.2.1-0"
+	// for the second repetition "myhost/10.0.2.1-1"
 	//
-	// <p>
-	// <code>myhost/10.0.2.1-0</code>
-	// </p>
-	//
-	// <p>
-	// for the second repetition
-	// </p>
-	//
-	// <p>
-	// <code>myhost/10.0.2.1-1</code>
-	// </p>
-	//
-	// <p>
 	// for a server where reverse lookups are failing the returned keys may look
-	// like
-	// </p>
-	//
-	// <p>
-	// <code>/10.0.2.1-0</code> and <code>/10.0.2.1-1</code>
-	// </p>
+	// like "/10.0.2.1-0" "/10.0.2.1-1"
 	SpyMemcached Format = iota
 
 	// LibMemcached uses the format traditionally used by libmemcached to map
@@ -87,7 +69,7 @@ func (f KetamaNodeKeyFormatter) getKeyForNode(node Node, repetition int) string 
 	// I'm using a HashMap implementation of the map, but the worst
 	// case ( I believe) is we're slightly in-efficient when
 	// a node has never been seen before concurrently on two different
-	// threads, so it the socketaddress will be requested multiple times!
+	// threads, so it the socket-address will be requested multiple times!
 	// all other cases should be as fast as possible.
 	nodeKey, has := f.keyByNode[node]
 	if !has {
