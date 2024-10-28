@@ -38,12 +38,6 @@ type Node interface {
 
 const defaultNumReps = 160
 
-type StringNode string
-
-func (n StringNode) String() string {
-	return string(n)
-}
-
 // NodeLocator holds the information about the allNodes of the consistent hash nodes.
 //
 //go:generate go-option -type "NodeLocator"
