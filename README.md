@@ -7,7 +7,7 @@
 
 various libs or tools for Golang
 
-# GoLibs
+# GoLibraries
 
 * [exp](https://pkg.go.dev/github.com/searKing/golang/go/exp) — `exp` holds experimental packages and defines various
   functions useful with [generics](https://go.dev/doc/tutorial/generics) of any type.
@@ -19,11 +19,19 @@ various libs or tools for Golang
       defines [Point[T]](https://pkg.go.dev/github.com/searKing/golang/go/exp/image#Point)
       and [Rectangle[T]](https://pkg.go.dev/github.com/searKing/golang/go/exp/image#Rectangle) of any type.
     - [sync.LRU](https://pkg.go.dev/github.com/searKing/golang/go/exp/sync#LRU) implements a thread safe fixed size LRU
-      cache, based on [not-thread safe lru](https://pkg.go.dev/github.com/searKing/golang/go@v1.2.82/exp/container/lru)
+      cache, based on [not-thread safe lru](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/lru#LRU)
     - [sync.FixedPool](https://pkg.go.dev/github.com/searKing/golang/go/exp/sync#FixedPool) is a set of resident and
       temporary items that may be individually saved and retrieved.
     - [types.Optional](https://pkg.go.dev/github.com/searKing/golang/go/exp/types#Optional) represents a Value that may
       be null.
+    - [container.hashring](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/hashring#NodeLocator) —
+      hashring provides a consistent hashing function, read more about consistent hashing on
+      wikipedia: [Consistent_hashing](http://en.wikipedia.org/wiki/Consistent_hashing).
+    - [container.lru](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/lru#LRU) implements a Go map[K]V
+      but implements a non-thread safe fixed size LRU cache.
+      Loads, stores, and deletes run in amortized constant time.
+    - [container.queue](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/queue#Queue) implements a
+      two-stage queue of FIFO, not a deque.
 * [slog](https://pkg.go.dev/github.com/searKing/log/slog) - `slog`
   provides [GlogHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewGlogHandler),
   [GlogHumanHandler](https://pkg.go.dev/github.com/searKing/golang/go/log/slog#NewGlogHumanHandler),
@@ -66,9 +74,11 @@ various libs or tools for Golang
   stacktrace of cgo.
 * [sql](https://pkg.go.dev/github.com/searKing/golang/go/database/sql#NullDuration) — Enhance go std sql.
     - NullDuration
-        - ```NullDuration represents an interface that may be null. NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
+      -
+      ```NullDuration represents an interface that may be null. NullDuration implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.```
     - NullJson
-        - ```NullJson represents an interface that may be null. NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString. Deprecate, use go-nulljson instead. For more information, see: https://pkg.go.dev/github.com/searKing/golang/tools/go-nulljson```
+      -
+      ```NullJson represents an interface that may be null. NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString. Deprecate, use go-nulljson instead. For more information, see: https://pkg.go.dev/github.com/searKing/golang/tools/go-nulljson```
 * [ternary_search_tree](https://pkg.go.dev/github.com/searKing/golang/go/container/trie_tree/ternary_search_tree#TernarySearchTree)
   — A type of trie (sometimes called a prefix tree) where nodes are arranged in a manner similar to a binary search
   tree, but with up to three children rather than the binary tree's limit of two.
@@ -111,7 +121,6 @@ various libs or tools for Golang
 
 * [go generate](https://blog.golang.org/generate) is only useful if you have tools to use it with! Here is an incomplete
   list of useful tools that generate code.
-
 * [go-syncmap](https://pkg.go.dev/github.com/searKing/golang/tools/go-syncmap) — Generates Go code using a
   package as a generic template for sync.Map.
 * [go-syncpool](https://pkg.go.dev/github.com/searKing/golang/tools/go-syncpool) — Generates Go code using a
