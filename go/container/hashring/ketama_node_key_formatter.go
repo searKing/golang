@@ -62,7 +62,7 @@ func NewKetamaNodeKeyFormatter(format Format) *KetamaNodeKeyFormatter {
 //
 // @return The key that represents the specific repetition of the node
 func (f KetamaNodeKeyFormatter) getKeyForNode(node Node, repetition int) string {
-	// Carrried over from the DefaultKetamaNodeLocatorConfiguration:
+	// Carried over from the DefaultKetamaNodeLocatorConfiguration:
 	// Internal Using the internal map retrieve the socket addresses
 	// for given nodes.
 	// I'm aware that this code is inherently thread-unsafe as
