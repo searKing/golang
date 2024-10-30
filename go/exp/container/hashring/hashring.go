@@ -82,8 +82,8 @@ func New[Node comparable](opts ...NodeLocatorOption[Node]) *NodeLocator[Node] {
 	return r
 }
 
-// GetAllNodes returns all available nodes
-func (c *NodeLocator[Node]) GetAllNodes() []Node {
+// getAllNodes returns all available nodes
+func (c *NodeLocator[Node]) getAllNodes() []Node {
 	return slices.Collect(maps.Keys(c.allNodes))
 }
 
@@ -228,7 +228,7 @@ func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
 
 // addWeightNodes adds a node to the hash without sorting the keys.
 func (c *NodeLocator[Node]) addWeightNodes(nodes ...Node) {
-	c.setWeightNodes(append(c.GetAllNodes(), nodes...)...)
+	c.setWeightNodes(append(c.getAllNodes(), nodes...)...)
 }
 
 // addNoWeightNodes adds a node to the hash without sorting the keys.
@@ -290,7 +290,7 @@ func (c *NodeLocator[Node]) removeWeightNodes(nodes ...Node) {
 	for _, node := range nodes {
 		delete(c.allNodes, node)
 	}
-	c.setWeightNodes(c.GetAllNodes()...)
+	c.setWeightNodes(c.getAllNodes()...)
 }
 
 func (c *NodeLocator[Node]) removeNoWeightNodes(nodes ...Node) {
