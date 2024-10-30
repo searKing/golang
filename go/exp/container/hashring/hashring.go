@@ -20,7 +20,6 @@
 package hashring
 
 import (
-	"fmt"
 	"maps"
 	"math"
 	"slices"
@@ -93,13 +92,13 @@ func (c *NodeLocator[Node]) getPrimaryNode(name string) (Node, bool) {
 	return c.getNodeForHashKey(c.getHashKey(name))
 }
 
-// GetMaxHashKey returns the last available node's HashKey
+// getMaxHashKey returns the last available node's HashKey
 // that is, Maximum HashKey in the Hash Cycle
-func (c *NodeLocator[Node]) GetMaxHashKey() (uint32, error) {
+func (c *NodeLocator[Node]) getMaxHashKey() (key uint32, ok bool) {
 	if len(c.sortedKeys) == 0 {
-		return 0, fmt.Errorf("NoSuchElementException")
+		return 0, false
 	}
-	return c.sortedKeys[len(c.sortedKeys)-1], nil
+	return c.sortedKeys[len(c.sortedKeys)-1], true
 }
 
 // getNodeForHashKey returns the first available node since iterateHashKey, such as HASH(“127.0.0.1:11311-0”)
