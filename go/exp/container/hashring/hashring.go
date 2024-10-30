@@ -123,7 +123,6 @@ func (c *NodeLocator[Node]) getNodeForHashKey(hash uint32) (Node, bool) {
 	return rv, has
 }
 
-// 根据输入物理节点列表，重新构造Hash环，即虚拟节点环
 // updateLocator reconstructs the hash ring with the input nodes
 func (c *NodeLocator[Node]) updateLocator(nodes ...Node) {
 	c.SetNodes(nodes...)
@@ -152,6 +151,7 @@ func (c *NodeLocator[Node]) SetNodes(nodes ...Node) {
 	c.setNoWeightNodes(nodes...)
 }
 
+// setNoWeightNodes sets all the elements in the hash.
 func (c *NodeLocator[Node]) setNoWeightNodes(nodes ...Node) {
 	// Set sets all the elements in the hash.
 	// If there are existing elements not present in nodes, they will be removed.
@@ -192,6 +192,7 @@ func (c *NodeLocator[Node]) setNoWeightNodes(nodes ...Node) {
 	c.addNoWeightNodes(nodesToBeAdded...)
 }
 
+// setWeightNodes sets all the elements in the hash.
 func (c *NodeLocator[Node]) setWeightNodes(nodes ...Node) {
 	c.RemoveAllNodes()
 	numReps := c.getNodeRepetitions()
@@ -231,10 +232,12 @@ func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
 	c.addNoWeightNodes(nodes...)
 }
 
+// addWeightNodes adds a node to the hash without sorting the keys.
 func (c *NodeLocator[Node]) addWeightNodes(nodes ...Node) {
 	c.setWeightNodes(append(c.GetAllNodes(), nodes...)...)
 }
 
+// addNoWeightNodes adds a node to the hash without sorting the keys.
 func (c *NodeLocator[Node]) addNoWeightNodes(nodes ...Node) {
 	numReps := c.getNodeRepetitions()
 
@@ -245,6 +248,7 @@ func (c *NodeLocator[Node]) addNoWeightNodes(nodes ...Node) {
 	c.updateSortedNodes()
 }
 
+// addNodeWithoutSort adds a node to the hash without sorting the keys.
 func (c *NodeLocator[Node]) addNodeWithoutSort(node Node, numReps int) {
 	// Ketama does some special work with md5 where it reuses chunks.
 	// Check to be backwards compatible, the hash algorithm does not
@@ -278,7 +282,7 @@ func (c *NodeLocator[Node]) addNodeWithoutSort(node Node, numReps int) {
 	c.allNodes[node] = struct{}{}
 }
 
-// RemoveNodes removes nodes from the consistent hash cycle...
+// RemoveNodes removes nodes from the consistent hash cycle
 func (c *NodeLocator[Node]) RemoveNodes(nodes ...Node) {
 	if c.isWeighted {
 		c.removeWeightNodes(nodes...)
@@ -287,6 +291,7 @@ func (c *NodeLocator[Node]) RemoveNodes(nodes ...Node) {
 	c.removeNoWeightNodes(nodes...)
 }
 
+// removeWeightNodes removes nodes from the consistent hash cycle
 func (c *NodeLocator[Node]) removeWeightNodes(nodes ...Node) {
 	for _, node := range nodes {
 		delete(c.allNodes, node)
@@ -423,6 +428,7 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 	return nodes, true
 }
 
+// updateSortedNodes sorts the keys in ascending order.
 func (c *NodeLocator[Node]) updateSortedNodes() {
 	hashes := c.sortedKeys[:0]
 	// reallocate if we're holding on to too much (1/4th)
@@ -438,6 +444,7 @@ func (c *NodeLocator[Node]) updateSortedNodes() {
 	c.sortedKeys = hashes
 }
 
+// isSameNode checks if two nodes are the same by the key.
 func (c *NodeLocator[Node]) isSameNode(n1, n2 Node) bool {
 	return c.nodeKeyFormatter.FormatNodeKey(n1, 0) == c.nodeKeyFormatter.FormatNodeKey(n2, 0)
 }
