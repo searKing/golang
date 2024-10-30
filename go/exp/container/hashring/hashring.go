@@ -109,7 +109,7 @@ func (c *NodeLocator[Node]) getNodeForHashKey(hash uint32) (Node, bool) {
 		return zeroN, false
 	}
 
-	rv, has := c.getNodeByKey()[hash]
+	rv, has := c.nodeByKey[hash]
 	if has {
 		return rv, true
 	}
@@ -119,7 +119,7 @@ func (c *NodeLocator[Node]) getNodeForHashKey(hash uint32) (Node, bool) {
 	}
 
 	hash = c.sortedKeys[firstKey]
-	rv, has = c.getNodeByKey()[hash]
+	rv, has = c.nodeByKey[hash]
 	return rv, has
 }
 
@@ -128,15 +128,10 @@ func (c *NodeLocator[Node]) updateLocator(nodes ...Node) {
 	c.SetNodes(nodes...)
 }
 
-// GetNodeRepetitions returns the number of discrete hashes that should be defined for each node
+// getNodeRepetitions returns the number of discrete hashes that should be defined for each node
 // in the continuum.
 func (c *NodeLocator[Node]) getNodeRepetitions() int {
 	return c.numReps
-}
-
-// getNodeByKey returns the nodes
-func (c *NodeLocator[Node]) getNodeByKey() map[uint32]Node {
-	return c.nodeByKey
 }
 
 // SetNodes setups the NodeLocator with the list of nodes it should use.
@@ -269,12 +264,12 @@ func (c *NodeLocator[Node]) addNodeWithoutSort(node Node, numReps int) {
 			if i+j > numReps { // out of bound
 				break
 			}
-			if _, has := c.getNodeByKey()[pos]; has {
+			if _, has := c.nodeByKey[pos]; has {
 				// skip this node, duplicated
 				numReps++
 				continue
 			}
-			c.getNodeByKey()[pos] = node
+			c.nodeByKey[pos] = node
 		}
 		i += len(positions)
 	}
@@ -353,7 +348,7 @@ func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
 
 // GetTwo returns the two closest distinct elements to the name input in the nodes.
 func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
-	if len(c.getNodeByKey()) == 0 {
+	if len(c.nodeByKey) == 0 {
 		var zeroN Node
 		return zeroN, zeroN, false
 	}
@@ -362,7 +357,7 @@ func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
 	if !found {
 		firstKey = 0
 	}
-	firstNode, has := c.getNodeByKey()[c.sortedKeys[firstKey]]
+	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
 
 	if len(c.allNodes) == 1 {
 		var zeroN Node
@@ -375,7 +370,7 @@ func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
 		if i >= len(c.sortedKeys) {
 			i = 0
 		}
-		secondNode = c.getNodeByKey()[c.sortedKeys[i]]
+		secondNode = c.nodeByKey[c.sortedKeys[i]]
 		if !c.isSameNode(secondNode, firstNode) {
 			break
 		}
@@ -385,12 +380,12 @@ func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
 
 // GetN returns the N closest distinct elements to the name input in the nodes.
 func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
-	if len(c.getNodeByKey()) == 0 {
+	if len(c.nodeByKey) == 0 {
 		return nil, false
 	}
 
-	if len(c.getNodeByKey()) < n {
-		n = len(c.getNodeByKey())
+	if len(c.nodeByKey) < n {
+		n = len(c.nodeByKey)
 	}
 
 	key := c.getHashKey(name)
@@ -398,7 +393,7 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 	if !found {
 		firstKey = 0
 	}
-	firstNode, has := c.getNodeByKey()[c.sortedKeys[firstKey]]
+	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
 
 	nodes := make([]Node, 0, n)
 	nodes = append(nodes, firstNode)
@@ -416,7 +411,7 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 			i--
 			continue
 		}
-		secondNode = c.getNodeByKey()[c.sortedKeys[i]]
+		secondNode = c.nodeByKey[c.sortedKeys[i]]
 		if !slices.ContainsFunc(nodes, func(n Node) bool { return c.isSameNode(n, secondNode) }) {
 			nodes = append(nodes, secondNode)
 		}
