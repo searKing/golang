@@ -82,6 +82,120 @@ func New[Node comparable](opts ...NodeLocatorOption[Node]) *NodeLocator[Node] {
 	return r
 }
 
+// SetNodes setups the NodeLocator with the list of nodes it should use.
+// If there are existing nodes not present in nodes, they will be removed.
+// @param nodes a List of Nodes for this NodeLocator to use in
+// its continuum
+func (c *NodeLocator[Node]) SetNodes(nodes ...Node) {
+	if c.isWeighted {
+		c.setWeightNodes(nodes...)
+		return
+	}
+	c.setNoWeightNodes(nodes...)
+}
+
+// RemoveAllNodes removes all nodes in the continuum....
+func (c *NodeLocator[Node]) RemoveAllNodes() {
+	c.sortedKeys = nil
+	c.nodeByKey = make(map[uint32]Node)
+	c.allNodes = make(map[Node]struct{})
+}
+
+// AddNodes inserts nodes into the consistent hash cycle.
+func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
+	if c.isWeighted {
+		c.addWeightNodes(nodes...)
+		return
+	}
+	c.addNoWeightNodes(nodes...)
+}
+
+// Get returns an element close to where name hashes to in the nodes.
+func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
+	if len(c.nodeByKey) == 0 {
+		var zeroN Node
+		return zeroN, false
+	}
+	return c.getPrimaryNode(name)
+}
+
+// GetTwo returns the two closest distinct elements to the name input in the nodes.
+func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
+	if len(c.nodeByKey) == 0 {
+		var zeroN Node
+		return zeroN, zeroN, false
+	}
+	key := c.getHashKey(name)
+	firstKey, found := c.tailSearch(key)
+	if !found {
+		firstKey = 0
+	}
+	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
+
+	if len(c.allNodes) == 1 {
+		var zeroN Node
+		return firstNode, zeroN, has
+	}
+
+	start := firstKey
+	var secondNode Node
+	for i := start + 1; i != start; i++ {
+		if i >= len(c.sortedKeys) {
+			i = 0
+		}
+		secondNode = c.nodeByKey[c.sortedKeys[i]]
+		if !c.isSameNode(secondNode, firstNode) {
+			break
+		}
+	}
+	return firstNode, secondNode, true
+}
+
+// GetN returns the N closest distinct elements to the name input in the nodes.
+func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
+	if len(c.nodeByKey) == 0 {
+		return nil, false
+	}
+
+	if len(c.nodeByKey) < n {
+		n = len(c.nodeByKey)
+	}
+
+	key := c.getHashKey(name)
+	firstKey, found := c.tailSearch(key)
+	if !found {
+		firstKey = 0
+	}
+	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
+
+	nodes := make([]Node, 0, n)
+	nodes = append(nodes, firstNode)
+
+	if len(nodes) == n {
+		return nodes, has
+	}
+
+	start := firstKey
+	var secondNode Node
+	for i := start + 1; i != start; i++ {
+		if i >= len(c.sortedKeys) {
+			i = 0
+			// take care of i++ after this loop of for
+			i--
+			continue
+		}
+		secondNode = c.nodeByKey[c.sortedKeys[i]]
+		if !slices.ContainsFunc(nodes, func(n Node) bool { return c.isSameNode(n, secondNode) }) {
+			nodes = append(nodes, secondNode)
+		}
+		if len(nodes) == n {
+			break
+		}
+	}
+
+	return nodes, true
+}
+
 // getAllNodes returns all available nodes
 func (c *NodeLocator[Node]) getAllNodes() []Node {
 	return slices.Collect(maps.Keys(c.allNodes))
@@ -131,18 +245,6 @@ func (c *NodeLocator[Node]) updateLocator(nodes ...Node) {
 // in the continuum.
 func (c *NodeLocator[Node]) getNodeRepetitions() int {
 	return c.numReps
-}
-
-// SetNodes setups the NodeLocator with the list of nodes it should use.
-// If there are existing nodes not present in nodes, they will be removed.
-// @param nodes a List of Nodes for this NodeLocator to use in
-// its continuum
-func (c *NodeLocator[Node]) SetNodes(nodes ...Node) {
-	if c.isWeighted {
-		c.setWeightNodes(nodes...)
-		return
-	}
-	c.setNoWeightNodes(nodes...)
 }
 
 // setNoWeightNodes sets all the elements in the hash.
@@ -208,22 +310,6 @@ func (c *NodeLocator[Node]) setWeightNodes(nodes ...Node) {
 
 	// sort keys
 	c.updateSortedNodes()
-}
-
-// RemoveAllNodes removes all nodes in the continuum....
-func (c *NodeLocator[Node]) RemoveAllNodes() {
-	c.sortedKeys = nil
-	c.nodeByKey = make(map[uint32]Node)
-	c.allNodes = make(map[Node]struct{})
-}
-
-// AddNodes inserts nodes into the consistent hash cycle.
-func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
-	if c.isWeighted {
-		c.addWeightNodes(nodes...)
-		return
-	}
-	c.addNoWeightNodes(nodes...)
 }
 
 // addWeightNodes adds a node to the hash without sorting the keys.
@@ -334,92 +420,6 @@ func (c *NodeLocator[Node]) tailSearch(key uint32) (i int, found bool) {
 		}
 		return -1
 	})
-}
-
-// Get returns an element close to where name hashes to in the nodes.
-func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
-	if len(c.nodeByKey) == 0 {
-		var zeroN Node
-		return zeroN, false
-	}
-	return c.getPrimaryNode(name)
-}
-
-// GetTwo returns the two closest distinct elements to the name input in the nodes.
-func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
-	if len(c.nodeByKey) == 0 {
-		var zeroN Node
-		return zeroN, zeroN, false
-	}
-	key := c.getHashKey(name)
-	firstKey, found := c.tailSearch(key)
-	if !found {
-		firstKey = 0
-	}
-	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
-
-	if len(c.allNodes) == 1 {
-		var zeroN Node
-		return firstNode, zeroN, has
-	}
-
-	start := firstKey
-	var secondNode Node
-	for i := start + 1; i != start; i++ {
-		if i >= len(c.sortedKeys) {
-			i = 0
-		}
-		secondNode = c.nodeByKey[c.sortedKeys[i]]
-		if !c.isSameNode(secondNode, firstNode) {
-			break
-		}
-	}
-	return firstNode, secondNode, true
-}
-
-// GetN returns the N closest distinct elements to the name input in the nodes.
-func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
-	if len(c.nodeByKey) == 0 {
-		return nil, false
-	}
-
-	if len(c.nodeByKey) < n {
-		n = len(c.nodeByKey)
-	}
-
-	key := c.getHashKey(name)
-	firstKey, found := c.tailSearch(key)
-	if !found {
-		firstKey = 0
-	}
-	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
-
-	nodes := make([]Node, 0, n)
-	nodes = append(nodes, firstNode)
-
-	if len(nodes) == n {
-		return nodes, has
-	}
-
-	start := firstKey
-	var secondNode Node
-	for i := start + 1; i != start; i++ {
-		if i >= len(c.sortedKeys) {
-			i = 0
-			// take care of i++ after this loop of for
-			i--
-			continue
-		}
-		secondNode = c.nodeByKey[c.sortedKeys[i]]
-		if !slices.ContainsFunc(nodes, func(n Node) bool { return c.isSameNode(n, secondNode) }) {
-			nodes = append(nodes, secondNode)
-		}
-		if len(nodes) == n {
-			break
-		}
-	}
-
-	return nodes, true
 }
 
 // updateSortedNodes sorts the keys in ascending order.
