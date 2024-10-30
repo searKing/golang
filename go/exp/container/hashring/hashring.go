@@ -207,7 +207,7 @@ func (c *NodeLocator[Node]) setWeightNodes(nodes ...Node) {
 		thisWeight := c.weightByNode[node]
 		percent := float64(thisWeight) / float64(totalWeight)
 		// floor(percent * numReps * nodeCount + 1e10)
-		pointerPerServer := (int)(math.Floor(percent*(float64(numReps))*float64(nodeCount) + 0.0000000001))
+		pointerPerServer := (int)(math.Floor(percent*(float64(numReps))*float64(nodeCount) + 1e10))
 		c.addNodeWithoutSort(node, pointerPerServer)
 	}
 
