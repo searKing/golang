@@ -88,8 +88,8 @@ func (c *NodeLocator[Node]) GetAllNodes() []Node {
 	return slices.Collect(maps.Keys(c.allNodes))
 }
 
-// GetPrimaryNode returns the first available node for a name, such as “127.0.0.1:11311-0” for "Alice"
-func (c *NodeLocator[Node]) GetPrimaryNode(name string) (Node, bool) {
+// getPrimaryNode returns the first available node for a name, such as “127.0.0.1:11311-0” for "Alice"
+func (c *NodeLocator[Node]) getPrimaryNode(name string) (Node, bool) {
 	return c.getNodeForHashKey(c.getHashKey(name))
 }
 
@@ -348,7 +348,7 @@ func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
 		var zeroN Node
 		return zeroN, false
 	}
-	return c.GetPrimaryNode(name)
+	return c.getPrimaryNode(name)
 }
 
 // GetTwo returns the two closest distinct elements to the name input in the nodes.
