@@ -211,10 +211,14 @@ func TestGetTwo(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	a, b, has := x.GetTwo("99999999")
+	nodes, has := x.GetN("99999999", 2)
 	if !has {
 		t.Fatal("missing nodes")
 	}
+	if len(nodes) != 2 {
+		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
+	}
+	a, b := nodes[0], nodes[1]
 	if a == b {
 		t.Errorf("a shouldn't equal b")
 	}
@@ -232,11 +236,16 @@ func TestGetTwoQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		a, b, has := x.GetTwo(s)
+		nodes, has := x.GetN(s, 2)
 		if !has {
 			t.Logf("missing nodes")
 			return false
 		}
+		if len(nodes) != 2 {
+			t.Logf("expected 2 allNodes instead of %d", len(nodes))
+			return false
+		}
+		a, b := nodes[0], nodes[1]
 		if a == b {
 			t.Logf("a == b")
 			return false
@@ -266,11 +275,16 @@ func TestGetTwoOnlyTwoQuick(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	f := func(s string) bool {
-		a, b, has := x.GetTwo(s)
+		nodes, has := x.GetN(s, 2)
 		if !has {
 			t.Logf("missing nodes")
 			return false
 		}
+		if len(nodes) != 2 {
+			t.Logf("expected 2 allNodes instead of %d", len(nodes))
+			return false
+		}
+		a, b := nodes[0], nodes[1]
 		if a == b {
 			t.Logf("a == b")
 			return false
@@ -295,18 +309,19 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	x := New[string]()
 
 	x.AddNodes("abcdefg")
-	a, b, has := x.GetTwo("99999999")
+	nodes, has := x.GetN("99999999", 2)
 	if !has {
-		t.Logf("missing nodes")
+		t.Fatalf("missing nodes")
 	}
+	if len(nodes) != 1 {
+		t.Fatalf("expected 2 allNodes instead of %d", len(nodes))
+	}
+	a, b := nodes[0], ""
 	if a == b {
 		t.Errorf("a shouldn't equal b")
 	}
 	if a != "abcdefg" {
 		t.Errorf("wrong a: %q", a)
-	}
-	if b != "" {
-		t.Errorf("wrong b: %q", b)
 	}
 }
 
@@ -492,10 +507,14 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	a, b, has := x.GetTwo("qwerqwerwqer")
+	nodes, has := x.GetN("qwerqwerwqer", 2)
 	if !has {
 		t.Fatal()
 	}
+	if len(nodes) != 2 {
+		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
+	}
+	a, b := nodes[0], nodes[1]
 	if a != "jkl" && a != "mno" {
 		t.Errorf("expected jkl or mno, got %s", a)
 	}
@@ -509,10 +528,14 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	a, b, has = x.GetTwo("qwerqwerwqer")
+	nodes, has = x.GetN("qwerqwerwqer", 2)
 	if !has {
 		t.Fatal()
 	}
+	if len(nodes) != 2 {
+		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
+	}
+	a, b = nodes[0], nodes[1]
 	if a != "jkl" && a != "mno" {
 		t.Errorf("expected jkl or mno, got %s", a)
 	}
@@ -526,10 +549,14 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	a, b, has = x.GetTwo("qwerqwerwqer")
+	nodes, has = x.GetN("qwerqwerwqer", 2)
 	if !has {
 		t.Fatal()
 	}
+	if len(nodes) != 2 {
+		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
+	}
+	a, b = nodes[0], nodes[1]
 	if a != "pqr" && a != "mno" {
 		t.Errorf("expected jkl or mno, got %s", a)
 	}
@@ -653,7 +680,7 @@ func BenchmarkGetTwo(b *testing.B) {
 	x.AddNodes("nothing")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.GetTwo("nothing")
+		x.GetN("nothing", 2)
 	}
 }
 
@@ -664,7 +691,7 @@ func BenchmarkGetTwoLarge(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.GetTwo("nothing")
+		x.GetN("nothing", 2)
 	}
 }
 

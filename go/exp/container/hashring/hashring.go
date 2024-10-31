@@ -82,6 +82,15 @@ func New[Node comparable](opts ...NodeLocatorOption[Node]) *NodeLocator[Node] {
 	return r
 }
 
+// AddNodes inserts nodes into the consistent hash cycle.
+func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
+	if c.isWeighted {
+		c.addWeightNodes(nodes...)
+		return
+	}
+	c.addNoWeightNodes(nodes...)
+}
+
 // SetNodes setups the NodeLocator with the list of nodes it should use.
 // If there are existing nodes not present in nodes, they will be removed.
 // @param nodes a List of Nodes for this NodeLocator to use in
@@ -94,20 +103,11 @@ func (c *NodeLocator[Node]) SetNodes(nodes ...Node) {
 	c.setNoWeightNodes(nodes...)
 }
 
-// RemoveAllNodes removes all nodes in the continuum....
+// RemoveAllNodes removes all nodes in the continuum.
 func (c *NodeLocator[Node]) RemoveAllNodes() {
 	c.sortedKeys = nil
 	c.nodeByKey = make(map[uint32]Node)
 	c.allNodes = make(map[Node]struct{})
-}
-
-// AddNodes inserts nodes into the consistent hash cycle.
-func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
-	if c.isWeighted {
-		c.addWeightNodes(nodes...)
-		return
-	}
-	c.addNoWeightNodes(nodes...)
 }
 
 // Get returns an element close to where name hashes to in the nodes.
@@ -119,44 +119,19 @@ func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
 	return c.getPrimaryNode(name)
 }
 
-// GetTwo returns the two closest distinct elements to the name input in the nodes.
-func (c *NodeLocator[Node]) GetTwo(name string) (Node, Node, bool) {
-	if len(c.nodeByKey) == 0 {
-		var zeroN Node
-		return zeroN, zeroN, false
-	}
-	key := c.getHashKey(name)
-	firstKey, found := c.tailSearch(key)
-	if !found {
-		firstKey = 0
-	}
-	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
-
-	if len(c.allNodes) == 1 {
-		var zeroN Node
-		return firstNode, zeroN, has
-	}
-
-	start := firstKey
-	var secondNode Node
-	for i := start + 1; i != start; i++ {
-		if i >= len(c.sortedKeys) {
-			i = 0
-		}
-		secondNode = c.nodeByKey[c.sortedKeys[i]]
-		if !c.isSameNode(secondNode, firstNode) {
-			break
-		}
-	}
-	return firstNode, secondNode, true
-}
-
 // GetN returns the N closest distinct elements to the name input in the nodes.
+//
+// The count determines the number of nodes to return:
+//   - n > 0: at most n nodes;
+//   - n == 0: the result is nil (zero nodes);
+//   - n < 0: all nodes.
 func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
-	if len(c.nodeByKey) == 0 {
+	if n == 0 || len(c.nodeByKey) == 0 {
 		return nil, false
 	}
-
+	if n < 0 {
+		return c.getAllNodes(), true
+	}
 	if len(c.nodeByKey) < n {
 		n = len(c.nodeByKey)
 	}
@@ -180,8 +155,7 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 	for i := start + 1; i != start; i++ {
 		if i >= len(c.sortedKeys) {
 			i = 0
-			// take care of i++ after this loop of for
-			i--
+			i-- // take care of i++ after this loop of for
 			continue
 		}
 		secondNode = c.nodeByKey[c.sortedKeys[i]]
