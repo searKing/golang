@@ -7,6 +7,7 @@ package hashring_test
 import (
 	"fmt"
 	"log"
+	"slices"
 
 	"github.com/searKing/golang/go/exp/container/hashring"
 )
@@ -16,20 +17,31 @@ func ExampleNew() {
 	c.AddNodes("NodeA")
 	c.AddNodes("NodeB")
 	c.AddNodes("NodeC")
+	var nodes []string
+	for node := range c.All() {
+		nodes = append(nodes, node)
+	}
+	slices.Sort(nodes)
+	fmt.Printf("all nodes: %v\n", nodes)
+
 	users := []string{"Alice", "Bob  ", "Eve  ", "Carol", "Dave "}
+	fmt.Printf("mapping nodes...\n")
 	for _, u := range users {
 		server, has := c.Get(u)
 		if !has {
 			log.Fatal()
 		}
-		fmt.Printf("%s => %s\n", u, server)
+		fmt.Printf("	%s => %s\n", u, server)
 	}
+
 	// Output:
-	// Alice => NodeB
-	// Bob   => NodeA
-	// Eve   => NodeA
-	// Carol => NodeC
-	// Dave  => NodeA
+	// all nodes: [NodeA NodeB NodeC]
+	// mapping nodes...
+	//	Alice => NodeB
+	//	Bob   => NodeA
+	//	Eve   => NodeA
+	//	Carol => NodeC
+	//	Dave  => NodeA
 }
 
 func ExampleAdd() {

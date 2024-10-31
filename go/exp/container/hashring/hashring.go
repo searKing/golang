@@ -20,6 +20,7 @@
 package hashring
 
 import (
+	"iter"
 	"maps"
 	"math"
 	"slices"
@@ -168,6 +169,12 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 	}
 
 	return nodes, true
+}
+
+// All returns an iterator over all nodes in hashring.
+// If c is empty, the sequence is empty: there is no empty element in the sequence.
+func (c *NodeLocator[Node]) All() iter.Seq[Node] {
+	return maps.Keys(c.allNodes)
 }
 
 // getAllNodes returns all available nodes
