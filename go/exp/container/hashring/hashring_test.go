@@ -211,8 +211,8 @@ func TestGetTwo(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	nodes, has := x.GetN("99999999", 2)
-	if !has {
+	nodes := x.GetN("99999999", 2)
+	if len(nodes) == 0 {
 		t.Fatal("missing nodes")
 	}
 	if len(nodes) != 2 {
@@ -236,8 +236,8 @@ func TestGetTwoQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		nodes, has := x.GetN(s, 2)
-		if !has {
+		nodes := x.GetN(s, 2)
+		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
 		}
@@ -275,8 +275,8 @@ func TestGetTwoOnlyTwoQuick(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	f := func(s string) bool {
-		nodes, has := x.GetN(s, 2)
-		if !has {
+		nodes := x.GetN(s, 2)
+		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
 		}
@@ -309,8 +309,8 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	x := New[string]()
 
 	x.AddNodes("abcdefg")
-	nodes, has := x.GetN("99999999", 2)
-	if !has {
+	nodes := x.GetN("99999999", 2)
+	if len(nodes) == 0 {
 		t.Fatalf("missing nodes")
 	}
 	if len(nodes) != 1 {
@@ -330,21 +330,21 @@ func TestGetN(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	members, has := x.GetN("9999999", 3)
-	if !has {
+	nodes := x.GetN("9999999", 3)
+	if len(nodes) == 0 {
 		t.Logf("missing nodes")
 	}
-	if len(members) != 3 {
-		t.Errorf("expected 3 allNodes instead of %d", len(members))
+	if len(nodes) != 3 {
+		t.Errorf("expected 3 allNodes instead of %d", len(nodes))
 	}
-	if members[0] != "abcdefg" {
-		t.Errorf("wrong allNodes[0]: %q", members[0])
+	if nodes[0] != "abcdefg" {
+		t.Errorf("wrong allNodes[0]: %q", nodes[0])
 	}
-	if members[1] != "opqrstu" {
-		t.Errorf("wrong allNodes[1]: %q", members[1])
+	if nodes[1] != "opqrstu" {
+		t.Errorf("wrong allNodes[1]: %q", nodes[1])
 	}
-	if members[2] != "hijklmn" {
-		t.Errorf("wrong allNodes[2]: %q", members[2])
+	if nodes[2] != "hijklmn" {
+		t.Errorf("wrong allNodes[2]: %q", nodes[2])
 	}
 }
 
@@ -353,18 +353,18 @@ func TestGetNLess(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	members, has := x.GetN("99999999", 2)
-	if !has {
+	nodes := x.GetN("99999999", 2)
+	if len(nodes) == 0 {
 		t.Logf("missing nodes")
 	}
-	if len(members) != 2 {
-		t.Errorf("expected 2 allNodes instead of %d", len(members))
+	if len(nodes) != 2 {
+		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
 	}
-	if members[0] != "opqrstu" {
-		t.Errorf("wrong allNodes[0]: %q", members[0])
+	if nodes[0] != "opqrstu" {
+		t.Errorf("wrong allNodes[0]: %q", nodes[0])
 	}
-	if members[1] != "hijklmn" {
-		t.Errorf("wrong allNodes[1]: %q", members[1])
+	if nodes[1] != "hijklmn" {
+		t.Errorf("wrong allNodes[1]: %q", nodes[1])
 	}
 }
 
@@ -373,21 +373,21 @@ func TestGetNMore(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	members, has := x.GetN("9999999", 5)
-	if !has {
+	nodes := x.GetN("9999999", 5)
+	if len(nodes) == 0 {
 		t.Logf("missing nodes")
 	}
-	if len(members) != 3 {
-		t.Errorf("expected 3 allNodes instead of %d", len(members))
+	if len(nodes) != 3 {
+		t.Errorf("expected 3 allNodes instead of %d", len(nodes))
 	}
-	if members[0] != "abcdefg" {
-		t.Errorf("wrong allNodes[0]: %q", members[0])
+	if nodes[0] != "abcdefg" {
+		t.Errorf("wrong allNodes[0]: %q", nodes[0])
 	}
-	if members[1] != "opqrstu" {
-		t.Errorf("wrong allNodes[1]: %q", members[1])
+	if nodes[1] != "opqrstu" {
+		t.Errorf("wrong allNodes[1]: %q", nodes[1])
 	}
-	if members[2] != "hijklmn" {
-		t.Errorf("wrong allNodes[2]: %q", members[2])
+	if nodes[2] != "hijklmn" {
+		t.Errorf("wrong allNodes[2]: %q", nodes[2])
 	}
 }
 
@@ -397,17 +397,17 @@ func TestGetNQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		members, has := x.GetN(s, 3)
-		if !has {
+		nodes := x.GetN(s, 3)
+		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
 		}
-		if len(members) != 3 {
-			t.Logf("expected 3 allNodes instead of %d", len(members))
+		if len(nodes) != 3 {
+			t.Logf("expected 3 allNodes instead of %d", len(nodes))
 			return false
 		}
 		set := make(map[string]bool, 4)
-		for _, member := range members {
+		for _, member := range nodes {
 			if set[member] {
 				t.Logf("duplicate error")
 				return false
@@ -433,17 +433,17 @@ func TestGetNLessQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		members, has := x.GetN(s, 2)
-		if !has {
+		nodes := x.GetN(s, 2)
+		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
 		}
-		if len(members) != 2 {
-			t.Logf("expected 2 allNodes instead of %d", len(members))
+		if len(nodes) != 2 {
+			t.Logf("expected 2 allNodes instead of %d", len(nodes))
 			return false
 		}
 		set := make(map[string]bool, 4)
-		for _, member := range members {
+		for _, member := range nodes {
 			if set[member] {
 				t.Logf("duplicate error")
 				return false
@@ -470,17 +470,17 @@ func TestGetNMoreQuick(t *testing.T) {
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
 		// t.Log("check", s)
-		members, has := x.GetN(s, 5)
-		if !has {
+		nodes := x.GetN(s, 5)
+		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
 		}
-		if len(members) != 3 {
-			t.Logf("expected 3 allNodes instead of %d", len(members))
+		if len(nodes) != 3 {
+			t.Logf("expected 3 allNodes instead of %d", len(nodes))
 			return false
 		}
 		set := make(map[string]bool, 4)
-		for _, member := range members {
+		for _, member := range nodes {
 			if set[member] {
 				t.Logf("duplicate error")
 				return false
@@ -507,9 +507,9 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	nodes, has := x.GetN("qwerqwerwqer", 2)
-	if !has {
-		t.Fatal()
+	nodes := x.GetN("qwerqwerwqer", 2)
+	if len(nodes) == 0 {
+		t.Fatal("missing node")
 	}
 	if len(nodes) != 2 {
 		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
@@ -528,9 +528,9 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	nodes, has = x.GetN("qwerqwerwqer", 2)
-	if !has {
-		t.Fatal()
+	nodes = x.GetN("qwerqwerwqer", 2)
+	if len(nodes) == 0 {
+		t.Fatal("missing node")
 	}
 	if len(nodes) != 2 {
 		t.Errorf("expected 2 allNodes instead of %d", len(nodes))
@@ -549,9 +549,9 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	nodes, has = x.GetN("qwerqwerwqer", 2)
-	if !has {
-		t.Fatal()
+	nodes = x.GetN("qwerqwerwqer", 2)
+	if len(nodes) == 0 {
+		t.Fatal("missing node")
 	}
 	if len(nodes) != 2 {
 		t.Errorf("expected 2 allNodes instead of %d", len(nodes))

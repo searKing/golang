@@ -126,12 +126,12 @@ func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
 //   - n > 0: at most n nodes;
 //   - n == 0: the result is nil (zero nodes);
 //   - n < 0: all nodes.
-func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
+func (c *NodeLocator[Node]) GetN(name string, n int) []Node {
 	if n == 0 || len(c.nodeByKey) == 0 {
-		return nil, false
+		return nil
 	}
 	if n < 0 {
-		return c.getAllNodes(), true
+		return c.getAllNodes()
 	}
 	if len(c.nodeByKey) < n {
 		n = len(c.nodeByKey)
@@ -142,13 +142,13 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 	if !found {
 		firstKey = 0
 	}
-	firstNode, has := c.nodeByKey[c.sortedKeys[firstKey]]
+	firstNode, _ := c.nodeByKey[c.sortedKeys[firstKey]]
 
 	nodes := make([]Node, 0, n)
 	nodes = append(nodes, firstNode)
 
 	if len(nodes) == n {
-		return nodes, has
+		return nodes
 	}
 
 	start := firstKey
@@ -168,7 +168,7 @@ func (c *NodeLocator[Node]) GetN(name string, n int) ([]Node, bool) {
 		}
 	}
 
-	return nodes, true
+	return nodes
 }
 
 // All returns an iterator over all nodes in hashring.
