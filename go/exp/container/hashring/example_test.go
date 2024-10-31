@@ -25,7 +25,7 @@ func ExampleNew() {
 	fmt.Printf("all nodes: %v\n", nodes)
 
 	users := []string{"Alice", "Bob  ", "Eve  ", "Carol", "Dave "}
-	fmt.Printf("mapping nodes...\n")
+	fmt.Printf("locate nodes...\n")
 	for _, u := range users {
 		server, has := c.Get(u)
 		if !has {
@@ -36,7 +36,7 @@ func ExampleNew() {
 
 	// Output:
 	// all nodes: [NodeA NodeB NodeC]
-	// mapping nodes...
+	// locate nodes...
 	//	Alice => NodeB
 	//	Bob   => NodeA
 	//	Eve   => NodeA
