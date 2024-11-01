@@ -29,16 +29,14 @@ func TestFilter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				got := maps_.Filter(tt.data)
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.Filter(tt.data)
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if !maps.Equal(got, tt.want) {
-					t.Errorf("maps_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
-				}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("maps_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -59,19 +57,16 @@ func TestFilterFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := maps.Clone(tt.data)
-				got := maps_.FilterFunc(copy, func(k, v int) bool {
-					return v != 0
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.FilterFunc(maps.Clone(tt.data), func(k, v int) bool {
+				return v != 0
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if !maps.Equal(got, tt.want) {
-					t.Errorf("maps_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
-				}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("maps_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -95,17 +90,14 @@ func TestTypeAssertFilter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := maps.Clone(tt.data)
-				got := maps_.TypeAssertFilter[map[int]int, map[int8]int8](copy)
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.TypeAssertFilter[map[int]int, map[int8]int8](maps.Clone(tt.data))
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if !maps.Equal(got, tt.want) {
-					t.Errorf("maps_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
-				}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("maps_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -129,19 +121,16 @@ func TestTypeAssertFilterFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := maps.Clone(tt.data)
-				got := maps_.TypeAssertFilterFunc[map[int]int, map[int8]int8](copy, func(k int, v int) (int8, int8, bool) {
-					return int8(k), int8(v), true
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return int8(k), int8(v), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.TypeAssertFilterFunc[map[int]int, map[int8]int8](maps.Clone(tt.data), func(k int, v int) (int8, int8, bool) {
+				return int8(k), int8(v), true
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return int8(k), int8(v), true}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if !maps.Equal(got, tt.want) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return int8(k), int8(v), true}) = %v, want %v", tt.data, got, tt.want)
-				}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return int8(k), int8(v), true}) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -165,19 +154,16 @@ func TestTypeAssertFilterFuncItoa(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := maps.Clone(tt.data)
-				got := maps_.TypeAssertFilterFunc[map[int]int, map[string]string](copy, func(k int, v int) (string, string, bool) {
-					return strconv.Itoa(k), strconv.Itoa(v), true
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return strconv.Itoa(k), strconv.Itoa(v), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.TypeAssertFilterFunc[map[int]int, map[string]string](maps.Clone(tt.data), func(k int, v int) (string, string, bool) {
+				return strconv.Itoa(k), strconv.Itoa(v), true
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return strconv.Itoa(k), strconv.Itoa(v), true}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if !maps.Equal(got, tt.want) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return strconv.Itoa(k), strconv.Itoa(v), true}) = %v, want %v", tt.data, got, tt.want)
-				}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(k int, v int) (int8, int8, bool) {return strconv.Itoa(k), strconv.Itoa(v), true}) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -203,22 +189,19 @@ func TestTypeAssertFilterConvert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := maps.Clone(tt.data)
-				got := maps_.TypeAssertFilter[map[any]any, map[Human]Human](copy)
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
-				if len(got) != len(tt.want) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.TypeAssertFilter[map[any]any, map[Human]Human](maps.Clone(tt.data))
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
+			if len(got) != len(tt.want) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				for k, v := range got {
-					if reflect.TypeOf(v) != reflect.TypeOf(tt.want[k]) {
-						t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) =[%d]: %v, want %v", tt.data, k, reflect.TypeOf(v).String(), reflect.TypeOf(tt.want[k]).String())
-					}
+			for k, v := range got {
+				if reflect.TypeOf(v) != reflect.TypeOf(tt.want[k]) {
+					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) =[%d]: %v, want %v", tt.data, k, reflect.TypeOf(v).String(), reflect.TypeOf(tt.want[k]).String())
 				}
 			}
 		})
@@ -245,26 +228,23 @@ func TestTypeAssertFilterFuncConvert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := maps.Clone(tt.data)
-				got := maps_.TypeAssertFilterFunc[map[any]any, map[Human]Human](copy, func(k any, v any) (Human, Human, bool) {
-					k2, ok := k.(Human)
-					v2, ov := v.(Human)
-					return k2, v2, (ok || k == nil) && (ov || v == nil)
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
-				if len(got) != len(tt.want) {
-					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := maps_.TypeAssertFilterFunc[map[any]any, map[Human]Human](maps.Clone(tt.data), func(k any, v any) (Human, Human, bool) {
+				k2, ok := k.(Human)
+				v2, ov := v.(Human)
+				return k2, v2, (ok || k == nil) && (ov || v == nil)
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
+			if len(got) != len(tt.want) {
+				t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				for k, v := range got {
-					if reflect.TypeOf(v) != reflect.TypeOf(tt.want[k]) {
-						t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) =[%d]: %v, want %v", tt.data, k, reflect.TypeOf(v).String(), reflect.TypeOf(tt.want[k]).String())
-					}
+			for k, v := range got {
+				if reflect.TypeOf(v) != reflect.TypeOf(tt.want[k]) {
+					t.Errorf("maps_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) =[%d]: %v, want %v", tt.data, k, reflect.TypeOf(v).String(), reflect.TypeOf(tt.want[k]).String())
 				}
 			}
 		})

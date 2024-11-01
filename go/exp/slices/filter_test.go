@@ -29,16 +29,14 @@ func TestFilter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				got := slices_.Filter(tt.data)
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("slices_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := slices_.Filter(tt.data)
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
-				}
+			if slices.Compare(got, tt.want) != 0 {
+				t.Errorf("slices_.Filter(%v) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -59,19 +57,16 @@ func TestFilterFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := slices.Clone(tt.data)
-				got := slices_.FilterFunc(copy, func(e int) bool {
-					return e != 0
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("slices_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := slices_.FilterFunc(slices.Clone(tt.data), func(e int) bool {
+				return e != 0
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
-				}
+			if slices.Compare(got, tt.want) != 0 {
+				t.Errorf("slices_.FilterFunc(%v, func(e int) bool {return e != 0}) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -92,17 +87,14 @@ func TestTypeAssertFilter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := slices.Clone(tt.data)
-				got := slices_.TypeAssertFilter[[]int, []int8](copy)
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("slices_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := slices_.TypeAssertFilter[[]int, []int8](slices.Clone(tt.data))
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
-				}
+			if slices.Compare(got, tt.want) != 0 {
+				t.Errorf("slices_.TypeAssertFilter(%v) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
@@ -129,23 +121,20 @@ func TestTypeAssertFilterConvert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := slices.Clone(tt.data)
-				got := slices_.TypeAssertFilter[[]any, []Human](copy)
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+			got := slices_.TypeAssertFilter[[]any, []Human](slices.Clone(tt.data))
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
+
+			for i, v := range got {
+				if i >= len(tt.want) {
 					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
 					return
 				}
 
-				for i, v := range got {
-					if i >= len(tt.want) {
-						t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
-						return
-					}
-
-					if reflect.TypeOf(v) != reflect.TypeOf(tt.want[i]) {
-						t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) =[%d]: %v, want %v", tt.data, i, reflect.TypeOf(v).String(), reflect.TypeOf(tt.want[i]).String())
-					}
+				if reflect.TypeOf(v) != reflect.TypeOf(tt.want[i]) {
+					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) =[%d]: %v, want %v", tt.data, i, reflect.TypeOf(v).String(), reflect.TypeOf(tt.want[i]).String())
 				}
 			}
 		})
@@ -167,20 +156,17 @@ func TestTypeAssertFilterFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := slices.Clone(tt.data)
-				got := slices_.TypeAssertFilterFunc[[]int, []int8](copy, func(e int) (int8, bool) {
-					return int8(e), true
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (int8, bool) {return int8(e), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := slices_.TypeAssertFilterFunc[[]int, []int8](slices.Clone(tt.data), func(e int) (int8, bool) {
+				return int8(e), true
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (int8, bool) {return int8(e), true}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (int8, bool) {return int8(e), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			if slices.Compare(got, tt.want) != 0 {
+				t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (int8, bool) {return int8(e), true}) = %v, want %v", tt.data, got, tt.want)
+				return
 			}
 		})
 	}
@@ -201,20 +187,17 @@ func TestTypeAssertFilterFuncItoa(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := slices.Clone(tt.data)
-				got := slices_.TypeAssertFilterFunc[[]int, []string](copy, func(e int) (string, bool) {
-					return strconv.Itoa(e), true
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (string, bool) {return strconv.Itoa(e), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := slices_.TypeAssertFilterFunc[[]int, []string](slices.Clone(tt.data), func(e int) (string, bool) {
+				return strconv.Itoa(e), true
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (string, bool) {return strconv.Itoa(e), true}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				if slices.Compare(got, tt.want) != 0 {
-					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (string, bool) {return strconv.Itoa(e), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			if slices.Compare(got, tt.want) != 0 {
+				t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (string, bool) {return strconv.Itoa(e), true}) = %v, want %v", tt.data, got, tt.want)
+				return
 			}
 		})
 	}
@@ -238,22 +221,19 @@ func TestTypeAssertFilterFuncConvert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.data), func(t *testing.T) {
-			{
-				copy := slices.Clone(tt.data)
-				got := slices_.TypeAssertFilterFunc[[]any, []Human](copy, func(e any) (Human, bool) {
-					h, ok := e.(Human)
-					return h, ok
-				})
-				if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
-					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (int8, bool) {return int8(e), true}) = %v, want %v", tt.data, got, tt.want)
-					return
-				}
+			got := slices_.TypeAssertFilterFunc[[]any, []Human](slices.Clone(tt.data), func(e any) (Human, bool) {
+				h, ok := e.(Human)
+				return h, ok
+			})
+			if (got == nil && tt.data != nil) || (got != nil && tt.data == nil) {
+				t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e int) (int8, bool) {return int8(e), true}) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
 
-				for _, v := range got {
-					if v.Kind() != "male" {
-						t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
-						return
-					}
+			for _, v := range got {
+				if v.Kind() != "male" {
+					t.Errorf("slices_.TypeAssertFilterFunc(%v, func(e any) (Human, bool) {h, ok := e.(Human); return h, ok}) = %v, want %v", tt.data, got, tt.want)
+					return
 				}
 			}
 		})
