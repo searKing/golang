@@ -120,55 +120,44 @@ func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
 	return c.getPrimaryNode(name)
 }
 
-// GetN returns the N closest distinct elements to the name input in the nodes.
-//
-// The count determines the number of nodes to return:
-//   - n > 0: at most n nodes;
-//   - n == 0: the result is nil (zero nodes);
-//   - n < 0: all nodes.
-func (c *NodeLocator[Node]) GetN(name string, n int) []Node {
-	if n == 0 || len(c.nodeByKey) == 0 {
-		return nil
-	}
-	if n < 0 {
-		return c.getAllNodes()
-	}
-	if len(c.nodeByKey) < n {
-		n = len(c.nodeByKey)
-	}
-
-	key := c.getHashKey(name)
-	firstKey, found := c.tailSearch(key)
-	if !found {
-		firstKey = 0
-	}
-	firstNode, _ := c.nodeByKey[c.sortedKeys[firstKey]]
-
-	nodes := make([]Node, 0, n)
-	nodes = append(nodes, firstNode)
-
-	if len(nodes) == n {
-		return nodes
-	}
-
-	start := firstKey
-	var secondNode Node
-	for i := start + 1; i != start; i++ {
-		if i >= len(c.sortedKeys) {
-			i = 0
-			i-- // take care of i++ after this loop of for
-			continue
+// GetSince returns an iterator over distinct nodes in hashring, start from where name hashes to in the nodes.
+func (c *NodeLocator[Node]) GetSince(name string) iter.Seq[Node] {
+	return func(yield func(Node) bool) {
+		if len(c.nodeByKey) == 0 {
+			return
 		}
-		secondNode = c.nodeByKey[c.sortedKeys[i]]
-		if !slices.ContainsFunc(nodes, func(n Node) bool { return c.isSameNode(n, secondNode) }) {
-			nodes = append(nodes, secondNode)
-		}
-		if len(nodes) == n {
-			break
-		}
-	}
 
-	return nodes
+		firstKey, found := c.tailSearch(c.getHashKey(name))
+		if !found {
+			firstKey = 0
+		}
+		firstNode := c.getNodeByHashKeyIndex(firstKey)
+
+		if !yield(firstNode) {
+			return
+		}
+
+		nodesSet := make(map[Node]struct{}) // for unique only
+		nodesSet[firstNode] = struct{}{}
+
+		start := firstKey
+		var secondNode Node
+		for i := start + 1; i != start; i++ {
+			if i >= len(c.sortedKeys) {
+				i = 0
+				i-- // take care of i++ after this loop of for
+				continue
+			}
+			secondNode = c.getNodeByHashKeyIndex(i)
+			if _, has := nodesSet[secondNode]; !has {
+				if !yield(secondNode) {
+					return
+				}
+				nodesSet[secondNode] = struct{}{}
+			}
+		}
+		return
+	}
 }
 
 // All returns an iterator over all nodes in hashring.
@@ -184,7 +173,7 @@ func (c *NodeLocator[Node]) getAllNodes() []Node {
 
 // getPrimaryNode returns the first available node for a name, such as “127.0.0.1:11311-0” for "Alice"
 func (c *NodeLocator[Node]) getPrimaryNode(name string) (Node, bool) {
-	return c.getNodeForHashKey(c.getHashKey(name))
+	return c.getNodeByHashKey(c.getHashKey(name))
 }
 
 // getMaxHashKey returns the last available node's HashKey
@@ -196,8 +185,8 @@ func (c *NodeLocator[Node]) getMaxHashKey() (key uint32, ok bool) {
 	return c.sortedKeys[len(c.sortedKeys)-1], true
 }
 
-// getNodeForHashKey returns the first available node since iterateHashKey, such as HASH(“127.0.0.1:11311-0”)
-func (c *NodeLocator[Node]) getNodeForHashKey(hash uint32) (Node, bool) {
+// getNodeByHashKey returns the first available node since iterateHashKey, such as HASH(“127.0.0.1:11311-0”)
+func (c *NodeLocator[Node]) getNodeByHashKey(hash uint32) (Node, bool) {
 	if len(c.sortedKeys) == 0 {
 		var zeroN Node
 		return zeroN, false
@@ -211,10 +200,12 @@ func (c *NodeLocator[Node]) getNodeForHashKey(hash uint32) (Node, bool) {
 	if !found {
 		firstKey = 0
 	}
+	return c.getNodeByHashKeyIndex(firstKey), true
+}
 
-	hash = c.sortedKeys[firstKey]
-	rv, has = c.nodeByKey[hash]
-	return rv, has
+// getNodeByHashKeyIndex returns the node by index of sorted hash keys.
+func (c *NodeLocator[Node]) getNodeByHashKeyIndex(keyIndex int) (node Node) {
+	return c.nodeByKey[c.sortedKeys[keyIndex]]
 }
 
 // updateLocator reconstructs the hash ring with the input nodes

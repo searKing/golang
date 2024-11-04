@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"testing"
 	"testing/quick"
+
+	iter_ "github.com/searKing/golang/go/iter"
 )
 
 func TestNew(t *testing.T) {
@@ -211,7 +213,7 @@ func TestGetTwo(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	nodes := x.GetN("99999999", 2)
+	nodes := getN(x, "99999999", 2)
 	if len(nodes) == 0 {
 		t.Fatal("missing nodes")
 	}
@@ -236,7 +238,7 @@ func TestGetTwoQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		nodes := x.GetN(s, 2)
+		nodes := getN(x, s, 2)
 		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
@@ -275,7 +277,7 @@ func TestGetTwoOnlyTwoQuick(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	f := func(s string) bool {
-		nodes := x.GetN(s, 2)
+		nodes := getN(x, s, 2)
 		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
@@ -309,7 +311,7 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	x := New[string]()
 
 	x.AddNodes("abcdefg")
-	nodes := x.GetN("99999999", 2)
+	nodes := getN(x, "99999999", 2)
 	if len(nodes) == 0 {
 		t.Fatalf("missing nodes")
 	}
@@ -330,7 +332,7 @@ func TestGetN(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	nodes := x.GetN("9999999", 3)
+	nodes := getN(x, "9999999", 3)
 	if len(nodes) == 0 {
 		t.Logf("missing nodes")
 	}
@@ -353,7 +355,7 @@ func TestGetNLess(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	nodes := x.GetN("99999999", 2)
+	nodes := getN(x, "99999999", 2)
 	if len(nodes) == 0 {
 		t.Logf("missing nodes")
 	}
@@ -373,7 +375,7 @@ func TestGetNMore(t *testing.T) {
 	x.AddNodes("abcdefg")
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
-	nodes := x.GetN("9999999", 5)
+	nodes := getN(x, "9999999", 5)
 	if len(nodes) == 0 {
 		t.Logf("missing nodes")
 	}
@@ -397,7 +399,7 @@ func TestGetNQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		nodes := x.GetN(s, 3)
+		nodes := getN(x, s, 3)
 		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
@@ -433,7 +435,7 @@ func TestGetNLessQuick(t *testing.T) {
 	x.AddNodes("hijklmn")
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
-		nodes := x.GetN(s, 2)
+		nodes := getN(x, s, 2)
 		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
@@ -470,7 +472,7 @@ func TestGetNMoreQuick(t *testing.T) {
 	x.AddNodes("opqrstu")
 	f := func(s string) bool {
 		// t.Log("check", s)
-		nodes := x.GetN(s, 5)
+		nodes := getN(x, s, 5)
 		if len(nodes) == 0 {
 			t.Logf("missing nodes")
 			return false
@@ -507,7 +509,7 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	nodes := x.GetN("qwerqwerwqer", 2)
+	nodes := getN(x, "qwerqwerwqer", 2)
 	if len(nodes) == 0 {
 		t.Fatal("missing node")
 	}
@@ -528,7 +530,7 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	nodes = x.GetN("qwerqwerwqer", 2)
+	nodes = getN(x, "qwerqwerwqer", 2)
 	if len(nodes) == 0 {
 		t.Fatal("missing node")
 	}
@@ -549,7 +551,7 @@ func TestSet(t *testing.T) {
 	if len(x.allNodes) != 2 {
 		t.Errorf("expected 2 elts, got %d", len(x.allNodes))
 	}
-	nodes = x.GetN("qwerqwerwqer", 2)
+	nodes = getN(x, "qwerqwerwqer", 2)
 	if len(nodes) == 0 {
 		t.Fatal("missing node")
 	}
@@ -660,7 +662,7 @@ func BenchmarkGetN(b *testing.B) {
 	x.AddNodes("nothing")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.GetN("nothing", 3)
+		getN(x, "nothing", 3)
 	}
 }
 
@@ -671,7 +673,7 @@ func BenchmarkGetNLarge(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.GetN("nothing", 3)
+		getN(x, "nothing", 3)
 	}
 }
 
@@ -680,7 +682,7 @@ func BenchmarkGetTwo(b *testing.B) {
 	x.AddNodes("nothing")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.GetN("nothing", 2)
+		getN(x, "nothing", 2)
 	}
 }
 
@@ -691,7 +693,7 @@ func BenchmarkGetTwoLarge(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		x.GetN("nothing", 2)
+		getN(x, "nothing", 2)
 	}
 }
 
@@ -721,4 +723,8 @@ func TestAddCollision(t *testing.T) {
 	if elt1 != elt2 {
 		t.Error(elt1, "and", elt2, "should be equal")
 	}
+}
+
+func getN[Node comparable](x *NodeLocator[Node], name string, n int) []Node {
+	return slices.Collect(iter_.FilterN(x.GetSince(name), n))
 }
