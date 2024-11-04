@@ -4,6 +4,8 @@
 
 package slices
 
+import "slices"
+
 // Union returns a slice satisfying c != zero within all c in the slice.
 // Union replaces consecutive runs of equal elements with a single copy.
 // This is like the uniq command found on Unix.
@@ -42,13 +44,13 @@ func UnionFunc[S ~[]E, E any](s1, s2 S, f func(v1, v2 E) bool) S {
 
 	var ss S
 	for _, v := range s1 {
-		if ContainsFunc(ss, func(e E) bool { return f(v, e) }) {
+		if slices.ContainsFunc(ss, func(e E) bool { return f(v, e) }) {
 			continue
 		}
 		ss = append(ss, v)
 	}
 	for _, v := range s2 {
-		if ContainsFunc(ss, func(e E) bool { return f(v, e) }) {
+		if slices.ContainsFunc(ss, func(e E) bool { return f(v, e) }) {
 			continue
 		}
 		ss = append(ss, v)

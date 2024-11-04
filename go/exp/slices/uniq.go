@@ -4,6 +4,8 @@
 
 package slices
 
+import "slices"
+
 // Uniq returns a slice satisfying c != zero within all c in the slice.
 // Uniq modifies the contents of the slice s; it does not create a new slice.
 func Uniq[S ~[]E, E comparable](s S) S {
@@ -36,7 +38,7 @@ func UniqFunc[S ~[]E, E any](s S, f func(v1, v2 E) bool) S {
 
 	i := 1
 	for _, v := range s[1:] {
-		if ContainsFunc(s[:i], func(e E) bool { return f(v, e) }) {
+		if slices.ContainsFunc(s[:i], func(e E) bool { return f(v, e) }) {
 			continue
 		}
 		s[i] = v

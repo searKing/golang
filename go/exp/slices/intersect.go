@@ -4,6 +4,8 @@
 
 package slices
 
+import "slices"
+
 // Intersect returns a slice satisfying c != zero within all c in the slice.
 // Intersect does not modify the contents of the slice s1 and s2; it creates a new slice.
 func Intersect[S ~[]E, E comparable](s1, s2 S) S {
@@ -43,10 +45,10 @@ func IntersectFunc[S ~[]E, E any](s1, s2 S, f func(v1, v2 E) bool) S {
 
 	var ss S
 	for _, v := range s1 {
-		if ContainsFunc(ss, func(e E) bool { return f(v, e) }) {
+		if slices.ContainsFunc(ss, func(e E) bool { return f(v, e) }) {
 			continue
 		}
-		if ContainsFunc(s2, func(e E) bool { return f(v, e) }) {
+		if slices.ContainsFunc(s2, func(e E) bool { return f(v, e) }) {
 			ss = append(ss, v)
 		}
 	}
