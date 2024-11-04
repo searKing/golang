@@ -16,7 +16,7 @@ import (
 
 func TestNew(t *testing.T) {
 	numReps := 160
-	x := New[string](WithNodeLocatorNumReps[string](numReps))
+	x := New[string](WithHashRingNumReps[string](numReps))
 	if x == nil {
 		t.Errorf("expected obj")
 		return
@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	numReps := 160
-	x := New[string](WithNodeLocatorNumReps[string](numReps))
+	x := New[string](WithHashRingNumReps[string](numReps))
 	x.AddNodes("abcdefg")
 
 	if len(x.nodeByKey) != numReps {
@@ -56,7 +56,7 @@ func TestAdd(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	numReps := 160
-	x := New[string](WithNodeLocatorNumReps[string](numReps))
+	x := New[string](WithHashRingNumReps[string](numReps))
 	x.AddNodes("abcdefg")
 	x.RemoveNodes("abcdefg")
 	if len(x.nodeByKey) != 0 {
@@ -69,7 +69,7 @@ func TestRemove(t *testing.T) {
 
 func TestRemoveNonExisting(t *testing.T) {
 	numReps := 160
-	x := New[string](WithNodeLocatorNumReps[string](numReps))
+	x := New[string](WithHashRingNumReps[string](numReps))
 	x.AddNodes("abcdefg")
 	x.RemoveNodes("abcdefghijk")
 	if len(x.nodeByKey) != numReps {
@@ -79,7 +79,7 @@ func TestRemoveNonExisting(t *testing.T) {
 
 func TestGetEmpty(t *testing.T) {
 	numReps := 160
-	x := New[string](WithNodeLocatorNumReps[string](numReps))
+	x := New[string](WithHashRingNumReps[string](numReps))
 	_, has := x.Get("asdfsadfsadf")
 	if has {
 		t.Errorf("expected error")
@@ -88,7 +88,7 @@ func TestGetEmpty(t *testing.T) {
 
 func TestGetSingle(t *testing.T) {
 	numReps := 160
-	x := New[string](WithNodeLocatorNumReps[string](numReps))
+	x := New[string](WithHashRingNumReps[string](numReps))
 	x.AddNodes("abcdefg")
 	f := func(s string) bool {
 		y, has := x.Get(s)
@@ -700,7 +700,7 @@ func BenchmarkGetTwoLarge(b *testing.B) {
 // from @edsrzf on github:
 func TestAddCollision(t *testing.T) {
 	// These two strings produce several crc32 collisions after "|i" is
-	// appended added by NodeLocator.virtualNode.
+	// appended added by HashRing.virtualNode.
 	const s1 = "abear"
 	const s2 = "solidiform"
 	x := New[string]()
@@ -725,6 +725,6 @@ func TestAddCollision(t *testing.T) {
 	}
 }
 
-func getN[Node comparable](x *NodeLocator[Node], name string, n int) []Node {
+func getN[Node comparable](x *HashRing[Node], name string, n int) []Node {
 	return slices.Collect(iter_.FilterN(x.GetSince(name), n))
 }

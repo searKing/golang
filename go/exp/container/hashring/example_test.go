@@ -44,7 +44,7 @@ func ExampleNew() {
 	//	Dave  => NodeA
 }
 
-func ExampleAdd() {
+func ExampleHashRing_AddNodes() {
 	c := hashring.New[string]()
 	c.AddNodes("NodeA")
 	c.AddNodes("NodeB")
@@ -84,7 +84,7 @@ func ExampleAdd() {
 	// Dave  => NodeA
 }
 
-func ExampleRemove() {
+func ExampleHashRing_RemoveNodes() {
 	c := hashring.New[string]()
 	c.AddNodes("NodeA")
 	c.AddNodes("NodeB")

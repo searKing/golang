@@ -24,7 +24,7 @@ various libs or tools for Golang
       temporary items that may be individually saved and retrieved.
     - [types.Optional](https://pkg.go.dev/github.com/searKing/golang/go/exp/types#Optional) represents a Value that may
       be null.
-    - [container.hashring](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/hashring#NodeLocator) —
+    - [container.hashring](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/hashring#HashRing) —
       hashring provides a consistent hashing function, read more about consistent hashing on
       wikipedia: [Consistent_hashing](http://en.wikipedia.org/wiki/Consistent_hashing).
     - [container.lru](https://pkg.go.dev/github.com/searKing/golang/go/exp/container/lru#LRU) implements a Go map[K]V

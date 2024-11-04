@@ -20,7 +20,7 @@ func (f FormatterFunc[Node]) FormatNodeKey(node Node, repetition int) string {
 // Formatter is used to format node for assigning nodes around the ring
 type Formatter[Node comparable] interface {
 	// FormatNodeKey returns a uniquely identifying key, suitable for hashing by the
-	// NodeLocator algorithm.
+	// HashRing algorithm.
 	FormatNodeKey(node Node, repetition int) string
 }
 
@@ -51,9 +51,9 @@ const (
 type KetamaNodeKeyFormatter[Node comparable] struct {
 	format Format
 
-	// Carried over from the DefaultKetamaNodeLocatorConfiguration:
+	// Carried over from the DefaultKetamaHashRingConfiguration:
 	// Internal lookup map to try to carry forward the optimisation that was
-	// previously in NodeLocator
+	// previously in HashRing
 	keyByNode map[Node]string
 }
 
@@ -69,7 +69,7 @@ func NewKetamaNodeKeyFormatter[Node comparable](format Format) *KetamaNodeKeyFor
 }
 
 // FormatNodeKey returns a uniquely identifying key, suitable for hashing by the
-// NodeLocator algorithm.
+// HashRing algorithm.
 //
 // @param node The Node to use to form the unique identifier
 // @param repetition The repetition number for the particular node in question
@@ -78,7 +78,7 @@ func NewKetamaNodeKeyFormatter[Node comparable](format Format) *KetamaNodeKeyFor
 //
 // @return The key that represents the specific repetition of the node
 func (f KetamaNodeKeyFormatter[Node]) FormatNodeKey(node Node, repetition int) string {
-	// Carried over from the DefaultKetamaNodeLocatorConfiguration:
+	// Carried over from the DefaultKetamaHashRingConfiguration:
 	// Internal Using the internal map retrieve the socket addresses
 	// for given nodes.
 	// I'm aware that this code is inherently thread-unsafe as

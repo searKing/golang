@@ -4,9 +4,9 @@
 
 // Package hashring provides a consistent hashing function.
 //
-// NodeLocator hashing is often used to distribute requests to a changing set of servers.  For example,
-// say you have some cache servers cacheA, cacheB, and cacheC.  You want to decide which cache server
-// to use to look up information on a user.
+// HashRing, aka NodeLocator hashing, is often used to distribute requests to a changing set of servers.
+// For example, say you have some cache servers cacheA, cacheB, and cacheC.
+// You want to decide which cache server to use to look up information on a user.
 //
 // You could use a typical hash table and hash the user id
 // to one of cacheA, cacheB, or cacheC.  But with a typical hash table, if you add or remove a server,
@@ -28,14 +28,14 @@ import (
 
 const defaultNumReps = 160
 
-// NodeLocator holds the information about the allNodes of the consistent hash nodes.
+// HashRing holds the information about the allNodes of the consistent hash nodes.
 //
 // Node represents a node in the consistent hash ring.
 // {}	-> 127.0.0.1:11311 -> 127.0.0.1:11311-0 -> 1234
 // Node ->       Key       ->     IterateKey    -> HashKey
 //
-//go:generate go-option -type "NodeLocator"
-type NodeLocator[Node comparable] struct {
+//go:generate go-option -type "HashRing"
+type HashRing[Node comparable] struct {
 	// The List of nodes to use in the Ketama consistent hash continuum
 	//
 	// This simulates the structure of keys used in the Ketama consistent hash ring,
@@ -66,8 +66,8 @@ type NodeLocator[Node comparable] struct {
 }
 
 // New creates a hash ring of n replicas for each entry.
-func New[Node comparable](opts ...NodeLocatorOption[Node]) *NodeLocator[Node] {
-	r := &NodeLocator[Node]{
+func New[Node comparable](opts ...HashRingOption[Node]) *HashRing[Node] {
+	r := &HashRing[Node]{
 		nodeByKey:        make(map[uint32]Node),
 		allNodes:         make(map[Node]struct{}),
 		hashAlg:          KetamaHash,
@@ -84,7 +84,7 @@ func New[Node comparable](opts ...NodeLocatorOption[Node]) *NodeLocator[Node] {
 }
 
 // AddNodes inserts nodes into the consistent hash cycle.
-func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
+func (c *HashRing[Node]) AddNodes(nodes ...Node) {
 	if c.isWeighted {
 		c.addWeightNodes(nodes...)
 		return
@@ -92,11 +92,11 @@ func (c *NodeLocator[Node]) AddNodes(nodes ...Node) {
 	c.addNoWeightNodes(nodes...)
 }
 
-// SetNodes setups the NodeLocator with the list of nodes it should use.
+// SetNodes setups the HashRing with the list of nodes it should use.
 // If there are existing nodes not present in nodes, they will be removed.
-// @param nodes a List of Nodes for this NodeLocator to use in
+// @param nodes a List of Nodes for this HashRing to use in
 // its continuum
-func (c *NodeLocator[Node]) SetNodes(nodes ...Node) {
+func (c *HashRing[Node]) SetNodes(nodes ...Node) {
 	if c.isWeighted {
 		c.setWeightNodes(nodes...)
 		return
@@ -105,14 +105,14 @@ func (c *NodeLocator[Node]) SetNodes(nodes ...Node) {
 }
 
 // RemoveAllNodes removes all nodes in the continuum.
-func (c *NodeLocator[Node]) RemoveAllNodes() {
+func (c *HashRing[Node]) RemoveAllNodes() {
 	c.sortedKeys = nil
 	c.nodeByKey = make(map[uint32]Node)
 	c.allNodes = make(map[Node]struct{})
 }
 
 // Get returns an element close to where name hashes to in the nodes.
-func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
+func (c *HashRing[Node]) Get(name string) (Node, bool) {
 	if len(c.nodeByKey) == 0 {
 		var zeroN Node
 		return zeroN, false
@@ -121,7 +121,7 @@ func (c *NodeLocator[Node]) Get(name string) (Node, bool) {
 }
 
 // GetSince returns an iterator over distinct nodes in hashring, start from where name hashes to in the nodes.
-func (c *NodeLocator[Node]) GetSince(name string) iter.Seq[Node] {
+func (c *HashRing[Node]) GetSince(name string) iter.Seq[Node] {
 	return func(yield func(Node) bool) {
 		if len(c.nodeByKey) == 0 {
 			return
@@ -162,23 +162,23 @@ func (c *NodeLocator[Node]) GetSince(name string) iter.Seq[Node] {
 
 // All returns an iterator over all nodes in hashring.
 // If c is empty, the sequence is empty: there is no empty element in the sequence.
-func (c *NodeLocator[Node]) All() iter.Seq[Node] {
+func (c *HashRing[Node]) All() iter.Seq[Node] {
 	return maps.Keys(c.allNodes)
 }
 
 // getAllNodes returns all available nodes
-func (c *NodeLocator[Node]) getAllNodes() []Node {
+func (c *HashRing[Node]) getAllNodes() []Node {
 	return slices.Collect(maps.Keys(c.allNodes))
 }
 
 // getPrimaryNode returns the first available node for a name, such as “127.0.0.1:11311-0” for "Alice"
-func (c *NodeLocator[Node]) getPrimaryNode(name string) (Node, bool) {
+func (c *HashRing[Node]) getPrimaryNode(name string) (Node, bool) {
 	return c.getNodeByHashKey(c.getHashKey(name))
 }
 
 // getMaxHashKey returns the last available node's HashKey
 // that is, Maximum HashKey in the Hash Cycle
-func (c *NodeLocator[Node]) getMaxHashKey() (key uint32, ok bool) {
+func (c *HashRing[Node]) getMaxHashKey() (key uint32, ok bool) {
 	if len(c.sortedKeys) == 0 {
 		return 0, false
 	}
@@ -186,7 +186,7 @@ func (c *NodeLocator[Node]) getMaxHashKey() (key uint32, ok bool) {
 }
 
 // getNodeByHashKey returns the first available node since iterateHashKey, such as HASH(“127.0.0.1:11311-0”)
-func (c *NodeLocator[Node]) getNodeByHashKey(hash uint32) (Node, bool) {
+func (c *HashRing[Node]) getNodeByHashKey(hash uint32) (Node, bool) {
 	if len(c.sortedKeys) == 0 {
 		var zeroN Node
 		return zeroN, false
@@ -204,23 +204,23 @@ func (c *NodeLocator[Node]) getNodeByHashKey(hash uint32) (Node, bool) {
 }
 
 // getNodeByHashKeyIndex returns the node by index of sorted hash keys.
-func (c *NodeLocator[Node]) getNodeByHashKeyIndex(keyIndex int) (node Node) {
+func (c *HashRing[Node]) getNodeByHashKeyIndex(keyIndex int) (node Node) {
 	return c.nodeByKey[c.sortedKeys[keyIndex]]
 }
 
 // updateLocator reconstructs the hash ring with the input nodes
-func (c *NodeLocator[Node]) updateLocator(nodes ...Node) {
+func (c *HashRing[Node]) updateLocator(nodes ...Node) {
 	c.SetNodes(nodes...)
 }
 
 // getNodeRepetitions returns the number of discrete hashes that should be defined for each node
 // in the continuum.
-func (c *NodeLocator[Node]) getNodeRepetitions() int {
+func (c *HashRing[Node]) getNodeRepetitions() int {
 	return c.numReps
 }
 
 // setNoWeightNodes sets all the elements in the hash.
-func (c *NodeLocator[Node]) setNoWeightNodes(nodes ...Node) {
+func (c *HashRing[Node]) setNoWeightNodes(nodes ...Node) {
 	// Set sets all the elements in the hash.
 	// If there are existing elements not present in nodes, they will be removed.
 	var nodesToBeRemoved []Node
@@ -261,7 +261,7 @@ func (c *NodeLocator[Node]) setNoWeightNodes(nodes ...Node) {
 }
 
 // setWeightNodes sets all the elements in the hash.
-func (c *NodeLocator[Node]) setWeightNodes(nodes ...Node) {
+func (c *HashRing[Node]) setWeightNodes(nodes ...Node) {
 	c.RemoveAllNodes()
 	numReps := c.getNodeRepetitions()
 	nodeCount := len(nodes)
@@ -285,12 +285,12 @@ func (c *NodeLocator[Node]) setWeightNodes(nodes ...Node) {
 }
 
 // addWeightNodes adds a node to the hash without sorting the keys.
-func (c *NodeLocator[Node]) addWeightNodes(nodes ...Node) {
+func (c *HashRing[Node]) addWeightNodes(nodes ...Node) {
 	c.setWeightNodes(append(c.getAllNodes(), nodes...)...)
 }
 
 // addNoWeightNodes adds a node to the hash without sorting the keys.
-func (c *NodeLocator[Node]) addNoWeightNodes(nodes ...Node) {
+func (c *HashRing[Node]) addNoWeightNodes(nodes ...Node) {
 	numReps := c.getNodeRepetitions()
 
 	for _, node := range nodes {
@@ -301,7 +301,7 @@ func (c *NodeLocator[Node]) addNoWeightNodes(nodes ...Node) {
 }
 
 // addNodeWithoutSort adds a node to the hash without sorting the keys.
-func (c *NodeLocator[Node]) addNodeWithoutSort(node Node, numReps int) {
+func (c *HashRing[Node]) addNodeWithoutSort(node Node, numReps int) {
 	// Ketama does some special work with md5 where it reuses chunks.
 	// Check to be backwards compatible, the hash algorithm does not
 	// matter for Ketama, just the placement should always be done using
@@ -335,7 +335,7 @@ func (c *NodeLocator[Node]) addNodeWithoutSort(node Node, numReps int) {
 }
 
 // RemoveNodes removes nodes from the consistent hash cycle
-func (c *NodeLocator[Node]) RemoveNodes(nodes ...Node) {
+func (c *HashRing[Node]) RemoveNodes(nodes ...Node) {
 	if c.isWeighted {
 		c.removeWeightNodes(nodes...)
 		return
@@ -344,14 +344,14 @@ func (c *NodeLocator[Node]) RemoveNodes(nodes ...Node) {
 }
 
 // removeWeightNodes removes nodes from the consistent hash cycle
-func (c *NodeLocator[Node]) removeWeightNodes(nodes ...Node) {
+func (c *HashRing[Node]) removeWeightNodes(nodes ...Node) {
 	for _, node := range nodes {
 		delete(c.allNodes, node)
 	}
 	c.setWeightNodes(c.getAllNodes()...)
 }
 
-func (c *NodeLocator[Node]) removeNoWeightNodes(nodes ...Node) {
+func (c *HashRing[Node]) removeNoWeightNodes(nodes ...Node) {
 	numReps := c.getNodeRepetitions()
 
 	for _, node := range nodes {
@@ -384,7 +384,7 @@ func (c *NodeLocator[Node]) removeNoWeightNodes(nodes ...Node) {
 }
 
 // tailSearch returns the first available node since iterateHashKey's Index, such as Index(HASH(“127.0.0.1:11311-0”))
-func (c *NodeLocator[Node]) tailSearch(key uint32) (i int, found bool) {
+func (c *HashRing[Node]) tailSearch(key uint32) (i int, found bool) {
 	// Search uses binary search to find and return the smallest index since iterateHashKey's Index
 	return slices.BinarySearchFunc(c.sortedKeys, key, func(v uint32, key uint32) int {
 		if v >= key {
@@ -395,7 +395,7 @@ func (c *NodeLocator[Node]) tailSearch(key uint32) (i int, found bool) {
 }
 
 // updateSortedNodes sorts the keys in ascending order.
-func (c *NodeLocator[Node]) updateSortedNodes() {
+func (c *HashRing[Node]) updateSortedNodes() {
 	hashes := c.sortedKeys[:0]
 	// reallocate if we're holding on to too much (1/4th)
 	// len(nodes) * replicas < cap / 4
@@ -411,6 +411,6 @@ func (c *NodeLocator[Node]) updateSortedNodes() {
 }
 
 // isSameNode checks if two nodes are the same by the key.
-func (c *NodeLocator[Node]) isSameNode(n1, n2 Node) bool {
+func (c *HashRing[Node]) isSameNode(n1, n2 Node) bool {
 	return c.nodeKeyFormatter.FormatNodeKey(n1, 0) == c.nodeKeyFormatter.FormatNodeKey(n2, 0)
 }
