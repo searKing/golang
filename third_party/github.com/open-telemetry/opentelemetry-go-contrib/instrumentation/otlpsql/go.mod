@@ -1,6 +1,6 @@
 module github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql
 
-go 1.21
+go 1.21.0
 
 require (
 	go.opentelemetry.io/contrib v1.27.0

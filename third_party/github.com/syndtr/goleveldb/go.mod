@@ -1,6 +1,8 @@
 module github.com/searKing/golang/third_party/github.com/syndtr/goleveldb
 
-go 1.21
+go 1.23
+
+toolchain go1.23.3
 
 require (
 	github.com/searKing/golang/go v1.2.120

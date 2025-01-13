@@ -1,3 +1,3 @@
 module go-grpc-middleware-v2
 
-go 1.21
+go 1.21.0
