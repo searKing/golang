@@ -6,6 +6,7 @@ package webserver
 
 import (
 	"github.com/searKing/golang/pkg/webserver/pkg/requestid"
+	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/tags"
 	"google.golang.org/grpc"
 
 	"github.com/searKing/golang/pkg/webserver/pkg/recovery"
@@ -13,6 +14,13 @@ import (
 	grpc_ "github.com/searKing/golang/third_party/google.golang.org/grpc"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/burstlimit"
 	"github.com/searKing/golang/third_party/google.golang.org/grpc/interceptors/timeoutlimit"
+)
+
+type tagsCtxMarker struct{}
+
+var (
+	// tagsCtxMarkerKey is the Context value marker that is used by logging middleware to read and write logging fields into context.
+	tagsCtxMarkerKey = &tagsCtxMarker{}
 )
 
 // UnaryHandlers returns new unary server handlers.
@@ -40,6 +48,8 @@ func (f *Factory) UnaryServerInterceptors(interceptors ...grpc.UnaryServerInterc
 	interceptors = append(interceptors, timeoutlimit.UnaryServerInterceptor(f.fc.HandledTimeoutUnary))
 	// burst limit
 	interceptors = append(interceptors, burstlimit.UnaryServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// map tags in context, for request local storage
+	interceptors = append(interceptors, tags.UnaryServerInterceptor(tagsCtxMarkerKey, map[string]any{}))
 	// validate
 	if v := f.fc.Validator; v != nil {
 		interceptors = append(interceptors, validator_.UnaryServerInterceptor(v))
@@ -58,6 +68,8 @@ func (f *Factory) StreamServerInterceptors(interceptors ...grpc.StreamServerInte
 	interceptors = append(interceptors, timeoutlimit.StreamServerInterceptor(f.fc.HandledTimeoutUnary))
 	// burst limit
 	interceptors = append(interceptors, burstlimit.StreamServerInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// map tags in context, for request local storage
+	interceptors = append(interceptors, tags.StreamServerInterceptor(tagsCtxMarkerKey, map[string]any{}))
 	// validate
 	if v := f.fc.Validator; v != nil {
 		interceptors = append(interceptors, validator_.StreamServerInterceptor(v))
@@ -74,10 +86,13 @@ func (f *Factory) UnaryClientInterceptors(interceptors ...grpc.UnaryClientInterc
 	interceptors = append(interceptors, timeoutlimit.UnaryClientInterceptor(f.fc.HandledTimeoutUnary))
 	// burst limit
 	interceptors = append(interceptors, burstlimit.UnaryClientInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// map tags in context, for request local storage
+	interceptors = append(interceptors, tags.UnaryClientInterceptor(tagsCtxMarkerKey, map[string]any{}))
 	// request id
 	if f.fc.FillRequestId {
 		interceptors = append(interceptors, requestid.UnaryClientInterceptor())
 	}
+
 	return interceptors
 }
 
@@ -86,6 +101,8 @@ func (f *Factory) StreamClientInterceptors(interceptors ...grpc.StreamClientInte
 	interceptors = append(interceptors, timeoutlimit.StreamClientInterceptor(f.fc.HandledTimeoutUnary))
 	// burst limit
 	interceptors = append(interceptors, burstlimit.StreamClientInterceptor(f.fc.MaxConcurrencyUnary, f.fc.BurstLimitTimeoutUnary))
+	// map tags in context, for request local storage
+	interceptors = append(interceptors, tags.StreamClientInterceptor(tagsCtxMarkerKey, map[string]any{}))
 	// request id
 	if f.fc.FillRequestId {
 		interceptors = append(interceptors, requestid.StreamClientInterceptor())
