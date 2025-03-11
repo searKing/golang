@@ -54,6 +54,10 @@ func walkDir(dir, gosyncmap, dirname string, t *testing.T) {
 				// This file is used for tag processing in TestTags or TestConstValueChange, below.
 				continue
 			}
+			if strings.HasSuffix(name, "_syncmap.go") {
+				// This file is ignored by the build tool since it's name ends with '_syncmap.go'.
+				continue
+			}
 			if name == "cgo.go" && !build.Default.CgoEnabled {
 				t.Logf("cgo is not enabled for %s", name)
 				continue

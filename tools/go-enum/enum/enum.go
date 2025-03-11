@@ -159,7 +159,11 @@ func ParseCommandLine(def bool) *flag.FlagSet {
 		commandLine.PrintDefaults()
 	}
 
-	commandLine.Parse(os.Args[1:])
+	err := commandLine.Parse(os.Args[1:])
+	if err != nil {
+		commandLine.Usage()
+		os.Exit(1)
+	}
 	return commandLine
 }
 
@@ -170,19 +174,19 @@ const (
 func Main() {
 	log.SetFlags(0)
 	log.SetPrefix("go-enum: ")
-	ParseCommandLine(true)
+	flags := ParseCommandLine(true)
 	if len(typeInfos) == 0 {
-		flag.Usage()
+		flags.Usage()
 		os.Exit(2)
 	}
 	if !useAll {
-		ParseCommandLine(false)
+		flags = ParseCommandLine(false)
 	}
 
 	// type <key, value> type <key, value>
 	typs := newTypeInfo(typeInfos)
 	if len(typs) == 0 {
-		flag.Usage()
+		flags.Usage()
 		os.Exit(3)
 	}
 
@@ -192,7 +196,8 @@ func Main() {
 	}
 
 	// We accept either one directory or a list of files. Which do we have?
-	args := flag.Args()
+	args := flags.Args()
+
 	if len(args) == 0 {
 		// Default: process whole package in current directory.
 		args = []string{"."}

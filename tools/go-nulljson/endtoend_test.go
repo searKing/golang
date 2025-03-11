@@ -54,6 +54,10 @@ func walkDir(dir, gonulljson, dirname string, t *testing.T) {
 				// This file is used for tag processing in TestTags or TestConstValueChange, below.
 				continue
 			}
+			if strings.HasSuffix(name, "_nulljson.go") {
+				// This file is ignored by the build tool since it's name ends with '_nulljson.go'.
+				continue
+			}
 			if name == "cgo.go" && !build.Default.CgoEnabled {
 				t.Logf("cgo is not enabled for %s", name)
 				continue
