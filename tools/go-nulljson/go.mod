@@ -8,5 +8,3 @@ require (
 )
 
 require golang.org/x/mod v0.15.0 // indirect
-
-replace github.com/searKing/golang/tools => ../../tools
