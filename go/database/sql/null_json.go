@@ -16,10 +16,11 @@ var _ sql.Scanner = (*NullJson)(nil)
 var _ driver.Value = (*NullJson)(nil)
 
 // NullJson represents an interface that may be null.
+//
 // NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
-// Deprecate, use go-nulljson instead.
+// Deprecated: Use [exp/database/sql.NullJson[T]] instead.
 // For more information, see:
-// https://godoc.org/github.com/searKing/golang/tools/go-nulljson
+// https://github.com/searKing/golang/blob/master/go/exp/database/sql/null_json.go
 type NullJson struct {
 	Data any // must be set with a pointer to zero value of expect type
 
