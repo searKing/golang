@@ -5,11 +5,15 @@
 package sql
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"time"
 )
+
+var _ sql.Scanner = (*NullJson)(nil)
+var _ driver.Value = (*NullJson)(nil)
 
 // NullJson represents an interface that may be null.
 // NullJson implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
