@@ -11,12 +11,8 @@ import (
 	"time"
 )
 
-func _() {
-	// An "cannot convert NullDuration literal (type NullDuration) to type atomic.Value" compiler error signifies that the base type have changed.
-	// Re-run the go-nulljson command to generate them again.
-	_ = (sql.Scanner)(&NullDuration{})
-	_ = (driver.Valuer)(&NullDuration{})
-}
+var _ sql.Scanner = (*NullDuration)(nil)
+var _ driver.Valuer = NullDuration{}
 
 var nilTimeDurationValue = func() (val time.Duration) { return }()
 

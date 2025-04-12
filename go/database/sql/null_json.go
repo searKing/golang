@@ -13,7 +13,7 @@ import (
 )
 
 var _ sql.Scanner = (*NullJson)(nil)
-var _ driver.Value = (*NullJson)(nil)
+var _ driver.Valuer = NullJson{}
 
 // NullJson represents an interface that may be null.
 //
