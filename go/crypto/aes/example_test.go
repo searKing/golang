@@ -78,7 +78,7 @@ func ExampleCBCEncrypt() {
 	// exampleplaintext
 }
 
-func ExampleCFBEncryptIV() {
+func ExampleCFBDecrypt() {
 	// Load your secret key from a safe place and reuse it across multiple
 	// NewCipher calls. (Obviously don't use this example key for anything
 	// real.) If you want to convert a passphrase to a key, use a suitable

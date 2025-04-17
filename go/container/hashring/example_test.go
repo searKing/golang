@@ -32,7 +32,7 @@ func ExampleNew() {
 	// Dave  => NodeA
 }
 
-func ExampleAdd() {
+func ExampleNodeLocator_AddNodes() {
 	c := hashring.New()
 	c.AddNodes(hashring.StringNode("NodeA"))
 	c.AddNodes(hashring.StringNode("NodeB"))
@@ -72,7 +72,7 @@ func ExampleAdd() {
 	// Dave  => NodeA
 }
 
-func ExampleRemove() {
+func ExampleNodeLocator_RemoveNodes() {
 	c := hashring.New()
 	c.AddNodes(hashring.StringNode("NodeA"))
 	c.AddNodes(hashring.StringNode("NodeB"))

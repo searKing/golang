@@ -13,15 +13,11 @@ import (
 func ExampleNew() {
 	err := multi.New(fmt.Errorf("whoops"), fmt.Errorf("foo"))
 	fmt.Println(err)
-
-	// Output: whoops|foo
-}
-
-func ExampleFormat() {
-	err := multi.New(fmt.Errorf("whoops"), fmt.Errorf("foo"))
+	fmt.Println("--------")
 	fmt.Printf("%+v", err)
 
-	// Output:
+	// Output: whoops|foo
+	// --------
 	// Multiple errors occurred:
 	//	whoops|foo
 }

@@ -79,7 +79,7 @@ func ExampleTernarySearchTree_Count() {
 	// 2
 }
 
-func ExampleNode_Depth() {
+func ExampleTernarySearchTree_Depth() {
 	tree := ternary_search_tree.New()
 	tree.Store("a", nil)
 	fmt.Println(tree.Depth())

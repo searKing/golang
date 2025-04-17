@@ -28,7 +28,7 @@ func ExampleDispatch() {
 		})).Start()
 }
 
-func ExampleDispatcher_Join() {
+func ExampleDispatch_Join() {
 	var conn chan DispatchMsg
 
 	workflow := dispatch.NewDispatch(
@@ -49,7 +49,7 @@ func ExampleDispatcher_Join() {
 	}
 	workflow.Join()
 }
-func ExampleDispatcher_Context() {
+func ExampleDispatch_Context() {
 	var conn chan DispatchMsg
 
 	workflow := dispatch.NewDispatch(
