@@ -39,6 +39,13 @@
 // generate methods for multiple types. The default output file is t_string.go,
 // where t is the lower-cased name of the first type listed. It can be overridden
 // with the -output flag.
+//
+// Deprecated: Use [github.com/searKing/golang/go/exp/database/sql.NullJson[T] or sql.Json[T]] instead.
+// For more information, see:
+// https://github.com/searKing/golang/blob/master/go/exp/database/sql/null_json.go
+// https://github.com/searKing/golang/blob/master/go/exp/database/sql/json.go
+//
+// This package is frozen and no new functionality will be added.
 package main
 
 import (
@@ -140,6 +147,19 @@ func main() {
 	g.Printf("\n")
 	g.Printf("// Install %[1]s by `go install github.com/searKing/golang/tools/%[1]s@latest`", goNullJsonToolName)
 	g.Printf("\n")
+	g.Printf("//")
+	g.Printf("\n")
+	g.Printf("// Deprecated: Use [github.com/searKing/golang/go/exp/database/sql.NullJson[T]] instead.")
+	g.Printf("\n")
+	g.Printf("// For more information, see:")
+	g.Printf("\n")
+	if *nullable {
+		g.Printf("// https://github.com/searKing/golang/blob/master/go/exp/database/sql/null_json.go")
+	} else {
+		g.Printf("// https://github.com/searKing/golang/blob/master/go/exp/database/sql/json.go")
+	}
+	g.Printf("\n")
+
 	g.Printf("package %s", g.pkg.name)
 	g.Printf("\n")
 	g.Printf(stringImport, "database/sql")
@@ -400,6 +420,7 @@ func (g *Generator) buildOneRun(value Value) {
 	} else {
 		text = tmplJson
 	}
+
 	g.Render(text, sqlRender)
 }
 
