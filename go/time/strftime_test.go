@@ -19,6 +19,10 @@ func TestLayoutTimeToSimilarStrftime(t *testing.T) {
 		wantLayout string
 	}{
 		{
+			layout:     "15:04:05", // Fri Mar 12 19:49:05 2021
+			wantLayout: "%H:%M:%S", // Fri Mar 12 09:42:04 2021
+		},
+		{
 			layout:     time.ANSIC,             // Fri Mar 12 19:49:05 2021
 			wantLayout: "%a %b %e %H:%M:%S %Y", // Fri Mar 12 09:42:04 2021
 		},

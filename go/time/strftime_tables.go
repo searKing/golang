@@ -76,6 +76,7 @@ const (
 	stdNeedEModifier      = 8 << 8             // need to use alternative numeric symbols (say, roman numerals) %Ec, %EC, %Ex, %EX, %Ey, %EY
 	stdNeedOModifier      = 16 << 8            // need to use a locale-dependent alternative representation %Od, %Oe, %OH, %OI, %Om, %OM, %OS, %Ou, %OU, %OV, %Ow, %OW, %Oy
 	stdArgShift           = 16                 // extra argument in high bits, above low stdArgShift
+	stdSeparatorShift     = 28                 // extra argument in high 4 bits for fractional second separators
 	stdMask               = 1<<stdArgShift - 1 // mask out argument
 
 )
