@@ -15,7 +15,7 @@ import (
 var _ sql.Scanner = (*Json[any])(nil)
 var _ driver.Valuer = Json[any]{}
 
-// Json represents an interface that may be null.
+// Json represents an interface that can not be null.
 // Json implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
 type Json[T any] struct {
 	Data T // must be set with a pointer to zero value of expect type
