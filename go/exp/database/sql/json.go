@@ -23,9 +23,9 @@ type Json[T any] struct {
 
 // Scan implements the sql.Scanner interface.
 func (nj *Json[T]) Scan(src any) error {
+	var zeroT T
+	nj.Data = zeroT
 	if src == nil {
-		var zeroT T
-		nj.Data = zeroT
 		return nil
 	}
 
@@ -43,8 +43,6 @@ func (nj *Json[T]) Scan(src any) error {
 		srcBytes, _ := json.Marshal(src)
 		err = json.Unmarshal(srcBytes, &nj.Data)
 	case nil:
-		var zeroT T
-		nj.Data = zeroT
 		err = nil
 	default:
 		srcBytes, _ := json.Marshal(src)
