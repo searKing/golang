@@ -10,7 +10,7 @@ import (
 	"github.com/searKing/golang/go/pragma"
 )
 
-// Map is generic format of Go sync.Map, it is safe for concurrent use
+// Map is a generic wrapper for sync.Map, it is safe for concurrent use
 // by multiple goroutines without additional locking or coordination.
 // Loads, stores, and deletes run in amortized constant time.
 type Map[K comparable, V any] struct {

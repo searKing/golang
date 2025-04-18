@@ -10,7 +10,7 @@ import (
 	"github.com/searKing/golang/go/pragma"
 )
 
-// A Value provides an atomic load and store of value.
+// A Value is a generic wrapper for atomic.Value, which provides an atomic load and store of value.
 // The zero value for a Value returns zero from [Value.Load].
 // Once [Value.Store] has been called, a Value must not be copied.
 //
