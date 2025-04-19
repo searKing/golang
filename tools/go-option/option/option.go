@@ -27,6 +27,7 @@ var (
 	output                  = flag.String("output", "", "output file name; default srcdir/<type>_option.go")
 	flagSkipPrivateFields   = flag.Bool("skip-unexported", false, "skip unexported Fields")
 	flagSkipAnonymousFields = flag.Bool("skip-anonymous", false, "skip anonymous Fields")
+	alias                   = flag.String("alias", "", "alias of the generated constant names")
 	trimPrefix              = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
 	trim                    = flag.Bool("trim", false, "trim type names as prefix from the generated constant names")
 	lineComment             = flag.Bool("linecomment", false, "use line comment text as printed text when present")
@@ -68,6 +69,11 @@ func Main() {
 		os.Exit(3)
 	}
 
+	if len(typs) > 1 && *alias != "" {
+		log.Printf("ignore --alias, as with multiple types")
+		*alias = ""
+	}
+
 	if *optionOnly && *configOnly {
 		flag.Usage()
 		os.Exit(4)
@@ -103,6 +109,7 @@ func Main() {
 	var dir string
 	g := Generator{
 		trimPrefix:  *trimPrefix,
+		alias:       *alias,
 		lineComment: *lineComment,
 	}
 	// TODO(suzmue): accept other patterns for packages (directories, list of files, import paths, etc).
@@ -148,6 +155,7 @@ type Generator struct {
 	pkg *Package     // Package we are scanning.
 
 	trimPrefix  string
+	alias       string
 	lineComment bool
 }
 
@@ -185,8 +193,9 @@ type File struct {
 	typeInfo typeInfo
 	structs  []Struct // Accumulator for constant structs of that type.
 
-	trimPrefix  string
-	lineComment bool
+	trimPrefix          string
+	aliasStructTypeName string
+	lineComment         bool
 }
 
 // Package holds a single parsed package and associated files and ast files.
@@ -239,10 +248,11 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 
 	for i, file := range pkg.Syntax {
 		g.pkg.files[i] = &File{
-			file:        file,
-			pkg:         g.pkg,
-			trimPrefix:  g.trimPrefix,
-			lineComment: g.lineComment,
+			file:                file,
+			pkg:                 g.pkg,
+			trimPrefix:          g.trimPrefix,
+			aliasStructTypeName: g.alias,
+			lineComment:         g.lineComment,
 		}
 	}
 }

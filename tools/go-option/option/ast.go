@@ -137,7 +137,9 @@ func (f *File) genDecl(node ast.Node) bool {
 			StructTypeGenericTypeParams:  FormatTypeParams(tspec.TypeParams),
 			StructTypeImport:             f.typeInfo.Import,
 		}
-		if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
+		if f.aliasStructTypeName != "" {
+			v.trimmedStructTypeName = f.aliasStructTypeName
+		} else if c := tspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
 			v.trimmedStructTypeName = strings.TrimSpace(c.Text())
 		} else {
 			v.trimmedStructTypeName = strings.TrimPrefix(v.StructTypeName, f.trimPrefix)
