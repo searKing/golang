@@ -8,7 +8,6 @@ import (
 	"cmp"
 	"fmt"
 	"io"
-	"reflect"
 )
 
 // Optional represents a Value that may be null.
@@ -25,7 +24,7 @@ func (o Optional[E]) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			_, _ = fmt.Fprintf(s, "null %s: %+v", reflect.TypeOf(o.Value).String(), o.Value)
+			_, _ = fmt.Fprintf(s, "null %T: %+v", o.Value, o.Value)
 			return
 		}
 		fallthrough
