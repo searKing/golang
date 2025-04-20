@@ -70,6 +70,15 @@ func FormatTypeDeclaration(tparams *ast.FieldList) (string, error) {
 		switch expr := tparams.List[i].Type.(type) {
 		case *ast.Ident:
 			buf.WriteString(expr.String())
+		case *ast.SelectorExpr:
+			switch expr := expr.X.(type) {
+			case *ast.Ident:
+				buf.WriteString(expr.String())
+			default:
+				return "", fmt.Errorf("unsupported expression %T", expr)
+			}
+			buf.WriteString(".")
+			buf.WriteString(expr.Sel.String())
 		default:
 			return "", fmt.Errorf("unsupported expression %T", expr)
 		}
