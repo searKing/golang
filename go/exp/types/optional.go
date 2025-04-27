@@ -8,6 +8,7 @@ import (
 	"cmp"
 	"fmt"
 	"io"
+	"reflect"
 )
 
 // Optional represents a Value that may be null.
@@ -46,6 +47,11 @@ func (o Optional[E]) ValueOr(e E) E {
 		return o.Value
 	}
 	return e
+}
+
+// IsZero returns true if the value is not valid or is zero.
+func (o Optional[E]) IsZero() bool {
+	return !o.Valid || reflect.ValueOf(o.Value).IsZero()
 }
 
 func CompareOptional[E cmp.Ordered](a, b Optional[E]) int {

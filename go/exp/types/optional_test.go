@@ -5,6 +5,7 @@
 package types_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"testing"
@@ -145,4 +146,34 @@ func TestCompareOptional(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOptional_IsZero(t *testing.T) {
+	type NonZeroStruct struct {
+		OmitZero  types.Optional[int] `json:"omit_zero,omitzero"`
+		OmitEmpty types.Optional[int] `json:"omit_empty,omitempty"`
+	}
+	tests := []struct {
+		a    NonZeroStruct
+		want string
+	}{
+		{NonZeroStruct{types.Optional[int]{}, types.Optional[int]{}}, `{"omit_empty":{"Value":0,"Valid":false}}`},
+		{NonZeroStruct{types.Opt[int](1), types.Opt[int](1)}, `{"omit_zero":{"Value":1,"Valid":true},"omit_empty":{"Value":1,"Valid":true}}`},
+		{NonZeroStruct{types.Opt[int](0), types.Opt[int](0)}, `{"omit_empty":{"Value":0,"Valid":true}}`},
+	}
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			{
+				data, err := json.Marshal(tt.a)
+				if err != nil {
+					t.Errorf("json.Marshal(%v) err (%v)", tt.a, err)
+				}
+				got := string(data)
+				if got != tt.want {
+					t.Errorf("json.Marshal(%v) got (%v), want (%v)", tt.a, got, tt.want)
+				}
+			}
+		})
+	}
+
 }
