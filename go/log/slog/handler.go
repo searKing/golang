@@ -333,11 +333,22 @@ func (s *handleState) appendNonBuiltIns(r slog.Record) {
 	// If the record has no Attrs, don't output any groups.
 	if r.NumAttrs() > 0 {
 		s.prefix.WriteString(s.h.groupPrefix)
+		// The group may turn out to be empty even though it has attrs (for
+		// example, ReplaceAttr may delete all the attrs).
+		// So remember where we are in the buffer, to restore the position
+		// later if necessary.
+		pos := s.buf.Len()
 		s.openGroups()
+		empty := true
 		r.Attrs(func(a slog.Attr) bool {
-			s.appendAttr(a)
+			if s.appendAttr(a) {
+				empty = false
+			}
 			return true
 		})
+		if empty {
+			s.buf.Truncate(pos)
+		}
 	}
 }
 

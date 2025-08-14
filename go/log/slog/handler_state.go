@@ -106,25 +106,43 @@ func (s *handleState) replaceKey(key string) string {
 	return key
 }
 
+// appendAttrs appends the slice of Attrs.
+// It reports whether something was appended.
+func (s *handleState) appendAttrs(as []slog.Attr) bool {
+	nonEmpty := false
+	for _, a := range as {
+		if s.appendAttr(a) {
+			nonEmpty = true
+		}
+	}
+	return nonEmpty
+}
+
 // appendAttr appends the Attr's key and value using app.
 // It handles replacement and checking for an empty key.
 // after replacement.
-func (s *handleState) appendAttr(a slog.Attr) {
+func (s *handleState) appendAttr(a slog.Attr) bool {
 	a = s.replaceAttr(a)
 	// Elide empty Attrs.
 	if isEmptyAttr(a) {
-		return
+		return false
 	}
 	if a.Value.Kind() == slog.KindGroup {
 		attrs := a.Value.Group()
 		// Output only non-empty groups.
 		if len(attrs) > 0 {
+			// The group may turn out to be empty even though it has attrs (for
+			// example, ReplaceAttr may delete all the attrs).
+			// So remember where we are in the buffer, to restore the position
+			// later if necessary.
+			pos := s.buf.Len()
 			// Inline a group with an empty key.
 			if a.Key != "" {
 				s.openGroup(a.Key)
 			}
-			for _, aa := range attrs {
-				s.appendAttr(aa)
+			if !s.appendAttrs(attrs) {
+				s.buf.Truncate(pos)
+				return false
 			}
 			if a.Key != "" {
 				s.closeGroup(a.Key)
@@ -134,6 +152,7 @@ func (s *handleState) appendAttr(a slog.Attr) {
 		s.appendKey(a.Key)
 		s.appendValue(a.Value)
 	}
+	return true
 }
 
 func (s *handleState) appendError(err error) {
