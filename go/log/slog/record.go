@@ -12,34 +12,6 @@ import (
 	"strings"
 )
 
-// source returns a Source for the log event.
-// If the Record was created without the necessary information,
-// or if the location is unavailable, it returns a non-nil *Source
-// with zero fields.
-func source(r slog.Record) *slog.Source {
-	fs := runtime.CallersFrames([]uintptr{r.PC})
-	f, _ := fs.Next()
-	return &slog.Source{
-		Function: f.Function,
-		File:     f.File,
-		Line:     f.Line,
-	}
-}
-
-// ShortSource returns a Source for the log event.
-// If the Record was created without the necessary information,
-// or if the location is unavailable, it returns a non-nil *Source
-// with zero fields.
-func ShortSource(r slog.Record) *slog.Source {
-	fs := runtime.CallersFrames([]uintptr{r.PC})
-	f, _ := fs.Next()
-	return &slog.Source{
-		Function: shortFunction(f.Function),
-		File:     shortFile(f.File),
-		Line:     f.Line,
-	}
-}
-
 // ShortCallerPrettyfier modify the content of the function and
 // file keys in the data when ReportCaller is activated.
 // INFO[0000] main.go:23 main() hello world

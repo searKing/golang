@@ -306,6 +306,9 @@ func (s *handleState) appendPid(forceGoroutineId bool, humanReadable bool) {
 }
 
 func (s *handleState) appendSource(src *slog.Source, withFuncName bool, humanReadable bool) {
+	if src == nil {
+		src = &slog.Source{}
+	}
 	if withFuncName && src.Function != "" {
 		if humanReadable {
 			s.buf.WriteString(fmt.Sprintf(" [%s:%d](%s)", src.File, src.Line, src.Function))

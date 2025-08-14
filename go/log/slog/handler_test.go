@@ -426,7 +426,11 @@ func TestHandlers(t *testing.T) {
 		},
 	} {
 		r := slog.NewRecord(testTime, slog.LevelInfo, "message", callerPC(2))
-		line := strconv.Itoa(source(r).Line)
+		src := source(r)
+		if src == nil {
+			t.Fatal("source is nil")
+		}
+		line := strconv.Itoa(src.Line)
 		r.AddAttrs(test.attrs...)
 		var buf bytes.Buffer
 		opts := slog.HandlerOptions{ReplaceAttr: test.replace, AddSource: test.addSource}
@@ -512,6 +516,44 @@ func TestHandlerEnabled(t *testing.T) {
 		if got != test.want {
 			t.Errorf("%v: got %t, want %t", test.leveler, got, test.want)
 		}
+	}
+}
+
+func TestHandlersWithUnavailableSource(t *testing.T) {
+	getPid = func() int { return 0 } // set pid to zero for test
+	defer func() { getPid = os.Getpid }()
+	// Verify that a nil source does not cause a panic.
+	// and that the source is empty.
+	var buf bytes.Buffer
+	opts := &slog.HandlerOptions{
+		ReplaceAttr: removeKeys(slog.LevelKey),
+		AddSource:   true,
+	}
+
+	for _, test := range []struct {
+		name string
+		h    slog.Handler
+		want string
+	}{
+		{"text", slog.NewTextHandler(&buf, opts), "msg=message"},
+		{"json", slog.NewJSONHandler(&buf, opts), `{"msg":"message"}`},
+		{"glog", NewGlogHandler(&buf, opts), "00010101 00:00:00.000000 0 ???:0] message"},
+		{"glog_human", NewGlogHumanHandler(&buf, opts), "[][00010101 00:00:00.000000] [0] [???:0] message"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			buf.Reset()
+			r := slog.NewRecord(time.Time{}, slog.LevelInfo, "message", 0)
+			err := test.h.Handle(t.Context(), r)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := strings.TrimSpace(test.want)
+			got := strings.TrimSpace(buf.String())
+			if got != want {
+				t.Errorf("\ngot  %s\nwant %s", got, want)
+			}
+		})
 	}
 }
 
