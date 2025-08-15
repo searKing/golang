@@ -264,19 +264,7 @@ func (h *commonHandler) handle(r slog.Record) error {
 	// level
 	state.appendLevel(r.Level, h.PadLevelText, h.sharedVar.maxLevelText, h.HumanReadable)
 	// time
-	t := r.Time // strip monotonic to match Attr behavior
-	mode := h.TimestampMode
-	if rep != nil {
-		a := rep(nil, slog.Time(slog.TimeKey, r.Time))
-		if a.Equal(slog.Attr{}) {
-			// disable timestamp logging if time is removed.
-			t = time.Time{}
-			mode = DisableTimestamp
-		} else if a.Value.Kind() == slog.KindTime {
-			t = a.Value.Time()
-		}
-	}
-	state.appendGlogTime(t, h.TimestampFormat, mode, h.HumanReadable)
+	state.appendGlogTime(r.Time, h.TimestampFormat, h.TimestampMode, h.HumanReadable, rep)
 	state.appendPid(h.ForceGoroutineId, h.HumanReadable)
 	// source
 	if h.opts.AddSource {

@@ -276,7 +276,17 @@ func (s *handleState) appendLevel(level slog.Level, padLevelText bool, maxLevelT
 	}
 }
 
-func (s *handleState) appendGlogTime(t time.Time, layout string, mode TimestampMode, humanReadable bool) {
+func (s *handleState) appendGlogTime(t time.Time, layout string, mode TimestampMode, humanReadable bool, rep func(groups []string, a slog.Attr) slog.Attr) {
+	if rep != nil {
+		a := rep(nil, slog.Time(slog.TimeKey, t))
+		if a.Equal(slog.Attr{}) {
+			// disable timestamp logging if time is removed.
+			t = time.Time{}
+			mode = DisableTimestamp
+		} else if a.Value.Kind() == slog.KindTime {
+			t = a.Value.Time()
+		}
+	}
 	if mode == DisableTimestamp {
 		return
 	}
