@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -119,27 +118,5 @@ func HttpHandlerDecorators() []http_.HandlerDecorator {
 				handler.ServeHTTP(w, r)
 			})
 		}),
-
-		// Inject "trace_id" and "span_id" into logging fields!
-		http_.HandlerDecoratorFunc(func(handler http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fields := spanFields(trace.SpanFromContext(r.Context()))
-				if len(fields) > 0 {
-					r = r.WithContext(logging.InjectFields(r.Context(), fields))
-				}
-				handler.ServeHTTP(w, r)
-			})
-		}),
 	}
-}
-
-func spanFields(span trace.Span) logging.Fields {
-	var fields logging.Fields
-	if span.SpanContext().HasTraceID() {
-		fields = append(fields, "trace_id", span.SpanContext().TraceID())
-	}
-	if span.SpanContext().HasSpanID() {
-		fields = append(fields, "span_id", span.SpanContext().SpanID())
-	}
-	return fields
 }
