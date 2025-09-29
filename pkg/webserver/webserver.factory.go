@@ -21,6 +21,7 @@ import (
 	"github.com/rs/cors"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/healthz"
+	otel_ "github.com/searKing/golang/pkg/webserver/pkg/otel"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 )
@@ -131,6 +132,10 @@ func (f *Factory) Config() FactoryConfig {
 // New creates a new server which logically combines the handling chain with the passed server.
 // name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delgating.
 func (f *Factory) New() (*WebServer, error) {
+	if f.fc.OtelHandling {
+		slog.SetDefault(slog.New(otel_.NewSlogHandler(slog.Default().Handler())))
+	}
+	
 	f.fc.BindAddress = f.GetBackendBindHostPort()
 	f.fc.ExternalAddress = f.GetBackendServeHostPort(true)
 
