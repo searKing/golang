@@ -17,6 +17,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/stats/opentelemetry"
 
 	http_ "github.com/searKing/golang/go/net/http"
 )
@@ -46,12 +47,23 @@ import (
 
 func DialOptions() []grpc.DialOption {
 	// 2.1) gRPC OutgoingContext<send Req> -> gRPC Req Header
-	return []grpc.DialOption{grpc.WithStatsHandler(otelgrpc.NewClientHandler())}
+	return []grpc.DialOption{grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		opentelemetry.DialOption(opentelemetry.Options{
+			MetricsOptions: opentelemetry.MetricsOptions{
+				MeterProvider: otel.GetMeterProvider(),
+				Metrics:       opentelemetry.DefaultMetrics,
+			},
+		})}
 }
 
 func ServerOptions() []grpc.ServerOption {
 	// 2.2) gRPC Req Header -> IncomingContext<recv Req>
-	return []grpc.ServerOption{grpc.StatsHandler(otelgrpc.NewServerHandler())}
+	return []grpc.ServerOption{grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		opentelemetry.ServerOption(opentelemetry.Options{
+			MetricsOptions: opentelemetry.MetricsOptions{
+				MeterProvider: otel.GetMeterProvider(),
+				Metrics:       opentelemetry.DefaultMetrics,
+			}})}
 }
 
 func tracerHeaderMatcher(key string) (string, bool) {
