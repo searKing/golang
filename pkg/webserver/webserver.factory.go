@@ -21,9 +21,11 @@ import (
 	"github.com/rs/cors"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/healthz"
+	encoding_ "github.com/searKing/golang/pkg/webserver/pkg/encoding"
 	otel_ "github.com/searKing/golang/pkg/webserver/pkg/otel"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
+	"google.golang.org/grpc/encoding"
 )
 
 // ClientMaxReceiveMessageSize use 4GB as the default message size limit.
@@ -135,7 +137,7 @@ func (f *Factory) New() (*WebServer, error) {
 	if f.fc.OtelHandling {
 		slog.SetDefault(slog.New(otel_.NewSlogHandler(slog.Default().Handler())))
 	}
-	
+
 	f.fc.BindAddress = f.GetBackendBindHostPort()
 	f.fc.ExternalAddress = f.GetBackendServeHostPort(true)
 
@@ -154,6 +156,8 @@ func (f *Factory) New() (*WebServer, error) {
 		f.fc.ExternalAddress = net.JoinHostPort(f.fc.ExternalAddress, port)
 	}
 
+	// support json codec for grpc
+	encoding.RegisterCodec(encoding_.NewJSONPb())
 	opts := grpc_.WithDefault()
 	{
 		// connection options
