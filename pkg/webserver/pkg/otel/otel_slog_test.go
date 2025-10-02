@@ -112,8 +112,8 @@ func TestOtelSlogHandler_PreservesExistingTraceID(t *testing.T) {
 	}
 }
 
-func TestSetDefault(t *testing.T) {
-	// Verify that setting the default to itself does not result in deadlock.
+func TestSetDefaultDeadlock(t *testing.T) {
+	// Verify that setting the default to otel slog does not result in deadlock.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	defer func(w io.Writer) { log.SetOutput(w) }(log.Writer())
@@ -121,7 +121,7 @@ func TestSetDefault(t *testing.T) {
 	go func() {
 		slog.Info("A")
 		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
-		// deadlock if replace as follows:
+		// deadlock happens if replace as follows:
 		//slog.SetDefault(slog.New(otel_.NewSlogHandler(slog.Default().Handler())))
 		slog.Info("B")
 		cancel()
