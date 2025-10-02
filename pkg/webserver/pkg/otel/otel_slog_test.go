@@ -6,9 +6,15 @@ package otel_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"log"
 	"log/slog"
+	"os"
 	"testing"
+	"time"
 
 	otel_ "github.com/searKing/golang/pkg/webserver/pkg/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -103,5 +109,25 @@ func TestOtelSlogHandler_PreservesExistingTraceID(t *testing.T) {
 
 	if _, ok := logEntry["span_id"]; ok {
 		t.Error("Should not add span_id when trace_id already exists")
+	}
+}
+
+func TestSetDefault(t *testing.T) {
+	// Verify that setting the default to itself does not result in deadlock.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	defer func(w io.Writer) { log.SetOutput(w) }(log.Writer())
+	log.SetOutput(io.Discard)
+	go func() {
+		slog.Info("A")
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+		// deadlock if replace as follows:
+		//slog.SetDefault(slog.New(otel_.NewSlogHandler(slog.Default().Handler())))
+		slog.Info("B")
+		cancel()
+	}()
+	<-ctx.Done()
+	if err := ctx.Err(); !errors.Is(err, context.Canceled) {
+		t.Errorf("wanted canceled, got %v", err)
 	}
 }
