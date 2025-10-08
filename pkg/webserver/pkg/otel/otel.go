@@ -50,7 +50,7 @@ func DialOptions() []grpc.DialOption {
 		opentelemetry.DialOption(opentelemetry.Options{
 			MetricsOptions: opentelemetry.MetricsOptions{
 				MeterProvider: otel.GetMeterProvider(),
-				Metrics:       opentelemetry.DefaultMetrics,
+				Metrics:       opentelemetry.DefaultMetrics(),
 			},
 		})}
 }
@@ -61,7 +61,7 @@ func ServerOptions() []grpc.ServerOption {
 		opentelemetry.ServerOption(opentelemetry.Options{
 			MetricsOptions: opentelemetry.MetricsOptions{
 				MeterProvider: otel.GetMeterProvider(),
-				Metrics:       opentelemetry.DefaultMetrics,
+				Metrics:       opentelemetry.DefaultMetrics(),
 			}})}
 }
 
