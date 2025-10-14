@@ -54,6 +54,7 @@ func isEmptyAttr(a slog.Attr) bool {
 func ReplaceAttrTruncate(n int) func(groups []string, a slog.Attr) slog.Attr {
 	return func(groups []string, a slog.Attr) slog.Attr {
 		if n > 0 {
+			a.Value = a.Value.Resolve()
 			k := truncate(a.Key, n)
 			switch a.Value.Kind() {
 			case slog.KindString:
