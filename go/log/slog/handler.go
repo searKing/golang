@@ -269,9 +269,9 @@ func (h *commonHandler) handle(r slog.Record) error {
 	// source
 	if h.opts.AddSource {
 		if h.SourcePrettier != nil {
-			state.appendSource(h.SourcePrettier(r), h.WithFuncName, h.HumanReadable)
+			state.appendSource(h.SourcePrettier(r), h.WithFuncName, h.HumanReadable, rep)
 		} else {
-			state.appendSource(source(r), h.WithFuncName, h.HumanReadable)
+			state.appendSource(source(r), h.WithFuncName, h.HumanReadable, rep)
 		}
 	} else {
 		if !h.HumanReadable {
