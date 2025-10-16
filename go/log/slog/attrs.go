@@ -67,6 +67,23 @@ func ReplaceAttrTruncate(n int) func(groups []string, a slog.Attr) slog.Attr {
 	}
 }
 
+// ReplaceAttrShortSource returns [ReplaceAttr] which shortens source's function and file.
+func ReplaceAttrShortSource() func(groups []string, s slog.Attr) slog.Attr {
+	return func(groups []string, a slog.Attr) slog.Attr {
+		// Remove the directory from the source's filename.
+		if a.Key == slog.SourceKey {
+			if src, ok := a.Value.Any().(*slog.Source); ok {
+				if isSourceEmpty(src) {
+					return a
+				}
+				src.Function = shortFunction(src.Function)
+				src.File = shortFile(src.File)
+			}
+		}
+		return a
+	}
+}
+
 // ReplaceAttrKeys allows customization of the key names for default fields.
 type ReplaceAttrKeys map[string]string
 
@@ -125,3 +142,6 @@ func truncate(s string, n int) string {
 	buf.WriteString(strings_.Truncate(s, n))
 	return buf.String()
 }
+
+// isSourceEmpty returns whether the Source struct is nil or only contains zero fields.
+func isSourceEmpty(s *slog.Source) bool { return s == nil || *s == slog.Source{} }
