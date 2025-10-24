@@ -99,7 +99,6 @@ func HttpHandlerDecorators(opts ...otelhttp.Option) []http_.HandlerDecorator {
 			// With Noop TracerProvider, the otelhttp still handles context propagation.
 			// See https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/examples/passthrough
 			os := []otelhttp.Option{
-				otelhttp.WithPublicEndpoint(),
 				otelhttp.WithMeterProvider(otel.GetMeterProvider()),
 				otelhttp.WithTracerProvider(otel.GetTracerProvider()),
 				otelhttp.WithPropagators(otel.GetTextMapPropagator()),
