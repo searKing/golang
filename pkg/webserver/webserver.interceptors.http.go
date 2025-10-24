@@ -6,12 +6,15 @@ package webserver
 
 import (
 	"github.com/rs/cors"
+	"github.com/searKing/golang/pkg/webserver/pkg/recovery"
 
 	http_ "github.com/searKing/golang/go/net/http"
 	"github.com/searKing/golang/pkg/webserver/pkg/otel"
 )
 
 func (f *Factory) HttpHandlerDecorators(decorators ...http_.HandlerDecorator) []http_.HandlerDecorator {
+	// recovery
+	decorators = append(decorators, recovery.HttpHandlerDecorator())
 	// otel
 	if f.fc.OtelHandling {
 		decorators = append(decorators, otel.HttpHandlerDecorators()...)
