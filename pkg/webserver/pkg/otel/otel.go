@@ -83,7 +83,7 @@ func ServeMuxOptions() []runtime.ServeMuxOption {
 }
 
 // HttpHandlerDecorators adds metrics and tracing to requests if the incoming request is sampled.
-func HttpHandlerDecorators() []http_.HandlerDecorator {
+func HttpHandlerDecorators(opts ...otelhttp.Option) []http_.HandlerDecorator {
 	return []http_.HandlerDecorator{
 
 		// 1.1) HTTP Req Header -> Context<send or recv Req>
@@ -98,7 +98,7 @@ func HttpHandlerDecorators() []http_.HandlerDecorator {
 			})
 			// With Noop TracerProvider, the otelhttp still handles context propagation.
 			// See https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/examples/passthrough
-			return otelhttp.NewHandler(wrappedHandler, "gRPC-Gateway",
+			os := []otelhttp.Option{
 				otelhttp.WithPublicEndpoint(),
 				otelhttp.WithMeterProvider(otel.GetMeterProvider()),
 				otelhttp.WithTracerProvider(otel.GetTracerProvider()),
@@ -108,7 +108,10 @@ func HttpHandlerDecorators() []http_.HandlerDecorator {
 						operation = "HTTP"
 					}
 					return operation + " " + r.Method + " " + r.URL.Path
-				}))
+				}),
+			}
+			os = append(os, opts...)
+			return otelhttp.NewHandler(wrappedHandler, "gRPC-Gateway", os...)
 		}),
 
 		// 3.1) HTTP Req Context -> gRPC Req Header

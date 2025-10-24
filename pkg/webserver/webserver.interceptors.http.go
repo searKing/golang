@@ -17,7 +17,7 @@ func (f *Factory) HttpHandlerDecorators(decorators ...http_.HandlerDecorator) []
 	decorators = append(decorators, recovery.HttpHandlerDecorator())
 	// otel
 	if f.fc.OtelHandling {
-		decorators = append(decorators, otel.HttpHandlerDecorators()...)
+		decorators = append(decorators, otel.HttpHandlerDecorators(f.fc.OtelHttpOptions...)...)
 	}
 
 	// cors
