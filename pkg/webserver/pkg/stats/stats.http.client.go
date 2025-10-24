@@ -18,13 +18,13 @@ func NewHttpClientTrace(ctx context.Context) *httptrace.ClientTrace {
 	logger := slog.With(logging.Attrs[any](ctx)...)
 	return &httptrace.ClientTrace{
 		GetConn: func(hostPort string) {
-			logger.Info(fmt.Sprintf("HTTP Client Get Conn to %s", hostPort))
+			logger.InfoContext(ctx, fmt.Sprintf("HTTP Client Get Conn to %s", hostPort))
 		},
 		GotConn: func(connInfo httptrace.GotConnInfo) {
-			logger.Info(fmt.Sprintf("HTTP Client Got Conn from %s to %s", connInfo.Conn.LocalAddr(), connInfo.Conn.RemoteAddr()))
+			logger.InfoContext(ctx, fmt.Sprintf("HTTP Client Got Conn from %s to %s", connInfo.Conn.LocalAddr(), connInfo.Conn.RemoteAddr()))
 		},
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-			logger.Info(fmt.Sprintf("HTTP Client Dns Done: %+v", dnsInfo))
+			logger.InfoContext(ctx, fmt.Sprintf("HTTP Client Dns Done: %+v", dnsInfo))
 		},
 	}
 }
