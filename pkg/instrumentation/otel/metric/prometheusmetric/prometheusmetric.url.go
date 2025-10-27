@@ -8,6 +8,7 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/prometheus/otlptranslator"
 	slices_ "github.com/searKing/golang/go/exp/slices"
 	"go.opentelemetry.io/otel/attribute"
 	prometheusmetric "go.opentelemetry.io/otel/exporters/prometheus"
@@ -104,6 +105,13 @@ func parsePrometheusOpts(q url.Values, opts ...prometheusmetric.Option) ([]prome
 			opts = append(opts, prometheusmetric.WithoutUnits())
 		}
 		q.Del("no_units")
+	}
+	{
+		ts := q.Get("translation_strategy")
+		if ts != "" {
+			opts = append(opts, prometheusmetric.WithTranslationStrategy(otlptranslator.TranslationStrategyOption(ts)))
+		}
+		q.Del("translation_strategy")
 	}
 	return opts, nil
 }
