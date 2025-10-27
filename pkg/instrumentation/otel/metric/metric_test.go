@@ -37,7 +37,7 @@ func TestNewMeterProvider(t *testing.T) {
 	//otel.SetLogger(stdr.New(slog.NewLogLogger(slog.Default().Handler(), slog.LevelWarn)))
 	mp, err := metric_.NewMeterProvider(ctx, metric_.WithOptionExporterEndpoints(
 		"stdout://localhost?allow_stdout&pretty_print&no_timestamps",
-		"prometheus://localhost?deny_keys=[]",
+		"prometheus://localhost",
 		//`otlp-http://some_endpoint/some_path?compression=gzip&insecure`,
 		//`otlp-grpc://some_endpoint/some_path?compression=gzip&insecure`,
 	), metric_.WithOptionResourceAttrs())

@@ -19,7 +19,7 @@ import (
 // URLOpener opens stdout Metric URLs like "http://localhost?allow_stdout&pretty_print&no_timestamps".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenExporter.
-	Option option
+	Options []Option
 }
 
 // Scheme returns the scheme supported by this trace exporter.
@@ -31,11 +31,15 @@ func (o *URLOpener) OpenExporterURL(ctx context.Context, u *url.URL) (sdktrace.S
 	u.RawQuery = ""
 	u.RawFragment = ""
 
-	stdoutOpts, err := parseStdoutOpts(q, o.Option.StdoutOptions...)
-	if err != nil {
-		return nil, err
+	opts := o.Options
+	{
+		stdoutOpts, err := parseStdoutOpts(q)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, WithOptionStdoutOptions(stdoutOpts...))
 	}
-	return OpenExporter(ctx, WithOptionStdoutOptions(stdoutOpts...))
+	return OpenExporter(ctx, opts...)
 }
 
 func parseStdoutOpts(q url.Values, opts ...stdouttrace.Option) ([]stdouttrace.Option, error) {

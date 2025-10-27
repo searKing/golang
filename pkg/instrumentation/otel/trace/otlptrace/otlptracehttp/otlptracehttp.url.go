@@ -8,18 +8,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
+	url_ "github.com/searKing/golang/pkg/instrumentation/otel/url"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
-	url_ "github.com/searKing/golang/pkg/instrumentation/otel/url"
 )
 
 // URLOpener opens OTLP Trace HTTP URLs like "otlp-http://endpoint".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenExporter.
-	Option option
+	Options []Option
 }
 
 // Scheme returns the scheme supported by this trace exporter.
@@ -38,17 +38,20 @@ func (o *URLOpener) OpenExporterURL(ctx context.Context, u *url.URL) (sdktrace.S
 		}
 		u.Scheme = scheme
 	}
-
-	var otlpOpts []otlptracehttp.Option
-	otlpOpts = append(otlpOpts, otlptracehttp.WithEndpointURL(u.String()))
+	opts := o.Options
 	{
-		opts, err := parseOtlpOpts(q, o.Option.OtlpOptions...)
-		if err != nil {
-			return nil, err
+		var otlpOpts []otlptracehttp.Option
+		otlpOpts = append(otlpOpts, otlptracehttp.WithEndpointURL(u.String()))
+		{
+			opts, err := parseOtlpOpts(q)
+			if err != nil {
+				return nil, err
+			}
+			otlpOpts = append(otlpOpts, opts...)
 		}
-		otlpOpts = append(otlpOpts, opts...)
+		opts = append(opts, WithOptionOtlpOptions(otlpOpts...))
 	}
-	return OpenExporter(ctx, WithOptionOtlpOptions(otlpOpts...))
+	return OpenExporter(ctx, opts...)
 }
 
 func parseScheme(q url.Values) (scheme string, err error) {
@@ -78,6 +81,17 @@ func parseOtlpOpts(q url.Values, opts ...otlptracehttp.Option) ([]otlptracehttp.
 			return nil, fmt.Errorf("unknown quary parameter compression: %s", v)
 		}
 		q.Del("compression")
+	}
+	{
+		b, err := url_.ParseBoolFromValues(q, "no_proxy")
+		if err != nil {
+			return nil, err
+		}
+		if b {
+			// No Proxy
+			opts = append(opts, otlptracehttp.WithProxy(func(_ *http.Request) (*url.URL, error) { return nil, nil }))
+		}
+		q.Del("no_proxy")
 	}
 	{
 		v := q["headers"]
