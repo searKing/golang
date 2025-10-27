@@ -20,7 +20,7 @@ import (
 // URLOpener opens Prometheus Metric URLs like "http://endpoint?deny_keys=[]".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenReader.
-	Option option
+	Options []Option
 }
 
 // Scheme returns the scheme supported by this metric.
@@ -28,12 +28,12 @@ func (o *URLOpener) Scheme() string { return "prometheus" }
 
 // OpenReaderURL opens a metric.Exporter based on u.
 func (o *URLOpener) OpenReaderURL(ctx context.Context, u *url.URL) (sdkmetric.Reader, error) {
-	var opts []Option
+	opts := o.Options
 	q := u.Query()
 	u.RawQuery = ""
 	u.RawFragment = ""
 	{
-		prometheusOpts, err := parsePrometheusOpts(q, o.Option.PrometheusOptions...)
+		prometheusOpts, err := parsePrometheusOpts(q)
 		if err != nil {
 			return nil, err
 		}
@@ -43,8 +43,6 @@ func (o *URLOpener) OpenReaderURL(ctx context.Context, u *url.URL) (sdkmetric.Re
 }
 
 func parsePrometheusOpts(q url.Values, opts ...prometheusmetric.Option) ([]prometheusmetric.Option, error) {
-	opts = append(opts, prometheusmetric.WithResourceAsConstantLabels(attribute.NewDenyKeysFilter()))
-
 	{
 		ns := q.Get("namespace")
 		if ns != "" {

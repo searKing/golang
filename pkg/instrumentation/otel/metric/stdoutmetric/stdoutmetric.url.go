@@ -19,7 +19,7 @@ import (
 // URLOpener opens stdout Metric URLs like "http://localhost?allow_stdout&pretty_print&no_timestamps&periodic_reader_interval=60s".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenReaderURL.
-	Option option
+	Options []Option
 }
 
 // Scheme returns the scheme supported by this metric.
@@ -31,16 +31,16 @@ func (o *URLOpener) OpenReaderURL(ctx context.Context, u *url.URL) (sdkmetric.Re
 	u.RawQuery = ""
 	u.RawFragment = ""
 
-	var opts []Option
+	opts := o.Options
 	{
-		stdoutOpts, err := parseStdoutOpts(q, o.Option.StdoutOptions...)
+		stdoutOpts, err := parseStdoutOpts(q)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, WithOptionStdoutOptions(stdoutOpts...))
 	}
 	{
-		readerOpts, err := parseReaderOpts(q, o.Option.PeriodicReaderOptions...)
+		readerOpts, err := parseReaderOpts(q)
 		if err != nil {
 			return nil, err
 		}

@@ -18,7 +18,7 @@ import (
 // URLOpener opens OTLP Trace gRPC URLs like "http://endpoint:4317?compression=gzip".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenExporter.
-	Option option
+	Options []Option
 }
 
 // Scheme returns the scheme supported by this trace exporter.
@@ -37,17 +37,20 @@ func (o *URLOpener) OpenExporterURL(ctx context.Context, u *url.URL) (sdktrace.S
 		}
 		u.Scheme = scheme
 	}
-
-	var otlpOpts []otlptracegrpc.Option
-	otlpOpts = append(otlpOpts, otlptracegrpc.WithEndpointURL(u.String()))
+	opts := o.Options
 	{
-		opts, err := parseOtlpOpts(q, o.Option.OtlpOptions...)
-		if err != nil {
-			return nil, err
+		var otlpOpts []otlptracegrpc.Option
+		otlpOpts = append(otlpOpts, otlptracegrpc.WithEndpointURL(u.String()))
+		{
+			opts, err := parseOtlpOpts(q)
+			if err != nil {
+				return nil, err
+			}
+			otlpOpts = append(otlpOpts, opts...)
 		}
-		otlpOpts = append(otlpOpts, opts...)
+		opts = append(opts, WithOptionOtlpOptions(otlpOpts...))
 	}
-	return OpenExporter(ctx, WithOptionOtlpOptions(otlpOpts...))
+	return OpenExporter(ctx, opts...)
 }
 
 func parseScheme(q url.Values) (scheme string, err error) {

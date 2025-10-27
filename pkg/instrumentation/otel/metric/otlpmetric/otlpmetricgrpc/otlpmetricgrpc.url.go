@@ -19,7 +19,7 @@ import (
 // URLOpener opens OTLP Metric gRPC URLs like "http://endpoint:4317?compression=gzip&temporality_selector=delta".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenExporter.
-	Option option
+	Options []Option
 }
 
 // Scheme returns the scheme supported by this metric.
@@ -39,7 +39,7 @@ func (o *URLOpener) OpenReaderURL(ctx context.Context, u *url.URL) (sdkmetric.Re
 		u.Scheme = scheme
 	}
 
-	var opts []Option
+	opts := o.Options
 	{
 		var otlpOpts []otlpmetricgrpc.Option
 		otlpOpts = append(otlpOpts, otlpmetricgrpc.WithEndpointURL(u.String()))
