@@ -11,6 +11,7 @@ import (
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/grpc"
 
 	url_ "github.com/searKing/golang/pkg/instrumentation/otel/url"
 )
@@ -80,6 +81,16 @@ func parseOtlpOpts(q url.Values, opts ...otlptracegrpc.Option) ([]otlptracegrpc.
 			return nil, fmt.Errorf("unknown quary parameter compression: %s", v)
 		}
 		q.Del("compression")
+	}
+	{
+		b, err := url_.ParseBoolFromValues(q, "no_proxy")
+		if err != nil {
+			return nil, err
+		}
+		if b {
+			opts = append(opts, otlptracegrpc.WithDialOption(grpc.WithNoProxy()))
+		}
+		q.Del("no_proxy")
 	}
 	return opts, nil
 }

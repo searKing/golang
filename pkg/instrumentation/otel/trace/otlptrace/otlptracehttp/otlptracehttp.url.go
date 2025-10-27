@@ -8,12 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
+	url_ "github.com/searKing/golang/pkg/instrumentation/otel/url"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
-	url_ "github.com/searKing/golang/pkg/instrumentation/otel/url"
 )
 
 // URLOpener opens OTLP Trace HTTP URLs like "otlp-http://endpoint".
@@ -81,6 +81,17 @@ func parseOtlpOpts(q url.Values, opts ...otlptracehttp.Option) ([]otlptracehttp.
 			return nil, fmt.Errorf("unknown quary parameter compression: %s", v)
 		}
 		q.Del("compression")
+	}
+	{
+		b, err := url_.ParseBoolFromValues(q, "no_proxy")
+		if err != nil {
+			return nil, err
+		}
+		if b {
+			// No Proxy
+			opts = append(opts, otlptracehttp.WithProxy(func(_ *http.Request) (*url.URL, error) { return nil, nil }))
+		}
+		q.Del("no_proxy")
 	}
 	{
 		v := q["headers"]
