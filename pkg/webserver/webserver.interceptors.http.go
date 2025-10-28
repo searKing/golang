@@ -13,14 +13,15 @@ import (
 )
 
 func (f *Factory) HttpHandlerDecorators(decorators ...http_.HandlerDecorator) []http_.HandlerDecorator {
+	var s []http_.HandlerDecorator
 	// recovery
-	decorators = append(decorators, recovery.HttpHandlerDecorator())
+	s = append(s, recovery.HttpHandlerDecorator())
 	// otel
 	if f.fc.OtelHandling {
-		decorators = append(decorators, otel.HttpHandlerDecorators(f.fc.OtelHttpOptions...)...)
+		s = append(s, otel.HttpHandlerDecorators(f.fc.OtelHttpOptions...)...)
 	}
 
 	// cors
-	decorators = append(decorators, http_.HandlerDecoratorFunc(cors.New(f.fc.Cors).Handler))
-	return decorators
+	s = append(s, http_.HandlerDecoratorFunc(cors.New(f.fc.Cors).Handler))
+	return append(s, decorators...)
 }

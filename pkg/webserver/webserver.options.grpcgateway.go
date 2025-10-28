@@ -11,8 +11,9 @@ import (
 )
 
 func (f *Factory) ServeMuxOptions(opts ...runtime.ServeMuxOption) []runtime.ServeMuxOption {
+	var s []runtime.ServeMuxOption
 	if f.fc.OtelHandling {
-		opts = append(opts, otel.ServeMuxOptions()...)
+		s = append(s, otel.ServeMuxOptions()...)
 	}
-	return opts
+	return append(s, opts...)
 }

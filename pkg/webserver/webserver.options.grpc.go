@@ -13,41 +13,43 @@ import (
 )
 
 func (f *Factory) ServerOptions(opts ...grpc.ServerOption) []grpc.ServerOption {
+	var s []grpc.ServerOption
 	if f.fc.MaxReceiveMessageSizeInBytes > 0 {
-		opts = append(opts, grpc.MaxRecvMsgSize(f.fc.MaxReceiveMessageSizeInBytes))
+		s = append(s, grpc.MaxRecvMsgSize(f.fc.MaxReceiveMessageSizeInBytes))
 	} else {
-		opts = append(opts, grpc.MaxRecvMsgSize(defaultMaxReceiveMessageSize))
+		s = append(s, grpc.MaxRecvMsgSize(defaultMaxReceiveMessageSize))
 	}
 	if f.fc.StatsHandling {
 		// log for the related stats handling (e.g., RPCs, connections).
-		opts = append(opts, grpc.StatsHandler(&stats.ServerHandler{}))
+		s = append(s, grpc.StatsHandler(&stats.ServerHandler{}))
 	}
 	if f.fc.OtelHandling {
-		opts = append(opts, otel.ServerOptions()...)
+		s = append(s, otel.ServerOptions()...)
 	}
-	return opts
+	return append(s, opts...)
 }
 
 func (f *Factory) DialOptions(opts ...grpc.DialOption) []grpc.DialOption {
+	var s []grpc.DialOption
 	if f.fc.NoGrpcProxy {
-		opts = append(opts, grpc.WithNoProxy())
+		s = append(s, grpc.WithNoProxy())
 	}
 	if !f.fc.ForceDisableTls {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		s = append(s, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	if f.fc.MaxReceiveMessageSizeInBytes > 0 {
-		opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(f.fc.MaxReceiveMessageSizeInBytes), grpc.MaxCallSendMsgSize(f.fc.MaxReceiveMessageSizeInBytes)))
+		s = append(s, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(f.fc.MaxReceiveMessageSizeInBytes), grpc.MaxCallSendMsgSize(f.fc.MaxReceiveMessageSizeInBytes)))
 	} else {
-		opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMaxReceiveMessageSize), grpc.MaxCallSendMsgSize(defaultMaxSendMessageSize)))
+		s = append(s, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMaxReceiveMessageSize), grpc.MaxCallSendMsgSize(defaultMaxSendMessageSize)))
 	}
 	if f.fc.StatsHandling {
 		// log for the related stats handling (e.g., RPCs, connections).
-		opts = append(opts, grpc.WithStatsHandler(&stats.ClientHandler{}))
+		s = append(s, grpc.WithStatsHandler(&stats.ClientHandler{}))
 	}
 	if f.fc.OtelHandling {
-		opts = append(opts, otel.DialOptions()...)
+		s = append(s, otel.DialOptions()...)
 	}
-	opts = append(opts, grpc.WithChainUnaryInterceptor(f.UnaryClientInterceptors()...))
-	opts = append(opts, grpc.WithChainStreamInterceptor(f.StreamClientInterceptors()...))
-	return opts
+	s = append(s, grpc.WithChainUnaryInterceptor(f.UnaryClientInterceptors()...))
+	s = append(s, grpc.WithChainStreamInterceptor(f.StreamClientInterceptors()...))
+	return append(s, opts...)
 }
