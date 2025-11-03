@@ -4,6 +4,11 @@
 
 package slices
 
+import (
+	"iter"
+	"slices"
+)
+
 // Split slices s into all subslices separated by sep and returns a slice of
 // the subslices between those separators.
 //
@@ -115,4 +120,19 @@ func SplitMap[M ~map[K]V, S ~[]E, K comparable, V any, E any](s S) M {
 		}
 	}
 	return m
+}
+
+// SplitSeq returns an iterator over consecutive sub-slices of up to n elements of s.
+// All but the last sub-slice will have size n.
+// All sub-slices are clipped to have no capacity beyond the length.
+// If s is empty, the sequence is empty: there is no empty slice in the sequence.
+// If sep is less than or equal to zero, SplitSeq splits after each element, as chunk size is 1.
+//
+// It is equivalent to Split in iter.Seq format.
+// It is equivalent to [slices.Chunk], but handles negative and zero separator values by treating them as 1.
+func SplitSeq[S ~[]E, E any](s S, sep int) iter.Seq[S] {
+	if sep <= 0 {
+		sep = 1
+	}
+	return slices.Chunk(s, sep)
 }
