@@ -5,12 +5,15 @@
 package slog
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/searKing/golang/go/log/slog/internal/buffer"
 	strings_ "github.com/searKing/golang/go/strings"
 )
 
@@ -50,21 +53,125 @@ func isEmptyAttr(a slog.Attr) bool {
 	}
 }
 
+// WalkAttrFunc is a function type for processing slog.Attr.
+// It receives an attribute and returns the processed attribute.
+// Can be used to modify, filter, or transform attribute values.
+type WalkAttrFunc func(slog.Attr) slog.Attr
+
+// WalkAttr recursively walks through the attribute tree and applies walkFn to each attribute.
+//
+// Processing steps:
+//  1. Resolves the attribute value first (handles lazy LogValuer evaluation)
+//  2. If it's a Group type, recursively processes all attributes within the group
+//  3. Applies walkFn to each attribute (including the group itself)
+//
+// Example:
+//
+//	// Redact sensitive fields
+//	sanitized := WalkAttr(attr, func(a slog.Attr) slog.Attr {
+//	    if a.Key == "password" {
+//	        return slog.String(a.Key, "[REDACTED]")
+//	    }
+//	    return a
+//	})
+func WalkAttr(attr slog.Attr, walkFn WalkAttrFunc) (tattr slog.Attr) {
+	attr.Value = attr.Value.Resolve()
+	switch v := attr.Value; v.Kind() {
+	case slog.KindGroup:
+		attrs := v.Group()
+		as := make([]any, 0, len(attrs))
+		for _, a := range attrs {
+			as = append(as, WalkAttr(a, walkFn))
+		}
+		return walkFn(slog.Group(attr.Key, as...))
+	default:
+		return walkFn(attr)
+	}
+}
+
 // ReplaceAttrTruncate returns [ReplaceAttr] which shrinks attr's key and value[string]'s len to n at most.
 func ReplaceAttrTruncate(n int) func(groups []string, a slog.Attr) slog.Attr {
 	return func(groups []string, a slog.Attr) slog.Attr {
-		if n > 0 {
-			a.Value = a.Value.Resolve()
-			k := truncate(a.Key, n)
-			switch a.Value.Kind() {
-			case slog.KindString:
-				return slog.String(k, truncate(a.Value.String(), n))
-			default:
-				return a
-			}
-		}
-		return a
+		return truncateAttr(a, n, nil)
 	}
+}
+
+func ReplaceAttrJsonTruncate(n int) func(groups []string, a slog.Attr) slog.Attr {
+	return func(groups []string, a slog.Attr) slog.Attr {
+		return truncateAttr(a, n, truncateAttrAny(true))
+	}
+}
+
+func ReplaceAttrTextTruncate(n int) func(groups []string, a slog.Attr) slog.Attr {
+	return func(groups []string, a slog.Attr) slog.Attr {
+		return truncateAttr(a, n, truncateAttrAny(false))
+	}
+}
+
+func truncateAttrAny(isJson bool) func(attr slog.Attr, n int) slog.Attr {
+	return func(attr slog.Attr, n int) slog.Attr {
+		if n <= 0 {
+			return attr
+		}
+		k, v := attr.Key, attr.Value
+		a := v.Any()
+		_, jm := a.(json.Marshaler)
+		if err, ok := a.(error); ok && !jm {
+			return slog.String(k, err.Error())
+		} else {
+			var b buffer.Buffer
+			var err error
+			if isJson {
+				err = b.AppendJSONMarshal(a)
+			} else {
+				err = b.AppendTextMarshal(a)
+			}
+			if err != nil {
+				return slog.String(k, fmt.Sprintf("!ERROR:%v", err))
+			}
+			if len(b.Bytes()) > n {
+				return slog.String(k, truncate(b.String(), n))
+			}
+			return attr
+		}
+	}
+}
+
+func truncateAttr(attr slog.Attr, n int, truncateAttrAny func(slog.Attr, int) slog.Attr) (tattr slog.Attr) {
+	if n <= 0 {
+		return attr
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			// If it panics with a nil pointer, the most likely cases are
+			// an encoding.TextMarshaler or error fails to guard against nil,
+			// in which case "<nil>" seems to be the feasible choice.
+			//
+			// Adapted from the code in fmt/print.go.
+			v := attr.Value
+			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
+				tattr = slog.String(attr.Key, "<nil>")
+				return
+			}
+
+			// Otherwise just print the original panic message.
+			tattr = slog.String(attr.Key, fmt.Sprintf("!PANIC: %v", r))
+		}
+	}()
+	return WalkAttr(attr, func(a slog.Attr) slog.Attr {
+		attr.Key = truncate(attr.Key, n)
+		switch v := attr.Value; v.Kind() {
+		case slog.KindString:
+			return slog.String(attr.Key, truncate(v.String(), n))
+		case slog.KindAny:
+			if truncateAttrAny != nil {
+				return truncateAttrAny(attr, n)
+			}
+			return attr
+		default:
+			return attr
+		}
+	})
 }
 
 // ReplaceAttrShortSource returns [ReplaceAttr] which shortens source's function and file.

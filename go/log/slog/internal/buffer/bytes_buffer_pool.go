@@ -6,7 +6,11 @@ package buffer
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/json"
+	"fmt"
+	"reflect"
+	"strconv"
 	"sync"
 )
 
@@ -73,4 +77,37 @@ func (b *Buffer) AppendJSONMarshal(v any) error {
 	bs := bb.Bytes()
 	b.Write(bs[:len(bs)-1]) // remove final newline
 	return nil
+}
+
+// AppendTextMarshal writes string represents v to the buffer.
+func (b *Buffer) AppendTextMarshal(v any) error {
+	if tm, ok := v.(encoding.TextMarshaler); ok {
+		data, err := tm.MarshalText()
+		if err != nil {
+			return err
+		}
+		b.Write(data)
+		return nil
+	}
+	if bs, ok := byteSlice(v); ok {
+		b.WriteString(strconv.Quote(string(bs)))
+		return nil
+	}
+	b.WriteString(fmt.Sprintf("%+v", v))
+	return nil
+}
+
+// byteSlice returns its argument as a []byte if the argument's
+// underlying type is []byte, along with a second return value of true.
+// Otherwise it returns nil, false.
+func byteSlice(a any) ([]byte, bool) {
+	if bs, ok := a.([]byte); ok {
+		return bs, true
+	}
+	// Like Printf's %s, we allow both the slice type and the byte element type to be named.
+	t := reflect.TypeOf(a)
+	if t != nil && t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8 {
+		return reflect.ValueOf(a).Bytes(), true
+	}
+	return nil, false
 }
