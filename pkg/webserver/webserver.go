@@ -192,7 +192,7 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 		err := s.grpcBackend.Shutdown(ctx)
 		msg := fmt.Sprintf("Have shutdown http server on %s", s.grpcBackend.BindAddr())
 		if err != nil {
-			slog.With(slog_.Error(err)).Error(msg)
+			slog.With(slog_.Error(err)).ErrorContext(ctx, msg)
 			return
 		}
 		slog.Info(msg)
@@ -223,7 +223,7 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 			slog.Info(msg)
 			return
 		}
-		slog.With(slog_.Error(err)).Error(msg)
+		slog.With(slog_.Error(err)).ErrorContext(ctx, msg)
 	}()
 
 	go func() {
@@ -248,7 +248,7 @@ func (s preparedWebServer) NonBlockingRun(ctx context.Context) (stopCtx, stopped
 		case <-stoppedCtx.Done():
 			slog.Info(msg)
 		default: // not caused by Shutdown
-			slog.With(slog_.Error(err)).Error(msg)
+			slog.With(slog_.Error(err)).ErrorContext(ctx, msg)
 		}
 		return
 	}()

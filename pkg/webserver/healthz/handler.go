@@ -110,12 +110,12 @@ func handleRootHealth(name string, firstTimeHealthy func(), checks ...HealthChec
 		}
 		if len(excluded) > 0 {
 			_, _ = fmt.Fprintf(&individualCheckOutput, "warn: some health checks cannot be excluded: no matches for %s\n", formatQuoted(maps.Keys(excluded)...))
-			slog.Warn(fmt.Sprintf("cannot exclude some health checks, no health checks are installed matching %s",
+			slog.WarnContext(r.Context(), fmt.Sprintf("cannot exclude some health checks, no health checks are installed matching %s",
 				formatQuoted(maps.Keys(excluded)...)))
 		}
 		// always be verbose on failure
 		if len(failedChecks) > 0 {
-			slog.Error(fmt.Sprintf("%s check failed: %s\n%v", strings.Join(failedChecks, ","), name, failedVerboseLogOutput.String()))
+			slog.ErrorContext(r.Context(), fmt.Sprintf("%s check failed: %s\n%v", strings.Join(failedChecks, ","), name, failedVerboseLogOutput.String()))
 			http.Error(w, fmt.Sprintf("%s%s check failed", individualCheckOutput.String(), name), http.StatusInternalServerError)
 			return
 		}

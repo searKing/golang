@@ -119,7 +119,7 @@ func (s *WebServer) RunPostStartHooks(ctx context.Context) error {
 			})
 		} else { // never happen
 			hookName := k
-			slog.Warn(fmt.Sprintf("unknown PostStartHook %q", hookName))
+			slog.WarnContext(ctx, fmt.Sprintf("unknown PostStartHook %q", hookName))
 		}
 	}
 	return g.Wait()

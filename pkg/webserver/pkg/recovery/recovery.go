@@ -67,7 +67,7 @@ func grpcRecoveryLogHandler(ctx context.Context, p any) (err error) {
 		_, _ = os.Stderr.Write([]byte(" [recovered]\n"))
 	}
 	logger := slog.With(logging.Attrs[any](ctx)...)
-	logger.With(slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack()))).Error("recovered in grpc")
+	logger.With(slog_.Error(status.Errorf(codes.Internal, "%s at %s", p, debug.Stack()))).ErrorContext(ctx, "recovered in grpc")
 	return status.Errorf(codes.Internal, "%s", p)
 }
 
@@ -78,5 +78,5 @@ func httpRecoveryLogHandler(ctx context.Context, p any) {
 		_, _ = os.Stderr.Write([]byte(" [recovered]\n"))
 	}
 	logger := slog.With(logging.Attrs[any](ctx)...)
-	logger.With(slog_.Error(fmt.Errorf("%s at %s", p, debug.Stack()))).Error("recovered in http")
+	logger.With(slog_.Error(fmt.Errorf("%s at %s", p, debug.Stack()))).ErrorContext(ctx, "recovered in http")
 }
