@@ -5,10 +5,10 @@
 package http
 
 import (
+	"net"
 	"net/http"
 	"strings"
 
-	net_ "github.com/searKing/golang/go/net"
 	strings_ "github.com/searKing/golang/go/strings"
 )
 
@@ -25,10 +25,25 @@ func ClientIP(req *http.Request) string {
 	if clientIP != "" {
 		return clientIP
 	}
+	return ipFromHostPort(req.RemoteAddr)
+}
 
-	if ip, _, err := net_.SplitHostPort(strings.TrimSpace(req.RemoteAddr)); err == nil {
-		return ip
+// ServerIP implements a best effort algorithm to return the real server IP, it parses
+// LocalAddrContextKey from request context to get server IP.
+func ServerIP(req *http.Request) string {
+	if addr, ok := req.Context().Value(http.LocalAddrContextKey).(net.Addr); ok {
+		return ipFromHostPort(addr.String())
 	}
-
 	return ""
+}
+
+func ipFromHostPort(hp string) string {
+	h, _, err := net.SplitHostPort(hp)
+	if err != nil {
+		return ""
+	}
+	if len(h) > 0 && h[0] == '[' {
+		return h[1 : len(h)-1]
+	}
+	return h
 }
