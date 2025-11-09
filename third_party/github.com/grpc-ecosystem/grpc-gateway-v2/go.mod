@@ -4,9 +4,9 @@ go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3
-	github.com/searKing/golang/go v1.2.124
+	github.com/searKing/golang/go v1.2.136
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.120
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
