@@ -169,3 +169,14 @@ func TestHandlerDecorators_WrapError(t *testing.T) {
 		t.Errorf("Wrapped error does not contain the original error.")
 	}
 }
+
+func TestHandlerDecorators_ErrorOr(t *testing.T) {
+	originalErr := errors.New("test error")
+
+	decorators := errors_.HandlerDecorators{}
+	resultErr := decorators.ErrorOr(originalErr, errors.New("default error"))
+	expectedErr := "default error"
+	if resultErr.Error() != expectedErr {
+		t.Errorf("Expected error '%s', but got '%s'", expectedErr, resultErr.Error())
+	}
+}

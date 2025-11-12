@@ -44,3 +44,14 @@ func (hds HandlerDecorators) WrapHandler(next HandlerFunc) HandlerFunc {
 func (hds HandlerDecorators) WrapError(err error) error {
 	return hds.WrapHandler(func(err error) error { return err })(err)
 }
+
+// ErrorOr applies all decorators in the slice, in reverse order, to the error.
+// If the error is not handled, returns the default error.
+func (hds HandlerDecorators) ErrorOr(err error, defaultErr error) error {
+	return hds.WrapHandler(func(err error) error {
+		if err == nil {
+			return nil
+		}
+		return defaultErr
+	})(err)
+}
