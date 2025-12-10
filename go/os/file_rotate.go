@@ -272,11 +272,16 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, seq int, b
 func (f *RotateFile) makeUsingFileReadyLocked() (err error) {
 	// using file exist, close this file if not ready to use
 	if f.usingFile != nil {
-		_, err := os.Stat(f.usingFile.Name())
+		diskFileInfo, err := os.Stat(f.usingFile.Name())
 		if err == nil {
-			return nil
+			usingFileInfo, statErr := f.usingFile.Stat()
+			if statErr == nil {
+				if os.SameFile(diskFileInfo, usingFileInfo) {
+					return nil
+				}
+			}
 		}
-		// file not exist, recreate the file and file link
+		// file not exist or not the same file, recreate the file and file link
 		_ = f.usingFile.Close()
 		f.usingFile = nil
 	}
