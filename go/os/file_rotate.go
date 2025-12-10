@@ -13,10 +13,10 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	filepath_ "github.com/searKing/golang/go/path/filepath"
-	"github.com/searKing/golang/go/sync/atomic"
 	time_ "github.com/searKing/golang/go/time"
 )
 
@@ -183,7 +183,7 @@ func (f *RotateFile) Close() error {
 	if f.usingFile == nil { // maybe file is closed or not open
 		return nil
 	}
-	defer f.serializedClean()
+	defer f.serializedClean("")
 
 	defer func() { f.usingFile = nil }()
 	return f.usingFile.Close()
@@ -276,6 +276,7 @@ func (f *RotateFile) makeUsingFileReadyLocked() (err error) {
 		if err == nil {
 			return nil
 		}
+		// file not exist, recreate the file and file link
 		_ = f.usingFile.Close()
 		f.usingFile = nil
 	}
@@ -350,30 +351,30 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io
 // file may not be nil if err is nil
 func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 	// if we got here, then we need to create a file
-	if newName != f.usingFilePath {
+	oldName := f.usingFilePath
+	if newName != oldName {
 		var err error
 		var mode string
 		switch f.RotateMode {
 		case RotateModeCopyRename:
 			// for which open the file, and write file not by RotateFile
-			// CopyRenameFileAll = RenameFileAll(src->dst) + OpenFile(src)
-			// usingFilePath -> newName + recreate usingFilePath
-			err = CopyRenameAll(newName, f.usingFilePath)
+			// CopyRenameFileAll = RenameFileAll(src->dst) + CopyFileAll(dst->src)
+			// oldName -> newName + recreate oldName
+			err = CopyRenameAll(newName, oldName)
 			mode = "copy_rename"
 		case RotateModeCopyTruncate:
 			// for which open the file, and write file not by RotateFile
 			// CopyTruncateFile = CopyFile(src->dst) + Truncate(src)
-			// usingFilePath -> newName + truncate usingFilePath
-			err = CopyTruncateAll(newName, f.usingFilePath)
+			// oldName -> newName + truncate oldName
+			err = CopyTruncateAll(newName, oldName)
 			mode = "copy_truncate"
 		case RotateModeNew:
 			// for which open the file, and write file by RotateFile
 			mode = "new"
-			fallthrough
 		default:
 		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to %s file %s to %s: %w", mode, f.usingFilePath, newName, err)
+			return nil, fmt.Errorf("failed to %s file %s to %s: %w", mode, oldName, newName, err)
 		}
 	}
 
@@ -395,16 +396,16 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 		}
 	}
 	// unlink files on a separate goroutine
-	go f.serializedClean()
+	go f.serializedClean(newName)
 
 	return file, nil
 }
 
 // unlink files
 // expect run on a separate goroutine
-func (f *RotateFile) serializedClean() error {
+func (f *RotateFile) serializedClean(protectedPath string) error {
 	// running already, ignore duplicate clean
-	if !f.cleaning.CAS(false, true) {
+	if !f.cleaning.CompareAndSwap(false, true) {
 		return nil
 	}
 	defer f.cleaning.Store(false)
@@ -414,6 +415,10 @@ func (f *RotateFile) serializedClean() error {
 	// find old files
 	var filesNotExpired []string
 	filesExpired, err := filepath_.GlobFunc(f.FilePathPrefix+f.RotateFileGlob, func(name string) bool {
+		if protectedPath != "" && name == protectedPath {
+			return false
+		}
+
 		fi, err := os.Stat(name)
 		if err != nil {
 			return false
