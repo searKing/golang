@@ -75,6 +75,23 @@ type WalkAttrFunc func(slog.Attr) slog.Attr
 //	    return a
 //	})
 func WalkAttr(attr slog.Attr, walkFn WalkAttrFunc) (tattr slog.Attr) {
+	defer func() {
+		if r := recover(); r != nil {
+			// If it panics with a nil pointer, the most likely cases are
+			// an encoding.TextMarshaler or error fails to guard against nil,
+			// in which case "<nil>" seems to be the feasible choice.
+			//
+			// Adapted from the code in fmt/print.go.
+			v := attr.Value
+			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
+				tattr = slog.String(attr.Key, "<nil>")
+				return
+			}
+
+			// Otherwise just print the original panic message.
+			tattr = slog.String(attr.Key, fmt.Sprintf("!PANIC: %v", r))
+		}
+	}()
 	attr.Value = attr.Value.Resolve()
 	switch v := attr.Value; v.Kind() {
 	case slog.KindGroup:
@@ -86,6 +103,22 @@ func WalkAttr(attr slog.Attr, walkFn WalkAttrFunc) (tattr slog.Attr) {
 		return walkFn(slog.Group(attr.Key, as...))
 	default:
 		return walkFn(attr)
+	}
+}
+
+// ReplaceAttrDuration returns [ReplaceAttr] which converts attr's value[Duration] to string.
+//
+// json.Marshal marshals time.Duration as int64, but we offen want formatted as with fmt.Sprint.
+func ReplaceAttrDuration() func(groups []string, a slog.Attr) slog.Attr {
+	return func(groups []string, attr slog.Attr) slog.Attr {
+		return WalkAttr(attr, func(a slog.Attr) slog.Attr {
+			switch v := attr.Value.Resolve(); v.Kind() {
+			case slog.KindDuration:
+				return slog.String(attr.Key, v.Duration().String())
+			default:
+				return attr
+			}
+		})
 	}
 }
 
@@ -141,23 +174,6 @@ func truncateAttr(attr slog.Attr, n int, truncateAttrAny func(slog.Attr, int) sl
 	if n <= 0 {
 		return attr
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			// If it panics with a nil pointer, the most likely cases are
-			// an encoding.TextMarshaler or error fails to guard against nil,
-			// in which case "<nil>" seems to be the feasible choice.
-			//
-			// Adapted from the code in fmt/print.go.
-			v := attr.Value
-			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
-				tattr = slog.String(attr.Key, "<nil>")
-				return
-			}
-
-			// Otherwise just print the original panic message.
-			tattr = slog.String(attr.Key, fmt.Sprintf("!PANIC: %v", r))
-		}
-	}()
 	return WalkAttr(attr, func(a slog.Attr) slog.Attr {
 		attr.Key = truncate(attr.Key, n)
 		switch v := attr.Value; v.Kind() {
