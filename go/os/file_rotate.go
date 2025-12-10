@@ -269,7 +269,7 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, seq int, b
 	return name, seq, false, false
 }
 
-func (f *RotateFile) makeUsingFileReadyLocked() error {
+func (f *RotateFile) makeUsingFileReadyLocked() (err error) {
 	// using file exist, close this file if not ready to use
 	if f.usingFile != nil {
 		_, err := os.Stat(f.usingFile.Name())
@@ -285,6 +285,11 @@ func (f *RotateFile) makeUsingFileReadyLocked() error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			_ = file.Close()
+		}
+	}()
 
 	// link -> filename
 	if f.FileLinkPath != "" {
@@ -343,7 +348,7 @@ func (f *RotateFile) getWriterLocked(bailOnRotateFail, forceRotate bool) (out io
 }
 
 // file may not be nil if err is nil
-func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
+func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 	// if we got here, then we need to create a file
 	if newName != f.usingFilePath {
 		var err error
@@ -377,6 +382,11 @@ func (f *RotateFile) rotateLocked(newName string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			_ = file.Close()
+		}
+	}()
 
 	// link -> filename
 	if f.FileLinkPath != "" {
