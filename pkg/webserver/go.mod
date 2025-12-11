@@ -2,8 +2,6 @@ module github.com/searKing/golang/pkg/webserver
 
 go 1.24.0
 
-toolchain go1.24.1
-
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-playground/validator/v10 v10.28.0
