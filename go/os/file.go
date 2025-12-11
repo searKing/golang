@@ -361,6 +361,62 @@ func CopyRenameFile(dst string, src string, flag int, perm os.FileMode) error {
 	return CopyFile(src, dst, flag, perm)
 }
 
+// CopyRenameTruncateAll renames src to dst, creates a new src file by copying from dst, and truncates the new src to size 0.
+// This operation is useful for log rotation scenarios where you want to preserve the original file handle.
+// parent dirs will be created with dirperm if not exist.
+// CopyRenameTruncateAll = RenameFileAll(src->dst) + CopyFileAll(dst->src) + Truncate(src, 0)
+func CopyRenameTruncateAll(dst string, src string) error {
+	return CopyRenameTruncateFileAll(dst, src, DefaultFlagCreate, DefaultPermissionDirectory, DefaultPermissionFile, 0)
+}
+
+// AppendRenameTruncateAll renames src to dst, creates or appends a new src file by copying from dst, and truncates the new src to size 0.
+// This operation is useful for log rotation scenarios where you want to preserve the original file handle.
+// parent dirs will be created with dirperm if not exist.
+// AppendRenameTruncateAll = RenameFileAll(src->dst) + CopyFileAll(dst->src with append) + Truncate(src, 0)
+func AppendRenameTruncateAll(dst string, src string) error {
+	return CopyRenameTruncateFileAll(dst, src, DefaultFlagCreateAppend, DefaultPermissionDirectory, DefaultPermissionFile, 0)
+}
+
+// CopyRenameTruncateFileAll is the generalized open call; most users will use CopyRenameTruncateAll or
+// AppendRenameTruncateAll instead. It renames src to dst, creates a new src file by copying from dst,
+// and truncates the new src to the specified size.
+// parent dirs will be created with dirperm if not exist.
+// CopyRenameTruncateFileAll = CopyRenameFileAll(dst, src) + Truncate(src, size)
+func CopyRenameTruncateFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode, size int64) error {
+	if err := CopyRenameFileAll(dst, src, flag, dirperm, fileperm); err != nil {
+		return err
+	}
+	return os.Truncate(dst, size)
+}
+
+// CopyRenameTruncate renames src to dst, creates a new src file by copying from dst, and truncates the new src to size 0.
+// This operation is useful for log rotation scenarios where you want to preserve the original file handle.
+// parent dirs will not be created, otherwise, use CopyRenameTruncateAll instead.
+// CopyRenameTruncate = Rename(src->dst) + CopyFile(dst->src) + Truncate(src, 0)
+func CopyRenameTruncate(dst string, src string) error {
+	return CopyRenameTruncateFile(dst, src, DefaultFlagCreate, DefaultPermissionFile, 0)
+}
+
+// AppendRenameTruncate renames src to dst, creates or appends a new src file by copying from dst, and truncates the new src to size 0.
+// This operation is useful for log rotation scenarios where you want to preserve the original file handle.
+// parent dirs will not be created, otherwise, use AppendRenameTruncateAll instead.
+// AppendRenameTruncate = Rename(src->dst) + CopyFile(dst->src with append) + Truncate(src, 0)
+func AppendRenameTruncate(dst string, src string) error {
+	return CopyRenameTruncateFile(dst, src, DefaultFlagCreateAppend, DefaultPermissionFile, 0)
+}
+
+// CopyRenameTruncateFile is the generalized open call; most users will use CopyRenameTruncate or
+// AppendRenameTruncate instead. It renames src to dst, creates a new src file by copying from dst,
+// and truncates the new src to the specified size.
+// parent dirs will not be created, otherwise, use CopyRenameTruncateFileAll instead.
+// CopyRenameTruncateFile = CopyRenameFile(dst, src) + Truncate(src, size)
+func CopyRenameTruncateFile(dst string, src string, flag int, perm os.FileMode, size int64) error {
+	if err := CopyRenameFile(dst, src, flag, perm); err != nil {
+		return err
+	}
+	return os.Truncate(dst, size)
+}
+
 // SameFile reports whether fi1 and fi2 describe the same file.
 // Overload os.SameFile by file path
 func SameFile(fi1, fi2 string) bool {
