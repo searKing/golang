@@ -335,17 +335,12 @@ func CopyRenameAll(dst string, src string) error {
 // It makes a copy of the src file, but don't change the original src at all.
 // CopyRenameFileAll renames from src to dst and creates src if not exist.
 // parent dirs will be created with dirperm if not exist.
-// CopyRenameFileAll = RenameFileAll(src->dst) + OpenFile(src)
+// CopyRenameFileAll = RenameFileAll(src->dst) + CopyFileAll(dst->src)
 func CopyRenameFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode) error {
 	if err := RenameFileAll(src, dst, dirperm); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(src, flag, fileperm)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return nil
+	return CopyFileAll(src, dst, flag, dirperm, fileperm)
 }
 
 // CopyRename makes a copy of the src file, but don't change the original src at all.  This option can  be
@@ -363,12 +358,7 @@ func CopyRenameFile(dst string, src string, flag int, perm os.FileMode) error {
 	if err := os.Rename(src, dst); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(src, flag, perm)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return nil
+	return CopyFile(src, dst, flag, perm)
 }
 
 // SameFile reports whether fi1 and fi2 describe the same file.
