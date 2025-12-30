@@ -25,6 +25,7 @@ func NewTracerProvider(ctx context.Context, options ...Option) (*sdktrace.Tracer
 	o.ApplyOptions(options...)
 
 	var tracerProviderOptions []sdktrace.TracerProviderOption
+	tracerProviderOptions = append(tracerProviderOptions, o.TracerProviderOptions...)
 	{
 		res, err := sdkresource.New(ctx,
 			sdkresource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
