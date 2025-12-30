@@ -19,6 +19,7 @@ func NewMeterProvider(ctx context.Context, options ...Option) (*metric.MeterProv
 	o.ApplyOptions(options...)
 
 	var metricProviderOptions []metric.Option
+	metricProviderOptions = append(metricProviderOptions, o.MetricOptions...)
 	{
 		readers, err := createReaders(ctx, options...)
 		if err != nil {
