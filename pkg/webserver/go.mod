@@ -9,7 +9,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3
 	github.com/rs/cors v1.11.1
-	github.com/searKing/golang/go v1.2.141
+	github.com/searKing/golang/go v1.2.142
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.129
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.136
 	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.129

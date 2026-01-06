@@ -25,6 +25,16 @@ type WebHandler interface {
 	SetRoutes(ginRouter gin.IRouter, grpcRouter *grpc.Gateway)
 }
 
+// WebHandlerFunc type is an adapter to allow the use of ordinary functions as WebHandlers.
+// If f is a function with the appropriate signature, WebHandlerFunc(f) is a WebHandler that calls f.
+
+type WebHandlerFunc func(ginRouter gin.IRouter, grpcRouter *grpc.Gateway)
+
+// SetRoutes calls f(w, r).
+func (f WebHandlerFunc) SetRoutes(ginRouter gin.IRouter, grpcRouter *grpc.Gateway) {
+	f(ginRouter, grpcRouter)
+}
+
 type WebServer struct {
 	Name string
 	// BindAddress is the host name to use for bind (local internet) facing URLs (e.g. Loopback)
