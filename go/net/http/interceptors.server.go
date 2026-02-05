@@ -75,5 +75,4 @@ func (chain HandlerInterceptorChain) InjectHttpHandler(next http.Handler) http.H
 
 		next.ServeHTTP(w, r)
 	})
-
 }
