@@ -44,9 +44,9 @@ import (
 // 4.2) otelhttp2grpc-no endpoint:
 //   HTTP Req Header -> gRPC IncomingContext
 
-func DialOptions() []grpc.DialOption {
+func DialOptions(opts ...otelgrpc.Option) []grpc.DialOption {
 	// 2.1) gRPC OutgoingContext<send Req> -> gRPC Req Header
-	return []grpc.DialOption{grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	return []grpc.DialOption{grpc.WithStatsHandler(otelgrpc.NewClientHandler(opts...)),
 		opentelemetry.DialOption(opentelemetry.Options{
 			MetricsOptions: opentelemetry.MetricsOptions{
 				MeterProvider: otel.GetMeterProvider(),
@@ -55,9 +55,9 @@ func DialOptions() []grpc.DialOption {
 		})}
 }
 
-func ServerOptions() []grpc.ServerOption {
+func ServerOptions(opts ...otelgrpc.Option) []grpc.ServerOption {
 	// 2.2) gRPC Req Header -> IncomingContext<recv Req>
-	return []grpc.ServerOption{grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	return []grpc.ServerOption{grpc.StatsHandler(otelgrpc.NewServerHandler(opts...)),
 		opentelemetry.ServerOption(opentelemetry.Options{
 			MetricsOptions: opentelemetry.MetricsOptions{
 				MeterProvider: otel.GetMeterProvider(),

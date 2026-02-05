@@ -24,7 +24,7 @@ func (f *Factory) ServerOptions(opts ...grpc.ServerOption) []grpc.ServerOption {
 		s = append(s, grpc.StatsHandler(&stats.ServerHandler{}))
 	}
 	if f.fc.OtelHandling {
-		s = append(s, otel.ServerOptions()...)
+		s = append(s, otel.ServerOptions(f.fc.OtelGrpcOptions...)...)
 	}
 	return append(s, opts...)
 }
@@ -47,7 +47,7 @@ func (f *Factory) DialOptions(opts ...grpc.DialOption) []grpc.DialOption {
 		s = append(s, grpc.WithStatsHandler(&stats.ClientHandler{}))
 	}
 	if f.fc.OtelHandling {
-		s = append(s, otel.DialOptions()...)
+		s = append(s, otel.DialOptions(f.fc.OtelGrpcOptions...)...)
 	}
 	s = append(s, grpc.WithChainUnaryInterceptor(f.UnaryClientInterceptors()...))
 	s = append(s, grpc.WithChainStreamInterceptor(f.StreamClientInterceptors()...))

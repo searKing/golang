@@ -25,6 +25,7 @@ import (
 	otel_ "github.com/searKing/golang/pkg/webserver/pkg/otel"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"google.golang.org/grpc/encoding"
 )
@@ -73,6 +74,7 @@ type FactoryConfig struct {
 	FillRequestId                bool                // for the field "RequestId" filling in Request and Response.
 	OtelHandling                 bool                // captures traces and metrics and send them to an observability platform by OpenTelemetry.
 	OtelHttpOptions              []otelhttp.Option   // take effect only when OtelHandling is true
+	OtelGrpcOptions              []otelgrpc.Option   // take effect only when OtelHandling is true
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
