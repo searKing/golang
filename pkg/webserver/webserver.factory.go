@@ -180,9 +180,9 @@ func (f *Factory) New() (*WebServer, error) {
 		opts = append(opts, grpc_.WithHttpNoForwardHandlerInterceptor(f.UnaryHandlers()...))
 	}
 
-	opts = append(opts, f.fc.GatewayOptions...)
 	// log
 	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...))...)
+	opts = append(opts, f.fc.GatewayOptions...)
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	{
 		l := slog.NewLogLogger(slog.Default().Handler(), slog.LevelError)
