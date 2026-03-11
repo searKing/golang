@@ -10,7 +10,6 @@ on:
     branches: [ "master" ]
 
 jobs:
-
   build:
     strategy:
       matrix:
@@ -18,9 +17,8 @@ jobs:
         go-version: [ '1.25.x' ]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
+    - uses: actions/checkout@v5
+    - name: Set up Go ${{ matrix.go-version }}
       uses: actions/setup-go@v5
       with:
         check-latest: true
@@ -28,8 +26,8 @@ jobs:
         go-version-file: 'go/go.mod'
         cache-dependency-path: 'go/go.sum'
         token: ${{ secrets.WORKFLOW_GITHUB_TOKEN }}
-    - name: Build
-      run: go version #build -v ./tools/...
+    - name: Display Go version
+      run: go version
 
     - name: Test
       working-directory: go
