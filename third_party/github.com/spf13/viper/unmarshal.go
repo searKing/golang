@@ -9,7 +9,7 @@ import (
 	"strings"
 	_ "unsafe" // for go:linkname
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	maps_ "github.com/searKing/golang/go/exp/maps"
 	json_ "github.com/searKing/golang/third_party/github.com/spf13/viper/json"
 	protojson_ "github.com/searKing/golang/third_party/google.golang.org/protobuf/encoding/protojson"
@@ -20,8 +20,51 @@ import (
 //go:linkname decode github.com/spf13/viper.decode
 func decode(input any, config *mapstructure.DecoderConfig) error
 
-//go:linkname defaultDecoderConfig github.com/spf13/viper.defaultDecoderConfig
-func defaultDecoderConfig(output any, opts ...viper.DecoderConfigOption) *mapstructure.DecoderConfig
+// defaultDecoderConfig returns default mapstructure.DecoderConfig with support
+// of time.Duration values & string slices.
+func defaultDecoderConfig(output any, opts ...viper.DecoderConfigOption) *mapstructure.DecoderConfig {
+	decodeHook := mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		// mapstructure.StringToSliceHookFunc(","),
+		stringToWeakSliceHookFunc(","),
+	)
+	c := &mapstructure.DecoderConfig{
+		Metadata:         nil,
+		WeaklyTypedInput: true,
+		DecodeHook:       decodeHook,
+	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	// Do not allow overwriting the output
+	c.Result = output
+
+	return c
+}
+
+// As of mapstructure v2.0.0 StringToSliceHookFunc checks if the return type is a string slice.
+// This function removes that check.
+// TODO: implement a function that checks if the value can be converted to the return type and use it instead.
+func stringToWeakSliceHookFunc(sep string) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.String || t.Kind() != reflect.Slice {
+			return data, nil
+		}
+
+		raw := data.(string)
+		if raw == "" {
+			return []string{}, nil
+		}
+
+		return strings.Split(raw, sep), nil
+	}
+}
 
 // DecodeProtoJsonHook if set, will be called before any decoding and any
 // type conversion (if WeaklyTypedInput is on). This lets you modify
