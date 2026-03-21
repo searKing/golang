@@ -11,9 +11,9 @@ import (
 	errors_ "github.com/searKing/golang/go/errors"
 	slices_ "github.com/searKing/golang/go/exp/slices"
 	net_ "github.com/searKing/golang/go/net"
-	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
 	"google.golang.org/grpc"
 )
 
@@ -287,8 +287,8 @@ func preRegisterMethod(ctx context.Context, metrics *ServerMetrics, serviceName 
 	// These are just references (no increments), as just referencing will create the labels but not set values.
 	_, attrs := spanInfo(mInfo.Name, ":0", metrics.ServerHostport, typeFromMethodInfo(mInfo), false)
 	metrics.serverStartedCounter.Add(ctx, 0, metric.WithAttributes(filter(attrs...)...))
-	metrics.serverStreamMsgReceived.Add(ctx, 0, metric.WithAttributes(filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...))
-	metrics.serverStreamMsgSent.Add(ctx, 0, metric.WithAttributes(filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...))
+	metrics.serverStreamMsgReceived.Add(ctx, 0, metric.WithAttributes(filter(append(attrs, semconv.RPCMessageTypeReceived)...)...))
+	metrics.serverStreamMsgSent.Add(ctx, 0, metric.WithAttributes(filter(append(attrs, semconv.RPCMessageTypeSent)...)...))
 
 	for _, code := range allCodes {
 		metrics.serverHandledCounter.Add(ctx, 0, metric.WithAttributes(filter(append(attrs, statusCodeAttr(code))...)...))
@@ -297,16 +297,16 @@ func preRegisterMethod(ctx context.Context, metrics *ServerMetrics, serviceName 
 		}
 	}
 	if metrics.serverStreamReceiveTimeHistogramEnabled {
-		metrics.serverStreamReceiveTimeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...))
+		metrics.serverStreamReceiveTimeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, semconv.RPCMessageTypeReceived)...)...))
 	}
 	if metrics.serverStreamReceiveSizeHistogramEnabled {
-		metrics.serverStreamReceiveSizeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, otelgrpc_.RPCMessageTypeReceived)...)...))
+		metrics.serverStreamReceiveSizeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, semconv.RPCMessageTypeReceived)...)...))
 	}
 
 	if metrics.serverStreamSendTimeHistogramEnabled {
-		metrics.serverStreamSendTimeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...))
+		metrics.serverStreamSendTimeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, semconv.RPCMessageTypeSent)...)...))
 	}
 	if metrics.serverStreamSendSizeHistogramEnabled {
-		metrics.serverStreamSendSizeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, otelgrpc_.RPCMessageTypeSent)...)...))
+		metrics.serverStreamSendSizeHistogram.Record(ctx, -1, metric.WithAttributes(filter(append(attrs, semconv.RPCMessageTypeSent)...)...))
 	}
 }

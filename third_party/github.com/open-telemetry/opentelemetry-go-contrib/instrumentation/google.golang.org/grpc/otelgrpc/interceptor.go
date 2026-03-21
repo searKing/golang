@@ -11,7 +11,6 @@ import (
 	"net"
 	"strings"
 
-	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 	grpccodes "google.golang.org/grpc/codes"
@@ -21,7 +20,7 @@ import (
 // spanInfo returns a span name and all appropriate attributes from the gRPC
 // method and peer address.
 func spanInfo(fullMethod, peerAddress, localAddress string, grpcType grpcType, client bool) (string, []attribute.KeyValue) {
-	attrs := []attribute.KeyValue{otelgrpc_.RPCSystemGRPC}
+	attrs := []attribute.KeyValue{semconv.RPCSystemGRPC}
 	name, mAttrs := parseFullMethod(fullMethod)
 	attrs = append(attrs, mAttrs...)
 	attrs = append(attrs, peerAttr(peerAddress, client)...)

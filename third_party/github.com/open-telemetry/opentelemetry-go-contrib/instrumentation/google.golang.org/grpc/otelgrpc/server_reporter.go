@@ -8,9 +8,9 @@ import (
 	"context"
 	"time"
 
-	otelgrpc_ "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
@@ -45,7 +45,7 @@ func (r *serverReporter) Attrs(attrs ...attribute.KeyValue) []attribute.KeyValue
 
 func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time.Time) {
 	if r.metrics.serverStreamReceiveTimeHistogramEnabled {
-		attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
+		attrs := r.Attrs(semconv.RPCMessageTypeReceived)
 		r.metrics.serverStreamReceiveTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), metric.WithAttributes(attrs...))
 		return
 	}
@@ -53,7 +53,7 @@ func (r *serverReporter) ReceiveMessageTimer(ctx context.Context, startTime time
 }
 
 func (r *serverReporter) ReceivedMessage(ctx context.Context, message any) {
-	attrs := r.Attrs(otelgrpc_.RPCMessageTypeReceived)
+	attrs := r.Attrs(semconv.RPCMessageTypeReceived)
 	r.metrics.serverStreamMsgReceived.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.serverStreamReceiveSizeHistogramEnabled {
 		if p, ok := message.(proto.Message); ok {
@@ -66,7 +66,7 @@ func (r *serverReporter) ReceivedMessage(ctx context.Context, message any) {
 
 func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Time) {
 	if r.metrics.serverStreamSendTimeHistogramEnabled {
-		attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
+		attrs := r.Attrs(semconv.RPCMessageTypeSent)
 		r.metrics.serverStreamSendTimeHistogram.Record(ctx, time.Since(startTime).Seconds(), metric.WithAttributes(attrs...))
 		return
 	}
@@ -74,7 +74,7 @@ func (r *serverReporter) SendMessageTimer(ctx context.Context, startTime time.Ti
 }
 
 func (r *serverReporter) SentMessage(ctx context.Context, message any) {
-	attrs := r.Attrs(otelgrpc_.RPCMessageTypeSent)
+	attrs := r.Attrs(semconv.RPCMessageTypeSent)
 	r.metrics.serverStreamMsgSent.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if r.metrics.serverStreamSendSizeHistogramEnabled {
 		if p, ok := message.(proto.Message); ok {
