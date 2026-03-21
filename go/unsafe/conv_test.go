@@ -45,22 +45,6 @@ func TestUnsafeConversions(t *testing.T) {
 		}
 	})
 
-	t.Run("StringToBytes allocations", func(t *testing.T) {
-		t.Parallel()
-
-		s := rand_.String(size)
-		f := func() {
-			b := StringToBytes(s)
-			if len(b) != size {
-				t.Errorf("invalid length: %d", len(b))
-			}
-		}
-		allocs := testing.AllocsPerRun(100, f)
-		if allocs > 0 {
-			t.Errorf("expected zero allocations, got %v", allocs)
-		}
-	})
-
 	t.Run("BytesToString semantics", func(t *testing.T) {
 		t.Parallel()
 
@@ -76,25 +60,39 @@ func TestUnsafeConversions(t *testing.T) {
 			t.Errorf("unexpected equality failure: %#v", s)
 		}
 	})
+}
 
-	t.Run("BytesToString allocations", func(t *testing.T) {
-		t.Parallel()
+func TestStringToBytesAllocations(t *testing.T) {
+	size := 1024 + rand.Intn(1024+1)
+	s := rand_.String(size)
+	f := func() {
+		b := StringToBytes(s)
+		if len(b) != size {
+			t.Errorf("invalid length: %d", len(b))
+		}
+	}
+	allocs := testing.AllocsPerRun(100, f)
+	if allocs > 0 {
+		t.Errorf("expected zero allocations, got %v", allocs)
+	}
+}
 
-		b := make([]byte, size)
-		if _, err := rand.Read(b); err != nil {
-			t.Fatal(err)
+func TestBytesToStringAllocations(t *testing.T) {
+	size := 1024 + rand.Intn(1024+1)
+	b := make([]byte, size)
+	if _, err := rand.Read(b); err != nil {
+		t.Fatal(err)
+	}
+	f := func() {
+		s := BytesToString(b)
+		if len(s) != size {
+			t.Errorf("invalid length: %d", len(s))
 		}
-		f := func() {
-			s := BytesToString(b)
-			if len(s) != size {
-				t.Errorf("invalid length: %d", len(s))
-			}
-		}
-		allocs := testing.AllocsPerRun(100, f)
-		if allocs > 0 {
-			t.Errorf("expected zero allocations, got %v", allocs)
-		}
-	})
+	}
+	allocs := testing.AllocsPerRun(100, f)
+	if allocs > 0 {
+		t.Errorf("expected zero allocations, got %v", allocs)
+	}
 }
 
 func BenchmarkBytesToStringRaw(b *testing.B) {
