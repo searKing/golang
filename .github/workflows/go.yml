@@ -22,9 +22,9 @@ jobs:
       uses: actions/setup-go@v5
       with:
         check-latest: true
-        # go-version: ${{ matrix.go-version }}
-        go-version-file: 'go/go.mod'
-        cache-dependency-path: 'go/go.sum'
+        go-version: ${{ matrix.go-version }}
+        #go-version-file: 'go/go.mod'
+        #cache-dependency-path: 'go/go.sum'
         token: ${{ secrets.WORKFLOW_GITHUB_TOKEN }}
     - name: Display Go version
       run: go version
