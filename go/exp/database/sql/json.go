@@ -33,20 +33,20 @@ func (nj *Json[T]) Scan(src any) error {
 	switch src := src.(type) {
 	case string:
 		if len(src) > 0 {
-			err = json.Unmarshal([]byte(src), &nj.Data)
+			err = unmarshalJson([]byte(src), &nj.Data)
 		}
 	case []byte:
 		if len(src) > 0 {
-			err = json.Unmarshal(src, &nj.Data)
+			err = unmarshalJson(src, &nj.Data)
 		}
 	case time.Time:
-		srcBytes, _ := json.Marshal(src)
-		err = json.Unmarshal(srcBytes, &nj.Data)
+		srcBytes, _ := marshalJson(src)
+		err = unmarshalJson(srcBytes, &nj.Data)
 	case nil:
 		err = nil
 	default:
-		srcBytes, _ := json.Marshal(src)
-		err = json.Unmarshal(srcBytes, &nj.Data)
+		srcBytes, _ := marshalJson(src)
+		err = unmarshalJson(srcBytes, &nj.Data)
 	}
 	if err == nil {
 		return nil
@@ -57,5 +57,20 @@ func (nj *Json[T]) Scan(src any) error {
 
 // Value implements the driver.Valuer interface.
 func (nj Json[T]) Value() (driver.Value, error) {
-	return json.Marshal(nj.Data)
+	return marshalJson(nj.Data)
+}
+
+func marshalJson(v any) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+func unmarshalJson(data []byte, v any) error {
+	if len(data) == 0 {
+		return nil
+	}
+	// for the sake of compatibility, skip json format check if [json.Unmarshaler] is implemented.
+	if u, ok := v.(json.Unmarshaler); ok {
+		return u.UnmarshalJSON(data)
+	}
+	return json.Unmarshal(data, v)
 }
