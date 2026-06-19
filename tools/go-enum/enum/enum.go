@@ -430,6 +430,7 @@ func (g *Generator) generate(typeInfo typeInfo) {
 	threshold := 10
 
 	if useString {
+		g.buildCheck(runs, typeInfo.Name, threshold)
 		// The decision of which pattern to use depends on the number of
 		// runs in the numbers. If there's only one, it's easy. For more than
 		// one, there's a tradeoff between complexity and size of the data
