@@ -5,6 +5,12 @@
 package prettyjson_test
 
 import (
+	"bytes"
+	"encoding/json/jsontext"
+	"fmt"
+	"io"
+	"log"
+	"strings"
 	"testing"
 
 	"github.com/searKing/golang/go/encoding/prettyjson"
@@ -61,7 +67,7 @@ func TestPrettyJsonMarshal(t *testing.T) {
 		{
 			data: longUrl,
 			opts: []prettyjson.EncOptsOption{prettyjson.WithEncOptsTruncateString(1), prettyjson.WithEncOptsTruncateStringIfMoreThan(4),
-				prettyjson.WithEncOptsForceLongUrl(true)},
+				prettyjson.WithEncOptsForceLongUrl(true), prettyjson.WithEncOptsEscapeHTML(true)},
 			want: `"https://example.com/tests/1.html?foo=1\u0026bar=baz\u0026a=0\u0026b=1\u0026c=2\u0026d=3#paragraph"`}, // take url as url
 		{
 			data: longUrl,
@@ -234,9 +240,77 @@ func TestPrettyJsonMarshal(t *testing.T) {
 		got, err := prettyjson.Marshal(tt.data, tt.opts...)
 		if err != nil {
 			t.Errorf("#%d: Marshal(%v) error: %v", i, tt.data, err)
+			continue
 		}
 		if tt.want != string(got) {
 			t.Errorf("#%d: Marshal(%v) = `%v`, want `%s`", i, tt.data, string(got), tt.want)
 		}
 	}
+}
+
+// This example demonstrates the use of the [Encoder] and [Decoder] to
+// parse and modify JSON without unmarshaling it into a concrete Go type.
+func Example_stringReplace() {
+	// Example input with non-idiomatic use of "Golang" instead of "Go".
+	const input = `[ "The quick brown fox jumps over the lazy dog", "Crimson", "Red", "Ruby", "Maroon" ]`
+
+	// Using a Decoder and Encoder, we can parse through every token,
+	// check and modify the token if necessary, and
+	// write the token to the output.
+	var replacements []jsontext.Pointer
+	in := strings.NewReader(input)
+	dec := jsontext.NewDecoder(in)
+	out := new(bytes.Buffer)
+	enc := jsontext.NewEncoder(out, jsontext.Multiline(true)) // expand for readability
+	for {
+		// Read a token from the input.
+		tok, err := dec.ReadToken()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatal(err)
+		}
+
+		// Check whether the token contains the string "Golang" and
+		// replace each occurrence with "Go" instead.
+		if tok.Kind() == '"' && strings.Contains(tok.String(), "Golang") {
+			replacements = append(replacements, dec.StackPointer())
+			tok = jsontext.String(strings.ReplaceAll(tok.String(), "Golang", "Go"))
+		}
+
+		// Write the (possibly modified) token to the output.
+		if err := enc.WriteToken(tok); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Print the list of replacements and the adjusted JSON output.
+	if len(replacements) > 0 {
+		fmt.Println(`Replaced "Golang" with "Go" in:`)
+		for _, where := range replacements {
+			fmt.Println("\t" + where)
+		}
+		fmt.Println()
+	}
+	fmt.Println("Result:", out.String())
+
+	// Output:
+	// Replaced "Golang" with "Go" in:
+	// 	/title
+	// 	/text
+	// 	/otherArticles/0
+	// 	/otherArticles/2
+	//
+	// Result: {
+	// 	"title": "Go version 1 is released",
+	// 	"author": "Andrew Gerrand",
+	// 	"date": "2012-03-28",
+	// 	"text": "Today marks a major milestone in the development of the Go programming language.",
+	// 	"otherArticles": [
+	// 		"Twelve Years of Go",
+	// 		"The Laws of Reflection",
+	// 		"Learn Go from your browser"
+	// 	]
+	// }
 }

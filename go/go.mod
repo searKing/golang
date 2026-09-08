@@ -1,8 +1,6 @@
 module github.com/searKing/golang/go
 
-go 1.23.0
-
-toolchain go1.24.2
+go 1.27.0
 
 require (
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
