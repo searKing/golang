@@ -15,9 +15,6 @@ import (
 
 //go:generate go-option -type "encOpts"
 type encOpts struct {
-	// quoted causes primitive fields to be encoded inside JSON strings.
-	quoted bool `option:"-"`
-
 	// escapeHTML causes '<', '>', and '&' to be escaped in JSON strings.
 	escapeHTML bool
 

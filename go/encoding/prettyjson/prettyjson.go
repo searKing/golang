@@ -7,6 +7,7 @@ import (
 	jsonv2 "encoding/json/v2"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"reflect"
 	"slices"
@@ -20,6 +21,28 @@ import (
 // Marshal serializes v using encoding/json/v2 and applies the configured
 // truncation rules.
 func Marshal(v any, options ...EncOptsOption) ([]byte, error) {
+	return jsonv2.Marshal(v, EncOptions(options...)...)
+}
+
+// MarshalWrite serializes a Go value into an [io.Writer] according to the provided
+// marshal and encode options (while ignoring unmarshal or decode options).
+// It does not terminate the output with a newline.
+// See [Marshal] for details about the conversion of a Go value into JSON.
+func MarshalWrite(out io.Writer, in any, options ...EncOptsOption) (err error) {
+	return jsonv2.MarshalWrite(out, in, EncOptions(options...)...)
+}
+
+// MarshalEncode serializes a Go value into an [jsontext.Encoder] according to
+// the provided marshal or encode options (while ignoring unmarshal or decode options).
+// The options provided take precedence over options already applied on
+// the [jsontext.Encoder] and only apply for the duration of the marshal call.
+//
+// See [Marshal] for details about the conversion of a Go value into JSON.
+func MarshalEncode(out *jsontext.Encoder, in any, options ...EncOptsOption) (err error) {
+	return jsonv2.MarshalEncode(out, in, EncOptions(options...)...)
+}
+
+func EncOptions(options ...EncOptsOption) []jsonv2.Options {
 	var opts encOpts
 	opts.ApplyOptions(options...)
 
@@ -40,8 +63,7 @@ func Marshal(v any, options ...EncOptsOption) ([]byte, error) {
 		// matching the custom isEmptyValue/v.IsZero() behavior of the old encoder.
 		jsonOpts = append(jsonOpts, jsonv2.OmitZeroStructFields(true))
 	}
-
-	return jsonv2.Marshal(v, jsonOpts...)
+	return jsonOpts
 }
 
 // AdvancedTruncateMarshalers returns the type-specific marshalers used by
