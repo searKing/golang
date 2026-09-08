@@ -133,10 +133,12 @@ func Truncate(s string, n int) string {
 	if n < 0 {
 		n = 0
 	}
-	if len(s) <= n {
+	runes := []rune(s)
+
+	if len(runes) <= n {
 		return s
 	}
-	return s[:n]
+	return string(runes[:n])
 }
 
 // PadLeft returns s padded to length n, padded left with repeated pad
