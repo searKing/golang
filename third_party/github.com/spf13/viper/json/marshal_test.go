@@ -38,8 +38,8 @@ func TestMarshal(t *testing.T) {
 				0: "alice",
 				1: "bob",
 			},
-			wantJson:  []byte{},
-			wantError: true,
+			wantJson:  []byte(`{"0":"alice","1":"bob"}`),
+			wantError: false,
 		},
 	}
 
