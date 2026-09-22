@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/google/go-cmp v0.7.0
-	github.com/searKing/golang/go v1.2.141
+	github.com/searKing/golang/go v1.2.145
 	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.141
 	github.com/spf13/viper v1.21.0
 	google.golang.org/protobuf v1.36.12

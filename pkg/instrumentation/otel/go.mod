@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/go-logr/logr v1.4.4
 	github.com/prometheus/otlptranslator v1.0.0
-	github.com/searKing/golang/go v1.2.142
+	github.com/searKing/golang/go v1.2.145
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.46.0

@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/searKing/golang/go v1.2.120
+	github.com/searKing/golang/go v1.2.145
 )
 
 require (

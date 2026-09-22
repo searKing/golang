@@ -3,7 +3,7 @@ module github.com/searKing/golang/third_party/github.com/syndtr/goleveldb
 go 1.27.0
 
 require (
-	github.com/searKing/golang/go v1.2.120
+	github.com/searKing/golang/go v1.2.145
 	github.com/syndtr/goleveldb v1.0.0
 )
 
