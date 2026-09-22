@@ -29,7 +29,7 @@ const testForcePush = false
 const instrumentation = "github.com/searKing/golang/pkg/instrumentation/otel/metric"
 
 func TestNewMeterProvider(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	otel.SetLogger(funcr.New(func(prefix, args string) { t.Logf("otel: %s", fmt.Sprint(prefix, args)) }, funcr.Options{Verbosity: 1}))
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { t.Errorf("otel: handler returned an error: %s", err.Error()) }))
