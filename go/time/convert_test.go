@@ -35,7 +35,7 @@ func TestConvertTimestamp(t *testing.T) {
 	for i, tt := range tests {
 		gotTimestamp := time_.ConvertTimestamp(tt.timestamp, tt.fromUnit, tt.toUnit)
 		if tt.wantTimestamp != gotTimestamp {
-			t.Errorf("#%d: ConvertTimestamp expected %q got %q", i, tt.wantTimestamp, gotTimestamp)
+			t.Errorf("#%d: ConvertTimestamp expected %d got %d", i, tt.wantTimestamp, gotTimestamp)
 		}
 	}
 }

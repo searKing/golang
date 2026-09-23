@@ -31,7 +31,7 @@ func TestCostTick_Costs(t *testing.T) {
 			cost.Tick("")
 		}
 		if len(cost.Costs()) != tt.wantCosts {
-			t.Errorf("%s: expected %q got %q", tt.msg, tt.wantCosts, len(cost.Costs()))
+			t.Errorf("%s: expected %d got %d", tt.msg, tt.wantCosts, len(cost.Costs()))
 		}
 	}
 }
