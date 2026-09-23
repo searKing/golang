@@ -751,7 +751,7 @@ func TestCustomAuthority(t *testing.T) {
 
 			err = <-errChan
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("custom authority should not have caused an error: %s", err)
 			}
 
 			if a.expectError {
