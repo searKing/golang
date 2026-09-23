@@ -78,6 +78,5 @@ func TestProtoString(t *testing.T) {
 
 // more useful string for debugging than fmt's struct printer
 func pfmt(p *Proto) string {
-	return fmt.Sprintf("type=%q, major=%q, minor=%#v",
-		p.Type, p.Major, p.Minor)
+	return fmt.Sprintf("type=%q, major=%d, minor=%#v", p.Type, p.Major, p.Minor)
 }
