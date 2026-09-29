@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package otelgrpc
+package otelhttp
 
 import (
 	otelcontrib "go.opentelemetry.io/contrib"
@@ -11,7 +11,7 @@ import (
 
 var (
 	// InstrumentationName is the name of this instrumentation package.
-	InstrumentationName = "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/octelhttp"
+	InstrumentationName = "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/otelhttp"
 	// InstrumentationVersion is the version of this instrumentation package.
 	InstrumentationVersion = otelcontrib.Version()
 
