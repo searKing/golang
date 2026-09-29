@@ -211,6 +211,9 @@ func (f *Factory) New() (*WebServer, error) {
 		ExternalAddress:                f.fc.ExternalAddress,
 		PreferRegisterHTTPFromEndpoint: f.fc.PreferRegisterHTTPFromEndpoint,
 		ShutdownDelayDuration:          f.fc.ShutdownDelayDuration,
+		gatewayOptions:                 opts,
+		otelHandling:                   f.fc.OtelHandling,
+		otelHttpOptions:                f.fc.OtelHttpOptions,
 		grpcBackend:                    grpcBackend,
 		ginBackend:                     ginBackend,
 

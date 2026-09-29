@@ -16,22 +16,25 @@ import (
 
 	"github.com/gin-gonic/gin"
 	slog_ "github.com/searKing/golang/go/log/slog"
+	http_ "github.com/searKing/golang/go/net/http"
 	runtime_ "github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
-	"github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
+	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"google.golang.org/grpc"
 )
 
 type WebHandler interface {
-	SetRoutes(ginRouter gin.IRouter, grpcRouter *grpc.Gateway)
+	SetRoutes(ginRouter gin.IRouter, grpcRouter *grpc_.Gateway)
 }
 
 // WebHandlerFunc type is an adapter to allow the use of ordinary functions as WebHandlers.
 // If f is a function with the appropriate signature, WebHandlerFunc(f) is a WebHandler that calls f.
 
-type WebHandlerFunc func(ginRouter gin.IRouter, grpcRouter *grpc.Gateway)
+type WebHandlerFunc func(ginRouter gin.IRouter, grpcRouter *grpc_.Gateway)
 
 // SetRoutes calls f(w, r).
-func (f WebHandlerFunc) SetRoutes(ginRouter gin.IRouter, grpcRouter *grpc.Gateway) {
+func (f WebHandlerFunc) SetRoutes(ginRouter gin.IRouter, grpcRouter *grpc_.Gateway) {
 	f(ginRouter, grpcRouter)
 }
 
@@ -46,8 +49,11 @@ type WebServer struct {
 
 	PreferRegisterHTTPFromEndpoint bool // prefer register http handler from endpoint
 
-	ginBackend  *gin.Engine
-	grpcBackend *grpc.Gateway
+	gatewayOptions  []grpc_.GatewayOption
+	otelHandling    bool
+	otelHttpOptions []otelhttp.Option
+	ginBackend      *gin.Engine
+	grpcBackend     *grpc_.Gateway
 
 	// PostStartHooks are each called after the server has started listening, in a separate go func for each
 	// with no guarantee of ordering between them.  The map key is a name used for error reporting.
@@ -96,6 +102,34 @@ func NewWebServer(fc FactoryConfig, configs ...FactoryConfigFunc) (*WebServer, e
 		return nil, err
 	}
 	return f.New()
+}
+
+func (s *WebServer) GatewayOptions() []grpc_.GatewayOption {
+	return s.gatewayOptions
+}
+
+func (s *WebServer) DialOptions() []grpc.DialOption {
+	return grpc_.ExtractDialOptions(s.gatewayOptions...)
+}
+
+func (s *WebServer) ServerOptions() []grpc.ServerOption {
+	return grpc_.ExtractServerOptions(s.gatewayOptions...)
+}
+
+func (s *WebServer) HttpInterceptorChain() http_.HandlerInterceptorChain {
+	return grpc_.ExtractHttpInterceptorChain(s.gatewayOptions...)
+}
+
+func (s *WebServer) HttpRoundTripDecorators() http_.RoundTripDecorators {
+	var decorators http_.RoundTripDecorators
+	if s.otelHandling {
+		opts := s.otelHttpOptions
+		decorators = append(decorators, http_.RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
+			return otelhttp.NewTransport(rt, opts...)
+		}))
+	}
+	decorators = append(decorators, grpc_.ExtractRoundTripDecorators(s.gatewayOptions...)...)
+	return decorators
 }
 
 // preparedWebServer is a private wrapper that enforces a call of PrepareRun() before Run can be invoked.
