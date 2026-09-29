@@ -60,3 +60,10 @@ func WithHttpRewriter(rewriter func(w http.ResponseWriter, r *http.Request) erro
 	return WithHttpHandlerInterceptor(
 		http_.WithHandlerInterceptor(rewriter, nil, nil, nil))
 }
+
+// WithHttpRoundTripDecorators sets HTTP client-side round trip decorators.
+func WithHttpRoundTripDecorators(decorators ...http_.RoundTripDecorator) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.roundTripDecorators = append(gateway.opt.roundTripDecorators, decorators...)
+	})
+}

@@ -70,6 +70,61 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 	}
 }
 
+// HttpRoundTripDecorator returns a new http RoundTripDecorator that optionally logs outgoing HTTP requests.
+func HttpRoundTripDecorator(l logging.Logger) http_.RoundTripDecorator {
+	var logHttpHeader bool
+	{
+		vHeader := os.Getenv("HTTP_GO_LOG_HTTP_HEADER")
+		if vh, err := strconv.ParseBool(vHeader); err == nil {
+			logHttpHeader = vh
+		}
+	}
+
+	return http_.RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
+		return http_.RoundTripFunc(func(r *http.Request) (*http.Response, error) {
+			var cost time_.Cost
+			cost.Start()
+			var attrs []any
+			attrs = append(attrs, slog.String(SystemTag[0], SystemTag[1]))
+			attrs = append(attrs, slog.Time("http.start_time", time.Now()))
+			attrs = append(attrs, extractLoggingFieldsFromHttpRequest(r)...)
+
+			var reqAttrs = attrs
+			if logHttpHeader {
+				reqAttrs = append(reqAttrs, httpHeaderToAttr(r.Header, "http.request.header"))
+			}
+			l.Log(r.Context(), logging.LevelInfo, "http request sending", reqAttrs...)
+
+			resp, err := rt.RoundTrip(r)
+
+			attrs = append(attrs,
+				slog.Duration("cost", cost.Elapse()),
+				slog.Int64("http.request_body_size", r.ContentLength))
+
+			if resp != nil {
+				attrs = append(attrs,
+					slog.String("http.status_code", slices_.FirstOrZero(http.StatusText(resp.StatusCode), "CODE("+strconv.FormatInt(int64(resp.StatusCode), 10)+")")),
+					slog.Int64("http.response_body_size", resp.ContentLength))
+			}
+			if err != nil {
+				attrs = append(attrs, slog.String("http.error", err.Error()))
+			}
+
+			var respAttrs = attrs
+			if logHttpHeader && resp != nil {
+				respAttrs = append(respAttrs, httpHeaderToAttr(resp.Header, "http.response.header"))
+			}
+
+			if err != nil {
+				l.Log(r.Context(), logging.LevelError, "finished http call with error", respAttrs...)
+			} else {
+				l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with status code %d", resp.StatusCode), respAttrs...)
+			}
+			return resp, err
+		})
+	})
+}
+
 func extractLoggingFieldsFromHttpRequest(r *http.Request) []any {
 	attrs := logging.ExtractFields(r.Context())
 	if slog.Default().Enabled(r.Context(), slog.LevelDebug) {

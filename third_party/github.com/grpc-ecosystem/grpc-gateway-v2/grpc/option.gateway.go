@@ -35,6 +35,9 @@ type gatewayOption struct {
 	srvMuxOpts       []runtime.ServeMuxOption
 	httpInterceptors http_.HandlerInterceptorChain
 
+	// for http client round trip
+	roundTripDecorators http_.RoundTripDecorators
+
 	loggingOpts []logging.Option
 }
 
