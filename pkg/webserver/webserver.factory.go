@@ -32,7 +32,7 @@ import (
 
 // ClientMaxReceiveMessageSize use 4GB as the default message size limit.
 // grpc library default is 4MB
-var defaultMaxReceiveMessageSize = math.MaxInt32 // 1024 * 1024 * 1024 * 4
+var defaultMaxReceiveMessageSize = 4 * 1024 * 1024 * 1024 // 1024 * 1024 * 1024 * 4
 var defaultMaxSendMessageSize = math.MaxInt32
 
 // FactoryConfigFunc is an alias for a function that will take in a pointer to an FactoryConfig and modify it
