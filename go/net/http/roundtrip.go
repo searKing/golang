@@ -21,6 +21,13 @@ type RoundTripDecorator interface {
 	WrapRoundTrip(rt http.RoundTripper) http.RoundTripper
 }
 
+// RoundTripDecoratorFunc is an adapter to allow the use of ordinary functions as RoundTripDecorators.
+type RoundTripDecoratorFunc func(rt http.RoundTripper) http.RoundTripper
+
+func (f RoundTripDecoratorFunc) WrapRoundTrip(rt http.RoundTripper) http.RoundTripper {
+	return f(rt)
+}
+
 // RoundTripDecorators defines a RoundTripDecorator slice.
 type RoundTripDecorators []RoundTripDecorator
 
