@@ -165,9 +165,7 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 	stoppedHttpServerCtx, stopHttpServer := context.WithCancel(context.Background())
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		defer stopHttpServer()
 		defer slog.Info("[graceful-termination] shutdown executed")
 		<-ctx.Done()
@@ -178,7 +176,7 @@ func (s preparedWebServer) Run(ctx context.Context) error {
 		close(s.readinessStopCh)
 		slog.InfoContext(ctx, fmt.Sprintf("[graceful-termination] shutdown is initiated and delayed after %d", s.ShutdownDelayDuration))
 		time.Sleep(s.ShutdownDelayDuration)
-	}()
+	})
 
 	// close socket after delayed stopCh
 	stopHttpServerCtx, stoppedHttpServerCtx, err := s.NonBlockingRun(stoppedHttpServerCtx)

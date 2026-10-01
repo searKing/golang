@@ -22,6 +22,7 @@ import (
 	slog_ "github.com/searKing/golang/go/log/slog"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	encoding_ "github.com/searKing/golang/pkg/webserver/pkg/encoding"
+	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
 	otel_ "github.com/searKing/golang/pkg/webserver/pkg/otel"
 	gin_ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
@@ -75,6 +76,8 @@ type FactoryConfig struct {
 	OtelHandling                 bool                // captures traces and metrics and send them to an observability platform by OpenTelemetry.
 	OtelHttpOptions              []otelhttp.Option   // take effect only when OtelHandling is true
 	OtelGrpcOptions              []otelgrpc.Option   // take effect only when OtelHandling is true
+	HTTPTraceLogging             bool                // log client-side HTTP trace events (DNS, connection) via slog. The default is false.
+	HTTPTraceOptions             []httptrace_.Option // take effect only when HTTPTraceLogging is true, e.g. WithEvents, WithLevel.
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
@@ -173,6 +176,9 @@ func (f *Factory) New() (*WebServer, error) {
 	{
 		// http interceptors
 		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpHandlerDecorators()...))
+		if f.fc.HTTPTraceLogging {
+			opts = append(opts, grpc_.WithHttpRoundTripDecorators(httptrace_.LoggingDecorator(f.fc.HTTPTraceOptions...)))
+		}
 		// grpc interceptors, when grpc service is called by http forward or gRPC.
 		opts = append(opts, grpc_.WithGrpcUnaryServerChain(f.UnaryServerInterceptors()...))
 		opts = append(opts, grpc_.WithGrpcStreamServerChain(f.StreamServerInterceptors()...))

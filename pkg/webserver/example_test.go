@@ -21,9 +21,10 @@ import (
 
 func TestNewWebServer(t *testing.T) {
 	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
-		Name:        "MockWebServer",
-		BindAddress: ":8080",
-		Validator:   getValidator(t),
+		Name:             "MockWebServer",
+		BindAddress:      ":8080",
+		Validator:        getValidator(t),
+		HTTPTraceLogging: true,
 	})
 	if err != nil {
 		t.Fatalf("create web server failed: %s", err)
@@ -32,9 +33,10 @@ func TestNewWebServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prepare web server failed: %s", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	go func() {
+		defer cancel()
 		time.Sleep(time.Millisecond)
 		url := "http://localhost:8080/healthz"
 		resp, err := http.Get(url)
@@ -42,6 +44,7 @@ func TestNewWebServer(t *testing.T) {
 			t.Errorf("GET %q failed: %s", url, err)
 			return
 		}
+		defer resp.Body.Close()
 		data, err := httputil.DumpResponse(resp, true)
 		if err != nil {
 			t.Errorf("dump response failed: %s", err)
