@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 	"reflect"
 	"strings"
@@ -56,6 +57,41 @@ func TestNewWebServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run web server failed: %s", err)
 	}
+}
+
+func ExampleWebServer_HttpRoundTripProxyFunc() {
+	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
+		BindAddress:             "127.0.0.1:0",
+		HTTPDynamicHostAndProxy: true,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// base stands in for the caller's *http.Transport.
+	// Production code clones http.DefaultTransport or its own transport the same way.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+	base := ts.Client().Transport.(*http.Transport).Clone()
+	if proxy := srv.HttpRoundTripProxyFunc(); proxy != nil {
+		base.Proxy = proxy
+	}
+	client := &http.Client{
+		Transport: srv.HttpRoundTripDecorators().WrapRoundTrip(base),
+	}
+
+	resp, err := client.Get(ts.URL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+	fmt.Println(resp.StatusCode)
+	// Output:
+	// 204
 }
 
 func isStrNotContainSpace(fl validator.FieldLevel) bool {

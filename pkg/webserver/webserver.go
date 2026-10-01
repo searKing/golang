@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -49,11 +50,12 @@ type WebServer struct {
 
 	PreferRegisterHTTPFromEndpoint bool // prefer register http handler from endpoint
 
-	gatewayOptions  []grpc_.GatewayOption
-	otelHandling    bool
-	otelHttpOptions []otelhttp.Option
-	ginBackend      *gin.Engine
-	grpcBackend     *grpc_.Gateway
+	gatewayOptions          []grpc_.GatewayOption
+	otelHandling            bool
+	otelHttpOptions         []otelhttp.Option
+	httpDynamicHostAndProxy bool
+	ginBackend              *gin.Engine
+	grpcBackend             *grpc_.Gateway
 
 	// PostStartHooks are each called after the server has started listening, in a separate go func for each
 	// with no guarantee of ordering between them.  The map key is a name used for error reporting.
@@ -120,6 +122,37 @@ func (s *WebServer) HttpInterceptorChain() http_.HandlerInterceptorChain {
 	return grpc_.ExtractHttpInterceptorChain(s.gatewayOptions...)
 }
 
+// HttpRoundTripProxyFunc returns the proxy function for the caller's *http.Transport
+// before that transport is passed to [WebServer.HttpRoundTripDecorators].
+//
+// When [FactoryConfig.HTTPDynamicHostAndProxy] is set, the function resolves a
+// proxy stored on the request with http_.RequestWithProxyTarget, then falls back to
+// HTTP_PROXY, HTTPS_PROXY, and NO_PROXY. A nil return means the switch is off;
+// leave Transport.Proxy unchanged.
+// The same switch adds destination-host rewriting to HttpRoundTripDecorators.
+// Put the host on the request with http_.RequestWithHostTarget.
+//
+// Build an outgoing client from a clone of the transport you already use:
+//
+//	base := http.DefaultTransport.(*http.Transport).Clone()
+//	if proxy := srv.HttpRoundTripProxyFunc(); proxy != nil {
+//		base.Proxy = proxy
+//	}
+//	client := &http.Client{
+//		Transport: srv.HttpRoundTripDecorators().WrapRoundTrip(base),
+//	}
+func (s *WebServer) HttpRoundTripProxyFunc() func(*http.Request) (*url.URL, error) {
+	if !s.httpDynamicHostAndProxy {
+		return nil
+	}
+	return http_.ProxyFuncFromContextOrEnvironment
+}
+
+// HttpRoundTripDecorators returns the decorators for an outgoing http.Client.
+// Wrap the caller's transport with them after installing [WebServer.HttpRoundTripProxyFunc].
+// The decorators cover access logging, optional OpenTelemetry and client traces,
+// and destination-host rewriting when HTTPDynamicHostAndProxy is set.
+// See HttpRoundTripProxyFunc for a complete client.
 func (s *WebServer) HttpRoundTripDecorators() http_.RoundTripDecorators {
 	var decorators http_.RoundTripDecorators
 	if s.otelHandling {
