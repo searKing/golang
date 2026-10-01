@@ -15,6 +15,17 @@ import (
 // OpenTelemetry trace_id and span_id to log records when a valid span
 // is present in the context.
 //
+// Pass a handler that writes to its own io.Writer, such as
+// slog.NewJSONHandler or slog.NewTextHandler. Do not pass
+// slog.Default().Handler(), or a wrapper that delegates to it, when the
+// result will be installed with slog.SetDefault. Until the process replaces
+// it, that handler is slog's builtin handler: it writes through log.Default,
+// and SetDefault points log.Default back at the wrapper, which deadlocks.
+// A caller-defined Handler type does not avoid this when its inner handler
+// is still the builtin one.
+// See https://github.com/golang/go/issues/61892 and
+// https://github.com/golang/go/issues/77716.
+//
 // Example usage:
 //
 //	baseHandler := slog.NewJSONHandler(os.Stdout, nil)

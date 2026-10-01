@@ -142,7 +142,16 @@ func (f *Factory) Config() FactoryConfig {
 // name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delgating.
 func (f *Factory) New() (*WebServer, error) {
 	if f.fc.OtelHandling {
+		// SetDefault points log.Default back at this handler. If the wrapped
+		// handler, or any wrapper around it, still writes through the builtin
+		// slog handler, that write re-enters log.Default and deadlocks.
+		// See https://github.com/golang/go/issues/61892 and
+		// https://github.com/golang/go/issues/77716.
+		// log.SetOutput breaks that bridge for every such chain. slog output
+		// still goes through the caller's handler. log.Printf writes to stderr
+		// and does not re-enter it.
 		slog.SetDefault(slog.New(otel_.NewSlogHandler(slog.Default().Handler())))
+		log.SetOutput(os.Stderr)
 	}
 
 	f.fc.BindAddress = f.GetBackendBindHostPort()

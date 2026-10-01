@@ -6,16 +6,113 @@ package webserver_test
 
 import (
 	"bytes"
+	"context"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/searKing/golang/pkg/webserver"
 	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
 )
+
+// processLogger is the slog logger at process start, before tests replace it.
+// OtelHandling must not deadlock when wrapping this builtin handler.
+var processLogger = slog.Default()
+
+func TestOtelHandlingLogDoesNotDeadlock(t *testing.T) {
+	prev := slog.Default()
+	slog.SetDefault(processLogger)
+	t.Cleanup(func() { slog.SetDefault(prev) })
+
+	assertOtelPrepareRun(t)
+}
+
+func TestOtelHandlingWrappedBuiltinHandlerDoesNotDeadlock(t *testing.T) {
+	prev := slog.Default()
+	slog.SetDefault(processLogger)
+	// Outer type is not *slog.defaultHandler, but Handle delegates to it.
+	slog.SetDefault(slog.New(delegatingSlogHandler{next: slog.Default().Handler()}))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+
+	assertOtelPrepareRun(t)
+}
+
+func TestOtelHandlingUsesCustomSlogHandler(t *testing.T) {
+	prev := slog.Default()
+	t.Cleanup(func() { slog.SetDefault(prev) })
+
+	var buf bytes.Buffer
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})))
+
+	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
+		BindAddress:  "127.0.0.1:0",
+		OtelHandling: true,
+	})
+	if err != nil {
+		t.Fatalf("create web server: %v", err)
+	}
+	if _, err := srv.PrepareRun(); err != nil {
+		t.Fatalf("prepare web server: %v", err)
+	}
+	slog.Info("custom-slog-marker")
+	log.Printf("custom-log-printf-marker")
+	if !strings.Contains(buf.String(), "custom-slog-marker") {
+		t.Fatalf("slog no longer uses the custom handler, logs=%s", buf.String())
+	}
+	if strings.Contains(buf.String(), "custom-log-printf-marker") {
+		t.Fatalf("log.Printf re-entered the slog handler, logs=%s", buf.String())
+	}
+}
+
+// delegatingSlogHandler forwards to the builtin handler under another type.
+type delegatingSlogHandler struct {
+	next slog.Handler
+}
+
+func (d delegatingSlogHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return d.next.Enabled(ctx, level)
+}
+
+func (d delegatingSlogHandler) Handle(ctx context.Context, r slog.Record) error {
+	return d.next.Handle(ctx, r)
+}
+
+func (d delegatingSlogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return delegatingSlogHandler{next: d.next.WithAttrs(attrs)}
+}
+
+func (d delegatingSlogHandler) WithGroup(name string) slog.Handler {
+	return delegatingSlogHandler{next: d.next.WithGroup(name)}
+}
+
+func assertOtelPrepareRun(t *testing.T) {
+	t.Helper()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		srv, err := webserver.NewWebServer(webserver.FactoryConfig{
+			BindAddress:  "127.0.0.1:0",
+			OtelHandling: true,
+		})
+		if err != nil {
+			t.Errorf("create web server: %v", err)
+			return
+		}
+		if _, err := srv.PrepareRun(); err != nil {
+			t.Errorf("prepare web server: %v", err)
+		}
+	}()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("deadlocked while logging with OtelHandling")
+	}
+}
 
 func TestHTTPTraceLoggingSwitch(t *testing.T) {
 	off, err := webserver.NewWebServer(webserver.FactoryConfig{BindAddress: "127.0.0.1:0"})
