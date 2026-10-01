@@ -25,9 +25,18 @@ func RequestWithProxyTarget(req *http.Request, proxy *httpproxy.Proxy) *http.Req
 	return req.WithContext(httpproxy.WithProxy(req.Context(), proxy))
 }
 
-// ProxyFuncFromContextOrEnvironment builds a proxy function from the given string, which should
-// represent a Target that can be used as a proxy. It performs basic
-// sanitization of the Target retrieved in context of Request, and returns any error encountered.
+// ProxyFuncFromContextOrEnvironment resolves the proxy URL for an HTTP
+// request, supporting both dynamic proxy discovery and fallback to
+// environment variables.
+//
+// If the request context contains a proxy configuration via
+// RequestWithProxyTarget, it is used. Otherwise, the function falls back to
+// http.ProxyFromEnvironment, which respects HTTP_PROXY, HTTPS_PROXY, and
+// NO_PROXY environment variables.
+//
+// When ProxyTarget is set in the context, it is resolved through the
+// configured resolver and the host portion of the proxy URL is updated with
+// the resolved address. This enables dynamic proxy discovery.
 func ProxyFuncFromContextOrEnvironment(req *http.Request) (*url.URL, error) {
 	proxy := httpproxy.ContextProxy(req.Context())
 	// load proxy from environment if proxy not set
@@ -59,11 +68,16 @@ func ProxyFuncFromContextOrEnvironment(req *http.Request) (*url.URL, error) {
 	return proxyUrl, nil
 }
 
-// DefaultTransportWithDynamicProxy is the default implementation of Transport and is
-// used by DefaultClientWithDynamicProxy. It establishes network connections as needed
-// and caches them for reuse by subsequent calls. It uses HTTP proxies
-// as directed by the ProxyFuncFromContextOrEnvironment, $HTTP_PROXY and $NO_PROXY (or $http_proxy and
-// $no_proxy) environment variables.
+// DefaultTransportWithDynamicProxy is an http.RoundTripper that supports
+// both static and dynamically resolved HTTP/HTTPS/SOCKS5 proxies.
+//
+// It uses ProxyFuncFromContextOrEnvironment to determine the proxy URL for
+// each request. Proxies can be configured via:
+//   - RequestWithProxyTarget (dynamic resolution)
+//   - HTTP_PROXY, HTTPS_PROXY, NO_PROXY environment variables
+//
+// The transport maintains connection pooling and configures reasonable
+// timeout and TLS handshake defaults suitable for proxied requests.
 var DefaultTransportWithDynamicProxy http.RoundTripper = &http.Transport{
 	Proxy: ProxyFuncFromContextOrEnvironment,
 	DialContext: (&net.Dialer{
@@ -77,16 +91,35 @@ var DefaultTransportWithDynamicProxy http.RoundTripper = &http.Transport{
 	ExpectContinueTimeout: 1 * time.Second,
 }
 
-// DefaultClientWithDynamicProxy is the default Client with DefaultTransportWithDynamicProxy.
+// DefaultClientWithDynamicProxy is an http.Client that uses DefaultTransportWithDynamicProxy.
 var DefaultClientWithDynamicProxy = &http.Client{
 	Transport: DefaultTransportWithDynamicProxy,
 }
 
-// ProxyFuncWithTargetOrDefault builds a proxy function from the given string, which should
-// represent a Target that can be used as a proxy. It performs basic
-// sanitization of the Target and returns any error encountered.
-// fixedProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
+// ProxyFuncWithTargetOrDefault returns a proxy function that applies dynamic
+// proxy resolution when configured, otherwise falls back to a default proxy
+// function.
+//
+// If fixedProxyUrl is empty, def is returned unchanged.
+//
+// If fixedProxyUrl is provided but fixedProxyTarget is empty, a function
+// returning the static proxy URL is returned (no dynamic resolution).
+//
+// If both fixedProxyUrl and fixedProxyTarget are provided, a function is
+// returned that resolves fixedProxyTarget through the resolver and updates
+// the proxy URL's host with the resolved address. This enables dynamic proxy
+// discovery.
+//
+// Parameters:
+//   - fixedProxyUrl: The proxy URL, e.g. "http://127.0.0.1:8080" or
+//     "socks5://proxy.example.com:1080"
+//   - fixedProxyTarget: The resolver target for dynamic proxy discovery, e.g.
+//     "proxy-service" or "proxy-lb"
+//   - def: The fallback proxy function, used when fixedProxyUrl is empty
+//
+// Returns:
+//   - A proxy function suitable for http.Transport.Proxy
+//   - An error function if fixedProxyUrl parsing fails
 func ProxyFuncWithTargetOrDefault(fixedProxyUrl string, fixedProxyTarget string, def func(req *http.Request) (*url.URL, error)) func(req *http.Request) (*url.URL, error) {
 	if fixedProxyUrl == "" {
 		return def
@@ -111,9 +144,21 @@ func ProxyFuncWithTargetOrDefault(fixedProxyUrl string, fixedProxyTarget string,
 	}
 }
 
-// TransportWithProxyTarget wraps http.RoundTripper with request url replaced by Target resolved by resolver.
-// fixedProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
+// TransportWithProxyTarget wraps an http.Transport to apply dynamic proxy
+// resolution.
+//
+// It updates the transport's Proxy field with a proxy function that supports
+// both dynamic resolution and fallback to the transport's current proxy
+// configuration.
+//
+// Parameters:
+//   - t: The http.Transport to wrap
+//   - fixedProxyUrl: The proxy URL, e.g. "http://127.0.0.1:8080"
+//   - fixedProxyTarget: The resolver target for dynamic discovery, e.g.
+//     "proxy-service"
+//
+// Returns:
+//   - The modified transport (pointer to the same object)
 func TransportWithProxyTarget(t *http.Transport, fixedProxyUrl string, fixedProxyTarget string) *http.Transport {
 	t.Proxy = ProxyFuncWithTargetOrDefault(fixedProxyUrl, fixedProxyTarget, t.Proxy)
 	return t

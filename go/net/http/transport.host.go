@@ -14,8 +14,13 @@ import (
 	time_ "github.com/searKing/golang/go/time"
 )
 
-// RequestWithHostTarget replace Host in url.Url by resolver.Host
-// replace Host in req if replaceHostInRequest is true
+var _ RoundTripDecorator = RoundTripDecoratorFunc(RoundTripperWithTarget)
+
+// RequestWithHostTarget attaches a dynamic destination host to the request
+// context.
+//
+// The target is resolved later by HostFuncFromContext before the request is
+// sent. This allows dynamic service discovery and destination rewriting.
 func RequestWithHostTarget(req *http.Request, target *httphost.Host) *http.Request {
 	if target == nil {
 		return req
@@ -23,9 +28,29 @@ func RequestWithHostTarget(req *http.Request, target *httphost.Host) *http.Reque
 	return req.WithContext(httphost.WithHost(req.Context(), target))
 }
 
-// HostFuncFromContext builds a host function from the given string, which should
-// represent a Target that can be used as a host. It performs basic
-// sanitization of the Target retrieved in context of Request, and returns any error encountered.
+// HostFuncFromContext resolves the dynamic destination host configured in the
+// request context and updates the request before it is sent to the underlying
+// transport.
+//
+// It resolves HostTarget through the configured resolver. The resolved address
+// replaces req.URL.Host, which determines the network address to which the
+// transport connects.
+//
+// If ReplaceHostInRequest is true, req.Host is also set to the resolved
+// address. This affects the HTTP Host header sent to the server.
+//
+// Example:
+//
+//	Original request URL: http://api.example.com/v1
+//	HostTarget:          "backend-service"
+//	Resolver output:     "10.0.0.8:8080"
+//
+//	After resolution:
+//	  req.URL.Host = "10.0.0.8:8080"
+//	  req.Host = "api.example.com" (unchanged if ReplaceHostInRequest is false)
+//
+// This is not an HTTP forward proxy. It is for service discovery and
+// destination rewriting only.
 func HostFuncFromContext(req *http.Request) error {
 	host := httphost.ContextHost(req.Context())
 	// load host from environment if host not set
@@ -55,18 +80,36 @@ func HostFuncFromContext(req *http.Request) error {
 	return nil
 }
 
-// DefaultTransportWithDynamicHost is the default implementation of Transport and is
-// used by DefaultClientWithDynamicHost. It establishes network connections as needed
-// and caches them for reuse by subsequent calls.
+// DefaultTransportWithDynamicHost is an http.RoundTripper that supports
+// dynamic destination host resolution.
+//
+// It wraps http.DefaultTransport to add service discovery and host rewriting
+// capability through HostFuncFromContext. This is useful for scenarios where
+// the destination address is resolved at request time based on a logical
+// service name.
 var DefaultTransportWithDynamicHost = RoundTripperWithTarget(http.DefaultTransport)
 
-// DefaultClientWithDynamicHost is the default Client with DefaultTransportWithDynamicHost.
+// DefaultClientWithDynamicHost is an http.Client that uses
+// DefaultTransportWithDynamicHost.
 var DefaultClientWithDynamicHost = &http.Client{
 	Transport: DefaultTransportWithDynamicHost,
 }
 
-// RoundTripperWithTarget wraps http.RoundTripper with request url replaced by Target resolved by resolver.
-// Target is as like gRPC Naming for service discovery.
+// RoundTripperWithTarget wraps an http.RoundTripper to support dynamic
+// destination host resolution and optional HTTP Host header rewriting.
+//
+// For each request, it:
+//  1. Resolves HostTarget through the configured resolver
+//  2. Updates req.URL.Host with the resolved address
+//  3. Optionally updates req.Host based on ReplaceHostInRequest
+//  4. Reports resolver results and request metrics through resolver.ResolveDone
+//  5. Wraps errors with resolver and destination information
+//
+// The underlying RoundTripper (typically http.DefaultTransport) connects to
+// the resolved destination address.
+//
+// This wrapper also handles proxy resolution if httpproxy.Proxy is configured
+// in the request context, and reports both host and proxy metrics.
 func RoundTripperWithTarget(rt http.RoundTripper) http.RoundTripper {
 	return RoundTripFunc(func(req *http.Request) (resp *http.Response, err error) {
 		err = HostFuncFromContext(req)
@@ -110,12 +153,15 @@ func RoundTripperWithTarget(rt http.RoundTripper) http.RoundTripper {
 	})
 }
 
-// DefaultTransportWithDynamicHostAndProxy is the default implementation of Transport and is
-// used by DefaultClientWithDynamicHostAndProxy. It establishes network connections as needed
-// and caches them for reuse by subsequent calls.
+// DefaultTransportWithDynamicHostAndProxy is an http.RoundTripper that
+// supports both dynamic destination host resolution and dynamic proxy resolution.
+//
+// It combines the functionality of DefaultTransportWithDynamicHost and
+// DefaultTransportWithDynamicProxy, allowing independent control over the
+// final business destination and the proxy server used to reach it.
 var DefaultTransportWithDynamicHostAndProxy = RoundTripperWithTarget(DefaultTransportWithDynamicProxy)
 
-// DefaultClientWithDynamicHostAndProxy is the default Client with DefaultTransportWithDynamicHostAndProxy.
+// DefaultClientWithDynamicHostAndProxy is an http.Client that uses DefaultTransportWithDynamicHostAndProxy.
 var DefaultClientWithDynamicHostAndProxy = &http.Client{
 	Transport: DefaultTransportWithDynamicHostAndProxy,
 }
