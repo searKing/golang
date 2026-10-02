@@ -11,14 +11,12 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	http_ "github.com/searKing/golang/go/net/http"
-	"github.com/searKing/golang/go/net/http/httphost"
 	runtime_ "github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
@@ -123,38 +121,19 @@ func (s *WebServer) HttpInterceptorChain() http_.HandlerInterceptorChain {
 	return grpc_.ExtractHttpInterceptorChain(s.gatewayOptions...)
 }
 
-// HttpRoundTripProxyFunc returns the proxy function for the caller's *http.Transport
-// before that transport is passed to [WebServer.HttpRoundTripDecorators].
-//
-// When [FactoryConfig.HTTPDynamicHostAndProxy] is set, the function resolves a
-// proxy stored on the request with http_.RequestWithProxyTarget, then falls back to
-// HTTP_PROXY, HTTPS_PROXY, and NO_PROXY. A nil return means the switch is off;
-// leave Transport.Proxy unchanged.
-// The same switch adds destination-host rewriting to HttpRoundTripDecorators.
-// Put the host on the request with http_.RequestWithHostTarget.
-//
-// Build an outgoing client with [WebServer.NewHttpClientForTarget].
-// To start from a transport you already use, clone it and wrap the decorators:
+// HttpRoundTripDecorators returns the outgoing-client middleware for access
+// logging, optional OpenTelemetry, and client traces.
+// [WebServer.NewHttpClientForTarget] applies this middleware automatically.
+// Call WrapRoundTrip only when the client keeps a transport of its own.
+// Set Proxy to http_.ProxyFuncFromContextOrEnvironment when that transport
+// should resolve http_.RequestWithProxyTarget and the HTTP_PROXY environment
+// variables:
 //
 //	base := http.DefaultTransport.(*http.Transport).Clone()
-//	if proxy := srv.HttpRoundTripProxyFunc(); proxy != nil {
-//		base.Proxy = proxy
-//	}
+//	base.Proxy = http_.ProxyFuncFromContextOrEnvironment
 //	client := &http.Client{
 //		Transport: srv.HttpRoundTripDecorators().WrapRoundTrip(base),
 //	}
-func (s *WebServer) HttpRoundTripProxyFunc() func(*http.Request) (*url.URL, error) {
-	if !s.httpDynamicHostAndProxy {
-		return nil
-	}
-	return http_.ProxyFuncFromContextOrEnvironment
-}
-
-// HttpRoundTripDecorators returns the decorators for an outgoing http.Client.
-// Wrap the caller's transport with them after installing [WebServer.HttpRoundTripProxyFunc].
-// The decorators cover access logging, optional OpenTelemetry and client traces,
-// and destination-host rewriting when HTTPDynamicHostAndProxy is set.
-// See HttpRoundTripProxyFunc for a complete client.
 func (s *WebServer) HttpRoundTripDecorators() http_.RoundTripDecorators {
 	var decorators http_.RoundTripDecorators
 	if s.otelHandling {
@@ -167,42 +146,26 @@ func (s *WebServer) HttpRoundTripDecorators() http_.RoundTripDecorators {
 	return decorators
 }
 
-// NewHttpClientForTarget returns an http.Client that sends requests through
-// this server's outgoing round-trip decorators.
+// NewHttpClientForTarget returns an http.Client for outgoing requests.
+// The returned client already includes [WebServer.HttpRoundTripDecorators],
+// so callers do not wrap that middleware again.
 //
-// target is the resolver target for destination-host rewriting. It is attached
-// to every request, the same as http_.RequestWithHostTarget. An empty target
-// leaves the request URL host unchanged. Rewriting runs when
-// HTTPDynamicHostAndProxy is set, because that switch installs
-// RoundTripperWithTarget. The caller imports the resolver for target, for
-// example passthrough.
+// When [FactoryConfig.HTTPDynamicHostAndProxy] is set, the underlying client
+// is http_.NewClientWithTarget. target is the destination-host resolver
+// target. An empty target leaves the request URL host unchanged. The caller
+// imports the resolver for target, for example passthrough.
 //
-// The transport is http.DefaultTransport. When [WebServer.HttpRoundTripProxyFunc]
-// is non-nil, the client uses a clone with that function as Transport.Proxy.
-// Use [WebServer.HttpRoundTripDecorators] when the client must start from a
-// different transport.
+// When the switch is off, the transport is http.DefaultTransport and target
+// is ignored. HttpRoundTripDecorators is still applied.
 func (s *WebServer) NewHttpClientForTarget(target string) *http.Client {
-	base := http.DefaultTransport
-	if proxy := s.HttpRoundTripProxyFunc(); proxy != nil {
-		if t, ok := base.(*http.Transport); ok {
-			cloned := t.Clone()
-			cloned.Proxy = proxy
-			base = cloned
-		}
+	var client *http.Client
+	if s.httpDynamicHostAndProxy {
+		client = http_.NewClientWithTarget(target)
+	} else {
+		client = &http.Client{Transport: http.DefaultTransport}
 	}
-
-	rts := s.HttpRoundTripDecorators()
-	if target != "" {
-		rts = append(http_.RoundTripDecorators{
-			http_.RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
-				return http_.RoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					host := &httphost.Host{HostTarget: target}
-					return rt.RoundTrip(http_.RequestWithHostTarget(req, host))
-				})
-			}),
-		}, rts...)
-	}
-	return &http.Client{Transport: rts.WrapRoundTrip(base)}
+	client.Transport = s.HttpRoundTripDecorators().WrapRoundTrip(client.Transport)
+	return client
 }
 
 // preparedWebServer is a private wrapper that enforces a call of PrepareRun() before Run can be invoked.

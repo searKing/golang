@@ -12,12 +12,10 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	http_ "github.com/searKing/golang/go/net/http"
 	_ "github.com/searKing/golang/go/net/resolver/passthrough"
 	"github.com/searKing/golang/pkg/webserver"
 	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
@@ -128,9 +126,6 @@ func TestHTTPDynamicHostAndProxySwitch(t *testing.T) {
 	if http.DefaultTransport != prevTransport {
 		t.Fatal("http.DefaultTransport replaced while HTTPDynamicHostAndProxy is false")
 	}
-	if off.HttpRoundTripProxyFunc() != nil {
-		t.Fatal("HttpRoundTripProxyFunc is set while HTTPDynamicHostAndProxy is false")
-	}
 
 	on, err := webserver.NewWebServer(webserver.FactoryConfig{
 		BindAddress:             "127.0.0.1:0",
@@ -142,13 +137,8 @@ func TestHTTPDynamicHostAndProxySwitch(t *testing.T) {
 	if http.DefaultTransport != prevTransport {
 		t.Fatal("http.DefaultTransport replaced while building the server")
 	}
-	if reflect.ValueOf(on.HttpRoundTripProxyFunc()).Pointer() != reflect.ValueOf(http_.ProxyFuncFromContextOrEnvironment).Pointer() {
-		t.Fatal("HttpRoundTripProxyFunc was not ProxyFuncFromContextOrEnvironment")
-	}
-	got := len(on.HttpRoundTripDecorators())
-	want := len(off.HttpRoundTripDecorators()) + 1
-	if got != want {
-		t.Fatalf("HTTPDynamicHostAndProxy decorators = %d, want %d", got, want)
+	if len(on.HttpRoundTripDecorators()) != len(off.HttpRoundTripDecorators()) {
+		t.Fatal("HTTPDynamicHostAndProxy changed HttpRoundTripDecorators")
 	}
 }
 

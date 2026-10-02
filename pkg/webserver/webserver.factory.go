@@ -20,7 +20,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/cors"
 	slog_ "github.com/searKing/golang/go/log/slog"
-	http_ "github.com/searKing/golang/go/net/http"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	encoding_ "github.com/searKing/golang/pkg/webserver/pkg/encoding"
 	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
@@ -79,7 +78,7 @@ type FactoryConfig struct {
 	OtelGrpcOptions              []otelgrpc.Option   // take effect only when OtelHandling is true
 	HTTPTraceLogging             bool                // log client-side HTTP trace events (DNS, connection) via slog. The default is false.
 	HTTPTraceOptions             []httptrace_.Option // take effect only when HTTPTraceLogging is true, e.g. WithEvents, WithLevel.
-	HTTPDynamicHostAndProxy      bool                // resolve each outgoing request's proxy and destination host. The default is false. See WebServer.HttpRoundTripProxyFunc.
+	HTTPDynamicHostAndProxy      bool                // NewHttpClientForTarget uses NewClient for destination host and dynamic proxy. The default is false.
 
 	// Deprecated: takes no effect, use slog instead.
 	EnableLogrusMiddleware bool // disable logrus middleware
@@ -187,9 +186,6 @@ func (f *Factory) New() (*WebServer, error) {
 	{
 		// http interceptors
 		opts = append(opts, grpc_.WithHttpHandlerDecorators(f.HttpHandlerDecorators()...))
-		if f.fc.HTTPDynamicHostAndProxy {
-			opts = append(opts, grpc_.WithHttpRoundTripDecorators(http_.RoundTripDecoratorFunc(http_.RoundTripperWithTarget)))
-		}
 		if f.fc.HTTPTraceLogging {
 			opts = append(opts, grpc_.WithHttpRoundTripDecorators(httptrace_.LoggingDecorator(f.fc.HTTPTraceOptions...)))
 		}

@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
+	http_ "github.com/searKing/golang/go/net/http"
 	_ "github.com/searKing/golang/go/net/resolver/passthrough"
 	"github.com/searKing/golang/pkg/webserver"
 )
@@ -60,26 +61,23 @@ func TestNewWebServer(t *testing.T) {
 	}
 }
 
-func ExampleWebServer_HttpRoundTripProxyFunc() {
+func ExampleWebServer_HttpRoundTripDecorators() {
 	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
-		BindAddress:             "127.0.0.1:0",
-		HTTPDynamicHostAndProxy: true,
+		BindAddress: "127.0.0.1:0",
 	})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	// base stands in for the caller's *http.Transport.
-	// Production code clones http.DefaultTransport or its own transport the same way.
+	// A caller-owned transport keeps its own dialer. Host rewriting is
+	// NewHttpClientForTarget; these decorators are access logs and traces.
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer ts.Close()
 	base := ts.Client().Transport.(*http.Transport).Clone()
-	if proxy := srv.HttpRoundTripProxyFunc(); proxy != nil {
-		base.Proxy = proxy
-	}
+	base.Proxy = http_.ProxyFuncFromContextOrEnvironment
 	client := &http.Client{
 		Transport: srv.HttpRoundTripDecorators().WrapRoundTrip(base),
 	}
