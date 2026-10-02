@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	slog_ "github.com/searKing/golang/go/log/slog"
 	http_ "github.com/searKing/golang/go/net/http"
+	"github.com/searKing/golang/go/net/http/httphost"
 	runtime_ "github.com/searKing/golang/go/runtime"
 	"github.com/searKing/golang/pkg/webserver/healthz"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
@@ -132,7 +133,8 @@ func (s *WebServer) HttpInterceptorChain() http_.HandlerInterceptorChain {
 // The same switch adds destination-host rewriting to HttpRoundTripDecorators.
 // Put the host on the request with http_.RequestWithHostTarget.
 //
-// Build an outgoing client from a clone of the transport you already use:
+// Build an outgoing client with [WebServer.NewHttpClientForTarget].
+// To start from a transport you already use, clone it and wrap the decorators:
 //
 //	base := http.DefaultTransport.(*http.Transport).Clone()
 //	if proxy := srv.HttpRoundTripProxyFunc(); proxy != nil {
@@ -163,6 +165,44 @@ func (s *WebServer) HttpRoundTripDecorators() http_.RoundTripDecorators {
 	}
 	decorators = append(decorators, grpc_.ExtractRoundTripDecorators(s.gatewayOptions...)...)
 	return decorators
+}
+
+// NewHttpClientForTarget returns an http.Client that sends requests through
+// this server's outgoing round-trip decorators.
+//
+// target is the resolver target for destination-host rewriting. It is attached
+// to every request, the same as http_.RequestWithHostTarget. An empty target
+// leaves the request URL host unchanged. Rewriting runs when
+// HTTPDynamicHostAndProxy is set, because that switch installs
+// RoundTripperWithTarget. The caller imports the resolver for target, for
+// example passthrough.
+//
+// The transport is http.DefaultTransport. When [WebServer.HttpRoundTripProxyFunc]
+// is non-nil, the client uses a clone with that function as Transport.Proxy.
+// Use [WebServer.HttpRoundTripDecorators] when the client must start from a
+// different transport.
+func (s *WebServer) NewHttpClientForTarget(target string) *http.Client {
+	base := http.DefaultTransport
+	if proxy := s.HttpRoundTripProxyFunc(); proxy != nil {
+		if t, ok := base.(*http.Transport); ok {
+			cloned := t.Clone()
+			cloned.Proxy = proxy
+			base = cloned
+		}
+	}
+
+	rts := s.HttpRoundTripDecorators()
+	if target != "" {
+		rts = append(http_.RoundTripDecorators{
+			http_.RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
+				return http_.RoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					host := &httphost.Host{HostTarget: target}
+					return rt.RoundTrip(http_.RequestWithHostTarget(req, host))
+				})
+			}),
+		}, rts...)
+	}
+	return &http.Client{Transport: rts.WrapRoundTrip(base)}
 }
 
 // preparedWebServer is a private wrapper that enforces a call of PrepareRun() before Run can be invoked.

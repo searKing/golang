@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
+	_ "github.com/searKing/golang/go/net/resolver/passthrough"
 	"github.com/searKing/golang/pkg/webserver"
 )
 
@@ -84,6 +85,37 @@ func ExampleWebServer_HttpRoundTripProxyFunc() {
 	}
 
 	resp, err := client.Get(ts.URL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+	fmt.Println(resp.StatusCode)
+	// Output:
+	// 204
+}
+
+func ExampleWebServer_NewHttpClientForTarget() {
+	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
+		BindAddress:             "127.0.0.1:0",
+		HTTPDynamicHostAndProxy: true,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Host != "logical.invalid" {
+			http.Error(w, r.Host, http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	client := srv.NewHttpClientForTarget(ts.Listener.Addr().String())
+	resp, err := client.Get("http://logical.invalid/healthz")
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	http_ "github.com/searKing/golang/go/net/http"
+	_ "github.com/searKing/golang/go/net/resolver/passthrough"
 	"github.com/searKing/golang/pkg/webserver"
 	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
 )
@@ -195,6 +196,55 @@ func TestHTTPTraceOptionsSelectEvents(t *testing.T) {
 	if strings.Contains(logs, "getting connection") {
 		t.Fatalf("WithEvents(0) logged trace events, logs=%s", logs)
 	}
+}
+
+func TestNewHttpClientForTarget(t *testing.T) {
+	var gotHost string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotHost = r.Host
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	t.Run("empty target uses the request URL", func(t *testing.T) {
+		srv, err := webserver.NewWebServer(webserver.FactoryConfig{BindAddress: "127.0.0.1:0"})
+		if err != nil {
+			t.Fatalf("create web server: %v", err)
+		}
+		resp, err := srv.NewHttpClientForTarget("").Get(ts.URL)
+		if err != nil {
+			t.Fatalf("GET %s: %v", ts.URL, err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", resp.StatusCode)
+		}
+		if gotHost != ts.Listener.Addr().String() {
+			t.Fatalf("host = %q, want %q", gotHost, ts.Listener.Addr().String())
+		}
+	})
+
+	t.Run("target rewrites host", func(t *testing.T) {
+		srv, err := webserver.NewWebServer(webserver.FactoryConfig{
+			BindAddress:             "127.0.0.1:0",
+			HTTPDynamicHostAndProxy: true,
+		})
+		if err != nil {
+			t.Fatalf("create web server: %v", err)
+		}
+		client := srv.NewHttpClientForTarget(ts.Listener.Addr().String())
+		resp, err := client.Get("http://logical.invalid/healthz")
+		if err != nil {
+			t.Fatalf("GET logical.invalid: %v", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", resp.StatusCode)
+		}
+		if gotHost != "logical.invalid" {
+			t.Fatalf("host = %q, want logical.invalid", gotHost)
+		}
+	})
 }
 
 func TestHttpRoundTripDecoratorsClient(t *testing.T) {
