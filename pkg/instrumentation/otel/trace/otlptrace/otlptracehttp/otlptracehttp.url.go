@@ -16,7 +16,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// URLOpener opens OTLP Trace HTTP URLs like "otlp-http://endpoint".
+// URLOpener opens OTLP Trace HTTP URLs like "otlp-http://endpoint:4318/v1/traces".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenExporter.
 	Options []Option
@@ -99,7 +99,7 @@ func parseOtlpOpts(q url.Values, opts ...otlptracehttp.Option) ([]otlptracehttp.
 		for _, data := range v {
 			err := json.Unmarshal([]byte(data), &headers)
 			if err != nil {
-				return nil, fmt.Errorf("unknown quary parameter headers: %w", err)
+				return nil, fmt.Errorf("unknown query parameter headers: %w", err)
 			}
 		}
 		if len(headers) > 0 {

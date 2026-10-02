@@ -16,7 +16,7 @@ import (
 	url_ "github.com/searKing/golang/pkg/instrumentation/otel/url"
 )
 
-// URLOpener opens OTLP Metric HTTP URLs like "http://endpoint:4318?compression=gzip&temporality_selector=delta".
+// URLOpener opens OTLP Metric HTTP URLs like "http://endpoint:4318/v1/metrics?compression=gzip&temporality_selector=delta".
 type URLOpener struct {
 	// Options specifies the options to pass to OpenExporter.
 	Options []Option
@@ -87,7 +87,7 @@ func parseOtlpOpts(q url.Values, opts ...otlpmetrichttp.Option) ([]otlpmetrichtt
 			opts = append(opts, otlpmetrichttp.WithCompression(otlpmetrichttp.NoCompression))
 		case "":
 		default:
-			return nil, fmt.Errorf("unknown quary parameter compression: %s", v)
+			return nil, fmt.Errorf("unknown query parameter compression: %s", v)
 		}
 		q.Del("compression")
 	}
@@ -103,7 +103,7 @@ func parseOtlpOpts(q url.Values, opts ...otlpmetrichttp.Option) ([]otlpmetrichtt
 			opts = append(opts, otlpmetrichttp.WithTemporalitySelector(sdkmetric.DefaultTemporalitySelector))
 		case "":
 		default:
-			return nil, fmt.Errorf("unknown quary parameter temporality_selector: %s", v)
+			return nil, fmt.Errorf("unknown query parameter temporality_selector: %s", v)
 		}
 		q.Del("temporality_selector")
 	}

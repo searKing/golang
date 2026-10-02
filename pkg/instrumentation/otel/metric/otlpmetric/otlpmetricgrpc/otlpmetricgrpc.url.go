@@ -88,7 +88,7 @@ func parseOtlpOpts(q url.Values, opts ...otlpmetricgrpc.Option) ([]otlpmetricgrp
 			opts = append(opts, otlpmetricgrpc.WithCompressor("none"))
 		case "":
 		default:
-			return nil, fmt.Errorf("unknown quary parameter compression: %s", v)
+			return nil, fmt.Errorf("unknown query parameter compression: %s", v)
 		}
 		q.Del("compression")
 	}
@@ -104,7 +104,7 @@ func parseOtlpOpts(q url.Values, opts ...otlpmetricgrpc.Option) ([]otlpmetricgrp
 			opts = append(opts, otlpmetricgrpc.WithTemporalitySelector(sdkmetric.DefaultTemporalitySelector))
 		case "":
 		default:
-			return nil, fmt.Errorf("unknown quary parameter temporality_selector: %s", v)
+			return nil, fmt.Errorf("unknown query parameter temporality_selector: %s", v)
 		}
 		q.Del("temporality_selector")
 	}

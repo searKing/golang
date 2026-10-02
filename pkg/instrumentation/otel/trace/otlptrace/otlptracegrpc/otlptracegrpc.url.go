@@ -78,7 +78,7 @@ func parseOtlpOpts(q url.Values, opts ...otlptracegrpc.Option) ([]otlptracegrpc.
 			opts = append(opts, otlptracegrpc.WithCompressor("none"))
 		case "":
 		default:
-			return nil, fmt.Errorf("unknown quary parameter compression: %s", v)
+			return nil, fmt.Errorf("unknown query parameter compression: %s", v)
 		}
 		q.Del("compression")
 	}
