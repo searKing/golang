@@ -16,39 +16,24 @@ import (
 	"github.com/searKing/golang/go/net/http/httpproxy"
 )
 
-type Client struct {
-	http.Client
-
-	Proxy *httpproxy.Proxy
-	Host  *httphost.Host
-}
-
-// Use adds middleware handlers to the transport.
-func (c *Client) Use(d ...RoundTripDecorator) *Client {
-	if len(d) == 0 {
-		return c
-	}
-	var rts RoundTripDecorators
-	rts = append(rts, d...)
-	c.Transport = rts.WrapRoundTrip(c.Transport)
-	// for chained call
-	return c
-}
-
 // parseURL is just url.Parse. It exists only so that url.Parse can be called
 // in places where url is shadowed for godoc. See https://golang.org/cl/49930.
 var parseURL = url.Parse
 
-// NewClient returns a http client wrapper behaves like http.Client,
-// sends HTTP Request to target by proxy url with Host replaced by proxyTarget
+// NewClient returns an http.Client that sends requests to hostTarget
+// through proxyUrl.
 //
 // u is the original url to send HTTP request, empty usually.
-// target is the resolver to resolve Host to send HTTP request,
-// that is replacing host in url(NOT HOST in http header) by address resolved by Host
-// fixedProxyUrl is proxy's url, like socks5://127.0.0.1:8080
-// fixedProxyTarget is as like gRPC Naming for proxy service discovery, with Host in TargetUrl replaced if not empty.
-func NewClient(u, hostTarget string, proxyUrl string, proxyTarget string) (*Client, error) {
-	tr := DefaultTransportWithDynamicHostAndProxy
+// hostTarget is the resolver target for the destination host. It replaces
+// the host in the request URL, not the HTTP Host header.
+// proxyUrl is the proxy URL, like socks5://127.0.0.1:8080.
+// proxyTarget is a resolver target for the proxy, like gRPC naming. When
+// non-empty, it replaces the host in proxyUrl.
+//
+// Host and proxy are attached by round-trip decorators, so every method on
+// the returned http.Client, including Get and Do, applies them.
+func NewClient(u, hostTarget string, proxyUrl string, proxyTarget string) (*http.Client, error) {
+	base := DefaultTransportWithDynamicHostAndProxy
 	if len(u) > 0 {
 		urlParsed, err := parseURL(u)
 		if err != nil {
@@ -56,7 +41,7 @@ func NewClient(u, hostTarget string, proxyUrl string, proxyTarget string) (*Clie
 		}
 		hostname := urlParsed.Hostname()
 		if strings.Index(hostname, "unix:") == 0 {
-			tr = &http.Transport{
+			base = &http.Transport{
 				DisableCompression: true,
 				DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
 					return net.Dial("unix", urlParsed.Host)
@@ -64,76 +49,56 @@ func NewClient(u, hostTarget string, proxyUrl string, proxyTarget string) (*Clie
 			}
 		}
 	}
-	client := http.Client{Transport: tr}
-	c := &Client{
-		Client: client,
-	}
+
+	var rts RoundTripDecorators
 	if hostTarget != "" {
-		c.Host = &httphost.Host{
-			HostTarget:           hostTarget,
-			ReplaceHostInRequest: false,
-		}
+		rts = append(rts, roundTripDecoratorWithHostTarget(hostTarget))
 	}
 	if proxyUrl != "" {
-		c.Proxy = &httpproxy.Proxy{
-			ProxyUrl:    proxyUrl,
-			ProxyTarget: proxyTarget,
-		}
+		rts = append(rts, roundTripDecoratorWithProxyTarget(proxyUrl, proxyTarget))
 	}
-	return c, nil
+	return &http.Client{Transport: rts.WrapRoundTrip(base)}, nil
 }
 
-// NewClientWithTarget returns a Client with http.Client and host replaced by resolver.Host
-// target is the resolver to resolve Host to send HTTP request,
-// that is replacing host in url(NOT HOST in http header) by address resolved by Host
-func NewClientWithTarget(target string) *Client {
+// NewClientWithTarget returns an http.Client whose destination host is
+// resolved from target. target replaces the host in the request URL, not
+// the HTTP Host header.
+func NewClientWithTarget(target string) *http.Client {
 	cli, _ := NewClient("", target, "", "")
 	return cli
 }
 
-// NewClientWithProxy returns a Client with http.Client with proxy set by resolver.Host
-// TargetUrl is proxy's url, like socks5://127.0.0.1:8080
-// Host is proxy's addr, replace the HOST in TargetUrl if not empty
-func NewClientWithProxy(proxyUrl string, proxyTarget string) *Client {
+// NewClientWithProxy returns an http.Client that sends through proxyUrl.
+// proxyUrl is the proxy URL, like socks5://127.0.0.1:8080.
+// proxyTarget replaces the host in proxyUrl when non-empty.
+func NewClientWithProxy(proxyUrl string, proxyTarget string) *http.Client {
 	cli, _ := NewClient("", "", proxyUrl, proxyTarget)
 	return cli
 }
 
-func NewClientWithUnixDisableCompression(u string) (*Client, error) {
+func NewClientWithUnixDisableCompression(u string) (*http.Client, error) {
 	return NewClient(u, "", "", "")
 }
 
-func (c *Client) Do(req *http.Request) (_ *http.Response, err error) {
-	return c.Client.Do(RequestWithHostTarget(RequestWithProxyTarget(req, c.Proxy), c.Host))
+func roundTripDecoratorWithHostTarget(target string) RoundTripDecorator {
+	return RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
+		return RoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			host := &httphost.Host{HostTarget: target}
+			return rt.RoundTrip(RequestWithHostTarget(req, host))
+		})
+	})
 }
 
-func (c *Client) Head(url string) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodHead, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	return c.Do(req)
-}
-
-func (c *Client) Get(url string) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	return c.Do(req)
-}
-
-func (c *Client) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodPost, url, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", contentType)
-	return c.Do(req)
-}
-
-func (c *Client) PostForm(url string, data url.Values) (resp *http.Response, err error) {
-	return c.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+func roundTripDecoratorWithProxyTarget(proxyUrl string, proxyTarget string) RoundTripDecorator {
+	return RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
+		return RoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			proxy := &httpproxy.Proxy{
+				ProxyUrl:    proxyUrl,
+				ProxyTarget: proxyTarget,
+			}
+			return rt.RoundTrip(RequestWithProxyTarget(req, proxy))
+		})
+	})
 }
 
 func Head(url string) (resp *http.Response, err error) {
@@ -142,7 +107,6 @@ func Head(url string) (resp *http.Response, err error) {
 		return nil, err
 	}
 	return client.Head(url)
-
 }
 
 func Get(url string) (resp *http.Response, err error) {
