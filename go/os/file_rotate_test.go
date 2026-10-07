@@ -7,12 +7,46 @@ package os_test
 import (
 	"os"
 	"path/filepath"
+	"runtime/debug"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	os_ "github.com/searKing/golang/go/os"
 )
+
+// countOpenFiles returns the number of open file descriptors of the process.
+func countOpenFiles(t *testing.T) int {
+	t.Helper()
+	entries, err := os.ReadDir("/dev/fd")
+	if err != nil {
+		t.Skipf("count open files: %v", err)
+	}
+	return len(entries)
+}
+
+func TestRotateFile_ForceNewFileOnStartupNoFdLeak(t *testing.T) {
+	// files leaked are closed by finalizer on GC
+	defer debug.SetGCPercent(debug.SetGCPercent(-1))
+
+	dir := t.TempDir()
+	before := countOpenFiles(t)
+	for i := 0; i < 10; i++ {
+		f := os_.NewRotateFile("2006-01-02")
+		f.FilePathPrefix = filepath.Join(dir, "app"+strconv.Itoa(i)+".")
+		f.ForceNewFileOnStartup = true
+		if _, err := f.WriteString("a"); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if after := countOpenFiles(t); after != before {
+		t.Errorf("open files = %d after 10 rotate files closed, want %d", after, before)
+	}
+}
 
 // sleepToNextSecond sleeps until just after the next second boundary,
 // so that following writes are in the same RotateInterval of one second.

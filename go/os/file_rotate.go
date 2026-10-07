@@ -512,10 +512,12 @@ func nextSeqFileName(name string, seq int) (string, int) {
 	// Special case: if seq is 0, we don't want to append 0 to the file name.
 	if seq == 0 {
 		nf, err := LockAll(name)
+		if err == nil {
+			_ = nf.Close()
+		}
 		if !os.IsExist(err) {
 			return name, seq
 		}
-		_ = nf.Close()
 		seq++
 	}
 
