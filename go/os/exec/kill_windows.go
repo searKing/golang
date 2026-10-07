@@ -6,6 +6,7 @@ package exec
 
 import "os/exec"
 
+// KillProcByName kills processes named pname and their children by taskkill forcefully, ignoring errors.
 func KillProcByName(pname string) {
 	params := []string{
 		"taskkill",
