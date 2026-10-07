@@ -28,5 +28,10 @@ func DiskUsage(path string) (total int64, free int64, avail int64, inodes int64,
 	// Fsid    uint64 /* file system id */
 	// Flag    uint64 /* bit mask of f_flag values */
 	// Namemax uint64 /* maximum filename length */
-	return int64(st.Bsize) * (int64(st.Blocks) - reservedBlocks), int64(st.Bsize) * int64(st.Bfree), int64(st.Bsize) * int64(st.Bavail), int64(st.Files), int64(st.Ffree), nil
+	// Blocks are counted in Frsize, see statvfs(3)
+	bsize := int64(st.Frsize)
+	if bsize <= 0 {
+		bsize = int64(st.Bsize)
+	}
+	return bsize * (int64(st.Blocks) - reservedBlocks), bsize * int64(st.Bfree), bsize * int64(st.Bavail), int64(st.Files), int64(st.Ffree), nil
 }

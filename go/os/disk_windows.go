@@ -11,7 +11,6 @@ package os
 import (
 	"fmt"
 	"os"
-	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -33,6 +32,7 @@ var (
 
 // DiskUsage returns total and free bytes available in a directory, e.g. `C:\`.
 // It returns free space available to the user (including quota limitations)
+// inodes and inodesFree are total and free clusters, 0 if unknown.
 //
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa364937(v=vs.85).aspx
 func DiskUsage(path string) (total int64, free int64, avail int64, inodes int64, inodesFree int64, err error) {
@@ -40,26 +40,19 @@ func DiskUsage(path string) (total int64, free int64, avail int64, inodes int64,
 	if _, err = os.Stat(path); err != nil {
 		return 0, 0, 0, 0, 0, err
 	}
+	pathPtr, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return 0, 0, 0, 0, 0, err
+	}
 
-	lpFreeBytesAvailable := int64(0)
-	lpTotalNumberOfBytes := int64(0)
-	lpTotalNumberOfFreeBytes := int64(0)
+	var freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes uint64
+	if err := windows.GetDiskFreeSpaceEx(pathPtr, &freeBytesAvailable, &totalNumberOfBytes, &totalNumberOfFreeBytes); err != nil {
+		return 0, 0, 0, 0, 0, &os.PathError{Op: "GetDiskFreeSpaceEx", Path: path, Err: err}
+	}
 
-	// Extract values safely
-	// BOOL WINAPI GetDiskFreeSpaceEx(
-	// _In_opt_  LPCTSTR         lpDirectoryName,
-	// _Out_opt_ PULARGE_INTEGER lpFreeBytesAvailable,
-	// _Out_opt_ PULARGE_INTEGER lpTotalNumberOfBytes,
-	// _Out_opt_ PULARGE_INTEGER lpTotalNumberOfFreeBytes
-	// );
-	_, _, _ = GetDiskFreeSpaceEx.Call(uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path))),
-		uintptr(unsafe.Pointer(&lpFreeBytesAvailable)),
-		uintptr(unsafe.Pointer(&lpTotalNumberOfBytes)),
-		uintptr(unsafe.Pointer(&lpTotalNumberOfFreeBytes)))
-
-	if uint64(lpTotalNumberOfFreeBytes) > uint64(lpTotalNumberOfBytes) {
+	if totalNumberOfFreeBytes > totalNumberOfBytes {
 		return 0, 0, 0, 0, 0, fmt.Errorf("detected free space (%d) > total disk space (%d), fs corruption at (%s). please run 'fsck'",
-			uint64(lpTotalNumberOfFreeBytes), uint64(lpTotalNumberOfBytes), path)
+			totalNumberOfFreeBytes, totalNumberOfBytes, path)
 	}
 
 	// Return values of GetDiskFreeSpace()
@@ -76,11 +69,12 @@ func DiskUsage(path string) (total int64, free int64, avail int64, inodes int64,
 	//   _Out_ LPDWORD lpNumberOfFreeClusters,
 	//   _Out_ LPDWORD lpTotalNumberOfClusters
 	// );
-	_, _, _ = GetDiskFreeSpace.Call(uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path))),
+	// clusters are left 0 if failed, as lpRootPathName may be required to be the root of a disk.
+	_, _, _ = GetDiskFreeSpace.Call(uintptr(unsafe.Pointer(pathPtr)),
 		uintptr(unsafe.Pointer(&lpSectorsPerCluster)),
 		uintptr(unsafe.Pointer(&lpBytesPerSector)),
 		uintptr(unsafe.Pointer(&lpNumberOfFreeClusters)),
 		uintptr(unsafe.Pointer(&lpTotalNumberOfClusters)))
 
-	return lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes, lpFreeBytesAvailable, int64(lpTotalNumberOfClusters), int64(lpNumberOfFreeClusters), err
+	return int64(totalNumberOfBytes), int64(totalNumberOfFreeBytes), int64(freeBytesAvailable), int64(lpTotalNumberOfClusters), int64(lpNumberOfFreeClusters), nil
 }
