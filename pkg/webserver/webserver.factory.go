@@ -85,6 +85,7 @@ type FactoryConfig struct {
 
 	GatewayOptions []grpc_.GatewayOption
 	GinMiddlewares []gin.HandlerFunc
+	JSONPbOptions  []encoding_.JSONPbOption // for json codec of grpc registered globally, e.g. WithMarshalOptions
 }
 
 // SetDefaults sets sensible values for unset fields in config. This is
@@ -174,7 +175,7 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 
 	// support json codec for grpc
-	encoding.RegisterCodec(encoding_.NewJSONPb())
+	encoding.RegisterCodec(encoding_.NewJSONPb(f.fc.JSONPbOptions...))
 	opts := grpc_.WithDefault()
 	{
 		// connection options

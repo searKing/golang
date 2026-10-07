@@ -25,8 +25,37 @@ func (j *JSONPb) Name() string {
 	return Name
 }
 
-func NewJSONPb() *JSONPb {
-	return &JSONPb{
+// A JSONPbOption sets options of JSONPb.
+type JSONPbOption interface {
+	apply(*JSONPb)
+}
+
+// JSONPbOptionFunc wraps a function that modifies JSONPb into an
+// implementation of the JSONPbOption interface.
+type JSONPbOptionFunc func(*JSONPb)
+
+func (f JSONPbOptionFunc) apply(do *JSONPb) {
+	f(do)
+}
+
+// WithMarshalOptions replaces MarshalOptions, which defaults to protojson.MarshalOptions{EmitUnpopulated: false}.
+func WithMarshalOptions(o protojson.MarshalOptions) JSONPbOption {
+	return JSONPbOptionFunc(func(j *JSONPb) {
+		j.MarshalOptions = o
+	})
+}
+
+// WithUnmarshalOptions replaces UnmarshalOptions, which defaults to protojson.UnmarshalOptions{DiscardUnknown: true}.
+// Set DiscardUnknown explicitly to keep ignoring unknown fields.
+func WithUnmarshalOptions(o protojson.UnmarshalOptions) JSONPbOption {
+	return JSONPbOptionFunc(func(j *JSONPb) {
+		j.UnmarshalOptions = o
+	})
+}
+
+// NewJSONPb returns a JSONPb, which emits no unpopulated fields and discards unknown fields by default.
+func NewJSONPb(opts ...JSONPbOption) *JSONPb {
+	j := &JSONPb{
 		JSONPb: runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				EmitUnpopulated: false,
@@ -36,4 +65,11 @@ func NewJSONPb() *JSONPb {
 			},
 		},
 	}
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt.apply(j)
+	}
+	return j
 }
