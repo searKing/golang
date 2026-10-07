@@ -1,0 +1,63 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package os_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	os_ "github.com/searKing/golang/go/os"
+)
+
+// sleepToNextSecond sleeps until just after the next second boundary,
+// so that following writes are in the same RotateInterval of one second.
+func sleepToNextSecond() {
+	now := time.Now()
+	time.Sleep(now.Truncate(time.Second).Add(time.Second + 10*time.Millisecond).Sub(now))
+}
+
+func TestRotateFile_CopyTruncateRotateOncePerInterval(t *testing.T) {
+	dir := t.TempDir()
+	f := os_.NewRotateFile("2006-01-02_15-04-05")
+	f.FilePathPrefix = filepath.Join(dir, "app.")
+	f.RotateMode = os_.RotateModeCopyTruncate
+	f.RotateInterval = time.Second
+	var rotated []string
+	f.PostRotateHandler = func(name string) { rotated = append(rotated, name) }
+	defer f.Close()
+
+	sleepToNextSecond()
+	if _, err := f.WriteString("a"); err != nil {
+		t.Fatal(err)
+	}
+	if len(rotated) != 1 {
+		t.Fatalf("rotations on startup = %d, want 1", len(rotated))
+	}
+	writing := rotated[0]
+
+	sleepToNextSecond()
+	for i := 0; i < 20; i++ {
+		if _, err := f.WriteString("b"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(rotated) != 2 {
+		t.Fatalf("rotations after 20 writes in next interval = %d, want 2", len(rotated))
+	}
+	if rotated[1] != writing {
+		t.Errorf("writing file after copytruncate = %q, want %q", rotated[1], writing)
+	}
+
+	got, err := os.ReadFile(writing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := strings.Repeat("b", 20); string(got) != want {
+		t.Errorf("writing file content = %q, want %q", got, want)
+	}
+}

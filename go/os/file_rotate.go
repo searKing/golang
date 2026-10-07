@@ -93,10 +93,10 @@ type RotateFile struct {
 
 	cleaning               atomic.Bool
 	mu                     sync.Mutex
-	writingSeq             int // file rotated by size limit meet
+	writingSeq             int // seq of writingFilePathRotated, file rotated by size limit meet
 	writingFilePath        string
 	writingFile            *os.File
-	writingFilePathRotated string // rotated file path, for copytruncate
+	writingFilePathRotated string // rotated file path, same as writingFilePath except for copytruncate
 }
 
 func NewRotateFile(layout string) *RotateFile {
@@ -235,8 +235,8 @@ func (f *RotateFile) filePathByRotate(forceRotate bool) (name string, seq int, b
 	}
 
 	// rotate by time
-	// compare expect time with current using file
-	if name != trimSeqFromNextFileName(f.writingFilePath, f.writingSeq) {
+	// compare expect time with current rotated file, as writingFilePath stays the same for copytruncate
+	if name != trimSeqFromNextFileName(f.writingFilePathRotated, f.writingSeq) {
 		if forceRotate {
 			// instead of just using the regular time layout,
 			// we create a new file name using names such as "foo", "foo.1", "foo.2", "foo.3", etc
