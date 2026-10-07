@@ -307,11 +307,17 @@ func (o *ExponentialBackOff) GetElapsedCount() int {
 // Increments the current interval by multiplying it with the multiplier.
 func (o *ExponentialBackOff) incrementCurrentInterval() {
 	// Check for overflow, if overflow is detected set the current interval to the max interval.
-	if o.maxInterval >= 0 && o.currentInterval*time.Duration(o.multiplier) >= o.maxInterval {
+	if o.maxInterval >= 0 && float64(o.currentInterval) >= float64(o.maxInterval)/o.multiplier {
 		o.currentInterval = o.maxInterval
 		return
 	}
-	o.currentInterval = time.Duration(float64(o.currentInterval) * o.multiplier)
+	next := float64(o.currentInterval) * o.multiplier
+	// converting a float64 out of range to time.Duration is implementation-defined
+	if next >= math.MaxInt64 {
+		o.currentInterval = math.MaxInt64
+		return
+	}
+	o.currentInterval = time.Duration(next)
 }
 
 // Increments the current count by ++.
