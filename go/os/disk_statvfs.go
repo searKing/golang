@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build netbsd || solaris || zos
-// +build netbsd solaris zos
+//go:build netbsd || solaris
 
 package os
 
