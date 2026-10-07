@@ -109,6 +109,106 @@ func TestReSymlink(t *testing.T) {
 	}
 }
 
+// setupLinkReplace creates oldname with mode 0600, and newname by create, in a temp dir.
+func setupLinkReplace(t *testing.T, create func(dir, newname string)) (dir, oldname, newname string) {
+	dir = t.TempDir()
+	oldname = filepath.Join(dir, "old")
+	newname = filepath.Join(dir, "new")
+	if err := os.WriteFile(oldname, []byte("old"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(oldname, 0600); err != nil {
+		t.Fatal(err)
+	}
+	create(dir, newname)
+	return dir, oldname, newname
+}
+
+// checkLinkReplaced checks that oldname keeps mode 0600, and no temp file is left in dir.
+func checkLinkReplaced(t *testing.T, dir, oldname string, wantEntries int) {
+	t.Helper()
+	fi, err := os.Stat(oldname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fi.Mode().Perm(); got != 0600 {
+		t.Errorf("mode of oldname = %v, want %v", got, os.FileMode(0600))
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != wantEntries {
+		var names []string
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		t.Errorf("entries in dir = %v, want %d entries", names, wantEntries)
+	}
+}
+
+func TestReLink_ReplaceExisting(t *testing.T) {
+	dir, oldname, newname := setupLinkReplace(t, func(dir, newname string) {
+		if err := os.WriteFile(newname, []byte("new"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if err := os_.ReLink(oldname, newname); err != nil {
+		t.Fatalf("ReLink() error = %v", err)
+	}
+	if !os_.SameFile(oldname, newname) {
+		t.Errorf("newname is not a hard link to oldname")
+	}
+	checkLinkReplaced(t, dir, oldname, 2)
+}
+
+func TestReSymlink_ReplaceExisting(t *testing.T) {
+	tests := []struct {
+		name        string
+		create      func(dir, newname string)
+		wantEntries int
+	}{
+		{
+			name: "regular file",
+			create: func(dir, newname string) {
+				if err := os.WriteFile(newname, []byte("new"), 0644); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantEntries: 2,
+		},
+		{
+			name: "symlink",
+			create: func(dir, newname string) {
+				other := filepath.Join(dir, "other")
+				if err := os.WriteFile(other, []byte("other"), 0644); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(other, newname); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantEntries: 3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir, oldname, newname := setupLinkReplace(t, tt.create)
+			if err := os_.ReSymlink(oldname, newname); err != nil {
+				t.Fatalf("ReSymlink() error = %v", err)
+			}
+			got, err := os.Readlink(newname)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != oldname {
+				t.Errorf("Readlink(newname) = %q, want %q", got, oldname)
+			}
+			checkLinkReplaced(t, dir, oldname, tt.wantEntries)
+		})
+	}
+}
+
 func TestNextFile(t *testing.T) {
 	t.Parallel()
 

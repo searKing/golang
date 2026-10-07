@@ -439,27 +439,20 @@ func ReLink(oldname, newname string) error {
 	if err != nil {
 		return err
 	}
+	// remove the temp file or link left if any step below fails
+	defer os.Remove(tempLink.Name())
 	if err = tempLink.Close(); err != nil {
 		return err
 	}
-
+	// free the temp name for os.Link, which fails if the name exists
 	if err = os.Remove(tempLink.Name()); err != nil {
 		return err
-	}
-
-	defer os.Remove(tempLink.Name())
-	// keep mode the same if newname already exists.
-	if fi, err := os.Stat(newname); err == nil {
-		if err := os.Chmod(tempLink.Name(), fi.Mode()); err != nil {
-			return err
-		}
 	}
 
 	if err := os.Link(oldname, tempLink.Name()); err != nil {
 		return err
 	}
 	return os.Rename(tempLink.Name(), newname)
-
 }
 
 // ReSymlink creates or replace newname as a symbolic link to oldname.
@@ -469,25 +462,19 @@ func ReSymlink(oldname, newname string) error {
 	if err != nil {
 		return err
 	}
+	// remove the temp file or link left if any step below fails
+	defer os.Remove(tempLink.Name())
 	if err = tempLink.Close(); err != nil {
 		return err
 	}
-
+	// free the temp name for os.Symlink, which fails if the name exists
 	if err = os.Remove(tempLink.Name()); err != nil {
 		return err
 	}
 
-	defer os.Remove(tempLink.Name())
 	if err := os.Symlink(oldname, tempLink.Name()); err != nil {
 		return err
 	}
-	// keep mode the same if newname already exists.
-	if fi, err := os.Stat(newname); err == nil {
-		if err := os.Chmod(tempLink.Name(), fi.Mode()); err != nil {
-			return err
-		}
-	}
-
 	return os.Rename(tempLink.Name(), newname)
 }
 
