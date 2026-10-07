@@ -405,6 +405,12 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 				err = CopyTruncateAll(newName, oldName)
 			} else if os.IsNotExist(err) {
 				err = nil
+				// newName may be created empty to reserve a seq, remove it as nothing is copied
+				if newName != writeName {
+					if fi, statErr := os.Stat(newName); statErr == nil && fi.Size() == 0 {
+						_ = os.Remove(newName)
+					}
+				}
 			}
 		case RotateModeNew:
 			// for which open the file, and write file by RotateFile

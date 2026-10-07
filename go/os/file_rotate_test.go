@@ -260,3 +260,63 @@ func TestRotateFile_CopyTruncateFilePathOnStartup(t *testing.T) {
 		})
 	}
 }
+
+// globFiles returns names of files in dir.
+func globFiles(t *testing.T, dir string) []string {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names
+}
+
+func TestRotateFile_CopyTruncateNoEmptyCopy(t *testing.T) {
+	t.Run("CopyTruncateFilePath not exist on startup", func(t *testing.T) {
+		dir := t.TempDir()
+		f := os_.NewRotateFile("2006-01-02")
+		f.FilePathPrefix = filepath.Join(dir, "app.")
+		f.RotateMode = os_.RotateModeCopyTruncate
+		f.CopyTruncateFilePath = filepath.Join(dir, "app.log")
+		f.ForceNewFileOnStartup = true
+		if _, err := f.WriteString("a"); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if got, want := globFiles(t, dir), []string{"app.log"}; !slices.Equal(got, want) {
+			t.Errorf("files = %q, want %q", got, want)
+		}
+	})
+	t.Run("log file removed before rotate", func(t *testing.T) {
+		dir := t.TempDir()
+		f := os_.NewRotateFile("2006-01-02_15-04-05")
+		f.FilePathPrefix = filepath.Join(dir, "app.")
+		f.RotateMode = os_.RotateModeCopyTruncate
+		f.RotateInterval = time.Second
+		var rotated []string
+		f.PostRotateHandler = func(name string) { rotated = append(rotated, name) }
+		defer f.Close()
+
+		sleepToNextSecond()
+		if _, err := f.WriteString("a"); err != nil {
+			t.Fatal(err)
+		}
+		live := rotated[0]
+		if err := os.Remove(live); err != nil {
+			t.Fatal(err)
+		}
+		sleepToNextSecond()
+		if err := f.Rotate(true); err != nil {
+			t.Fatal(err)
+		}
+		if got, want := globFiles(t, dir), []string{filepath.Base(live)}; !slices.Equal(got, want) {
+			t.Errorf("files = %q, want %q", got, want)
+		}
+	})
+}
