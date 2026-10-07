@@ -105,13 +105,21 @@ func RenameFileAll(oldpath, newpath string, dirperm os.FileMode) error {
 	return os.Rename(oldpath, newpath)
 }
 
-// TouchAll creates the named file or dir. If the file already exists, it is touched to now.
+// TouchAll creates the named file or dir. If the file or dir already exists, it is touched to now.
 // If the file does not exist, it is created with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0755 (before umask).
+// If the parent dirs do not exist, they are created with mode 0755 (before umask).
+// If path ends with a separator, it is created as a dir.
+// A dir is opened with O_RDONLY, as a dir can not be opened for writing.
 func TouchAll(path string) (*os.File, error) {
 	f, err := OpenFileAll(path, os.O_WRONLY|os.O_CREATE, DefaultPermissionDirectory, DefaultPermissionFile)
 	if err != nil {
-		return nil, err
+		// a directory can only be opened with O_RDONLY
+		if fi, statErr := os.Stat(path); statErr != nil || !fi.IsDir() {
+			return nil, err
+		}
+		if f, err = os.Open(path); err != nil {
+			return nil, err
+		}
 	}
 	if err := ChtimesNow(path); err != nil {
 		defer f.Close()
@@ -120,25 +128,25 @@ func TouchAll(path string) (*os.File, error) {
 	return f, nil
 }
 
-// CreateAll creates or truncates the named file or dir. If the file already exists,
+// CreateAll creates or truncates the named file. If the file already exists,
 // it is truncated. If the file does not exist, it is created with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0755 (before umask).
+// If the parent dirs do not exist, they are created with mode 0755 (before umask).
+// If path is a dir, or ends with a separator, an error is returned, see [OpenFileAll].
 func CreateAll(path string) (*os.File, error) {
 	return OpenFileAll(path, DefaultFlagCreate, DefaultPermissionDirectory, DefaultPermissionFile)
 }
 
-// CreateAllIfNotExist creates the named file or dir. If the file does not exist, it is created
-// with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0755 (before umask).
-// If path is already a directory, CreateAllIfNotExist does nothing and returns nil.
+// CreateAllIfNotExist creates the named file if it does not exist, with mode 0666 (before umask).
+// If the parent dirs do not exist, they are created with mode 0755 (before umask).
+// If path is a dir, or ends with a separator, an error is returned, see [OpenFileAll].
 func CreateAllIfNotExist(path string) (*os.File, error) {
 	return OpenFileAll(path, DefaultFlagCreateIfNotExist, DefaultPermissionDirectory, DefaultPermissionFile)
 }
 
-// AppendAllIfNotExist appends the named file or dir. If the file does not exist, it is created
+// AppendAllIfNotExist opens the named file for appending. If the file does not exist, it is created
 // with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0755 (before umask).
-// If path is already a directory, CreateAllIfNotExist does nothing and returns nil.
+// If the parent dirs do not exist, they are created with mode 0755 (before umask).
+// If path is a dir, or ends with a separator, an error is returned, see [OpenFileAll].
 func AppendAllIfNotExist(path string) (*os.File, error) {
 	return OpenFileAll(path, DefaultFlagCreateAppend, DefaultPermissionDirectory, DefaultPermissionFile)
 }
@@ -146,14 +154,16 @@ func AppendAllIfNotExist(path string) (*os.File, error) {
 // OpenAll opens the named file or dir for reading. If successful, methods on
 // the returned file or dir can be used for reading; the associated file
 // descriptor has mode O_RDONLY.
+// Nothing is created if the file or dir does not exist.
 // If there is an error, it will be of type *PathError.
 func OpenAll(path string) (*os.File, error) {
 	return OpenFileAll(path, os.O_RDONLY, 0, 0)
 }
 
-// LockAll creates the named file or dir. If the file already exists, error returned.
+// LockAll creates the named file. If the file already exists, error returned.
 // If the file does not exist, it is created with mode 0666 (before umask).
-// If the dir does not exist, it is created with mode 0755 (before umask).
+// If the parent dirs do not exist, they are created with mode 0755 (before umask).
+// If path is a dir, or ends with a separator, an error is returned, see [OpenFileAll].
 func LockAll(path string) (*os.File, error) {
 	return OpenFileAll(path, DefaultFlagLock, DefaultPermissionDirectory, DefaultPermissionFile)
 }
@@ -161,52 +171,50 @@ func LockAll(path string) (*os.File, error) {
 // OpenFileAll is the generalized open call; most users will use OpenAll
 // or CreateAll instead. It opens the named file or directory with specified flag
 // (O_RDONLY etc.).
-// If the file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask).
-// If the directory does not exist, it is created with mode dirperm (before umask).
+// If the file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask),
+// and the parent dirs are created with mode dirperm (before umask) if they do not exist.
+// If path ends with a separator, and the O_CREATE flag is passed, path is created as a dir,
+// then opened as an existing dir.
+// A dir can only be opened with O_RDONLY, other flags cause an error.
 // If successful, methods on the returned File can be used for I/O.
 // If there is an error, it will be of type *PathError.
 func OpenFileAll(path string, flag int, dirperm, fileperm os.FileMode) (*os.File, error) {
-	dir, file := filepath.Split(path)
 	// file or dir exists
 	if _, err := os.Stat(path); err == nil {
-		return os.OpenFile(path, flag, 0)
+		// fileperm takes effect if the file is removed after Stat and O_CREATE is passed
+		return os.OpenFile(path, flag, fileperm)
 	}
 
-	if dir != "" {
+	if dir, _ := filepath.Split(path); dir != "" && flag&os.O_CREATE != 0 {
 		// mkdir -p dir
 		if err := os.MkdirAll(dir, dirperm); err != nil {
 			return nil, err
 		}
 	}
-
-	// create file if needed
-	if file == "" {
-		return nil, nil
-	}
 	return os.OpenFile(path, flag, fileperm)
 }
 
-// CopyAll creates or truncates the dst file or dir, filled with content from src file.
+// CopyAll creates or truncates the dst file, filled with content from src file.
 // If the dst file already exists, it is truncated.
 // If the dst file does not exist, it is created with mode 0666 (before umask).
-// If the dst dir does not exist, it is created with mode 0755 (before umask).
+// If the parent dirs of dst do not exist, they are created with mode 0755 (before umask).
 func CopyAll(dst string, src string) error {
 	return CopyFileAll(dst, src, DefaultFlagCreate, DefaultPermissionDirectory, DefaultPermissionFile)
 }
 
-// CopyAppendAll creates or appends the dst file or dir, filled with content from src file.
-// If the dst file already exists, it is truncated.
+// CopyAppendAll creates or appends the dst file, filled with content from src file.
+// If the dst file already exists, it is appended.
 // If the dst file does not exist, it is created with mode 0666 (before umask).
-// If the dst dir does not exist, it is created with mode 0755 (before umask).
+// If the parent dirs of dst do not exist, they are created with mode 0755 (before umask).
 func CopyAppendAll(dst string, src string) error {
 	return CopyFileAll(dst, src, DefaultFlagCreateAppend, DefaultPermissionDirectory, DefaultPermissionFile)
 }
 
 // CopyFileAll is the generalized open call; most users will use CopyAll
-// or AppendAll instead. It opens the named file or directory with specified flag
-// (O_RDONLY etc.).
-// If the dst file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask).
-// If the dst directory does not exist, it is created with mode dirperm (before umask).
+// or CopyAppendAll instead. It opens the dst file with specified flag
+// (O_RDONLY etc.), see [OpenFileAll].
+// If the dst file does not exist, and the O_CREATE flag is passed, it is created with mode fileperm (before umask),
+// and the parent dirs of dst are created with mode dirperm (before umask) if they do not exist.
 // If successful, methods on the returned File can be used for I/O.
 // If there is an error, it will be of type *PathError.
 func CopyFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode) error {
@@ -227,26 +235,24 @@ func CopyFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode
 	return err
 }
 
-// Copy creates or truncates the dst file or dir, filled with content from src file.
+// Copy creates or truncates the dst file, filled with content from src file.
 // If the dst file already exists, it is truncated.
 // If the dst file does not exist, it is created with mode 0666 (before umask).
-// If the dst dir does not exist, it is created with mode 0755 (before umask).
 // parent dirs will not be created, otherwise, use CopyAll instead.
 func Copy(dst string, src string) error {
 	return CopyFile(dst, src, DefaultFlagCreate, DefaultPermissionFile)
 }
 
-// Append creates or appends the dst file or dir, filled with content from src file.
-// If the dst file already exists, it is truncated.
+// Append creates or appends the dst file, filled with content from src file.
+// If the dst file already exists, it is appended.
 // If the dst file does not exist, it is created with mode 0666 (before umask).
-// If the dst dir does not exist, it is created with mode 0755 (before umask).
-// parent dirs will not be created, otherwise, use AppendAll instead.
+// parent dirs will not be created, otherwise, use CopyAppendAll instead.
 func Append(dst string, src string) error {
 	return CopyFile(dst, src, DefaultFlagCreateAppend, DefaultPermissionFile)
 }
 
 // CopyFile is the generalized open call; most users will use Copy
-// or Append instead. It opens the named file or directory with specified flag
+// or Append instead. It opens the dst file with specified flag
 // (O_RDONLY etc.).
 // CopyFile copies from src to dst.
 // parent dirs will not be created, otherwise, use CopyFileAll instead.
