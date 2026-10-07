@@ -305,11 +305,8 @@ func (f *RotateFile) makeUsingFileReadyLocked() (err error) {
 		}
 	}()
 
-	// link -> filename
-	if f.FileLinkPath != "" {
-		if err := ReSymlink(symlinkTarget(f.writingFilePath, f.FileLinkPath), f.FileLinkPath); err != nil {
-			return err
-		}
+	if err := f.symlinkLocked(f.writingFilePath); err != nil {
+		return err
 	}
 	f.writingFile = file
 	return nil
@@ -416,11 +413,8 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 		}
 	}()
 
-	// link -> filename
-	if f.FileLinkPath != "" {
-		if err := ReSymlink(symlinkTarget(writeName, f.FileLinkPath), f.FileLinkPath); err != nil {
-			return nil, err
-		}
+	if err := f.symlinkLocked(writeName); err != nil {
+		return nil, err
 	}
 	// unlink files on a separate goroutine
 	go f.serializedClean(writeName)
@@ -516,6 +510,18 @@ func nextSeqFileName(name string, seq int) (string, int) {
 	}
 	_ = nf.Close()
 	return nf.Name(), seqUsed
+}
+
+// symlinkLocked links FileLinkPath to name if FileLinkPath is set,
+// creating the dir of FileLinkPath if not exist.
+func (f *RotateFile) symlinkLocked(name string) error {
+	if f.FileLinkPath == "" {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(f.FileLinkPath), DefaultPermissionDirectory); err != nil {
+		return err
+	}
+	return ReSymlink(symlinkTarget(name, f.FileLinkPath), f.FileLinkPath)
 }
 
 // symlinkTarget returns the target of a symbolic link at linkPath to name.

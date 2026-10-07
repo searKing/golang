@@ -55,10 +55,8 @@ func TestRotateFile_FileLinkPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			t.Chdir(dir)
+			// the dir of link is not created in advance
 			link := tt.link(dir)
-			if err := os.MkdirAll(filepath.Dir(link), 0755); err != nil {
-				t.Fatal(err)
-			}
 
 			f := os_.NewRotateFile("2006-01-02")
 			f.FilePathPrefix = tt.prefix(dir)
