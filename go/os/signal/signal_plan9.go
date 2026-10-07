@@ -6,14 +6,22 @@ package signal
 
 import (
 	"os"
+	"sync"
 	"syscall"
 )
 
 const numSig = 256
 
+var (
+	sigtabMu sync.Mutex
+	sigtab   = make(map[os.Signal]int)
+)
+
 func Signum(sig os.Signal) int {
 	switch sig := sig.(type) {
 	case syscall.Note:
+		sigtabMu.Lock()
+		defer sigtabMu.Unlock()
 		n, ok := sigtab[sig]
 		if !ok {
 			n = len(sigtab) + 1
@@ -26,4 +34,10 @@ func Signum(sig os.Signal) int {
 	default:
 		return -1
 	}
+}
+
+// allSignals returns nil, as notes can not be enumerated,
+// and signal.Notify relays all notes if no signals are provided.
+func allSignals() []os.Signal {
+	return nil
 }

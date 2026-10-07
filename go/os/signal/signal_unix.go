@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || nacl || netbsd || openbsd || solaris || windows
+//go:build unix || (js && wasm) || wasip1 || windows
 
 package signal
 
@@ -26,4 +26,13 @@ func Signum(sig os.Signal) int {
 	default:
 		return -1
 	}
+}
+
+// allSignals returns signals numbered in [0, numSig).
+func allSignals() []os.Signal {
+	sigs := make([]os.Signal, 0, numSig)
+	for n := 0; n < numSig; n++ {
+		sigs = append(sigs, syscall.Signal(n))
+	}
+	return sigs
 }

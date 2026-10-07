@@ -51,9 +51,7 @@ func (f OnSignalHandlerFunc) OnSignal(signum os.Signal) {
 // While unix-like os will remain sig's handler always.
 func Notify(c chan<- os.Signal, sigs ...os.Signal) {
 	if len(sigs) == 0 {
-		for n := 0; n < numSig; n++ {
-			sigs = append(sigs, syscall.Signal(n))
-		}
+		sigs = allSignals()
 	}
 	signal.Notify(c, sigs...)
 	setSig(sigs...)
