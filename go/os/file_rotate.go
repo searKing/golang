@@ -31,11 +31,12 @@ const (
 	// see option: `create` in https://man7.org/linux/man-pages/man8/logrotate.8.html
 	RotateModeNew RotateMode = iota
 
-	// RotateModeCopyRename Make a copy of the log file, but don't change the original at all. This option can be
-	// used, for instance, to make a snapshot of the current log file, or when some other
-	// utility needs to truncate or parse the file. When this option is used, the create
-	// option will have no effect, as the old log file stays in place.
-	// see option: `copy` in https://man7.org/linux/man-pages/man8/logrotate.8.html
+	// RotateModeCopyRename rename the log file to the new rotate file, copy it back as the old rotate file,
+	// then truncate the new rotate file. Rotate files are named by the time of their contents as RotateModeNew,
+	// while the log file keeps its inode, so that some program which can not be told to close its log file
+	// continues writing (appending) to the new rotate file.
+	// Note that there is a very small time slice between copying the file and truncating it,
+	// so some logging data written by other programs might be lost.
 	RotateModeCopyRename RotateMode = iota
 
 	// RotateModeCopyTruncate Truncate the original log file in place after creating a copy, instead of moving the
@@ -44,6 +45,10 @@ const (
 	// previous log file forever. Note that there is a very small time slice between copying
 	// the file and truncating it, so some logging data might be lost. When this option is
 	// used, the create option will have no effect, as the old log file stays in place.
+	//
+	// The log file keeps the name of the first rotate file, and the copies are named by the time of rotation,
+	// that is, each copy contains logs of the previous rotate interval, as `dateext` without `dateyesterday`
+	// in logrotate. Use RotateModeCopyRename if the log file need not keep its name.
 	// see option: `copytruncate` in https://man7.org/linux/man-pages/man8/logrotate.8.html
 	RotateModeCopyTruncate RotateMode = iota
 )
