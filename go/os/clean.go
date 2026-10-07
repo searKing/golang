@@ -7,7 +7,6 @@ package os
 import (
 	"errors"
 	"os"
-	"sort"
 	"time"
 
 	filepath_ "github.com/searKing/golang/go/path/filepath"
@@ -68,7 +67,7 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 	now := time.Now()
 
 	// unlink expired files in place, collect the others
-	var filesNotExpired []string
+	var filesNotExpired []rotateFile
 
 	var errs []error
 	_, err := filepath_.GlobFunc(pattern, func(name string) bool {
@@ -78,7 +77,7 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		}
 
 		if quora.MaxAge <= 0 || now.Sub(fi.ModTime()) < quora.MaxAge {
-			filesNotExpired = append(filesNotExpired, name)
+			filesNotExpired = append(filesNotExpired, rotateFile{name: name, modTime: fi.ModTime()})
 			return false
 		}
 
@@ -104,20 +103,20 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		return errors.Join(errs...)
 	}
 
-	var filesExceedMaxCount []string
+	var filesExceedMaxCount []rotateFile
 	var filesLeftOrdered = filesNotExpired
 
 	// prefer to delete files ordered by ModTime from oldest to newest.
-	sort.Sort(rotateFileSlice(filesLeftOrdered))
+	sortRotateFiles(filesLeftOrdered)
 	if quora.ExceedCount(len(filesLeftOrdered)) {
 		removeCount := len(filesLeftOrdered) - quora.MaxCount
 		filesExceedMaxCount = filesLeftOrdered[:removeCount]
 		filesLeftOrdered = filesLeftOrdered[removeCount:]
 	}
 
-	for _, path := range filesExceedMaxCount {
-		if f(path) {
-			err = os.Remove(path)
+	for _, file := range filesExceedMaxCount {
+		if f(file.name) {
+			err = os.Remove(file.name)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -142,13 +141,13 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 		return false
 	}
 
-	for _, path := range filesLeftOrdered {
-		if !needGC(path) {
+	for _, file := range filesLeftOrdered {
+		if !needGC(file.name) {
 			break
 		}
 
-		if f(path) {
-			err = os.Remove(path)
+		if f(file.name) {
+			err = os.Remove(file.name)
 			if err != nil {
 				errs = append(errs, err)
 			}

@@ -5,13 +5,14 @@
 package os
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -439,7 +440,7 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 	now := time.Now()
 
 	// find old files
-	var filesNotExpired []string
+	var filesNotExpired []rotateFile
 	filesExpired, err := filepath_.GlobFunc(f.FilePathPrefix+f.RotateFileGlob, func(name string) bool {
 		if protectedPath != "" && name == protectedPath {
 			return false
@@ -452,7 +453,7 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 		}
 
 		if f.MaxAge <= 0 || now.Sub(fi.ModTime()) < f.MaxAge {
-			filesNotExpired = append(filesNotExpired, name)
+			filesNotExpired = append(filesNotExpired, rotateFile{name: name, modTime: fi.ModTime()})
 			return false
 		}
 		return true
@@ -461,14 +462,10 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 		return err
 	}
 
-	var filesExceedMaxCount []string
-	if f.MaxCount > 0 && len(filesNotExpired) > 0 {
-		removeCount := len(filesNotExpired) - f.MaxCount
-		if removeCount < 0 {
-			removeCount = 0
-		}
-		sort.Sort(rotateFileSlice(filesNotExpired))
-		filesExceedMaxCount = filesNotExpired[:removeCount]
+	var filesExceedMaxCount []rotateFile
+	if f.MaxCount > 0 && len(filesNotExpired) > f.MaxCount {
+		sortRotateFiles(filesNotExpired)
+		filesExceedMaxCount = filesNotExpired[:len(filesNotExpired)-f.MaxCount]
 	}
 	var errs []error
 	for _, path := range filesExpired {
@@ -477,8 +474,8 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 			errs = append(errs, err)
 		}
 	}
-	for _, path := range filesExceedMaxCount {
-		err = os.Remove(path)
+	for _, file := range filesExceedMaxCount {
+		err = os.Remove(file.name)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -565,30 +562,21 @@ func maxSeqFileName(name string) (string, int) {
 	return fmt.Sprintf("%s%d%s", prefix, seq, suffix), seq
 }
 
-// sort filename by mode time and ascii in increase order
-type rotateFileSlice []string
-
-func (s rotateFileSlice) Len() int {
-	return len(s)
-}
-func (s rotateFileSlice) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+// rotateFile is a rotate file with ModTime, which is stat once for sorting.
+type rotateFile struct {
+	name    string
+	modTime time.Time
 }
 
-func (s rotateFileSlice) Less(i, j int) bool {
-	fi, err := os.Stat(s[i])
-	if err != nil {
-		return false
-	}
-	fj, err := os.Stat(s[j])
-	if err != nil {
-		return false
-	}
-	if fi.ModTime().Equal(fj.ModTime()) {
-		if len(s[i]) == len(s[j]) {
-			return s[i] < s[j]
+// sortRotateFiles sorts files by ModTime and name in increase order.
+func sortRotateFiles(files []rotateFile) {
+	slices.SortFunc(files, func(a, b rotateFile) int {
+		if c := a.modTime.Compare(b.modTime); c != 0 {
+			return c
 		}
-		return len(s[i]) > len(s[j]) // foo.1, foo.2, ..., foo
-	}
-	return fi.ModTime().Before(fj.ModTime())
+		if len(a.name) != len(b.name) {
+			return cmp.Compare(len(b.name), len(a.name)) // foo.1, foo.2, ..., foo
+		}
+		return strings.Compare(a.name, b.name)
+	})
 }
