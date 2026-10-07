@@ -295,6 +295,34 @@ func TestReSymlink_ReplaceExisting(t *testing.T) {
 	}
 }
 
+func TestCopyRenameTruncateAll(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.log")
+	dst := filepath.Join(dir, "sub", "dst.log")
+	f, err := os.OpenFile(src, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString("old"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os_.CopyRenameTruncateAll(dst, src); err != nil {
+		t.Fatalf("CopyRenameTruncateAll() error = %v", err)
+	}
+	if _, err := f.WriteString("new"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, err := os.ReadFile(src); err != nil || string(got) != "old" {
+		t.Errorf("ReadFile(src) = %q, %v, want %q", got, err, "old")
+	}
+	if got, err := os.ReadFile(dst); err != nil || string(got) != "new" {
+		t.Errorf("ReadFile(dst) = %q, %v, want %q", got, err, "new")
+	}
+}
+
 func TestNextFile(t *testing.T) {
 	t.Parallel()
 
