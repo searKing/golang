@@ -577,9 +577,42 @@ func sortRotateFiles(files []rotateFile) {
 		if c := a.modTime.Compare(b.modTime); c != 0 {
 			return c
 		}
-		if len(a.name) != len(b.name) {
-			return cmp.Compare(len(b.name), len(a.name)) // foo.1, foo.2, ..., foo
-		}
-		return strings.Compare(a.name, b.name)
+		return compareRotateFileName(a.name, b.name)
 	})
+}
+
+// compareRotateFileName compares names as foo.1, foo.2, ..., foo.9, foo.10, ..., foo,
+// by ascii, except that runs of digits are compared by numeric value,
+// and a name is after the longer names it prefixes.
+func compareRotateFileName(a, b string) int {
+	isDigit := func(c byte) bool { return '0' <= c && c <= '9' }
+	for a != "" && b != "" {
+		if !isDigit(a[0]) || !isDigit(b[0]) {
+			if a[0] != b[0] {
+				return cmp.Compare(a[0], b[0])
+			}
+			a, b = a[1:], b[1:]
+			continue
+		}
+		i, j := 0, 0
+		for i < len(a) && isDigit(a[i]) {
+			i++
+		}
+		for j < len(b) && isDigit(b[j]) {
+			j++
+		}
+		na, nb := strings.TrimLeft(a[:i], "0"), strings.TrimLeft(b[:j], "0")
+		if c := cmp.Compare(len(na), len(nb)); c != 0 {
+			return c
+		}
+		if c := strings.Compare(na, nb); c != 0 {
+			return c
+		}
+		// the same value, such as 01 and 1, the longer first as a prefixed name
+		if i != j {
+			return cmp.Compare(j, i)
+		}
+		a, b = a[i:], b[j:]
+	}
+	return cmp.Compare(len(b), len(a))
 }

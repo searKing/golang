@@ -71,8 +71,8 @@ func TestUnlinkOldestFiles(t *testing.T) {
 func TestUnlinkOldestFiles_SameModTime(t *testing.T) {
 	dir := t.TempDir()
 	mt := time.Now().Add(-time.Minute)
-	// ordered as a.log.1, a.log.2, a.log if ModTime equal
-	for _, name := range []string{"a.log", "a.log.1", "a.log.2"} {
+	// ordered as a.log.1, a.log.2, a.log.9, a.log.10, a.log if ModTime equal
+	for _, name := range []string{"a.log", "a.log.1", "a.log.2", "a.log.9", "a.log.10"} {
 		name = filepath.Join(dir, name)
 		if err := os.WriteFile(name, []byte("x"), 0644); err != nil {
 			t.Fatal(err)
@@ -91,7 +91,7 @@ func TestUnlinkOldestFiles_SameModTime(t *testing.T) {
 		left = append(left, filepath.Base(m))
 	}
 	slices.Sort(left)
-	if want := []string{"a.log", "a.log.2"}; !slices.Equal(left, want) {
+	if want := []string{"a.log", "a.log.10"}; !slices.Equal(left, want) {
 		t.Errorf("files left = %v, want %v", left, want)
 	}
 }
