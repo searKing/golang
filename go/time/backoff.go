@@ -317,8 +317,8 @@ func (o *ExponentialBackOff) incrementCurrentInterval() {
 // Increments the current count by ++.
 func (o *ExponentialBackOff) incrementCurrentCount() {
 	// Check for overflow, if overflow is detected set the current interval to the max interval.
-	if o.currentCount >= math.MaxInt64 {
-		o.currentCount = math.MaxInt64
+	if o.currentCount >= math.MaxInt {
+		o.currentCount = math.MaxInt
 		return
 	}
 	o.currentCount++
