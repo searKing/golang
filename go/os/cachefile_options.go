@@ -72,7 +72,8 @@ func WithCacheFileCacheMetaExt(v string) CacheFileOption {
 }
 
 // WithCacheFileCacheExpiredAfter sets CacheExpiredAfter in CacheFile.
-// Cache file expiration time, lazy expire cache files base on cache URL modification time
+// Cache file expiration time, lazy expire cache files base on cache URL modification time.
+// Never expire if <= 0, set a tiny duration such as time.Nanosecond to refresh cache files on every Get.
 func WithCacheFileCacheExpiredAfter(v time.Duration) CacheFileOption {
 	return CacheFileOptionFunc(func(o *CacheFile) {
 		o.CacheExpiredAfter = v

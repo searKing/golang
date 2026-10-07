@@ -37,8 +37,10 @@ type CacheFile struct {
 	// see: https://github.com/golang/go/issues/13516
 	BucketKeyFunc func(key string) string
 
-	CacheMetaExt      string        // the file name extension used by path. ".cache" if empty
-	CacheExpiredAfter time.Duration // Cache file expiration time, lazy expire cache files base on cache URL modification time
+	CacheMetaExt string // the file name extension used by path. ".cache" if empty
+	// Cache file expiration time, lazy expire cache files base on cache URL modification time.
+	// Never expire if <= 0, set a tiny duration such as time.Nanosecond to refresh cache files on every Get.
+	CacheExpiredAfter time.Duration
 }
 
 func NewCacheFile(opts ...CacheFileOption) *CacheFile {
@@ -129,7 +131,7 @@ func (f *CacheFile) createCacheMetaIfNotExist(key, cacheMetaPathPattern string) 
 		info, err := os.Stat(cacheMetaPath)
 		if err == nil {
 			// violate cache file if cache expired
-			expired := now.Sub(info.ModTime()) > f.CacheExpiredAfter
+			expired := f.CacheExpiredAfter > 0 && now.Sub(info.ModTime()) > f.CacheExpiredAfter
 			if expired {
 				_ = os.Truncate(cacheMetaPath, 0) // make cache meta file not available
 				_ = os.Remove(cacheFilePath)      // clear cache file if exists, atomic operation as cache meta file is locked.
