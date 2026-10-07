@@ -514,10 +514,7 @@ func nextSeqFileName(name string, seq int) (string, int) {
 	if err != nil {
 		return name, seq
 	}
-	defer nf.Close()
-	if seqUsed == 0 {
-		return name, seqUsed
-	}
+	_ = nf.Close()
 	return nf.Name(), seqUsed
 }
 
