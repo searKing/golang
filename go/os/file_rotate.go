@@ -139,7 +139,7 @@ func (f *RotateFile) Write(b []byte) (n int, err error) {
 
 	out, err := f.getWriterLocked(false, false)
 	if err != nil {
-		return 0, fmt.Errorf("acquite rotated file :%w", err)
+		return 0, fmt.Errorf("acquire rotated file: %w", err)
 	}
 
 	return out.Write(b)
@@ -148,7 +148,7 @@ func (f *RotateFile) Write(b []byte) (n int, err error) {
 // WriteString is like Write, but writes the contents of string s rather than
 // a slice of bytes.
 func (f *RotateFile) WriteString(s string) (n int, err error) {
-	if err := f.checkValid("close"); err != nil {
+	if err := f.checkValid("write"); err != nil {
 		return 0, err
 	}
 	return f.Write([]byte(s))
@@ -169,7 +169,7 @@ func (f *RotateFile) WriteAt(b []byte, off int64) (n int, err error) {
 
 	out, err := f.getWriterLocked(false, false)
 	if err != nil {
-		return 0, fmt.Errorf("acquite rotated file :%w", err)
+		return 0, fmt.Errorf("acquire rotated file: %w", err)
 	}
 	if w, ok := out.(io.WriterAt); ok {
 		return w.WriteAt(b, off)
