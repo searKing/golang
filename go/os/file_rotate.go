@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -305,7 +306,7 @@ func (f *RotateFile) makeUsingFileReadyLocked() (err error) {
 
 	// link -> filename
 	if f.FileLinkPath != "" {
-		if err := ReSymlink(f.writingFilePath, f.FileLinkPath); err != nil {
+		if err := ReSymlink(symlinkTarget(f.writingFilePath, f.FileLinkPath), f.FileLinkPath); err != nil {
 			return err
 		}
 	}
@@ -416,7 +417,7 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 
 	// link -> filename
 	if f.FileLinkPath != "" {
-		if err := ReSymlink(writeName, f.FileLinkPath); err != nil {
+		if err := ReSymlink(symlinkTarget(writeName, f.FileLinkPath), f.FileLinkPath); err != nil {
 			return nil, err
 		}
 	}
@@ -533,6 +534,28 @@ func nextSeqFileName(name string, seq int) (string, int) {
 		return name, seqUsed
 	}
 	return nf.Name(), seqUsed
+}
+
+// symlinkTarget returns the target of a symbolic link at linkPath to name.
+// A relative target is resolved against the dir of the link, not the working dir,
+// so a relative name is converted to be relative to the dir of linkPath.
+func symlinkTarget(name, linkPath string) string {
+	if filepath.IsAbs(name) {
+		return name
+	}
+	absName, err := filepath.Abs(name)
+	if err != nil {
+		return name
+	}
+	absLinkDir, err := filepath.Abs(filepath.Dir(linkPath))
+	if err != nil {
+		return absName
+	}
+	rel, err := filepath.Rel(absLinkDir, absName)
+	if err != nil {
+		return absName
+	}
+	return rel
 }
 
 // foo.txt -> foo.txt

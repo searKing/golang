@@ -26,6 +26,68 @@ func countOpenFiles(t *testing.T) int {
 	return len(entries)
 }
 
+func TestRotateFile_FileLinkPath(t *testing.T) {
+	tests := []struct {
+		name         string
+		prefix       func(dir string) string
+		link         func(dir string) string
+		wantRelative bool
+	}{
+		{
+			name:         "relative in same dir",
+			prefix:       func(string) string { return filepath.Join("log", "test.") },
+			link:         func(string) string { return filepath.Join("log", "s.log") },
+			wantRelative: true,
+		},
+		{
+			name:         "relative in different dirs",
+			prefix:       func(string) string { return filepath.Join("logs", "app.") },
+			link:         func(string) string { return filepath.Join("links", "app.log") },
+			wantRelative: true,
+		},
+		{
+			name:   "absolute",
+			prefix: func(dir string) string { return filepath.Join(dir, "logs", "app.") },
+			link:   func(dir string) string { return filepath.Join(dir, "links", "app.log") },
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Chdir(dir)
+			link := tt.link(dir)
+			if err := os.MkdirAll(filepath.Dir(link), 0755); err != nil {
+				t.Fatal(err)
+			}
+
+			f := os_.NewRotateFile("2006-01-02")
+			f.FilePathPrefix = tt.prefix(dir)
+			f.FileLinkPath = link
+			if _, err := f.WriteString("hello"); err != nil {
+				t.Fatal(err)
+			}
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := os.ReadFile(link)
+			if err != nil {
+				t.Fatalf("read through link: %v", err)
+			}
+			if string(got) != "hello" {
+				t.Errorf("content through link = %q, want %q", got, "hello")
+			}
+			target, err := os.Readlink(link)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if gotRelative := !filepath.IsAbs(target); gotRelative != tt.wantRelative {
+				t.Errorf("link target %q is relative = %v, want %v", target, gotRelative, tt.wantRelative)
+			}
+		})
+	}
+}
+
 func TestRotateFile_ForceNewFileOnStartupNoFdLeak(t *testing.T) {
 	// files leaked are closed by finalizer on GC
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))

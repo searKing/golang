@@ -462,6 +462,7 @@ func ReLink(oldname, newname string) error {
 }
 
 // ReSymlink creates or replace newname as a symbolic link to oldname.
+// As [os.Symlink], a relative oldname is resolved against the dir of newname, not the working dir.
 // If there is an error, it will be of type *LinkError.
 func ReSymlink(oldname, newname string) error {
 	tempLink, err := os.CreateTemp(filepath.Dir(newname), filepath.Base(newname))
