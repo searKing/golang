@@ -13,14 +13,21 @@ import (
 var _ encoding.Codec = (*JSONPb)(nil)
 var _ runtime.Marshaler = (*JSONPb)(nil)
 
-// Name is the name registered for the proto compressor.
+// Name is the name registered for the json codec, used as the content-subtype of grpc,
+// that is "application/grpc+json".
 const Name = "json"
 
-// JSONPb 遵循云API3.0标准协议的JSONPb
+// JSONPb is a json codec of protobuf messages by protojson, which serves both as an
+// encoding.Codec of grpc, registered by encoding.RegisterCodec, and as a runtime.Marshaler
+// of grpc-gateway. Values not of proto.Message are marshaled by encoding/json.
+//
+// Use NewJSONPb to create a JSONPb, which emits no unpopulated fields and discards unknown
+// fields by default, as Tencent Cloud API 3.0 does.
 type JSONPb struct {
 	runtime.JSONPb
 }
 
+// Name returns the name of the codec, implementing encoding.Codec.
 func (j *JSONPb) Name() string {
 	return Name
 }
