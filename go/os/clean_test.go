@@ -19,12 +19,14 @@ func TestUnlinkOldestFiles(t *testing.T) {
 	tests := []struct {
 		name     string
 		files    int
+		symlink  bool // a.link links to the newest file
 		maxCount int
 		wantLeft []string
 	}{
 		{name: "under max count", files: 2, maxCount: 5, wantLeft: []string{"a.0", "a.1"}},
 		{name: "equal max count", files: 3, maxCount: 3, wantLeft: []string{"a.0", "a.1", "a.2"}},
 		{name: "exceed max count", files: 5, maxCount: 2, wantLeft: []string{"a.3", "a.4"}},
+		{name: "symlink not counted", files: 3, symlink: true, maxCount: 2, wantLeft: []string{"a.1", "a.2", "a.link"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -38,6 +40,12 @@ func TestUnlinkOldestFiles(t *testing.T) {
 				// a.0 is the oldest
 				mt := now.Add(time.Duration(i-tt.files) * time.Minute)
 				if err := os.Chtimes(name, mt, mt); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tt.symlink {
+				newest := filepath.Join(dir, "a."+strconv.Itoa(tt.files-1))
+				if err := os.Symlink(newest, filepath.Join(dir, "a.link")); err != nil {
 					t.Fatal(err)
 				}
 			}

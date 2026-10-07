@@ -445,26 +445,14 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 			return false
 		}
 
-		fi, err := os.Stat(name)
-		if err != nil {
+		// skip symbolic links, such as FileLinkPath, neither counted nor removed
+		fi, err := os.Lstat(name)
+		if err != nil || fi.Mode()&os.ModeSymlink != 0 {
 			return false
 		}
 
-		fl, err := os.Lstat(name)
-		if err != nil {
-			return false
-		}
-		if f.MaxAge <= 0 {
+		if f.MaxAge <= 0 || now.Sub(fi.ModTime()) < f.MaxAge {
 			filesNotExpired = append(filesNotExpired, name)
-			return false
-		}
-
-		if now.Sub(fi.ModTime()) < f.MaxAge {
-			filesNotExpired = append(filesNotExpired, name)
-			return false
-		}
-
-		if fl.Mode()&os.ModeSymlink == os.ModeSymlink {
 			return false
 		}
 		return true

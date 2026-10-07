@@ -54,9 +54,10 @@ func UnlinkOldestFiles(pattern string, quora DiskQuota) error {
 
 // UnlinkOldestFilesFunc unlinks files matching pattern which exceed quora,
 // skipping files for which f(name) returns false.
+// Symbolic links are skipped, neither counted nor unlinked.
 //
 // Files are unlinked in the following order:
-//  1. files older than MaxAge, symbolic links excluded;
+//  1. files older than MaxAge;
 //  2. the oldest files by ModTime, until no more than MaxCount files left;
 //  3. the oldest files by ModTime, until disk usage is within MaxUsedProportion and MaxIUsedProportion.
 func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) bool) error {
@@ -71,26 +72,13 @@ func UnlinkOldestFilesFunc(pattern string, quora DiskQuota, f func(name string) 
 
 	var errs []error
 	_, err := filepath_.GlobFunc(pattern, func(name string) bool {
-		fi, err := os.Stat(name)
-		if err != nil {
+		fi, err := os.Lstat(name)
+		if err != nil || fi.Mode()&os.ModeSymlink != 0 {
 			return false
 		}
 
-		fl, err := os.Lstat(name)
-		if err != nil {
-			return false
-		}
-		if quora.MaxAge <= 0 {
+		if quora.MaxAge <= 0 || now.Sub(fi.ModTime()) < quora.MaxAge {
 			filesNotExpired = append(filesNotExpired, name)
-			return false
-		}
-
-		if now.Sub(fi.ModTime()) < quora.MaxAge {
-			filesNotExpired = append(filesNotExpired, name)
-			return false
-		}
-
-		if fl.Mode()&os.ModeSymlink == os.ModeSymlink {
 			return false
 		}
 
