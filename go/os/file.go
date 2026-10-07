@@ -6,6 +6,7 @@ package os
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -229,9 +230,10 @@ func CopyFileAll(dst string, src string, flag int, dirperm, fileperm os.FileMode
 		return err
 	}
 
-	defer dstFile.Close()
-
 	_, err = io.Copy(dstFile, srcFile)
+	if err1 := dstFile.Close(); err == nil {
+		err = err1
+	}
 	return err
 }
 
@@ -268,9 +270,10 @@ func CopyFile(dst string, src string, flag int, perm os.FileMode) error {
 		return err
 	}
 
-	defer dstFile.Close()
-
 	_, err = io.Copy(dstFile, srcFile)
+	if err1 := dstFile.Close(); err == nil {
+		err = err1
+	}
 	return err
 }
 
@@ -654,9 +657,9 @@ func AppendFileAllFrom(filename string, r io.Reader, dirperm, fileperm os.FileMo
 }
 
 // WriteRenameAll writes data to a temp file and rename to the new file named by filename.
-// If the file does not exist, WriteRenameAll creates it with mode 0666 (before umask)
+// If the file does not exist, WriteRenameAll creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameAll creates it with 0755 (before umask)
-// otherwise WriteRenameAll truncates it before writing, without changing permissions.
+// otherwise WriteRenameAll replaces it, without changing permissions.
 func WriteRenameAll(filename string, data []byte) error {
 	return WriteRenameFileAll(filename, data, DefaultPermissionDirectory)
 }
@@ -664,28 +667,28 @@ func WriteRenameAll(filename string, data []byte) error {
 // WriteRenameFileAll is the generalized open call; most users will use WriteRenameAll instead.
 // WriteRenameFileAll is safer than WriteFileAll as before Write finished, nobody can find the unfinished file.
 // It writes data to a temp file and rename to the new file named by filename.
-// If the file does not exist, WriteRenameFileAll creates it with permissions fileperm
+// If the file does not exist, WriteRenameFileAll creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameFileAll creates it with permissions dirperm
-// (before umask); otherwise WriteRenameFileAll truncates it before writing, without changing permissions.
+// (before umask); otherwise WriteRenameFileAll replaces it, without changing permissions.
 func WriteRenameFileAll(filename string, data []byte, dirperm os.FileMode) error {
 	return WriteRenameFileAllFrom(filename, bytes.NewReader(data), dirperm)
 }
 
 // WriteRenameAllFrom writes data to a temp file from r until EOF or error, and rename to the new file named by filename.
 // WriteRenameAllFrom is safer than WriteAllFrom as before Write finished, nobody can find the unfinished file.
-// If the file does not exist, WriteRenameAllFrom creates it with mode 0666 (before umask)
+// If the file does not exist, WriteRenameAllFrom creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameAllFrom creates it with 0755 (before umask)
-// otherwise WriteRenameAllFrom truncates it before writing, without changing permissions.
+// otherwise WriteRenameAllFrom replaces it, without changing permissions.
 func WriteRenameAllFrom(filename string, r io.Reader) error {
 	return WriteRenameFileAllFrom(filename, r, DefaultPermissionDirectory)
 }
 
 // WriteRenameFileAllFrom is the generalized open call; most users will use WriteRenameAllFrom instead.
-// WriteRenameFileAllFrom is safer than WriteRenameAllFrom as before Write finished, nobody can find the unfinished file.
-// It writes data to a temp file and rename to the new file named by filename.
-// If the file does not exist, WriteRenameFileAllFrom creates it with permissions fileperm
+// WriteRenameFileAllFrom is safer than WriteFileAllFrom as before Write finished, nobody can find the unfinished file.
+// It writes data to a temp file from r until EOF or error, syncs it, and rename to the new file named by filename.
+// If the file does not exist, WriteRenameFileAllFrom creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameFileAllFrom creates it with permissions dirperm
-// (before umask); otherwise WriteRenameFileAllFrom truncates it before writing, without changing permissions.
+// (before umask); otherwise WriteRenameFileAllFrom replaces it, without changing permissions.
 func WriteRenameFileAllFrom(filename string, r io.Reader, dirperm os.FileMode) error {
 	dir, file := filepath.Split(filename)
 	if dir == "" {
@@ -695,15 +698,28 @@ func WriteRenameFileAllFrom(filename string, r io.Reader, dirperm os.FileMode) e
 	if file != "" {
 		pattern = fmt.Sprintf(".%s.*.rename", file)
 	}
+	fi, statErr := os.Stat(filename)
+
 	tempFile, err := TempAll(dir, pattern)
 	if err != nil {
 		return err
 	}
-	defer tempFile.Close()
-
 	tempFilePath := tempFile.Name()
-	defer os.Remove(tempFilePath) // remove if rename failed
+	defer os.Remove(tempFilePath) // remove if failed
+
 	_, err = tempFile.ReadFrom(r)
+	if err == nil && statErr == nil {
+		// Chmod is not affected by umask, and fails on file systems without permissions, such as vfat
+		_ = tempFile.Chmod(fi.Mode().Perm())
+	}
+	if err == nil {
+		if err = tempFile.Sync(); errors.Is(err, errors.ErrUnsupported) {
+			err = nil
+		}
+	}
+	if err1 := tempFile.Close(); err == nil {
+		err = err1
+	}
 	if err != nil {
 		return err
 	}

@@ -96,9 +96,9 @@ func AppendFileAllFrom(filename string, r io.Reader, dirperm, fileperm os.FileMo
 }
 
 // WriteRenameAll writes data to a temp file and rename to the new file named by filename.
-// If the file does not exist, WriteRenameAll creates it with mode 0666 (before umask)
+// If the file does not exist, WriteRenameAll creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameAll creates it with 0755 (before umask)
-// otherwise WriteRenameAll truncates it before writing, without changing permissions.
+// otherwise WriteRenameAll replaces it, without changing permissions.
 //
 // As of Go 1.16, this function simply calls os.WriteRenameAll.
 func WriteRenameAll(filename string, data []byte) error {
@@ -108,20 +108,20 @@ func WriteRenameAll(filename string, data []byte) error {
 // WriteRenameFileAll is the generalized open call; most users will use WriteRenameAll instead.
 // WriteRenameFileAll is safer than WriteFileAll as before Write finished, nobody can find the unfinished file.
 // It writes data to a temp file and rename to the new file named by filename.
-// If the file does not exist, WriteRenameFileAll creates it with permissions fileperm
+// If the file does not exist, WriteRenameFileAll creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameFileAll creates it with permissions dirperm
-// (before umask); otherwise WriteRenameFileAll truncates it before writing, without changing permissions.
+// (before umask); otherwise WriteRenameFileAll replaces it, without changing permissions.
 //
-// As of Go 1.16, this function simply calls os.WriteRenameFileAllFrom.
+// As of Go 1.16, this function simply calls os.WriteRenameFileAll.
 func WriteRenameFileAll(filename string, data []byte, dirperm os.FileMode) error {
 	return os_.WriteRenameFileAll(filename, data, dirperm)
 }
 
 // WriteRenameAllFrom writes data to a temp file from r until EOF or error, and rename to the new file named by filename.
 // WriteRenameAllFrom is safer than WriteAllFrom as before Write finished, nobody can find the unfinished file.
-// If the file does not exist, WriteRenameAllFrom creates it with mode 0666 (before umask)
+// If the file does not exist, WriteRenameAllFrom creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameAllFrom creates it with 0755 (before umask)
-// otherwise WriteRenameAllFrom truncates it before writing, without changing permissions.
+// otherwise WriteRenameAllFrom replaces it, without changing permissions.
 //
 // As of Go 1.16, this function simply calls os.WriteRenameAllFrom.
 func WriteRenameAllFrom(filename string, r io.Reader) error {
@@ -129,11 +129,11 @@ func WriteRenameAllFrom(filename string, r io.Reader) error {
 }
 
 // WriteRenameFileAllFrom is the generalized open call; most users will use WriteRenameAllFrom instead.
-// WriteRenameFileAllFrom is safer than WriteRenameAllFrom as before Write finished, nobody can find the unfinished file.
-// It writes data to a temp file and rename to the new file named by filename.
-// If the file does not exist, WriteRenameFileAllFrom creates it with permissions fileperm
+// WriteRenameFileAllFrom is safer than WriteFileAllFrom as before Write finished, nobody can find the unfinished file.
+// It writes data to a temp file from r until EOF or error, syncs it, and rename to the new file named by filename.
+// If the file does not exist, WriteRenameFileAllFrom creates it with mode 0600 (before umask)
 // If the dir does not exist, WriteRenameFileAllFrom creates it with permissions dirperm
-// (before umask); otherwise WriteRenameFileAllFrom truncates it before writing, without changing permissions.
+// (before umask); otherwise WriteRenameFileAllFrom replaces it, without changing permissions.
 //
 // As of Go 1.16, this function simply calls os.WriteRenameFileAllFrom.
 func WriteRenameFileAllFrom(filename string, r io.Reader, dirperm os.FileMode) error {

@@ -3,6 +3,7 @@ package os_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -320,6 +321,55 @@ func TestCopyRenameTruncateAll(t *testing.T) {
 	}
 	if got, err := os.ReadFile(dst); err != nil || string(got) != "new" {
 		t.Errorf("ReadFile(dst) = %q, %v, want %q", got, err, "new")
+	}
+}
+
+func TestWriteRenameAll_Perm(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission bits are not supported on windows")
+	}
+	dir := t.TempDir()
+	existing := filepath.Join(dir, "existing")
+	if err := os.WriteFile(existing, []byte("old"), 0640); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(existing, 0640); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name     string
+		filename string
+		wantPerm os.FileMode
+	}{
+		{name: "new file", filename: filepath.Join(dir, "sub", "new"), wantPerm: 0600},
+		{name: "existing file", filename: existing, wantPerm: 0640},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := os_.WriteRenameAll(tt.filename, []byte("new")); err != nil {
+				t.Fatalf("WriteRenameAll() error = %v", err)
+			}
+			if got, err := os.ReadFile(tt.filename); err != nil || string(got) != "new" {
+				t.Errorf("ReadFile() = %q, %v, want %q", got, err, "new")
+			}
+			fi, err := os.Stat(tt.filename)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := fi.Mode().Perm(); got != tt.wantPerm {
+				t.Errorf("perm = %v, want %v", got, tt.wantPerm)
+			}
+			entries, err := os.ReadDir(filepath.Dir(tt.filename))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, e := range entries {
+				if strings.HasSuffix(e.Name(), ".rename") {
+					t.Errorf("temp file %q left", e.Name())
+				}
+			}
+		})
 	}
 }
 
