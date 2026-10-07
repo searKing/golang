@@ -14,21 +14,24 @@ import (
 )
 
 // enhance signal.Notify with stacktrace of cgo.
-// redirects signal log to stdout
+// redirects signal log to stderr
 func init() {
-	DumpSignalTo(int(syscall.Stdout))
+	DumpSignalTo(int(syscall.Stderr))
 	// FIXME https://github.com/golang/go/issues/35814
 	//RegisterOnSignal(OnSignalHandlerFunc(func(signum os.Signal) {}))
 
 	var dumpfile string
 	if f, err := os.CreateTemp("", "*.stacktrace.dump"); err == nil {
 		dumpfile = f.Name()
+		_ = f.Close()
+		// only the name is reserved, the file is created when stacktrace is dumped,
+		// so that PreviousStacktrace returns empty before that.
+		_ = os.Remove(dumpfile)
 	} else {
 		dumpfile = filepath.Join(os.TempDir(), fmt.Sprintf("stacktrace.%d.dump", time.Now().UnixNano()))
 	}
 
 	DumpStacktraceTo(dumpfile)
-	defer os.Remove(dumpfile)
 }
 
 type OnSignalHandler interface {
