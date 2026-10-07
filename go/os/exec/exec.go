@@ -7,58 +7,52 @@ package exec
 import (
 	"context"
 	"io"
-	"os"
 	"os/exec"
+	"syscall"
+	"time"
 )
 
-type commandServer struct {
-	cmd    *exec.Cmd
-	handle func(reader io.Reader)
-	ctx    context.Context
-	done   context.CancelFunc
+// waitDelay is how long to wait for the process to exit after SIGTERM is sent, before it is killed.
+const waitDelay = time.Second
+
+// command returns the Cmd struct to execute the named program with the given arguments.
+// The process is sent SIGTERM if ctx is done before the command completes on its own,
+// and is killed if it does not exit within waitDelay.
+// Signals other than Kill are not supported on Windows, so the process is killed after waitDelay there.
+func command(ctx context.Context, name string, arg ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, name, arg...)
+	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
+	cmd.WaitDelay = waitDelay
+	return cmd
 }
 
-func newCommandServer(parent context.Context, stop context.CancelFunc, handle func(reader io.Reader), name string, args ...string) (*commandServer, error) {
-	if parent == nil {
-		parent = context.Background()
-	}
-	if stop == nil {
-		stop = func() {}
-	}
-	if handle == nil {
-		handle = func(reader io.Reader) {}
-	}
-
-	cs := &commandServer{
-		cmd:    exec.Command(name, args...),
-		handle: handle,
-		ctx:    parent,
-		done:   stop,
+// commandContext starts the named program, feeds its stdout to handle, and waits for it to exit.
+// ctx.Err() is returned if ctx is done before the command completes on its own.
+func commandContext(ctx context.Context, handle func(reader io.Reader), name string, arg ...string) error {
+	cmd := command(ctx, name, arg...)
+	// Use a pipe other than cmd.StdoutPipe, so that Wait closes stdout after WaitDelay,
+	// even if a subprocess holds stdout open.
+	pr, pw := io.Pipe()
+	cmd.Stdout = pw
+	if err := cmd.Start(); err != nil {
+		return err
 	}
 
-	r, err := cs.cmd.StdoutPipe()
-	if err != nil {
-		cs.Stop()
-		return nil, err
-	}
-	go cs.watch(r)
-	return cs, nil
-}
+	handled := make(chan struct{})
+	go func() {
+		defer close(handled)
+		if handle != nil {
+			handle(pr)
+		}
+		// drain stdout left, or the process may block on writing stdout
+		_, _ = io.Copy(io.Discard, pr)
+	}()
 
-func (cs *commandServer) wait() error {
-	select {
-	case <-cs.ctx.Done():
-		return cs.ctx.Err()
+	err := cmd.Wait()
+	_ = pw.Close()
+	<-handled
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
-	return nil
-}
-
-func (cs *commandServer) watch(r io.Reader) {
-	cs.handle(r)
-	cs.cmd.Wait()
-	cs.done()
-}
-func (cs *commandServer) Stop() {
-	cs.cmd.Process.Signal(os.Interrupt)
-	cs.done()
+	return err
 }
