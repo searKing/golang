@@ -48,9 +48,10 @@ const (
 	// the file and truncating it, so some logging data might be lost. When this option is
 	// used, the create option will have no effect, as the old log file stays in place.
 	//
-	// The log file keeps the name of the first rotate file, and the copies are named by the time of rotation,
-	// that is, each copy contains logs of the previous rotate interval, as `dateext` without `dateyesterday`
-	// in logrotate. Use RotateModeCopyRename if the log file need not keep its name.
+	// The log file is named by RotateFile.CopyTruncateFilePath if set, or keeps the name of the first rotate file
+	// otherwise, and the copies are named by the time of rotation, that is, each copy contains logs of the
+	// previous rotate interval, as `dateext` without `dateyesterday` in logrotate.
+	// Use RotateModeCopyRename if the log file need not keep its name.
 	// see option: `copytruncate` in https://man7.org/linux/man-pages/man8/logrotate.8.html
 	RotateModeCopyTruncate RotateMode = iota
 )
@@ -68,6 +69,12 @@ type RotateFile struct {
 
 	// sets the symbolic link name that gets linked to the current file name being used.
 	FileLinkPath string
+
+	// CopyTruncateFilePath sets the fixed name of the log file being written for RotateModeCopyTruncate,
+	// which is never removed by cleaning. If empty, the log file keeps the name of the first rotate file.
+	// The log file is copied on startup only if ForceNewFileOnStartup is set.
+	// It takes no effect for other RotateMode.
+	CopyTruncateFilePath string
 
 	// Rotate files are rotated until RotateInterval expired before being removed
 	// take effects if only RotateInterval is bigger than 0.
@@ -366,10 +373,16 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 	oldName := f.writingFilePath
 	var writeName string
 	var needRotate bool
-	if f.RotateMode == RotateModeCopyTruncate && oldName != "" {
+	switch {
+	case f.RotateMode == RotateModeCopyTruncate && f.CopyTruncateFilePath != "":
+		// newName may be an existing copy on startup, which must not be overwritten unless forced
+		needRotate = newName != f.writingFilePathRotated && (oldName != "" || f.ForceNewFileOnStartup)
+		oldName = f.CopyTruncateFilePath
+		writeName = oldName
+	case f.RotateMode == RotateModeCopyTruncate && oldName != "":
 		writeName = oldName
 		needRotate = newName != f.writingFilePathRotated
-	} else {
+	default:
 		writeName = newName
 		needRotate = newName != f.writingFilePath
 	}
@@ -437,6 +450,10 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 	var filesNotExpired []rotateFile
 	filesExpired, err := filepath_.GlobFunc(f.FilePathPrefix+f.RotateFileGlob, func(name string) bool {
 		if protectedPath != "" && name == protectedPath {
+			return false
+		}
+		if f.RotateMode == RotateModeCopyTruncate && f.CopyTruncateFilePath != "" &&
+			filepath.Clean(name) == filepath.Clean(f.CopyTruncateFilePath) {
 			return false
 		}
 

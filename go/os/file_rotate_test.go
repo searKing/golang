@@ -8,12 +8,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	os_ "github.com/searKing/golang/go/os"
+	time_ "github.com/searKing/golang/go/time"
 )
 
 // countOpenFiles returns the number of open file descriptors of the process.
@@ -153,5 +155,108 @@ func TestRotateFile_CopyTruncateRotateOncePerInterval(t *testing.T) {
 	}
 	if want := strings.Repeat("b", 20); string(got) != want {
 		t.Errorf("writing file content = %q, want %q", got, want)
+	}
+}
+
+func readFile(t *testing.T, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+func TestRotateFile_CopyTruncateFilePath(t *testing.T) {
+	dir := t.TempDir()
+	live := filepath.Join(dir, "app.log")
+	f := os_.NewRotateFile("2006-01-02_15-04-05")
+	f.FilePathPrefix = filepath.Join(dir, "app.")
+	f.RotateMode = os_.RotateModeCopyTruncate
+	f.RotateInterval = time.Second
+	f.CopyTruncateFilePath = live
+	f.RotateFileGlob = "*" // matches the log file too
+	f.MaxAge = time.Hour
+	var rotated []string
+	f.PostRotateHandler = func(name string) { rotated = append(rotated, name) }
+
+	sleepToNextSecond()
+	if _, err := f.WriteString("a"); err != nil {
+		t.Fatal(err)
+	}
+	sleepToNextSecond()
+	for i := 0; i < 20; i++ {
+		if _, err := f.WriteString("b"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if want := []string{live, live}; !slices.Equal(rotated, want) {
+		t.Errorf("rotated = %q, want %q", rotated, want)
+	}
+	if got, want := readFile(t, live), strings.Repeat("b", 20); got != want {
+		t.Errorf("log file content = %q, want %q", got, want)
+	}
+	copies, err := filepath.Glob(filepath.Join(dir, "app.2*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(copies) != 1 || readFile(t, copies[0]) != "a" {
+		t.Fatalf("copies = %q, want one copy of %q", copies, "a")
+	}
+
+	// the log file is not removed by cleaning, even if expired
+	old := time.Now().Add(-2 * time.Hour)
+	if err := os.Chtimes(live, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(live); err != nil {
+		t.Errorf("log file after clean: %v", err)
+	}
+}
+
+func TestRotateFile_CopyTruncateFilePathOnStartup(t *testing.T) {
+	for _, force := range []bool{false, true} {
+		t.Run("ForceNewFileOnStartup="+strconv.FormatBool(force), func(t *testing.T) {
+			dir := t.TempDir()
+			live := filepath.Join(dir, "app.log")
+			prefix := filepath.Join(dir, "app.")
+			// a copy rotated by the previous run in the same rotate interval
+			copied := prefix + time_.TruncateByLocation(time.Now(), 24*time.Hour).Format("2006-01-02")
+			if err := os.WriteFile(copied, []byte("copied"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(live, []byte("old"), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			f := os_.NewRotateFile("2006-01-02")
+			f.FilePathPrefix = prefix
+			f.RotateMode = os_.RotateModeCopyTruncate
+			f.CopyTruncateFilePath = live
+			f.ForceNewFileOnStartup = force
+			if _, err := f.WriteString("new"); err != nil {
+				t.Fatal(err)
+			}
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			if got := readFile(t, copied); got != "copied" {
+				t.Errorf("copy of previous run = %q, want %q", got, "copied")
+			}
+			want := "oldnew"
+			if force {
+				want = "new"
+				if got := readFile(t, copied+".1"); got != "old" {
+					t.Errorf("copy on startup = %q, want %q", got, "old")
+				}
+			}
+			if got := readFile(t, live); got != want {
+				t.Errorf("log file content = %q, want %q", got, want)
+			}
+		})
 	}
 }
