@@ -18,7 +18,7 @@ import (
 // Maintain a mapping of keys to structure field indexes
 
 type StructInfo struct {
-	fieldsLRU lru.LRU
+	fieldsLRU *lru.LRU
 	Zero      reflect.Value
 }
 type fieldInfo struct {
@@ -55,7 +55,7 @@ func GetStructInfo(st reflect.Type) (*StructInfo, error) {
 
 	// Traversal all Fields of the Struct
 	n := st.NumField()
-	fieldsLRU := lru.LRU{}
+	fieldsLRU := &lru.LRU{}
 	inlineMap := -1
 	for i := 0; i != n; i++ {
 		field := st.Field(i)
