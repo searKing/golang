@@ -48,7 +48,7 @@ func (lru *KeyLRU) AddOrUpdate(key any) error {
 }
 
 func (lru *KeyLRU) RemoveOldest() any {
-	if lru.ll == nil {
+	if lru.ll == nil || lru.ll.Len() == 0 {
 		return nil
 	}
 	ele := lru.ll.Back()

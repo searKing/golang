@@ -29,3 +29,18 @@ func TestLRUPairsValues(t *testing.T) {
 		t.Errorf("Values() = %v; want %v", values, want)
 	}
 }
+
+func TestLRUEmpty(t *testing.T) {
+	var l lru.LRU
+	if v, ok := l.Peek("a"); v != nil || ok {
+		t.Errorf("Peek(a) = %v, %t; want nil, false", v, ok)
+	}
+	l.Add("a", 1)
+	l.Remove("a")
+	if v := l.RemoveOldest(); v != nil {
+		t.Errorf("RemoveOldest() = %v; want nil", v)
+	}
+	if v, ok := l.Peek("a"); v != nil || ok {
+		t.Errorf("Peek(a) = %v, %t; want nil, false", v, ok)
+	}
+}

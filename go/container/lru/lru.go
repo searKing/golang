@@ -75,7 +75,7 @@ func (lru *LRU) AddOrUpdate(key any, value any) error {
 }
 
 func (lru *LRU) RemoveOldest() any {
-	if lru.ll == nil {
+	if lru.ll == nil || lru.ll.Len() == 0 {
 		return nil
 	}
 	ele := lru.ll.Back()
@@ -105,10 +105,11 @@ func (lru *LRU) Find(key any) (any, bool) {
 
 func (lru *LRU) Peek(key any) (any, bool) {
 	e, ok := lru.m[key]
-	if ok {
-		lru.Remove(key)
+	if !ok {
+		return nil, false
 	}
-	return e.Value.(Pair).Value, ok
+	lru.Remove(key)
+	return e.Value.(Pair).Value, true
 }
 
 // Len returns the number of items in the cache.
