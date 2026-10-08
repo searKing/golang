@@ -116,8 +116,13 @@ func (r *Reservation) Wait(ctx context.Context) error {
 		// Wait if necessary
 		select {
 		case <-r.tokensGot.Done():
-			// We can proceed.
-			return nil
+			// tokensGot is done by tokens ready, or by the ctx of Reserve.
+			if r.Ready() {
+				// We can proceed.
+				return nil
+			}
+			r.Cancel()
+			return r.tokensGot.Err()
 		case <-ctx.Done():
 			// Context was canceled before we could proceed.  Cancel the
 			// reservation, which may permit other events to proceed sooner.

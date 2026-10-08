@@ -345,6 +345,19 @@ func TestWaitBlock(t *testing.T) {
 
 }
 
+func TestWaitReserveCanceled(t *testing.T) {
+	lim := NewEmptyBurstLimiter(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	r := lim.Reserve(ctx)
+	cancel()
+	if err := r.Wait(context.Background()); err != context.Canceled {
+		t.Errorf("r.Wait() = %v; want %v", err, context.Canceled)
+	}
+	if lim.Tokens() != 0 {
+		t.Errorf("lim.Tokens() = %d; want 0", lim.Tokens())
+	}
+}
+
 func TestPutTokenNInOrder(t *testing.T) {
 	lim := NewEmptyBurstLimiter(3)
 	var rs []*Reservation
