@@ -105,7 +105,7 @@ func UnmarshalKeyViper(v *viper.Viper, key string, rawVal any, opts ...viper.Dec
 }
 
 func UnmarshalKeys(keys []string, rawVal any, opts ...viper.DecoderConfigOption) error {
-	return UnmarshalKeysViper(viper.GetViper(), keys, rawVal)
+	return UnmarshalKeysViper(viper.GetViper(), keys, rawVal, opts...)
 }
 
 func UnmarshalKeysViper(v *viper.Viper, keys []string, rawVal any, opts ...viper.DecoderConfigOption) error {
