@@ -146,28 +146,6 @@ func FindModuleRoot(dir string) (root string) {
 	return findModuleRoot(dir)
 }
 
-// borrow from golang src code
-// //go:linkname findModuleRoot cmd/go/internal/modload.findModuleRoot
-func findModuleRoot(dir string) (root string) {
-	if dir == "" {
-		panic("dir not set")
-	}
-	dir = filepath.Clean(dir)
-
-	// Look for enclosing go.mod.
-	for {
-		if fi, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !fi.IsDir() {
-			return dir
-		}
-		d := filepath.Dir(dir)
-		if d == dir {
-			break
-		}
-		dir = d
-	}
-	return ""
-}
-
 func segments(path string) []string {
 	return strings.Split(path, string(os.PathSeparator))
 }
