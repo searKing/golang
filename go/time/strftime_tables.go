@@ -201,7 +201,6 @@ var stdSimilarChunkNames = map[int]string{
 	stdMonFirstWeekOfYear:    stdChunkNames[stdWeekDay],
 	stdFirstTwoDigitYear:     stdChunkNames[stdLongYear],
 	stdSecondsSinceEpoch:     strftimeChunkNames[stdSecondsSinceEpoch],
-	stdDayOfYear:             strftimeChunkNames[stdDayOfYear],
 	stdISO8601WeekYear:       stdChunkNames[stdYear],
 	stdISO8601LongWeekYear:   stdChunkNames[stdLongYear],
 	stdISO8601Week:           strftimeChunkNames[stdISO8601Week],
@@ -232,101 +231,100 @@ var stdSimilarChunkNames = map[int]string{
 // see http://www.cplusplus.com/reference/ctime/strftime/
 // see https://man7.org/linux/man-pages/man3/strftime.3.html
 var strftimeChunkNames = map[int]string{
-	0:                        "",
-	stdWeekDay:               "%a", // Thu; Abbreviated weekday name
-	stdLongWeekDay:           "%A", // Thursday; Full weekday name
-	stdMonth:                 "%b", // Aug; Abbreviated month name, (same as %h)
-	stdLongMonth:             "%B", // August; Full month name
-	stdDateAndTime:           "%c", // Thu Aug 23 14:55:02 2001; Date and time representation， %a %b %e %H:%M:%S %Y
-	stdFirstTwoDigitYear:     "%C", // 20; Year divided by 100 and truncated to integer (00-99)
-	stdZeroDay:               "%d", // 23; Day of the month, zero-padded (01-31)
-	stdShortSlashDate:        "%D", // 08/23/01; Short MM/DD/YY date, equivalent to %m/%d/%y, (same as %x)
-	stdUnderDay:              "%e", // 23; Day of the month, space-padded ( 1-31)
-	stdShortDashDate:         "%F", // 2001-08-23; Short YYYY-MM-DD date, equivalent to %Y-%m-%d
-	stdISO8601WeekYear:       "%g", // 01; Week-based year, last two digits (00-99)
-	stdISO8601LongWeekYear:   "%G", // 2001; Week-based year
-	stdHour:                  "%H", // 14; Hour in 24h format (00-23), (same as %k)
-	stdZeroHour12:            "%I", // 02; Hour in 12h format (01-12), (same as %l)
-	stdDayOfYear:             "%j", // 235; Day of the year (001-366)
-	stdZeroMonth:             "%m", // 08; Month as a decimal number (01-12)
-	stdZeroMinute:            "%M", // 55; Minute (00-59)
-	stdCharNewLine:           "%n", // '\n'; New-line character ('\n')
-	stdPM:                    "%p", // PM; AM or PM designation
-	stdpm:                    "%P", // om; am or pm designation
-	stdHour12ClockTime:       "%r", // 02:55:02 pm; 12-hour clock time
-	stdHourHourMinuteTime:    "%R", // 14:55; 24-hour HH:MM time, equivalent to %H:%M
-	stdSecondsSinceEpoch:     "%s", // ; The number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC). (TZ)
-	stdZeroSecond:            "%S", // 02; Second (00-61)
-	stdCharHorizontalTab:     "%t", // '\t'; Horizontal-tab character ('\t')
-	stdISO8601Time:           "%T", // 14:55:02; ISO 8601 time format (HH:MM:SS), equivalent to %H:%M:%S
-	stdNumWeekDay:            "%u", // 4; ISO 8601 weekday as number with Monday as 1 (1-7)
-	stdSundayFirstWeekOfYear: "%U", // 33; Week number with the first Sunday as the first day of week one (00-53)
-	stdISO8601NumWeek:        "%v", // 34; ISO 8601 week number (01-53)
-	stdISO8601Week:           "%V", // 34; ISO 8601 week number (01-53)
-	stdZeroNumWeek:           "%w", // 4; Weekday as a decimal number with Sunday as 0 (0-6)
-	stdMonFirstWeekOfYear:    "%W", // 34; Week number with the first Monday as the first day of week one (00-53)
-	stdHourClockTime:         "%X", // 14:55:02; Time representation
-	stdYear:                  "%y", // 01; Year, last two digits (00-99)
-	stdLongYear:              "%Y", // 2001; Year
-	stdNumTZ:                 "%z", // +100; ISO 8601 offset from UTC in timezone (1 minute=1, 1 hour=100), If timezone cannot be determined, no characters
-	stdTZ:                    "%Z", // CDT; Timezone name or abbreviation, If timezone cannot be determined, no characters
-	stdCharPercentSign:       "%%", // '%'; A % sign
-	stdISO8601TZ:             "%z",
-	stdNop:                   "",
-}
-
-var strftimeSimilarChunkNames = map[int]string{
-	stdNumMonth:                                 strftimeChunkNames[stdMonth],
-	stdDay:                                      strftimeChunkNames[stdZeroDay],
-	stdUnderYearDay:                             strftimeChunkNames[stdZeroDay],
-	stdZeroYearDay:                              strftimeChunkNames[stdDayOfYear],
-	stdHour12:                                   strftimeChunkNames[stdZeroHour12],
-	stdMinute:                                   strftimeChunkNames[stdZeroMinute],
-	stdSecond:                                   strftimeChunkNames[stdZeroSecond],
-	stdISO8601SecondsTZ:                         strftimeChunkNames[stdNumTZ],
-	stdISO8601ShortTZ:                           strftimeChunkNames[stdNumTZ],
-	stdISO8601ColonTZ:                           strftimeChunkNames[stdNumTZ],
-	stdISO8601ColonSecondsTZ:                    strftimeChunkNames[stdNumTZ],
-	stdNumSecondsTz:                             strftimeChunkNames[stdNumTZ],
-	stdNumShortTZ:                               strftimeChunkNames[stdNumTZ],
-	stdNumColonTZ:                               strftimeChunkNames[stdNumTZ],
-	stdNumColonSecondsTZ:                        strftimeChunkNames[stdNumTZ],
-	stdDateAndTime | stdNeedEModifier:           "%Ec",
-	stdFirstTwoDigitYear | stdNeedEModifier:     "%EC",
-	stdShortSlashDate | stdNeedEModifier:        "%Ex",
-	stdHourClockTime | stdNeedEModifier:         "%EX",
-	stdYear | stdNeedEModifier:                  "%Ey",
-	stdLongYear | stdNeedEModifier:              "%EY",
-	stdZeroDay | stdNeedOModifier:               "%Od",
-	stdUnderDay | stdNeedOModifier:              "%Oe",
-	stdHour | stdNeedOModifier:                  "%OH",
-	stdZeroHour12 | stdNeedOModifier:            "%OI",
-	stdZeroMonth | stdNeedOModifier:             "%Om",
-	stdZeroMinute | stdNeedOModifier:            "%OM",
-	stdZeroSecond | stdNeedOModifier:            "%OS",
-	stdNumWeekDay | stdNeedOModifier:            "%Ou",
+	0:                                       "",
+	stdWeekDay:                              "%a", // Thu; Abbreviated weekday name
+	stdLongWeekDay:                          "%A", // Thursday; Full weekday name
+	stdMonth:                                "%b", // Aug; Abbreviated month name, (same as %h)
+	stdLongMonth:                            "%B", // August; Full month name
+	stdDateAndTime:                          "%c", // Thu Aug 23 14:55:02 2001; Date and time representation， %a %b %e %H:%M:%S %Y
+	stdFirstTwoDigitYear:                    "%C", // 20; Year divided by 100 and truncated to integer (00-99)
+	stdZeroDay:                              "%d", // 23; Day of the month, zero-padded (01-31)
+	stdShortSlashDate:                       "%D", // 08/23/01; Short MM/DD/YY date, equivalent to %m/%d/%y, (same as %x)
+	stdUnderDay:                             "%e", // 23; Day of the month, space-padded ( 1-31)
+	stdShortDashDate:                        "%F", // 2001-08-23; Short YYYY-MM-DD date, equivalent to %Y-%m-%d
+	stdISO8601WeekYear:                      "%g", // 01; Week-based year, last two digits (00-99)
+	stdISO8601LongWeekYear:                  "%G", // 2001; Week-based year
+	stdHour:                                 "%H", // 14; Hour in 24h format (00-23), (same as %k)
+	stdZeroHour12:                           "%I", // 02; Hour in 12h format (01-12), (same as %l)
+	stdZeroYearDay:                          "%j", // 235; Day of the year (001-366)
+	stdZeroMonth:                            "%m", // 08; Month as a decimal number (01-12)
+	stdZeroMinute:                           "%M", // 55; Minute (00-59)
+	stdCharNewLine:                          "%n", // '\n'; New-line character ('\n')
+	stdPM:                                   "%p", // PM; AM or PM designation
+	stdpm:                                   "%P", // om; am or pm designation
+	stdHour12ClockTime:                      "%r", // 02:55:02 pm; 12-hour clock time
+	stdHourHourMinuteTime:                   "%R", // 14:55; 24-hour HH:MM time, equivalent to %H:%M
+	stdSecondsSinceEpoch:                    "%s", // ; The number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC). (TZ)
+	stdZeroSecond:                           "%S", // 02; Second (00-61)
+	stdCharHorizontalTab:                    "%t", // '\t'; Horizontal-tab character ('\t')
+	stdISO8601Time:                          "%T", // 14:55:02; ISO 8601 time format (HH:MM:SS), equivalent to %H:%M:%S
+	stdNumWeekDay:                           "%u", // 4; ISO 8601 weekday as number with Monday as 1 (1-7)
+	stdSundayFirstWeekOfYear:                "%U", // 33; Week number with the first Sunday as the first day of week one (00-53)
+	stdISO8601NumWeek:                       "%v", // 34; ISO 8601 week number (01-53)
+	stdISO8601Week:                          "%V", // 34; ISO 8601 week number (01-53)
+	stdZeroNumWeek:                          "%w", // 4; Weekday as a decimal number with Sunday as 0 (0-6)
+	stdMonFirstWeekOfYear:                   "%W", // 34; Week number with the first Monday as the first day of week one (00-53)
+	stdHourClockTime:                        "%X", // 14:55:02; Time representation
+	stdYear:                                 "%y", // 01; Year, last two digits (00-99)
+	stdLongYear:                             "%Y", // 2001; Year
+	stdNumTZ:                                "%z", // +100; ISO 8601 offset from UTC in timezone (1 minute=1, 1 hour=100), If timezone cannot be determined, no characters
+	stdTZ:                                   "%Z", // CDT; Timezone name or abbreviation, If timezone cannot be determined, no characters
+	stdCharPercentSign:                      "%%", // '%'; A % sign
+	stdISO8601TZ:                            "%z",
+	stdNop:                                  "",
+	stdDateAndTime | stdNeedEModifier:       "%Ec",
+	stdFirstTwoDigitYear | stdNeedEModifier: "%EC",
+	stdShortSlashDate | stdNeedEModifier:    "%Ex",
+	stdHourClockTime | stdNeedEModifier:     "%EX",
+	stdYear | stdNeedEModifier:              "%Ey",
+	stdLongYear | stdNeedEModifier:          "%EY",
+	stdZeroDay | stdNeedOModifier:           "%Od",
+	stdUnderDay | stdNeedOModifier:          "%Oe",
+	stdHour | stdNeedOModifier:              "%OH",
+	stdZeroHour12 | stdNeedOModifier:        "%OI",
+	stdZeroMonth | stdNeedOModifier:         "%Om",
+	stdZeroMinute | stdNeedOModifier:        "%OM",
+	stdZeroSecond | stdNeedOModifier:        "%OS",
+	stdNumWeekDay | stdNeedOModifier:        "%Ou",
 	stdSundayFirstWeekOfYear | stdNeedOModifier: "%OU",
 	stdISO8601Week | stdNeedOModifier:           "%OV",
 	stdZeroNumWeek | stdNeedOModifier:           "%Ow",
 	stdMonFirstWeekOfYear | stdNeedOModifier:    "%OW",
 	stdYear | stdNeedOModifier:                  "%Oy",
-	stdFracSecond0 | 1<<stdArgShift:             "",
-	stdFracSecond0 | 2<<stdArgShift:             "",
-	stdFracSecond0 | 3<<stdArgShift:             "",
-	stdFracSecond0 | 4<<stdArgShift:             "",
-	stdFracSecond0 | 5<<stdArgShift:             "",
-	stdFracSecond0 | 6<<stdArgShift:             "",
-	stdFracSecond0 | 7<<stdArgShift:             "",
-	stdFracSecond0 | 8<<stdArgShift:             "",
-	stdFracSecond0 | 9<<stdArgShift:             "",
-	stdFracSecond9 | 1<<stdArgShift:             "",
-	stdFracSecond9 | 2<<stdArgShift:             "",
-	stdFracSecond9 | 3<<stdArgShift:             "",
-	stdFracSecond9 | 4<<stdArgShift:             "",
-	stdFracSecond9 | 5<<stdArgShift:             "",
-	stdFracSecond9 | 6<<stdArgShift:             "",
-	stdFracSecond9 | 7<<stdArgShift:             "",
-	stdFracSecond9 | 8<<stdArgShift:             "",
-	stdFracSecond9 | 9<<stdArgShift:             "",
-	stdNop:                                      "",
+}
+
+var strftimeSimilarChunkNames = map[int]string{
+	stdNumMonth:                     strftimeChunkNames[stdMonth],
+	stdDay:                          strftimeChunkNames[stdZeroDay],
+	stdUnderYearDay:                 strftimeChunkNames[stdZeroYearDay],
+	stdHour12:                       strftimeChunkNames[stdZeroHour12],
+	stdMinute:                       strftimeChunkNames[stdZeroMinute],
+	stdSecond:                       strftimeChunkNames[stdZeroSecond],
+	stdISO8601SecondsTZ:             strftimeChunkNames[stdNumTZ],
+	stdISO8601ShortTZ:               strftimeChunkNames[stdNumTZ],
+	stdISO8601ColonTZ:               strftimeChunkNames[stdNumTZ],
+	stdISO8601ColonSecondsTZ:        strftimeChunkNames[stdNumTZ],
+	stdNumSecondsTz:                 strftimeChunkNames[stdNumTZ],
+	stdNumShortTZ:                   strftimeChunkNames[stdNumTZ],
+	stdNumColonTZ:                   strftimeChunkNames[stdNumTZ],
+	stdNumColonSecondsTZ:            strftimeChunkNames[stdNumTZ],
+	stdFracSecond0 | 1<<stdArgShift: "",
+	stdFracSecond0 | 2<<stdArgShift: "",
+	stdFracSecond0 | 3<<stdArgShift: "",
+	stdFracSecond0 | 4<<stdArgShift: "",
+	stdFracSecond0 | 5<<stdArgShift: "",
+	stdFracSecond0 | 6<<stdArgShift: "",
+	stdFracSecond0 | 7<<stdArgShift: "",
+	stdFracSecond0 | 8<<stdArgShift: "",
+	stdFracSecond0 | 9<<stdArgShift: "",
+	stdFracSecond9 | 1<<stdArgShift: "",
+	stdFracSecond9 | 2<<stdArgShift: "",
+	stdFracSecond9 | 3<<stdArgShift: "",
+	stdFracSecond9 | 4<<stdArgShift: "",
+	stdFracSecond9 | 5<<stdArgShift: "",
+	stdFracSecond9 | 6<<stdArgShift: "",
+	stdFracSecond9 | 7<<stdArgShift: "",
+	stdFracSecond9 | 8<<stdArgShift: "",
+	stdFracSecond9 | 9<<stdArgShift: "",
+	stdNop:                          "",
 }

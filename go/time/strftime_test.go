@@ -167,3 +167,82 @@ func TestLayoutStrftimeToSimilarTime(t *testing.T) {
 	}
 
 }
+
+func TestLayoutStrftimeToTimeModifier(t *testing.T) {
+	tests := []struct {
+		layout      string
+		wantExact   string
+		wantSimilar string
+	}{
+		{layout: "%Ec|tail", wantExact: "%Ec|tail", wantSimilar: time.ANSIC + "|tail"},
+		{layout: "%EY-%m", wantExact: "%EY-01", wantSimilar: "2006-01"},
+		{layout: "%OH:%M", wantExact: "%OH:04", wantSimilar: "15:04"},
+		{layout: "%Od/%Om/%Oy", wantExact: "%Od/%Om/%Oy", wantSimilar: "02/01/06"},
+	}
+	for _, tt := range tests {
+		if got := time_.LayoutStrftimeToTime(tt.layout); got != tt.wantExact {
+			t.Errorf("LayoutStrftimeToTime(%q) = %q, want %q", tt.layout, got, tt.wantExact)
+		}
+		if got := time_.LayoutStrftimeToSimilarTime(tt.layout); got != tt.wantSimilar {
+			t.Errorf("LayoutStrftimeToSimilarTime(%q) = %q, want %q", tt.layout, got, tt.wantSimilar)
+		}
+	}
+}
+
+func TestLayoutDayOfYear(t *testing.T) {
+	for name, fn := range map[string]func(string) string{
+		"LayoutStrftimeToTime":        time_.LayoutStrftimeToTime,
+		"LayoutStrftimeToSimilarTime": time_.LayoutStrftimeToSimilarTime,
+	} {
+		if got, want := fn("%Y-%j"), "2006-002"; got != want {
+			t.Errorf("%s(%q) = %q, want %q", name, "%Y-%j", got, want)
+		}
+	}
+	for name, fn := range map[string]func(string) string{
+		"LayoutTimeToStrftime":        time_.LayoutTimeToStrftime,
+		"LayoutTimeToSimilarStrftime": time_.LayoutTimeToSimilarStrftime,
+	} {
+		if got, want := fn("2006-002"), "%Y-%j"; got != want {
+			t.Errorf("%s(%q) = %q, want %q", name, "2006-002", got, want)
+		}
+	}
+	if got, want := time_.LayoutTimeToSimilarStrftime("__2"), "%j"; got != want {
+		t.Errorf("LayoutTimeToSimilarStrftime(%q) = %q, want %q", "__2", got, want)
+	}
+
+	tm := time.Date(2021, 3, 12, 0, 0, 0, 0, time.UTC)
+	if got, want := tm.Format(time_.LayoutStrftimeToTime("%j")), "071"; got != want {
+		t.Errorf("Format(%q) = %q, want %q", "%j", got, want)
+	}
+}
+
+func TestLayoutStrftimeToTimeIncompleteEscape(t *testing.T) {
+	tests := []struct {
+		layout     string
+		wantLayout string
+	}{
+		{layout: "%", wantLayout: "%"},
+		{layout: "100%", wantLayout: "100%"},
+		{layout: "%Y %E", wantLayout: "2006 %E"},
+		{layout: "%Y %O", wantLayout: "2006 %O"},
+		{layout: "%E%", wantLayout: "%E%"},
+		{layout: "%q%Y", wantLayout: "%q2006"},
+	}
+	for _, tt := range tests {
+		for name, fn := range map[string]func(string) string{
+			"LayoutStrftimeToTime":        time_.LayoutStrftimeToTime,
+			"LayoutStrftimeToSimilarTime": time_.LayoutStrftimeToSimilarTime,
+		} {
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						t.Errorf("%s(%q) panicked: %v", name, tt.layout, r)
+					}
+				}()
+				if got := fn(tt.layout); got != tt.wantLayout {
+					t.Errorf("%s(%q) = %q, want %q", name, tt.layout, got, tt.wantLayout)
+				}
+			}()
+		}
+	}
+}

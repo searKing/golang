@@ -75,6 +75,9 @@ func nextStrftimeChunk(layout string) (prefix string, std int, suffix string) {
 		switch c := int(layout[i]); c {
 		case '%': // %
 			j := i + 1
+			if j >= len(layout) {
+				break
+			}
 			switch c := int(layout[j]); c {
 			case 'a': // Mon
 				return layout[:i], stdWeekDay, layout[j+1:]
@@ -97,19 +100,22 @@ func nextStrftimeChunk(layout string) (prefix string, std int, suffix string) {
 			case 'E': // E modifier is to use a locale-dependent alternative representation
 				// %Ec, %EC, %Ex, %EX, %Ey, %EY
 				k := j + 1
+				if k >= len(layout) {
+					break
+				}
 				switch c := int(layout[k]); c {
 				case 'c': // "Mon Jan _2 15:04:05 2006" (assumes "C" locale)
-					return layout[0:i], stdDateAndTime & stdNeedEModifier, layout[k+1:]
+					return layout[0:i], stdDateAndTime | stdNeedEModifier, layout[k+1:]
 				case 'C': // 20
-					return layout[0:i], stdFirstTwoDigitYear & stdNeedEModifier, layout[k+1:]
+					return layout[0:i], stdFirstTwoDigitYear | stdNeedEModifier, layout[k+1:]
 				case 'x': // %m/%d/%y
-					return layout[0:i], stdShortSlashDate & stdNeedEModifier, layout[k+1:]
+					return layout[0:i], stdShortSlashDate | stdNeedEModifier, layout[k+1:]
 				case 'X': // locale depended time representation (assumes "C" locale)
-					return layout[0:i], stdHourClockTime & stdNeedEModifier, layout[k+1:]
+					return layout[0:i], stdHourClockTime | stdNeedEModifier, layout[k+1:]
 				case 'y':
-					return layout[0:i], stdYear & stdNeedEModifier, layout[k+1:]
+					return layout[0:i], stdYear | stdNeedEModifier, layout[k+1:]
 				case 'Y':
-					return layout[0:i], stdLongYear & stdNeedEModifier, layout[k+1:]
+					return layout[0:i], stdLongYear | stdNeedEModifier, layout[k+1:]
 				}
 			case 'f': // fraction seconds in microseconds (Python)
 				std = stdFracSecond0
@@ -126,7 +132,7 @@ func nextStrftimeChunk(layout string) (prefix string, std int, suffix string) {
 			case 'I', 'l':
 				return layout[0:i], stdZeroHour12, layout[j+1:]
 			case 'j':
-				return layout[0:i], stdDayOfYear, layout[j+1:]
+				return layout[0:i], stdZeroYearDay, layout[j+1:]
 			case 'm':
 				return layout[0:i], stdZeroMonth, layout[j+1:]
 			case 'M':
@@ -136,33 +142,36 @@ func nextStrftimeChunk(layout string) (prefix string, std int, suffix string) {
 			case 'O': // O modifier is to use alternative numeric symbols (say, roman numerals)
 				// %Od %Oe %OH %OI %Om %OM %OS %Ou %OU %OV %Ow %OW %Oy
 				k := j + 1
+				if k >= len(layout) {
+					break
+				}
 				switch c := int(layout[k]); c {
 				case 'd': // 02
-					return layout[0:i], stdZeroDay & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdZeroDay | stdNeedOModifier, layout[k+1:]
 				case 'e': // _2
-					return layout[0:i], stdUnderDay & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdUnderDay | stdNeedOModifier, layout[k+1:]
 				case 'H':
-					return layout[0:i], stdHour & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdHour | stdNeedOModifier, layout[k+1:]
 				case 'I':
-					return layout[0:i], stdZeroHour12 & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdZeroHour12 | stdNeedOModifier, layout[k+1:]
 				case 'm':
-					return layout[0:i], stdZeroMonth & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdZeroMonth | stdNeedOModifier, layout[k+1:]
 				case 'M':
-					return layout[0:i], stdZeroMinute & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdZeroMinute | stdNeedOModifier, layout[k+1:]
 				case 'S':
-					return layout[0:i], stdZeroSecond & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdZeroSecond | stdNeedOModifier, layout[k+1:]
 				case 'u': // weekday as a decimal number, where Monday is 1
-					return layout[0:i], stdNumWeekDay & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdNumWeekDay | stdNeedOModifier, layout[k+1:]
 				case 'U': // week of the year as a decimal number (Sunday is the first day of the week)
-					return layout[0:i], stdSundayFirstWeekOfYear & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdSundayFirstWeekOfYear | stdNeedOModifier, layout[k+1:]
 				case 'V':
-					return layout[0:i], stdISO8601Week & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdISO8601Week | stdNeedOModifier, layout[k+1:]
 				case 'w':
-					return layout[0:i], stdZeroNumWeek & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdZeroNumWeek | stdNeedOModifier, layout[k+1:]
 				case 'W': // week of the year as a decimal number (Monday is the first day of the week)
-					return layout[0:i], stdMonFirstWeekOfYear & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdMonFirstWeekOfYear | stdNeedOModifier, layout[k+1:]
 				case 'y':
-					return layout[0:i], stdYear & stdNeedOModifier, layout[k+1:]
+					return layout[0:i], stdYear | stdNeedOModifier, layout[k+1:]
 				}
 			case 'p':
 				return layout[0:i], stdPM, layout[j+1:]
