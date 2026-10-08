@@ -21,14 +21,14 @@ type validatorServerStream struct {
 	grpc.ServerStream
 }
 
-func (s *validatorServerStream) RecvMsg(req interface{}) error {
+func (s *validatorServerStream) RecvMsg(req any) error {
 	err := s.ServerStream.RecvMsg(req)
 	if err != nil {
 		return err
 	}
 	if v := s.validator; v != nil {
 		if err = v.StructCtx(s.Context(), req); err != nil {
-			return status.Errorf(codes.InvalidArgument, err.Error())
+			return status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
 	return nil

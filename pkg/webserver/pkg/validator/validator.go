@@ -41,7 +41,7 @@ func unaryHandler(validator *validator.Validate, handler func(ctx context.Contex
 	return func(ctx context.Context, req any) (any, error) {
 		if v := validator; v != nil {
 			if err := v.StructCtx(ctx, req); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, err.Error())
+				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 		}
 		// DON'T CHECK RESPONSE
