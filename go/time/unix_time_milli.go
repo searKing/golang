@@ -1,3 +1,7 @@
+// Copyright 2021 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package time
 
 import (
@@ -27,7 +31,7 @@ func (t UnixTimeMillisecond) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-// The time is expected to be a quoted string in RFC 3339 format.
+// The time is expected to be a number of Unix milliseconds.
 func (t *UnixTimeMillisecond) UnmarshalJSON(data []byte) error {
 	// Ignore null, like in the main JSON package.
 	if string(data) == "null" {
@@ -38,20 +42,17 @@ func (t *UnixTimeMillisecond) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	t.Time = UnixWithUnit(timestamp, t.unit())
-
-	var s = t.Time.String()
-	_ = s
 	return nil
 }
 
 // MarshalText implements the encoding.TextMarshaler interface.
-// The time is formatted in Unix Seconds, with sub-second precision added if present.
+// The time is formatted in Unix milliseconds.
 func (t UnixTimeMillisecond) MarshalText() ([]byte, error) {
 	return t.MarshalJSON()
 }
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface.
-// The time is expected to be in RFC 3339 format.
+// The time is expected to be a number of Unix milliseconds.
 func (t *UnixTimeMillisecond) UnmarshalText(data []byte) error {
 	return t.UnmarshalJSON(data)
 }
