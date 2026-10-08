@@ -354,7 +354,7 @@ func TestHandlers(t *testing.T) {
 		{
 			name:          "GroupValue as Attr value",
 			replace:       removeKeys(slog.TimeKey, slog.LevelKey),
-			attrs:         []slog.Attr{{"v", slog.AnyValue(slog.IntValue(3))}},
+			attrs:         []slog.Attr{{Key: "v", Value: slog.AnyValue(slog.IntValue(3))}},
 			wantText:      "msg=message v=3",
 			wantJSON:      `{"msg":"message","v":3}`,
 			wantGlog:      `0] message, v=3`,
