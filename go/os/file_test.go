@@ -218,7 +218,8 @@ func checkLinkReplaced(t *testing.T, dir, oldname string, wantEntries int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := fi.Mode().Perm(); got != 0600 {
+	// permission bits are not supported on windows
+	if got := fi.Mode().Perm(); runtime.GOOS != "windows" && got != 0600 {
 		t.Errorf("mode of oldname = %v, want %v", got, os.FileMode(0600))
 	}
 	entries, err := os.ReadDir(dir)
@@ -309,18 +310,30 @@ func TestCopyRenameTruncateAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// a file opened can not be renamed on windows
+	held := runtime.GOOS != "windows"
+	if !held {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	if err := os_.CopyRenameTruncateAll(dst, src); err != nil {
 		t.Fatalf("CopyRenameTruncateAll() error = %v", err)
 	}
-	if _, err := f.WriteString("new"); err != nil {
-		t.Fatal(err)
+	wantDst := ""
+	if held {
+		if _, err := f.WriteString("new"); err != nil {
+			t.Fatal(err)
+		}
+		wantDst = "new"
 	}
 
 	if got, err := os.ReadFile(src); err != nil || string(got) != "old" {
 		t.Errorf("ReadFile(src) = %q, %v, want %q", got, err, "old")
 	}
-	if got, err := os.ReadFile(dst); err != nil || string(got) != "new" {
-		t.Errorf("ReadFile(dst) = %q, %v, want %q", got, err, "new")
+	if got, err := os.ReadFile(dst); err != nil || string(got) != wantDst {
+		t.Errorf("ReadFile(dst) = %q, %v, want %q", got, err, wantDst)
 	}
 }
 

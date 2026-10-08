@@ -391,6 +391,10 @@ func TestRotateFile_CopyTruncateNoEmptyCopy(t *testing.T) {
 			t.Fatal(err)
 		}
 		live := rotated[0]
+		// a file opened can not be removed on windows
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
 		if err := os.Remove(live); err != nil {
 			t.Fatal(err)
 		}
