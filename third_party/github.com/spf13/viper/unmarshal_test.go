@@ -6,7 +6,10 @@ package viper_test
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 	viper_ "github.com/searKing/golang/third_party/github.com/spf13/viper"
@@ -77,6 +80,50 @@ func TestUnmarshalWithOptions(t *testing.T) {
 	}
 	if got.Server.Port != 8080 {
 		t.Errorf("Unmarshal ignores opts: got port %d, want %d", got.Server.Port, 8080)
+	}
+}
+
+func TestUnmarshalKeysViperDecodeHook(t *testing.T) {
+	type Server struct {
+		Name string
+	}
+	upper := func(f reflect.Type, _ reflect.Type, data any) (any, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		return strings.ToUpper(data.(string)), nil
+	}
+	v := viper.NewWithOptions(viper.WithDecodeHook(upper))
+	v.Set("server", map[string]any{"name": "foo"})
+
+	for name, fn := range map[string]func(*viper.Viper, []string, any, ...viper.DecoderConfigOption) error{
+		"UnmarshalKeysViper":      viper_.UnmarshalKeysViper,
+		"UnmarshalKeysExactViper": viper_.UnmarshalKeysExactViper,
+	} {
+		var got Server
+		if err := fn(v, []string{"server"}, &got); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if got.Name != "FOO" {
+			t.Errorf("%s ignores decode hook of viper: got name %q, want %q", name, got.Name, "FOO")
+		}
+	}
+}
+
+func TestUnmarshalKeysViperDefaultDecodeHook(t *testing.T) {
+	type Server struct {
+		Timeout time.Duration
+		Hosts   []string
+	}
+	v := viper.New()
+	v.Set("server", map[string]any{"timeout": "1m", "hosts": "a,b"})
+
+	var got Server
+	if err := viper_.UnmarshalKeysViper(v, []string{"server"}, &got); err != nil {
+		t.Fatalf("UnmarshalKeysViper: %v", err)
+	}
+	if want := (Server{Timeout: time.Minute, Hosts: []string{"a", "b"}}); !reflect.DeepEqual(got, want) {
+		t.Errorf("UnmarshalKeysViper = %+v, want %+v", got, want)
 	}
 }
 

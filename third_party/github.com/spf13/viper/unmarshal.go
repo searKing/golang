@@ -6,6 +6,7 @@ package viper
 
 import (
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -27,50 +28,22 @@ func decode(input any, config *mapstructure.DecoderConfig) error {
 	return decoder.Decode(input)
 }
 
-// defaultDecoderConfig returns default mapstructure.DecoderConfig with support
-// of time.Duration values & string slices.
-func defaultDecoderConfig(output any, opts ...viper.DecoderConfigOption) *mapstructure.DecoderConfig {
-	decodeHook := mapstructure.ComposeDecodeHookFunc(
-		mapstructure.StringToTimeDurationHookFunc(),
-		// mapstructure.StringToSliceHookFunc(","),
-		stringToWeakSliceHookFunc(","),
-	)
-	c := &mapstructure.DecoderConfig{
-		Metadata:         nil,
-		WeaklyTypedInput: true,
-		DecodeHook:       decodeHook,
-	}
-
-	for _, opt := range opts {
-		opt(c)
-	}
+// defaultDecoderConfig returns the mapstructure.DecoderConfig that v uses to unmarshal,
+// with the decode hook of [viper.WithDecodeHook] and opts applied.
+//
+// v builds the config only when it unmarshals, so the config is captured by an extra
+// option applied last, and is then reset to a zero config for v to decode nothing into a dummy.
+func defaultDecoderConfig(v *viper.Viper, output any, opts ...viper.DecoderConfigOption) *mapstructure.DecoderConfig {
+	var c mapstructure.DecoderConfig
+	var dummy struct{}
+	_ = v.UnmarshalKey("", &dummy, append(slices.Clip(opts), func(config *mapstructure.DecoderConfig) {
+		c = *config
+		*config = mapstructure.DecoderConfig{}
+	})...)
 
 	// Do not allow overwriting the output
 	c.Result = output
-
-	return c
-}
-
-// As of mapstructure v2.0.0 StringToSliceHookFunc checks if the return type is a string slice.
-// This function removes that check.
-// TODO: implement a function that checks if the value can be converted to the return type and use it instead.
-func stringToWeakSliceHookFunc(sep string) mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
-		if f.Kind() != reflect.String || t.Kind() != reflect.Slice {
-			return data, nil
-		}
-
-		raw := data.(string)
-		if raw == "" {
-			return []string{}, nil
-		}
-
-		return strings.Split(raw, sep), nil
-	}
+	return &c
 }
 
 // DecodeProtoJsonHook if set, will be called before any decoding and any
@@ -124,7 +97,7 @@ func UnmarshalKeysViper(v *viper.Viper, keys []string, rawVal any, opts ...viper
 	if !has {
 		return nil
 	}
-	return decode(val, defaultDecoderConfig(rawVal, opts...))
+	return decode(val, defaultDecoderConfig(v, rawVal, opts...))
 }
 
 // Unmarshal unmarshalls the config into a Struct. Make sure that the tags
@@ -161,7 +134,7 @@ func UnmarshalKeysExactViper(v *viper.Viper, keys []string, rawVal any, opts ...
 	if !has {
 		return nil
 	}
-	config := defaultDecoderConfig(rawVal, opts...)
+	config := defaultDecoderConfig(v, rawVal, opts...)
 	config.ErrorUnused = true
 	return decode(val, config)
 }
