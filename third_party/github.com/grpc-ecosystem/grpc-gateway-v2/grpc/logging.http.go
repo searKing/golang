@@ -147,9 +147,14 @@ func extractLoggingFieldsFromHttpRequest(r *http.Request) []any {
 		attrs = append(attrs, slog.String("http.client_ip", http_.ClientIP(r)))
 	}
 
-	attrs = append(attrs, slog.String("http.method", r.Method), slog.String("http.request.uri", r.RequestURI))
-
 	absRequestURI := strings.HasPrefix(r.RequestURI, "http://") || strings.HasPrefix(r.RequestURI, "https://")
+	uri := r.RequestURI
+	if (uri == "" || absRequestURI) && r.URL != nil {
+		// RequestURI is unset for client requests, and may contain a password if absolute
+		uri = r.URL.Redacted()
+	}
+	attrs = append(attrs, slog.String("http.method", r.Method), slog.String("http.request.uri", uri))
+
 	if !absRequestURI {
 		host := r.Host
 		if host == "" && r.URL != nil {

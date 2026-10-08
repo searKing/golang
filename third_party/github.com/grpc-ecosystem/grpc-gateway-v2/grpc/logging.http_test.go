@@ -14,6 +14,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 
+	http_ "github.com/searKing/golang/go/net/http"
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 )
 
@@ -116,6 +117,55 @@ func TestHttpInterceptor_StatusWithoutWrite(t *testing.T) {
 	}
 	if want := []string{"OK"}; !slices.Equal(codes, want) {
 		t.Errorf("http.status_code = %q, want %q", codes, want)
+	}
+}
+
+// uriLogger records http.request.uri logged.
+type uriLogger []string
+
+func (ul *uriLogger) Log(_ context.Context, _ logging.Level, _ string, fields ...any) {
+	for _, f := range fields {
+		if a, ok := f.(slog.Attr); ok && a.Key == "http.request.uri" {
+			*ul = append(*ul, a.Value.String())
+		}
+	}
+}
+
+func TestHttpInterceptor_RedactURI(t *testing.T) {
+	tests := []struct {
+		target string
+		want   string
+	}{
+		{"/a?b=1", "/a?b=1"},
+		{"http://user:pass@example.com/a?b=1", "http://user:xxxxx@example.com/a?b=1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.target, func(t *testing.T) {
+			var ul uriLogger
+			h := grpc_.HttpInterceptor(&ul)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+			h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, tt.target, nil))
+			if want := []string{tt.want, tt.want}; !slices.Equal(ul, want) {
+				t.Errorf("http.request.uri = %q, want %q", ul, want)
+			}
+		})
+	}
+}
+
+func TestHttpRoundTripDecorator_RedactURI(t *testing.T) {
+	var ul uriLogger
+	rt := grpc_.HttpRoundTripDecorator(&ul).WrapRoundTrip(http_.RoundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody, Request: r}, nil
+	}))
+	r, err := http.NewRequest(http.MethodGet, "http://user:pass@example.com/a?b=1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rt.RoundTrip(r); err != nil {
+		t.Fatal(err)
+	}
+	want := "http://user:xxxxx@example.com/a?b=1"
+	if want := []string{want, want}; !slices.Equal(ul, want) {
+		t.Errorf("http.request.uri = %q, want %q", ul, want)
 	}
 }
 
