@@ -10,7 +10,7 @@ import (
 )
 
 type output struct {
-	a      *bool `json:"MemberA"`
+	A      *bool `json:"MemberA"`
 	b      bool
 	c      []bool
 	expect bool
