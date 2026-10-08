@@ -57,7 +57,6 @@ const (
 	stdMonFirstWeekOfYear                                   // week of the year (Monday first)
 	stdFirstTwoDigitYear                                    // "20"
 	stdSecondsSinceEpoch                                    // The number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC). (TZ)
-	stdDayOfYear                                            // day of the year (range [001,366])
 	stdDateAndTime                                          // Date and time representation; Thu Aug 23 14:55:02 2001
 	stdShortSlashDate                                       // Short MM/DD/YY date, equivalent to %m/%d/%y; 08/23/01
 	stdShortDashDate                                        // Short YYYY-MM-DD date, equivalent to %Y-%m-%d; 2001-08-23
@@ -73,8 +72,8 @@ const (
 	stdNeedDate           = 1 << 8             // need month, day, year
 	stdNeedClock          = 2 << 8             // need hour, minute, second
 	stdNeedISOISO8601Week = 4 << 8             // need ISO8601 week and year
-	stdNeedEModifier      = 8 << 8             // need to use alternative numeric symbols (say, roman numerals) %Ec, %EC, %Ex, %EX, %Ey, %EY
-	stdNeedOModifier      = 16 << 8            // need to use a locale-dependent alternative representation %Od, %Oe, %OH, %OI, %Om, %OM, %OS, %Ou, %OU, %OV, %Ow, %OW, %Oy
+	stdNeedEModifier      = 8 << 8             // need to use a locale-dependent alternative representation %Ec, %EC, %Ex, %EX, %Ey, %EY
+	stdNeedOModifier      = 16 << 8            // need to use alternative numeric symbols (say, roman numerals) %Od, %Oe, %OH, %OI, %Om, %OM, %OS, %Ou, %OU, %OV, %Ow, %OW, %Oy
 	stdArgShift           = 16                 // extra argument in high bits, above low stdArgShift
 	stdSeparatorShift     = 28                 // extra argument in high 4 bits for fractional second separators
 	stdMask               = 1<<stdArgShift - 1 // mask out argument
@@ -225,6 +224,83 @@ var stdSimilarChunkNames = map[int]string{
 	stdZeroNumWeek | stdNeedOModifier:           stdChunkNames[stdWeekDay],
 	stdMonFirstWeekOfYear | stdNeedOModifier:    stdChunkNames[stdWeekDay],
 	stdYear | stdNeedOModifier:                  stdChunkNames[stdYear],
+}
+
+// strftimeChunks maps from the conversion specifier after '%' to the std value, 0 for unknown ones.
+// see https://man7.org/linux/man-pages/man3/strftime.3.html
+var strftimeChunks = [256]int{
+	'a': stdWeekDay,                      // Mon
+	'A': stdLongWeekDay,                  // Monday
+	'b': stdMonth,                        // Jan
+	'h': stdMonth,                        // Jan
+	'B': stdLongMonth,                    // January
+	'c': stdDateAndTime,                  // "Mon Jan _2 15:04:05 2006" (assumes "C" locale)
+	'C': stdFirstTwoDigitYear,            // 20
+	'd': stdZeroDay,                      // 02
+	'D': stdShortSlashDate,               // %m/%d/%y
+	'x': stdShortSlashDate,               // %m/%d/%y
+	'e': stdUnderDay,                     // _2
+	'f': stdFracSecond0 | 6<<stdArgShift, // fraction seconds in microseconds (Python)
+	'F': stdShortDashDate,                // %Y-%m-%d
+	'g': stdISO8601WeekYear,
+	'G': stdISO8601LongWeekYear,
+	'H': stdHour,
+	'k': stdHour,
+	'I': stdZeroHour12,
+	'l': stdZeroHour12,
+	'j': stdZeroYearDay,
+	'm': stdZeroMonth,
+	'M': stdZeroMinute,
+	'n': stdCharNewLine,
+	'p': stdPM,
+	'P': stdpm,
+	'r': stdHour12ClockTime,    // "%I:%M:%S %p"
+	'R': stdHourHourMinuteTime, // %H:%M"
+	's': stdSecondsSinceEpoch,
+	'S': stdZeroSecond,
+	't': stdCharHorizontalTab,
+	'T': stdISO8601Time,           // %H:%M:%S
+	'u': stdNumWeekDay,            // weekday as a decimal number, where Monday is 1
+	'U': stdSundayFirstWeekOfYear, // week of the year as a decimal number (Sunday is the first day of the week)
+	'v': stdISO8601NumWeek,
+	'V': stdISO8601Week,
+	'w': stdZeroNumWeek,
+	'W': stdMonFirstWeekOfYear, // week of the year as a decimal number (Monday is the first day of the week)
+	'X': stdHourClockTime,      // locale depended time representation (assumes "C" locale)
+	'y': stdYear,
+	'Y': stdLongYear,
+	'z': stdISO8601ColonTZ,
+	'Z': stdTZ,
+	'%': stdCharPercentSign,
+}
+
+// strftimeEChunks maps from the conversion specifier after "%E" to the std value, 0 for unknown ones.
+// E modifier is to use a locale-dependent alternative representation.
+var strftimeEChunks = [256]int{
+	'c': stdDateAndTime | stdNeedEModifier,
+	'C': stdFirstTwoDigitYear | stdNeedEModifier,
+	'x': stdShortSlashDate | stdNeedEModifier,
+	'X': stdHourClockTime | stdNeedEModifier,
+	'y': stdYear | stdNeedEModifier,
+	'Y': stdLongYear | stdNeedEModifier,
+}
+
+// strftimeOChunks maps from the conversion specifier after "%O" to the std value, 0 for unknown ones.
+// O modifier is to use alternative numeric symbols (say, roman numerals).
+var strftimeOChunks = [256]int{
+	'd': stdZeroDay | stdNeedOModifier,
+	'e': stdUnderDay | stdNeedOModifier,
+	'H': stdHour | stdNeedOModifier,
+	'I': stdZeroHour12 | stdNeedOModifier,
+	'm': stdZeroMonth | stdNeedOModifier,
+	'M': stdZeroMinute | stdNeedOModifier,
+	'S': stdZeroSecond | stdNeedOModifier,
+	'u': stdNumWeekDay | stdNeedOModifier,
+	'U': stdSundayFirstWeekOfYear | stdNeedOModifier,
+	'V': stdISO8601Week | stdNeedOModifier,
+	'w': stdZeroNumWeek | stdNeedOModifier,
+	'W': stdMonFirstWeekOfYear | stdNeedOModifier,
+	'y': stdYear | stdNeedOModifier,
 }
 
 // strftimeChunkNames maps from nextStrftimeChunk results to the matched strings.

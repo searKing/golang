@@ -216,6 +216,20 @@ func TestLayoutDayOfYear(t *testing.T) {
 	}
 }
 
+func FuzzLayoutStrftimeToTime(f *testing.F) {
+	for _, layout := range []string{"%Y-%m-%dT%H:%M:%S%z", "%Ec %OH %j %f %%", "100%", "%E", "%O", "%E%", "%q%Y"} {
+		f.Add(layout)
+	}
+	f.Fuzz(func(t *testing.T, layout string) {
+		// Conversions never panic, and keep text without '%' as is.
+		got := time_.LayoutStrftimeToTime(layout)
+		_ = time_.LayoutStrftimeToSimilarTime(layout)
+		if !strings.Contains(layout, "%") && got != layout {
+			t.Errorf("LayoutStrftimeToTime(%q) = %q, want %q", layout, got, layout)
+		}
+	})
+}
+
 func TestLayoutStrftimeToTimeIncompleteEscape(t *testing.T) {
 	tests := []struct {
 		layout     string
