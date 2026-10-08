@@ -152,10 +152,12 @@ func TestRead(t *testing.T) {
 	writer, reader := net.Pipe()
 	go func() {
 		if _, err := io.WriteString(writer, strings.Repeat(payload, mult)); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 		if err := writer.Close(); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 	}()
 
@@ -301,10 +303,12 @@ func TestHTTP2(t *testing.T) {
 	writer, reader := net.Pipe()
 	go func() {
 		if _, err := io.WriteString(writer, http2.ClientPreface); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 		if err := writer.Close(); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 	}()
 	muxer := mux.NewServeMux()

@@ -49,7 +49,8 @@ func test(t *testing.T, matcher mux.Matcher, payload string, mult int) {
 	go func() {
 		defer wg.Done()
 		if _, err := io.WriteString(writer, strings.Repeat(payload, mult)); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 		_ = writer.Close()
 

@@ -281,16 +281,19 @@ func testHTTP2HeaderField(
 	writer, reader := net.Pipe()
 	go func() {
 		if _, err := io.WriteString(writer, http2.ClientPreface); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 		var buf bytes.Buffer
 		enc := hpack.NewEncoder(&buf)
 		if err := enc.WriteField(hpack.HeaderField{Name: name, Value: headerValue}); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 		framer := http2.NewFramer(writer, nil)
 		if err := framer.WriteSettingsAck(); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 
 		if err := framer.WriteHeaders(http2.HeadersFrameParam{
@@ -299,10 +302,12 @@ func testHTTP2HeaderField(
 			EndStream:     true,
 			EndHeaders:    true,
 		}); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 		if err := writer.Close(); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			return
 		}
 	}()
 
