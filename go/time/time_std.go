@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Code copied from src/time/format.go of Go 1.27, keep in sync when upgrading Go.
+// The std constants are local to this package, and do not share values with package time.
+
 package time
 
 import (
