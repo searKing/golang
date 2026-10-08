@@ -64,6 +64,9 @@ func (r *Reservation) OK() bool {
 // Cancel or GC does put back the token reserved in the Reservation.
 // If Ready is false, WaitN blocks until lim permits n events to happen.
 func (r *Reservation) Ready() bool {
+	// PutTokenN of lim fills tokens concurrently.
+	r.lim.mu.Lock()
+	defer r.lim.mu.Unlock()
 	return r.tokens >= r.burst
 }
 
