@@ -27,6 +27,8 @@ var (
 // HttpInterceptor returns a new unary http interceptors that optionally logs endpoint handling.
 // Logger will read existing and write new logging.Fields available in current context.
 // See `ExtractFields` and `InjectFields` for details.
+// Headers are logged if HTTP_GO_LOG_HTTP_HEADER is true, with values of sensitive ones redacted,
+// see ExampleHttpInterceptor_customHeaders to log headers chosen instead.
 func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 	var logHttpHeader bool
 	{
@@ -71,6 +73,8 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 }
 
 // HttpRoundTripDecorator returns a new http RoundTripDecorator that optionally logs outgoing HTTP requests.
+// Headers are logged if HTTP_GO_LOG_HTTP_HEADER is true, with values of sensitive ones redacted,
+// see ExampleHttpRoundTripDecorator_customHeaders to log headers chosen instead.
 func HttpRoundTripDecorator(l logging.Logger) http_.RoundTripDecorator {
 	var logHttpHeader bool
 	{
