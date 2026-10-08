@@ -294,7 +294,7 @@ func TestTimerStopStress(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		go func(i int) {
 			timer := time_.AfterFunc(2*time.Second, func() {
-				t.Fatalf("timer %d was not stopped", i)
+				t.Errorf("timer %d was not stopped", i)
 			})
 			time.Sleep(1 * time.Second)
 			timer.Stop()
