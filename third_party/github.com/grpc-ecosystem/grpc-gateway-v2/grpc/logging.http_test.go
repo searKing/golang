@@ -93,6 +93,32 @@ func TestHttpInterceptor_RedactHeader(t *testing.T) {
 	}
 }
 
+func TestHttpInterceptor_StatusWithoutWrite(t *testing.T) {
+	var msgs, codes []string
+	l := logging.LoggerFunc(func(_ context.Context, _ logging.Level, msg string, fields ...any) {
+		msgs = append(msgs, msg)
+		for _, f := range fields {
+			if a, ok := f.(slog.Attr); ok && a.Key == "http.status_code" {
+				codes = append(codes, a.Value.String())
+			}
+		}
+	})
+	// net/http replies 200 if the handler writes nothing
+	h := grpc_.HttpInterceptor(l)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status replied = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if want := "finished http call with status code 200"; len(msgs) != 2 || msgs[1] != want {
+		t.Errorf("messages = %q, want the last %q", msgs, want)
+	}
+	if want := []string{"OK"}; !slices.Equal(codes, want) {
+		t.Errorf("http.status_code = %q, want %q", codes, want)
+	}
+}
+
 func TestHttpRoundTripDecorator_RedactHeader(t *testing.T) {
 	t.Setenv("HTTP_GO_LOG_HTTP_HEADER", "true")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

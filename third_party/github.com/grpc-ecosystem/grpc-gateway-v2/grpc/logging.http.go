@@ -55,9 +55,14 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 
 			rw := http_.NewResponseWriterDelegator(w)
 			handler.ServeHTTP(rw, r)
+			status := rw.Status()
+			if status == 0 {
+				// net/http replies 200 if the handler writes nothing
+				status = http.StatusOK
+			}
 
 			attrs = append(attrs,
-				slog.String("http.status_code", slices_.FirstOrZero(http.StatusText(rw.Status()), "CODE("+strconv.FormatInt(int64(rw.Status()), 10)+")")),
+				slog.String("http.status_code", slices_.FirstOrZero(http.StatusText(status), "CODE("+strconv.FormatInt(int64(status), 10)+")")),
 				slog.Duration("cost", cost.Elapse()),
 				slog.Int64("http.request_body_size", r.ContentLength),
 				slog.Int64("http.response_body_size", rw.Written()))
@@ -66,7 +71,7 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 			if logHttpHeader {
 				respAttrs = append(respAttrs, httpHeaderToAttr(rw.Header(), "http.response.header"))
 			}
-			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with status code %d", rw.Status()),
+			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with status code %d", status),
 				respAttrs...)
 		})
 	}
