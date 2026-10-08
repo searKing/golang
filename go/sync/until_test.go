@@ -94,9 +94,11 @@ func TestUntil_DoBlockingAndGot(t *testing.T) {
 	if c := atomic.LoadUint64(&finishedCount); c != 0 {
 		t.Errorf("finished goroutines count: %v, want 0", c)
 	}
+	mu.Lock()
 	fn = func() (any, error) {
 		return "bar", nil
 	}
+	mu.Unlock()
 	until.Retry()
 
 	time.Sleep(50 * time.Millisecond)
