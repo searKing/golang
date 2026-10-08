@@ -23,7 +23,7 @@ func (t UnixTimeDay) String() string {
 }
 
 func (t UnixTimeDay) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.Unix())
+	return []byte(t.String()), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.

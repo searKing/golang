@@ -23,7 +23,7 @@ func (t UnixTimeMicrosecond) String() string {
 }
 
 func (t UnixTimeMicrosecond) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.UnixNano() * int64(t.unit()))
+	return []byte(t.String()), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
