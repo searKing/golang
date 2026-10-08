@@ -105,6 +105,11 @@ type RotateFile struct {
 	// name means file path rotated
 	PostRotateHandler func(name string)
 
+	// CleanErrorHandler called with the error of cleaning rotate files if any, such as failure to remove.
+	// It is called without RotateFile locked, so it can write to the RotateFile, such as logging.
+	// It is called in background for cleaning on rotate, maybe after Close returns.
+	CleanErrorHandler func(err error)
+
 	cleaning               atomic.Bool
 	cleanWg                sync.WaitGroup // cleaning on rotate, waited by Close
 	mu                     sync.Mutex
@@ -194,18 +199,24 @@ func (f *RotateFile) Close() error {
 	if err := f.checkValid("close"); err != nil {
 		return err
 	}
+	err, cleanErr := f.close()
+	f.handleCleanError(cleanErr)
+	return err
+}
+
+// close closes the writing file, then cleans rotate files, with f locked.
+func (f *RotateFile) close() (closeErr, cleanErr error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	// files are not touched by cleaning on rotate after Close returns
 	f.cleanWg.Wait()
 
 	if f.writingFile == nil { // maybe file is closed or not open
-		return nil
+		return nil, nil
 	}
-	defer f.serializedClean("")
-
-	defer func() { f.writingFile = nil }()
-	return f.writingFile.Close()
+	closeErr = f.writingFile.Close()
+	f.writingFile = nil
+	return closeErr, f.serializedClean("")
 }
 
 // Rotate forcefully rotates the file. If the generated file name
@@ -440,7 +451,13 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 		return nil, err
 	}
 	// unlink files on a separate goroutine
-	f.cleanWg.Go(func() { _ = f.serializedClean(writeName) })
+	f.cleanWg.Add(1)
+	go func() {
+		err := f.serializedClean(writeName)
+		f.cleanWg.Done()
+		// not waited by Close, as it may write to f
+		f.handleCleanError(err)
+	}()
 
 	return file, nil
 }
@@ -502,6 +519,12 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+func (f *RotateFile) handleCleanError(err error) {
+	if err != nil && f.CleanErrorHandler != nil {
+		f.CleanErrorHandler(err)
+	}
 }
 
 // checkValid checks whether f is valid for use.

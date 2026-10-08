@@ -138,6 +138,61 @@ func TestRotateFile_CloseWaitsCleaning(t *testing.T) {
 	}
 }
 
+func TestRotateFile_CleanErrorHandler(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "app.")
+	f := os_.NewRotateFile("2006-01-02")
+	f.FilePathPrefix = prefix
+	f.MaxAge = time.Hour
+	var errs []error
+	f.CleanErrorHandler = func(err error) {
+		errs = append(errs, err)
+		if len(errs) == 1 {
+			// not deadlocked, as called without f locked
+			if _, err := f.WriteString("c"); err != nil {
+				t.Error(err)
+			}
+		}
+	}
+
+	// cleaning on rotate is done
+	if _, err := f.WriteString("a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if len(errs) != 0 {
+		t.Fatalf("clean errors = %v, want none", errs)
+	}
+
+	// an expired rotate file failed to remove, as a dir not empty
+	bad := prefix + "2000-01-01.d"
+	if err := os.MkdirAll(filepath.Join(bad, "x"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-2 * time.Hour)
+	if err := os.Chtimes(bad, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("b"); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if len(errs) != 1 || !strings.Contains(errs[0].Error(), bad) {
+		t.Fatalf("clean errors = %v, want one of %s", errs, bad)
+	}
+	// close the file reopened by the handler
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if got := readFile(t, prefix+time_.TruncateByLocation(time.Now(), 24*time.Hour).Format("2006-01-02")); got != "abc" {
+		t.Errorf("log file content = %q, want %q", got, "abc")
+	}
+}
+
 // sleepToNextSecond sleeps until just after the next second boundary,
 // so that following writes are in the same RotateInterval of one second.
 func sleepToNextSecond() {
