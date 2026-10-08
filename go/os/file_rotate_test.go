@@ -110,6 +110,34 @@ func TestRotateFile_ForceNewFileOnStartupNoFdLeak(t *testing.T) {
 	}
 }
 
+func TestRotateFile_CloseWaitsCleaning(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "app.")
+	old := time.Now().Add(-time.Hour)
+	for i := 0; i < 300; i++ {
+		name := prefix + "2000-01-01." + strconv.Itoa(i)
+		if err := os.WriteFile(name, nil, 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(name, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	f := os_.NewRotateFile("2006-01-02")
+	f.FilePathPrefix = prefix
+	f.MaxCount = 1
+	if _, err := f.WriteString("a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if files := globFiles(t, dir); len(files) != 1 {
+		t.Errorf("files right after Close = %d, want 1", len(files))
+	}
+}
+
 // sleepToNextSecond sleeps until just after the next second boundary,
 // so that following writes are in the same RotateInterval of one second.
 func sleepToNextSecond() {

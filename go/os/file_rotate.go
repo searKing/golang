@@ -106,6 +106,7 @@ type RotateFile struct {
 	PostRotateHandler func(name string)
 
 	cleaning               atomic.Bool
+	cleanWg                sync.WaitGroup // cleaning on rotate, waited by Close
 	mu                     sync.Mutex
 	writingSeq             int // seq of writingFilePathRotated, file rotated by size limit meet
 	writingFilePath        string
@@ -188,12 +189,15 @@ func (f *RotateFile) WriteAt(b []byte, off int64) (n int, err error) {
 // Close satisfies the io.Closer interface. You must
 // call this method if you performed any writes to
 // the object.
+// Close waits for cleaning of rotate files in background.
 func (f *RotateFile) Close() error {
 	if err := f.checkValid("close"); err != nil {
 		return err
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	// files are not touched by cleaning on rotate after Close returns
+	f.cleanWg.Wait()
 
 	if f.writingFile == nil { // maybe file is closed or not open
 		return nil
@@ -436,7 +440,7 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 		return nil, err
 	}
 	// unlink files on a separate goroutine
-	go f.serializedClean(writeName)
+	f.cleanWg.Go(func() { _ = f.serializedClean(writeName) })
 
 	return file, nil
 }
