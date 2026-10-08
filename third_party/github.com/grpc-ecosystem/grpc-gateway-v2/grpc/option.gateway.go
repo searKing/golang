@@ -57,10 +57,7 @@ func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {
 
 func (opt *gatewayOption) ClientDialOpts() []grpc.DialOption {
 	var streamInterceptors []grpc.StreamClientInterceptor
-	streamInterceptors = append(streamInterceptors)
-
 	var unaryInterceptors []grpc.UnaryClientInterceptor
-	unaryInterceptors = append(unaryInterceptors)
 	return append(opt.grpcClientDialOpts, grpc.WithChainStreamInterceptor(streamInterceptors...),
 		grpc.WithChainUnaryInterceptor(unaryInterceptors...))
 }
