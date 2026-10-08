@@ -104,8 +104,8 @@ const ZeroBackOff = NonSlidingBackOff(0)
 // meaning that the operation should not be retried.
 type StopBackOff struct{}
 
-func (o *StopBackOff) Reset() {}
-func (o *StopBackOff) NextBackOff() (backoff time.Duration, ok bool) {
+func (o StopBackOff) Reset() {}
+func (o StopBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 	return 0, false
 }
 
@@ -113,9 +113,9 @@ func (o *StopBackOff) NextBackOff() (backoff time.Duration, ok bool) {
 // after waiting every duration.
 type NonSlidingBackOff time.Duration
 
-func (o *NonSlidingBackOff) Reset() {}
-func (o *NonSlidingBackOff) NextBackOff() (backoff time.Duration, ok bool) {
-	return time.Duration(*o), true
+func (o NonSlidingBackOff) Reset() {}
+func (o NonSlidingBackOff) NextBackOff() (backoff time.Duration, ok bool) {
+	return time.Duration(o), true
 }
 
 // JitterBackOff returns a time.Duration between

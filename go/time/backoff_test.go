@@ -22,7 +22,9 @@ func TestFixedBackOff(t *testing.T) {
 		max     time.Duration
 		ok      bool
 	}{
-		{"*stop", &time_.StopBackOff{}, 0, 0, false},
+		{"zero", time_.ZeroBackOff, 0, 0, true},
+		{"stop", time_.StopBackOff{}, 0, 0, false},
+		{"non-sliding", nonSliding, time.Second, time.Second, true},
 		{"*non-sliding", &nonSliding, time.Second, time.Second, true},
 		{"jitter", time_.JitterBackOff(time.Second, 0.5), 500 * time.Millisecond, 1500*time.Millisecond + 1, true},
 	}
@@ -42,12 +44,11 @@ func TestBackoffUntilNonSliding(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var n int
-	backoff := time_.NonSlidingBackOff(time.Millisecond)
 	time_.BackoffUntil(ctx, func(ctx context.Context) {
 		if n++; n == 3 {
 			cancel()
 		}
-	}, &backoff, true)
+	}, time_.NonSlidingBackOff(time.Millisecond), true)
 	if n != 3 {
 		t.Errorf("BackoffUntil runs f %d times; want 3", n)
 	}
