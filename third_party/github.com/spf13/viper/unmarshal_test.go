@@ -33,7 +33,7 @@ func TestDecodeProtoJsonHook(t *testing.T) {
 		Credentials: map[int64]string{1: "foo", 2: "bar"},
 	}
 	if fmt.Sprintf("%v", want.Credentials) != fmt.Sprintf("%v", got.Credentials) {
-		t.Errorf("got %v want %v", got, want)
+		t.Errorf("got %v want %v", got.Credentials, want.Credentials)
 	}
 }
 
