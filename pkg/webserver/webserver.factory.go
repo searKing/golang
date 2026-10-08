@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -199,7 +200,11 @@ func (f *Factory) New() (*WebServer, error) {
 	}
 
 	// log
-	opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(), grpc_.ExtractLoggingOptions(opts...))...)
+	{
+		all := append(slices.Clip(opts), f.fc.GatewayOptions...)
+		opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(),
+			grpc_.ExtractLoggingOptions(all...), grpc_.ExtractHttpLoggingOptions(all...)...)...)
+	}
 	opts = append(opts, f.fc.GatewayOptions...)
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	{

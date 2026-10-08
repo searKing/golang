@@ -16,9 +16,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+
 	_ "github.com/searKing/golang/go/net/resolver/passthrough"
 	"github.com/searKing/golang/pkg/webserver"
 	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
+	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 )
 
 // processLogger is the slog logger at process start, before tests replace it.
@@ -247,8 +250,9 @@ func TestHttpRoundTripDecoratorsClient(t *testing.T) {
 			t.Fatalf("status = %d, want 200", status)
 		}
 		for _, want := range []string{
-			"http request sending",
-			"finished http call with status code 200",
+			`"msg":"started call"`,
+			`"msg":"finished call"`,
+			`"http.status_code":"OK"`,
 			"getting connection",
 			"got connection",
 		} {
@@ -265,13 +269,28 @@ func TestHttpRoundTripDecoratorsClient(t *testing.T) {
 		if status != http.StatusOK {
 			t.Fatalf("status = %d, want 200", status)
 		}
-		if !strings.Contains(logs, "http request sending") {
+		if !strings.Contains(logs, `"msg":"started call"`) {
 			t.Fatalf("client log missing request log, logs=%s", logs)
 		}
 		if strings.Contains(logs, "getting connection") {
 			t.Fatalf("trace log present while HTTPTraceLogging is false, logs=%s", logs)
 		}
 	})
+}
+
+func TestHttpLoggingOptionFromGatewayOptions(t *testing.T) {
+	_, logs := roundTripThroughDecorators(t, webserver.FactoryConfig{
+		BindAddress: "127.0.0.1:0",
+		GatewayOptions: []grpc_.GatewayOption{
+			grpc_.WithHttpLoggingOption(grpc_.WithHttpLogOnEvents(logging.FinishCall)),
+		},
+	})
+	if !strings.Contains(logs, `"msg":"finished call"`) {
+		t.Fatalf("client log missing finish log, logs=%s", logs)
+	}
+	if strings.Contains(logs, `"msg":"started call"`) {
+		t.Fatalf("start log present while only FinishCall is logged, logs=%s", logs)
+	}
 }
 
 // traceLogs builds a server with HTTPTraceLogging and opts, issues one request
