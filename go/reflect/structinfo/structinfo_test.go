@@ -5,12 +5,35 @@
 package structinfo
 
 import (
+	"maps"
 	"reflect"
 	"testing"
 )
 
 type inlined struct {
 	B int `bson:"b"`
+}
+
+func TestGetStructInfo(t *testing.T) {
+	type T struct {
+		A int
+		B int `bson:"b,omitempty"`
+	}
+	sinfo, err := GetStructInfo(reflect.TypeFor[T]())
+	if err != nil {
+		t.Fatalf("GetStructInfo() error = %v", err)
+	}
+	tests := []fieldInfo{
+		{Key: "a", Num: 0},
+		{Key: "b", Num: 1, Tags: map[string]string{"OmitEmpty": "omitempty"}},
+	}
+	for _, want := range tests {
+		v, ok := sinfo.fieldsLRU.Find(want.Key)
+		got, _ := v.(fieldInfo)
+		if !ok || got.Key != want.Key || got.Num != want.Num || !maps.Equal(got.Tags, want.Tags) {
+			t.Errorf("field %q = %v, %t; want %v", want.Key, v, ok, want)
+		}
+	}
 }
 
 func TestGetStructInfoInline(t *testing.T) {

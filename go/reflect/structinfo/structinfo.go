@@ -79,6 +79,9 @@ func GetStructInfo(st reflect.Type) (*StructInfo, error) {
 			for _, flag := range fields[1:] {
 				switch flag {
 				case "omitempty":
+					if info.Tags == nil {
+						info.Tags = make(map[string]string)
+					}
 					info.Tags["OmitEmpty"] = "omitempty"
 				case "inline":
 					inline = true
