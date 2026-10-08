@@ -312,6 +312,7 @@ func TestWaitSimple(t *testing.T) {
 	runWait(t, lim, wait{"exceed-burst-error", context.Background(), 4, false})
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	runWait(t, lim, wait{"act-now", ctx, 2, true})
 	lim.PutTokenN(2)
 	runWait(t, lim, wait{"act-later", ctx, 3, true})
