@@ -18,3 +18,17 @@ func ExtractLoggingOptions(options ...GatewayOption) []logging.Option {
 	g.ApplyOptions(options...)
 	return g.opt.loggingOpts
 }
+
+// WithHttpLoggingOption customizes logs of http calls, as WithLoggingOption does for gRPC calls.
+func WithHttpLoggingOption(opts ...HttpLoggingOption) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.httpLoggingOpts = append(gateway.opt.httpLoggingOpts, opts...)
+	})
+}
+
+// ExtractHttpLoggingOptions extract all [HttpLoggingOption] from the given options.
+func ExtractHttpLoggingOptions(options ...GatewayOption) []HttpLoggingOption {
+	var g Gateway
+	g.ApplyOptions(options...)
+	return g.opt.httpLoggingOpts
+}

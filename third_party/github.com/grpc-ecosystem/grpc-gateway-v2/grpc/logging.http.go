@@ -34,25 +34,32 @@ var (
 // Logger will read existing and write new logging.Fields available in current context.
 // See `ExtractFields` and `InjectFields` for details.
 // Logs and fields are consistent with logging.UnaryServerInterceptor of gRPC, such as levels by
-// logging.DefaultServerCodeToLevel of the gRPC code mapped from the http status code.
+// logging.DefaultServerCodeToLevel of the gRPC code mapped from the http status code by DefaultHttpToCode,
+// customized by opts as logging.Option does.
 // Headers are logged if HTTP_GO_LOG_HTTP_HEADER is true, with values of sensitive ones redacted,
 // see ExampleHttpInterceptor_customHeaders to log headers chosen instead.
-func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
+func HttpInterceptor(l logging.Logger, opts ...HttpLoggingOption) func(handler http.Handler) http.Handler {
+	o := evaluateHttpLoggingOptions(logging.DefaultServerCodeToLevel, opts)
 	logHttpHeader := logHttpHeaderFromEnv()
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			ctx, fields := injectLoggingFields(r, logging.KindServerFieldValue, start)
+			ctx, fields := injectLoggingFields(r, logging.KindServerFieldValue, start, o)
 			r = r.WithContext(ctx)
 
-			reqFields := fields
-			if logHttpHeader {
-				reqFields = append(reqFields, httpHeaderToFields(r.Header, "http.request.header")...)
+			if o.has(logging.StartCall) {
+				reqFields := fields
+				if logHttpHeader {
+					reqFields = append(reqFields, httpHeaderToFields(r.Header, "http.request.header")...)
+				}
+				l.Log(ctx, o.levelFunc(codes.OK), "started call", reqFields...)
 			}
-			l.Log(ctx, logging.DefaultServerCodeToLevel(codes.OK), "started call", reqFields...)
 
 			rw := http_.NewResponseWriterDelegator(w)
 			handler.ServeHTTP(rw, r)
+			if !o.has(logging.FinishCall) {
+				return
+			}
 			status := rw.Status()
 			if status == 0 {
 				// net/http replies 200 if the handler writes nothing
@@ -65,53 +72,71 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 				"http.request_body_size", r.ContentLength,
 				"http.response_body_size", rw.Written(),
 			})
-			fields = fields.AppendUnique(durationToTimeMillisFields(time.Since(start)))
+			if o.fieldsFromRequestFn != nil {
+				// fieldsFromRequestFn dups override the existing fields.
+				fields = o.fieldsFromRequestFn(ctx, r).AppendUnique(fields)
+			}
+			fields = fields.AppendUnique(o.durationFieldFunc(time.Since(start)))
 			if logHttpHeader {
 				fields = append(fields, httpHeaderToFields(rw.Header(), "http.response.header")...)
 			}
-			l.Log(ctx, logging.DefaultServerCodeToLevel(httpStatusToCode(status)), "finished call", fields...)
+			l.Log(ctx, o.levelFunc(o.codeFunc(status, nil)), "finished call", fields...)
 		})
 	}
 }
 
 // HttpRoundTripDecorator returns a new http RoundTripDecorator that optionally logs outgoing HTTP requests.
 // Logs and fields are consistent with logging.UnaryClientInterceptor of gRPC, such as levels by
-// logging.DefaultClientCodeToLevel of the gRPC code mapped from the http status code or the error.
+// logging.DefaultClientCodeToLevel of the gRPC code mapped from the http status code or the error by
+// DefaultHttpToCode, customized by opts as logging.Option does.
 // Headers are logged if HTTP_GO_LOG_HTTP_HEADER is true, with values of sensitive ones redacted,
 // see ExampleHttpRoundTripDecorator_customHeaders to log headers chosen instead.
-func HttpRoundTripDecorator(l logging.Logger) http_.RoundTripDecorator {
+func HttpRoundTripDecorator(l logging.Logger, opts ...HttpLoggingOption) http_.RoundTripDecorator {
+	o := evaluateHttpLoggingOptions(logging.DefaultClientCodeToLevel, opts)
 	logHttpHeader := logHttpHeaderFromEnv()
 	return http_.RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
 		return http_.RoundTripFunc(func(r *http.Request) (*http.Response, error) {
 			start := time.Now()
-			ctx, fields := injectLoggingFields(r, logging.KindClientFieldValue, start)
+			ctx, fields := injectLoggingFields(r, logging.KindClientFieldValue, start, o)
 
-			reqFields := fields
-			if logHttpHeader {
-				reqFields = append(reqFields, httpHeaderToFields(r.Header, "http.request.header")...)
+			if o.has(logging.StartCall) {
+				reqFields := fields
+				if logHttpHeader {
+					reqFields = append(reqFields, httpHeaderToFields(r.Header, "http.request.header")...)
+				}
+				l.Log(ctx, o.levelFunc(codes.OK), "started call", reqFields...)
 			}
-			l.Log(ctx, logging.DefaultClientCodeToLevel(codes.OK), "started call", reqFields...)
 
 			resp, err := rt.RoundTrip(r.WithContext(ctx))
+			if !o.has(logging.FinishCall) {
+				return resp, err
+			}
 
 			fields = fields.WithUnique(logging.ExtractFields(ctx))
 			fields = fields.AppendUnique(logging.Fields{"http.request_body_size", r.ContentLength})
 			var code codes.Code
 			if err != nil {
-				code = httpErrorToCode(err)
+				code = o.codeFunc(0, err)
 				fields = fields.AppendUnique(logging.Fields{"http.error", fmt.Sprintf("%v", err)})
+				if o.errorToFieldsFunc != nil {
+					fields = fields.AppendUnique(o.errorToFieldsFunc(err))
+				}
 			} else {
-				code = httpStatusToCode(resp.StatusCode)
+				code = o.codeFunc(resp.StatusCode, nil)
 				fields = fields.AppendUnique(logging.Fields{
 					"http.status_code", httpStatusText(resp.StatusCode),
 					"http.response_body_size", resp.ContentLength,
 				})
 			}
-			fields = fields.AppendUnique(durationToTimeMillisFields(time.Since(start)))
+			if o.fieldsFromRequestFn != nil {
+				// fieldsFromRequestFn dups override the existing fields.
+				fields = o.fieldsFromRequestFn(ctx, r).AppendUnique(fields)
+			}
+			fields = fields.AppendUnique(o.durationFieldFunc(time.Since(start)))
 			if logHttpHeader && resp != nil {
 				fields = append(fields, httpHeaderToFields(resp.Header, "http.response.header")...)
 			}
-			l.Log(ctx, logging.DefaultClientCodeToLevel(code), "finished call", fields...)
+			l.Log(ctx, o.levelFunc(code), "finished call", fields...)
 			return resp, err
 		})
 	})
@@ -124,7 +149,7 @@ func logHttpHeaderFromEnv() bool {
 
 // injectLoggingFields injects common fields of r into its context, as logging interceptors of gRPC do,
 // returning the context and the fields to log, plus fields of start time and deadline used only once.
-func injectLoggingFields(r *http.Request, kind string, start time.Time) (context.Context, logging.Fields) {
+func injectLoggingFields(r *http.Request, kind string, start time.Time, o *httpLoggingOptions) (context.Context, logging.Fields) {
 	ctx := r.Context()
 	fields := logging.Fields{SystemTag[0], SystemTag[1], ComponentFieldKey, kind}
 
@@ -150,20 +175,21 @@ func injectLoggingFields(r *http.Request, kind string, start time.Time) (context
 			fields = append(fields, "http.client_ip", ip)
 		}
 	}
+	for _, key := range o.disableHttpLogFields {
+		fields.Delete(key)
+	}
 	fields = fields.WithUnique(logging.ExtractFields(ctx))
+	if o.fieldsFromRequestFn != nil {
+		// fieldsFromRequestFn dups override the existing fields.
+		fields = o.fieldsFromRequestFn(ctx, r).AppendUnique(fields)
+	}
 	ctx = logging.InjectFields(ctx, fields)
 
-	singleUseFields := logging.Fields{"http.start_time", start.Format(time.RFC3339)}
+	singleUseFields := logging.Fields{"http.start_time", start.Format(o.timestampFormat)}
 	if d, ok := ctx.Deadline(); ok {
-		singleUseFields = singleUseFields.AppendUnique(logging.Fields{"http.request.deadline", d.Format(time.RFC3339)})
+		singleUseFields = singleUseFields.AppendUnique(logging.Fields{"http.request.deadline", d.Format(o.timestampFormat)})
 	}
 	return ctx, fields.WithUnique(singleUseFields)
-}
-
-// durationToTimeMillisFields converts the duration to milliseconds by key http.time_ms,
-// as logging.DurationToTimeMillisFields does by key grpc.time_ms.
-func durationToTimeMillisFields(duration time.Duration) logging.Fields {
-	return logging.Fields{"http.time_ms", fmt.Sprintf("%v", float32(duration.Nanoseconds()/1000)/1000)}
 }
 
 // httpStatusText returns the text of the http status code, as "OK" of grpc.code for gRPC.

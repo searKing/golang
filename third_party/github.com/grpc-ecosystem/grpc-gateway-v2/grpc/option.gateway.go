@@ -38,7 +38,8 @@ type gatewayOption struct {
 	// for http client round trip
 	roundTripDecorators http_.RoundTripDecorators
 
-	loggingOpts []logging.Option
+	loggingOpts     []logging.Option
+	httpLoggingOpts []HttpLoggingOption
 }
 
 func (opt *gatewayOption) ServerOptions() []grpc.ServerOption {

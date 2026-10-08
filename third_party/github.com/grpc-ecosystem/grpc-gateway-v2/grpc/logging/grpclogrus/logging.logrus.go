@@ -39,7 +39,8 @@ func interceptorLogrusLogger(l logrus.FieldLogger) logging.Logger {
 	})
 }
 
-func WithLogrusLoggerConfig(logger *logrus.Logger, slogOpts []logging.Option) []grpc_.GatewayOption {
+// WithLogrusLoggerConfig logs gRPC calls customized by slogOpts, and http calls customized by httpOpts.
+func WithLogrusLoggerConfig(logger *logrus.Logger, slogOpts []logging.Option, httpOpts ...grpc_.HttpLoggingOption) []grpc_.GatewayOption {
 	// interceptor's log below
 	loggerOpts := []logging.Option{
 		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
@@ -47,6 +48,12 @@ func WithLogrusLoggerConfig(logger *logrus.Logger, slogOpts []logging.Option) []
 		// Add any other option (check functions starting with logging.With).
 	}
 	loggerOpts = append(loggerOpts, slogOpts...)
+	httpLoggerOpts := []grpc_.HttpLoggingOption{
+		grpc_.WithHttpLogOnEvents(logging.StartCall, logging.FinishCall),
+		grpc_.WithHttpFieldsFromContextAndRequest(grpc_.HttpFieldsFromRequestWithForward),
+		// Add any other option (check functions starting with grpc_.WithHttp).
+	}
+	httpLoggerOpts = append(httpLoggerOpts, httpOpts...)
 	l := interceptorLogrusLogger(logger)
 
 	var opts []grpc_.GatewayOption
@@ -54,6 +61,6 @@ func WithLogrusLoggerConfig(logger *logrus.Logger, slogOpts []logging.Option) []
 	opts = append(opts, grpc_.WithGrpcUnaryServerChain(logging.UnaryServerInterceptor(l, loggerOpts...)))
 	opts = append(opts, grpc_.WithGrpcStreamClientChain(logging.StreamClientInterceptor(l, loggerOpts...)))
 	opts = append(opts, grpc_.WithGrpcUnaryClientChain(logging.UnaryClientInterceptor(l, loggerOpts...)))
-	opts = append(opts, grpc_.WithHttpWrapper(grpc_.HttpInterceptor(l)))
+	opts = append(opts, grpc_.WithHttpWrapper(grpc_.HttpInterceptor(l, httpLoggerOpts...)))
 	return opts
 }

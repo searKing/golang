@@ -36,7 +36,8 @@ func interceptorSlogLogger(h slog.Handler) logging.Logger {
 	})
 }
 
-func WithSlogLoggerConfig(h slog.Handler, slogOpts []logging.Option) []GatewayOption {
+// WithSlogLoggerConfig logs gRPC calls customized by slogOpts, and http calls customized by httpOpts.
+func WithSlogLoggerConfig(h slog.Handler, slogOpts []logging.Option, httpOpts ...HttpLoggingOption) []GatewayOption {
 	grpclog.SetLoggerV2(grpclog_.NewSlogger(h))
 
 	// interceptor's log below
@@ -46,11 +47,17 @@ func WithSlogLoggerConfig(h slog.Handler, slogOpts []logging.Option) []GatewayOp
 		// Add any other option (check functions starting with logging.With).
 	}
 	loggerOpts = append(loggerOpts, slogOpts...)
+	httpLoggerOpts := []HttpLoggingOption{
+		WithHttpLogOnEvents(logging.StartCall, logging.FinishCall),
+		WithHttpFieldsFromContextAndRequest(HttpFieldsFromRequestWithForward),
+		// Add any other option (check functions starting with WithHttp).
+	}
+	httpLoggerOpts = append(httpLoggerOpts, httpOpts...)
 	l := interceptorSlogLogger(h)
 
 	var opts []GatewayOption
-	opts = append(opts, WithHttpWrapper(HttpInterceptor(l)))
-	opts = append(opts, WithHttpRoundTripDecorators(HttpRoundTripDecorator(l)))
+	opts = append(opts, WithHttpWrapper(HttpInterceptor(l, httpLoggerOpts...)))
+	opts = append(opts, WithHttpRoundTripDecorators(HttpRoundTripDecorator(l, httpLoggerOpts...)))
 	opts = append(opts, WithGrpcStreamServerChain(logging.StreamServerInterceptor(l, loggerOpts...)))
 	opts = append(opts, WithGrpcUnaryServerChain(logging.UnaryServerInterceptor(l, loggerOpts...)))
 	opts = append(opts, WithGrpcStreamClientChain(logging.StreamClientInterceptor(l, loggerOpts...)))
