@@ -38,19 +38,16 @@ func (lru *LRU) Keys() []any {
 }
 func (lru *LRU) Values() []any {
 	var values []any
-	for _, value := range lru.m {
-		values = append(values, value)
+	for _, ele := range lru.m {
+		values = append(values, ele.Value.(Pair).Value)
 	}
 	return values
 }
 
 func (lru *LRU) Pairs() []Pair {
 	var pairs []Pair
-	for key, value := range lru.m {
-		pairs = append(pairs, Pair{
-			Key:   key,
-			Value: value,
-		})
+	for _, ele := range lru.m {
+		pairs = append(pairs, ele.Value.(Pair))
 	}
 	return pairs
 }
