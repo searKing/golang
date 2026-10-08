@@ -7,7 +7,6 @@ package viper
 import (
 	"reflect"
 	"strings"
-	_ "unsafe" // for go:linkname
 
 	"github.com/go-viper/mapstructure/v2"
 	maps_ "github.com/searKing/golang/go/exp/maps"
@@ -17,8 +16,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-//go:linkname decode github.com/spf13/viper.decode
-func decode(input any, config *mapstructure.DecoderConfig) error
+// decode is a wrapper around mapstructure.Decode that mimics the WeakDecode functionality.
+//
+// Code copied from decode in viper.go of github.com/spf13/viper v1.21.0, keep in sync when upgrading viper.
+func decode(input any, config *mapstructure.DecoderConfig) error {
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(input)
+}
 
 // defaultDecoderConfig returns default mapstructure.DecoderConfig with support
 // of time.Duration values & string slices.
