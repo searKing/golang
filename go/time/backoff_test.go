@@ -5,12 +5,53 @@
 package time_test
 
 import (
+	"context"
 	"math"
 	"testing"
 	"time"
 
 	time_ "github.com/searKing/golang/go/time"
 )
+
+func TestFixedBackOff(t *testing.T) {
+	nonSliding := time_.NonSlidingBackOff(time.Second)
+	tests := []struct {
+		name    string
+		backoff time_.BackOff
+		min     time.Duration
+		max     time.Duration
+		ok      bool
+	}{
+		{"*stop", &time_.StopBackOff{}, 0, 0, false},
+		{"*non-sliding", &nonSliding, time.Second, time.Second, true},
+		{"jitter", time_.JitterBackOff(time.Second, 0.5), 500 * time.Millisecond, 1500*time.Millisecond + 1, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for range 3 {
+				got, ok := tt.backoff.NextBackOff()
+				if ok != tt.ok || got < tt.min || got > tt.max {
+					t.Fatalf("NextBackOff() = %v, %t; want [%v, %v], %t", got, ok, tt.min, tt.max, tt.ok)
+				}
+			}
+		})
+	}
+}
+
+func TestBackoffUntilNonSliding(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var n int
+	backoff := time_.NonSlidingBackOff(time.Millisecond)
+	time_.BackoffUntil(ctx, func(ctx context.Context) {
+		if n++; n == 3 {
+			cancel()
+		}
+	}, &backoff, true)
+	if n != 3 {
+		t.Errorf("BackoffUntil runs f %d times; want 3", n)
+	}
+}
 
 func TestExponentialBackOff_MaxInterval(t *testing.T) {
 	tests := []struct {

@@ -115,7 +115,7 @@ type NonSlidingBackOff time.Duration
 
 func (o *NonSlidingBackOff) Reset() {}
 func (o *NonSlidingBackOff) NextBackOff() (backoff time.Duration, ok bool) {
-	return time.Duration(*o), false
+	return time.Duration(*o), true
 }
 
 // JitterBackOff returns a time.Duration between
@@ -136,7 +136,7 @@ type jitterBackOff struct {
 
 func (o *jitterBackOff) Reset() {}
 func (o *jitterBackOff) NextBackOff() (backoff time.Duration, ok bool) {
-	return Jitter(o.duration, o.maxFactor), false
+	return Jitter(o.duration, o.maxFactor), true
 }
 
 // ExponentialBackOff Code borrowed from https://github.com/googleapis/google-http-java-client/blob/master/google-http-client/
