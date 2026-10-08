@@ -131,6 +131,7 @@ func (s *Subject) PublishSignal(ctx context.Context, event any) error {
 // event will be dropped if ctx is Done before event is received.
 func (s *Subject) PublishBroadcast(ctx context.Context, event any) error {
 	var wg sync.WaitGroup
+	var errsMu sync.Mutex
 	var errs []error
 	func() {
 		s.mu.Lock()
@@ -141,6 +142,8 @@ func (s *Subject) PublishBroadcast(ctx context.Context, event any) error {
 				defer wg.Done()
 				err := listener.publish(ctx, event)
 				if err != nil {
+					errsMu.Lock()
+					defer errsMu.Unlock()
 					errs = append(errs, err)
 				}
 			}(listener)

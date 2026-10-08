@@ -112,6 +112,27 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 	}
 }
 
+func TestSubject_PublishBroadcastErrors(t *testing.T) {
+	var s sync_.Subject
+	const n = 100
+	for range n {
+		_, cancel := s.Subscribe()
+		defer cancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := s.PublishBroadcast(ctx, nil)
+	joined, _ := err.(interface{ Unwrap() []error })
+	if joined == nil || len(joined.Unwrap()) != n {
+		t.Fatalf("PublishBroadcast() = %v; want %d errors", err, n)
+	}
+	for _, err := range joined.Unwrap() {
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("PublishBroadcast() error = %v; want %v", err, context.Canceled)
+		}
+	}
+}
+
 func TestSubject_PublishBroadcastDeadLock(t *testing.T) {
 	s := sync_.Subject{}
 	func() {
