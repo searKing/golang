@@ -41,7 +41,7 @@ func TestSubject_PublishSignal(t *testing.T) {
 			defer cancel()
 			err := s.PublishSignal(ctx, nil)
 			if err != nil {
-				t.Fatalf("PublishSignal: %s", err)
+				t.Errorf("PublishSignal: %s", err)
 				return
 			}
 		}()
@@ -89,7 +89,7 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 			defer cancel()
 			err := s.PublishBroadcast(ctx, nil)
 			if err != nil {
-				t.Fatalf("PublishBroadcast: %s", err)
+				t.Errorf("PublishBroadcast: %s", err)
 				return
 			}
 		}()
