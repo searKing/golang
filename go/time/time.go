@@ -6,6 +6,7 @@ package time
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -73,11 +74,16 @@ func (d *Duration) UnmarshalJSON(data []byte) error {
 }
 
 func (d Duration) MarshalText() ([]byte, error) {
-	return json.Marshal(time.Duration(d).String())
+	return []byte(time.Duration(d).String()), nil
 }
 
 func (d *Duration) UnmarshalText(data []byte) error {
-	tmp, err := time.ParseDuration(string(data))
+	s := string(data)
+	// MarshalText of old versions quotes the text.
+	if unquoted, err := strconv.Unquote(s); err == nil {
+		s = unquoted
+	}
+	tmp, err := time.ParseDuration(s)
 	if err != nil {
 		return err
 	}
