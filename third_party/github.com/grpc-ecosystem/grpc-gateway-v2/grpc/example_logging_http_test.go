@@ -17,9 +17,11 @@ import (
 	grpc_ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc"
 )
 
-// exampleLogger logs to stdout only the message and fields of headers, to keep the output stable.
+// exampleLogger logs to stdout only the message and fields of headers, to keep the output stable,
+// at debug level, as calls succeeded of http clients are logged at debug level.
 func exampleLogger() logging.Logger {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.MessageKey || strings.HasPrefix(a.Key, "http.request.header.") {
 				return a
@@ -60,8 +62,8 @@ func ExampleHttpInterceptor_customHeaders() {
 	h.ServeHTTP(httptest.NewRecorder(), r)
 
 	// Output:
-	// msg="http request received" http.request.header.X-Request-Id=req-1 http.request.header.Authorization=Bearer
-	// msg="finished http call with status code 200" http.request.header.X-Request-Id=req-1 http.request.header.Authorization=Bearer
+	// msg="started call" http.request.header.X-Request-Id=req-1 http.request.header.Authorization=Bearer
+	// msg="finished call" http.request.header.X-Request-Id=req-1 http.request.header.Authorization=Bearer
 }
 
 // This example logs headers chosen by the caller of a http client, injecting them into the request context
@@ -83,6 +85,6 @@ func ExampleHttpRoundTripDecorator_customHeaders() {
 	_ = resp.Body.Close()
 
 	// Output:
-	// msg="http request sending" http.request.header.X-Request-Id=req-1
-	// msg="finished http call with status code 200" http.request.header.X-Request-Id=req-1
+	// msg="started call" http.request.header.X-Request-Id=req-1
+	// msg="finished call" http.request.header.X-Request-Id=req-1
 }

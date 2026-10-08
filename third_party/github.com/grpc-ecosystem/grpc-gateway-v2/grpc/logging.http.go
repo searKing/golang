@@ -5,8 +5,11 @@
 package grpc
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -16,42 +19,37 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	slices_ "github.com/searKing/golang/go/exp/slices"
 	http_ "github.com/searKing/golang/go/net/http"
-	time_ "github.com/searKing/golang/go/time"
+	"google.golang.org/grpc/codes"
 )
 
 var (
 	// SystemTag is tag representing an event inside gRPC call.
 	SystemTag = []string{"protocol", "http"}
+	// ComponentFieldKey is a tag representing the client/server that is calling,
+	// valued as logging.KindServerFieldValue or logging.KindClientFieldValue.
+	ComponentFieldKey = "http.component"
 )
 
 // HttpInterceptor returns a new unary http interceptors that optionally logs endpoint handling.
 // Logger will read existing and write new logging.Fields available in current context.
 // See `ExtractFields` and `InjectFields` for details.
+// Logs and fields are consistent with logging.UnaryServerInterceptor of gRPC, such as levels by
+// logging.DefaultServerCodeToLevel of the gRPC code mapped from the http status code.
 // Headers are logged if HTTP_GO_LOG_HTTP_HEADER is true, with values of sensitive ones redacted,
 // see ExampleHttpInterceptor_customHeaders to log headers chosen instead.
 func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
-	var logHttpHeader bool
-	{
-		vHeader := os.Getenv("HTTP_GO_LOG_HTTP_HEADER")
-		if vh, err := strconv.ParseBool(vHeader); err == nil {
-			logHttpHeader = vh
-		}
-	}
-
+	logHttpHeader := logHttpHeaderFromEnv()
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var cost time_.Cost
-			cost.Start()
-			var attrs []any
-			attrs = append(attrs, slog.String(SystemTag[0], SystemTag[1]))
-			attrs = append(attrs, slog.Time("http.start_time", time.Now()))
-			attrs = append(attrs, extractLoggingFieldsFromHttpRequest(r)...)
+			start := time.Now()
+			ctx, fields := injectLoggingFields(r, logging.KindServerFieldValue, start)
+			r = r.WithContext(ctx)
 
-			var reqAttrs = attrs
+			reqFields := fields
 			if logHttpHeader {
-				reqAttrs = append(reqAttrs, httpHeaderToAttr(r.Header, "http.request.header"))
+				reqFields = append(reqFields, httpHeaderToFields(r.Header, "http.request.header")...)
 			}
-			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("http request received"), reqAttrs...)
+			l.Log(ctx, logging.DefaultServerCodeToLevel(codes.OK), "started call", reqFields...)
 
 			rw := http_.NewResponseWriterDelegator(w)
 			handler.ServeHTTP(rw, r)
@@ -61,91 +59,74 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 				status = http.StatusOK
 			}
 
-			attrs = append(attrs,
-				slog.String("http.status_code", slices_.FirstOrZero(http.StatusText(status), "CODE("+strconv.FormatInt(int64(status), 10)+")")),
-				slog.Duration("cost", cost.Elapse()),
-				slog.Int64("http.request_body_size", r.ContentLength),
-				slog.Int64("http.response_body_size", rw.Written()))
-
-			var respAttrs = attrs
+			fields = fields.WithUnique(logging.ExtractFields(ctx))
+			fields = fields.AppendUnique(logging.Fields{
+				"http.status_code", httpStatusText(status),
+				"http.request_body_size", r.ContentLength,
+				"http.response_body_size", rw.Written(),
+			})
+			fields = fields.AppendUnique(durationToTimeMillisFields(time.Since(start)))
 			if logHttpHeader {
-				respAttrs = append(respAttrs, httpHeaderToAttr(rw.Header(), "http.response.header"))
+				fields = append(fields, httpHeaderToFields(rw.Header(), "http.response.header")...)
 			}
-			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with status code %d", status),
-				respAttrs...)
+			l.Log(ctx, logging.DefaultServerCodeToLevel(httpStatusToCode(status)), "finished call", fields...)
 		})
 	}
 }
 
 // HttpRoundTripDecorator returns a new http RoundTripDecorator that optionally logs outgoing HTTP requests.
+// Logs and fields are consistent with logging.UnaryClientInterceptor of gRPC, such as levels by
+// logging.DefaultClientCodeToLevel of the gRPC code mapped from the http status code or the error.
 // Headers are logged if HTTP_GO_LOG_HTTP_HEADER is true, with values of sensitive ones redacted,
 // see ExampleHttpRoundTripDecorator_customHeaders to log headers chosen instead.
 func HttpRoundTripDecorator(l logging.Logger) http_.RoundTripDecorator {
-	var logHttpHeader bool
-	{
-		vHeader := os.Getenv("HTTP_GO_LOG_HTTP_HEADER")
-		if vh, err := strconv.ParseBool(vHeader); err == nil {
-			logHttpHeader = vh
-		}
-	}
-
+	logHttpHeader := logHttpHeaderFromEnv()
 	return http_.RoundTripDecoratorFunc(func(rt http.RoundTripper) http.RoundTripper {
 		return http_.RoundTripFunc(func(r *http.Request) (*http.Response, error) {
-			var cost time_.Cost
-			cost.Start()
-			var attrs []any
-			attrs = append(attrs, slog.String(SystemTag[0], SystemTag[1]))
-			attrs = append(attrs, slog.Time("http.start_time", time.Now()))
-			attrs = append(attrs, extractLoggingFieldsFromHttpRequest(r)...)
+			start := time.Now()
+			ctx, fields := injectLoggingFields(r, logging.KindClientFieldValue, start)
 
-			var reqAttrs = attrs
+			reqFields := fields
 			if logHttpHeader {
-				reqAttrs = append(reqAttrs, httpHeaderToAttr(r.Header, "http.request.header"))
+				reqFields = append(reqFields, httpHeaderToFields(r.Header, "http.request.header")...)
 			}
-			l.Log(r.Context(), logging.LevelInfo, "http request sending", reqAttrs...)
+			l.Log(ctx, logging.DefaultClientCodeToLevel(codes.OK), "started call", reqFields...)
 
-			resp, err := rt.RoundTrip(r)
+			resp, err := rt.RoundTrip(r.WithContext(ctx))
 
-			attrs = append(attrs,
-				slog.Duration("cost", cost.Elapse()),
-				slog.Int64("http.request_body_size", r.ContentLength))
-
-			if resp != nil {
-				attrs = append(attrs,
-					slog.String("http.status_code", slices_.FirstOrZero(http.StatusText(resp.StatusCode), "CODE("+strconv.FormatInt(int64(resp.StatusCode), 10)+")")),
-					slog.Int64("http.response_body_size", resp.ContentLength))
-			}
+			fields = fields.WithUnique(logging.ExtractFields(ctx))
+			fields = fields.AppendUnique(logging.Fields{"http.request_body_size", r.ContentLength})
+			var code codes.Code
 			if err != nil {
-				attrs = append(attrs, slog.String("http.error", err.Error()))
-			}
-
-			var respAttrs = attrs
-			if logHttpHeader && resp != nil {
-				respAttrs = append(respAttrs, httpHeaderToAttr(resp.Header, "http.response.header"))
-			}
-
-			if err != nil {
-				l.Log(r.Context(), logging.LevelError, "finished http call with error", respAttrs...)
+				code = httpErrorToCode(err)
+				fields = fields.AppendUnique(logging.Fields{"http.error", fmt.Sprintf("%v", err)})
 			} else {
-				l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with status code %d", resp.StatusCode), respAttrs...)
+				code = httpStatusToCode(resp.StatusCode)
+				fields = fields.AppendUnique(logging.Fields{
+					"http.status_code", httpStatusText(resp.StatusCode),
+					"http.response_body_size", resp.ContentLength,
+				})
 			}
+			fields = fields.AppendUnique(durationToTimeMillisFields(time.Since(start)))
+			if logHttpHeader && resp != nil {
+				fields = append(fields, httpHeaderToFields(resp.Header, "http.response.header")...)
+			}
+			l.Log(ctx, logging.DefaultClientCodeToLevel(code), "finished call", fields...)
 			return resp, err
 		})
 	})
 }
 
-func extractLoggingFieldsFromHttpRequest(r *http.Request) []any {
-	attrs := logging.ExtractFields(r.Context())
-	if slog.Default().Enabled(r.Context(), slog.LevelDebug) {
-		if d, ok := r.Context().Deadline(); ok {
-			attrs = append(attrs, slog.Time("http.request.deadline", d))
-		}
-	}
-	attrs = append(attrs, slog.String("http.remote_addr", r.RemoteAddr))
-	ip := http_.ClientIP(r)
-	if ip != "" && !strings.HasPrefix(r.RemoteAddr, ip) {
-		attrs = append(attrs, slog.String("http.client_ip", http_.ClientIP(r)))
-	}
+func logHttpHeaderFromEnv() bool {
+	v, _ := strconv.ParseBool(os.Getenv("HTTP_GO_LOG_HTTP_HEADER"))
+	return v
+}
+
+// injectLoggingFields injects common fields of r into its context, as logging interceptors of gRPC do,
+// returning the context and the fields to log, plus fields of start time and deadline used only once.
+func injectLoggingFields(r *http.Request, kind string, start time.Time) (context.Context, logging.Fields) {
+	ctx := r.Context()
+	fields := logging.Fields{SystemTag[0], SystemTag[1], ComponentFieldKey, kind}
 
 	absRequestURI := strings.HasPrefix(r.RequestURI, "http://") || strings.HasPrefix(r.RequestURI, "https://")
 	uri := r.RequestURI
@@ -153,18 +134,94 @@ func extractLoggingFieldsFromHttpRequest(r *http.Request) []any {
 		// RequestURI is unset for client requests, and may contain a password if absolute
 		uri = r.URL.Redacted()
 	}
-	attrs = append(attrs, slog.String("http.method", r.Method), slog.String("http.request.uri", uri))
-
+	fields = append(fields, "http.method", r.Method, "http.request.uri", uri)
 	if !absRequestURI {
 		host := r.Host
 		if host == "" && r.URL != nil {
 			host = r.URL.Host
 		}
 		if host != "" {
-			attrs = append(attrs, slog.String("http.host", host))
+			fields = append(fields, "http.host", host)
 		}
 	}
-	return attrs
+	if kind == logging.KindServerFieldValue {
+		fields = append(fields, "http.remote_addr", r.RemoteAddr)
+		if ip := http_.ClientIP(r); ip != "" && !strings.HasPrefix(r.RemoteAddr, ip) {
+			fields = append(fields, "http.client_ip", ip)
+		}
+	}
+	fields = fields.WithUnique(logging.ExtractFields(ctx))
+	ctx = logging.InjectFields(ctx, fields)
+
+	singleUseFields := logging.Fields{"http.start_time", start.Format(time.RFC3339)}
+	if d, ok := ctx.Deadline(); ok {
+		singleUseFields = singleUseFields.AppendUnique(logging.Fields{"http.request.deadline", d.Format(time.RFC3339)})
+	}
+	return ctx, fields.WithUnique(singleUseFields)
+}
+
+// durationToTimeMillisFields converts the duration to milliseconds by key http.time_ms,
+// as logging.DurationToTimeMillisFields does by key grpc.time_ms.
+func durationToTimeMillisFields(duration time.Duration) logging.Fields {
+	return logging.Fields{"http.time_ms", fmt.Sprintf("%v", float32(duration.Nanoseconds()/1000)/1000)}
+}
+
+// httpStatusText returns the text of the http status code, as "OK" of grpc.code for gRPC.
+func httpStatusText(code int) string {
+	return slices_.FirstOrZero(http.StatusText(code), "CODE("+strconv.Itoa(code)+")")
+}
+
+// httpStatusToCode maps the http status code to the gRPC code, reversing runtime.HTTPStatusFromCode of grpc-gateway,
+// and the less severe code if ambiguous.
+func httpStatusToCode(status int) codes.Code {
+	switch status {
+	case 499:
+		return codes.Canceled
+	case http.StatusBadRequest:
+		return codes.InvalidArgument
+	case http.StatusUnauthorized:
+		return codes.Unauthenticated
+	case http.StatusForbidden:
+		return codes.PermissionDenied
+	case http.StatusNotFound:
+		return codes.NotFound
+	case http.StatusConflict:
+		return codes.AlreadyExists
+	case http.StatusTooManyRequests:
+		return codes.ResourceExhausted
+	case http.StatusNotImplemented:
+		return codes.Unimplemented
+	case http.StatusServiceUnavailable:
+		return codes.Unavailable
+	case http.StatusGatewayTimeout:
+		return codes.DeadlineExceeded
+	case http.StatusInternalServerError:
+		return codes.Internal
+	}
+	switch {
+	case status < http.StatusBadRequest:
+		return codes.OK
+	case status < http.StatusInternalServerError:
+		return codes.InvalidArgument
+	default:
+		return codes.Unknown
+	}
+}
+
+// httpErrorToCode maps the error of a http round trip to the gRPC code,
+// as gRPC reports Unavailable if the transport fails.
+func httpErrorToCode(err error) codes.Code {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return codes.Canceled
+	case errors.Is(err, context.DeadlineExceeded):
+		return codes.DeadlineExceeded
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return codes.DeadlineExceeded
+	}
+	return codes.Unavailable
 }
 
 // redacted replaces values of sensitive headers in logs, as [net/url.URL.Redacted] does for passwords.
@@ -198,8 +255,8 @@ func redactHeaderValue(name, v string) string {
 	return redacted
 }
 
-// httpHeaderToAttr groups headers h as k, with values of sensitive headers redacted.
-func httpHeaderToAttr(h http.Header, k string) slog.Attr {
+// httpHeaderToFields groups headers h as k, with values of sensitive headers redacted.
+func httpHeaderToFields(h http.Header, k string) logging.Fields {
 	var attrs []slog.Attr
 	for name, vs := range h {
 		if isSensitiveHeader(name) {
@@ -211,5 +268,5 @@ func httpHeaderToAttr(h http.Header, k string) slog.Attr {
 		}
 		attrs = append(attrs, slog.Any(name, vs))
 	}
-	return slog.GroupAttrs(k, attrs...)
+	return logging.Fields{k, slog.GroupValue(attrs...)}
 }
