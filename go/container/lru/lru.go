@@ -58,14 +58,13 @@ func (lru *LRU) AddPair(pair Pair) error {
 // Add adds Key to the head of the linked list.
 func (lru *LRU) Add(key any, value any) error {
 	lru.lazyInit()
-	ele := lru.ll.PushFront(Pair{
-		Key:   key,
-		Value: value,
-	})
 	if _, ok := lru.m[key]; ok {
 		return errors.New("key was already in LRU")
 	}
-	lru.m[key] = ele
+	lru.m[key] = lru.ll.PushFront(Pair{
+		Key:   key,
+		Value: value,
+	})
 	return nil
 }
 

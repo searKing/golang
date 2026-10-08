@@ -35,11 +35,10 @@ func (lru *KeyLRU) Keys() []any {
 // add adds Key to the head of the linked list.
 func (lru *KeyLRU) Add(key any) error {
 	lru.lazyInit()
-	ele := lru.ll.PushFront(key)
 	if _, ok := lru.m[key]; ok {
 		return errors.New("key was already in LRU")
 	}
-	lru.m[key] = ele
+	lru.m[key] = lru.ll.PushFront(key)
 	return nil
 }
 func (lru *KeyLRU) AddOrUpdate(key any) error {

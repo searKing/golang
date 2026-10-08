@@ -30,6 +30,25 @@ func TestLRUPairsValues(t *testing.T) {
 	}
 }
 
+func TestLRUAddDuplicated(t *testing.T) {
+	var l lru.LRU
+	if err := l.Add("a", 1); err != nil {
+		t.Fatalf("Add(a, 1) = %v; want nil", err)
+	}
+	if err := l.Add("a", 2); err == nil {
+		t.Errorf("Add(a, 2) = nil; want error")
+	}
+	if v, ok := l.Find("a"); !ok || v != 1 {
+		t.Errorf("Find(a) = %v, %t; want 1, true", v, ok)
+	}
+	if v, want := l.RemoveOldest(), (lru.Pair{Key: "a", Value: 1}); v != want {
+		t.Errorf("RemoveOldest() = %v; want %v", v, want)
+	}
+	if v := l.RemoveOldest(); v != nil {
+		t.Errorf("RemoveOldest() = %v; want nil", v)
+	}
+}
+
 func TestLRUEmpty(t *testing.T) {
 	var l lru.LRU
 	if v, ok := l.Peek("a"); v != nil || ok {
@@ -42,5 +61,21 @@ func TestLRUEmpty(t *testing.T) {
 	}
 	if v, ok := l.Peek("a"); v != nil || ok {
 		t.Errorf("Peek(a) = %v, %t; want nil, false", v, ok)
+	}
+}
+
+func TestKeyLRUAddDuplicated(t *testing.T) {
+	var l lru.KeyLRU
+	if err := l.Add("a"); err != nil {
+		t.Fatalf("Add(a) = %v; want nil", err)
+	}
+	if err := l.Add("a"); err == nil {
+		t.Errorf("Add(a) = nil; want error")
+	}
+	if v := l.RemoveOldest(); v != "a" {
+		t.Errorf("RemoveOldest() = %v; want a", v)
+	}
+	if v := l.RemoveOldest(); v != nil {
+		t.Errorf("RemoveOldest() = %v; want nil", v)
 	}
 }
