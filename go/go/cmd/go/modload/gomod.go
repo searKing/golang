@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -100,19 +101,21 @@ func FindModuleName(modRoot string) (name string, err error) {
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
+		line, _, _ := strings.Cut(scanner.Text(), "//")
 		fields := strings.Fields(line)
-		if len(fields) < 0 {
-			continue
-		}
-		if fields[0] != "module" {
+		if len(fields) == 0 || fields[0] != "module" {
 			continue
 		}
 		if len(fields) != 2 {
 			return "", fmt.Errorf("malformed module declaration in %s", gomod)
 		}
-		return fields[1], scanner.Err()
+		name := fields[1]
+		if strings.HasPrefix(name, `"`) || strings.HasPrefix(name, "`") {
+			if name, err = strconv.Unquote(name); err != nil {
+				return "", fmt.Errorf("malformed module path in %s: %w", gomod, err)
+			}
+		}
+		return name, scanner.Err()
 	}
 	return "", scanner.Err()
 
@@ -138,7 +141,7 @@ func FindGoMod(dir string) string {
 		// when it happens. See golang.org/issue/26708.
 		return ""
 	}
-	return filepath.Join(dir, "go.mod")
+	return filepath.Join(modRoot, "go.mod")
 }
 
 // FindModuleRoot returns the nearest dir of go.mod by walk dir and dir's parent and forefathers in order
