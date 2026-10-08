@@ -62,7 +62,7 @@ func HttpInterceptor(l logging.Logger) func(handler http.Handler) http.Handler {
 
 			var respAttrs = attrs
 			if logHttpHeader {
-				respAttrs = append(respAttrs, httpHeaderToAttr(r.Header, "http.response.header"))
+				respAttrs = append(respAttrs, httpHeaderToAttr(rw.Header(), "http.response.header"))
 			}
 			l.Log(r.Context(), logging.LevelInfo, fmt.Sprintf("finished http call with status code %d", rw.Status()),
 				respAttrs...)
@@ -153,10 +153,49 @@ func extractLoggingFieldsFromHttpRequest(r *http.Request) []any {
 	return attrs
 }
 
+// redacted replaces values of sensitive headers in logs, as [net/url.URL.Redacted] does for passwords.
+const redacted = "xxxxx"
+
+// isSensitiveHeader reports whether the header name carries credentials, whose values are redacted in logs.
+// Sensitive headers refer to the Go standard library, which strips them on redirect to other domains,
+// see (*Client).makeHeadersCopier in net/http/client.go, plus Set-Cookie of responses.
+//
+// To customize headers logged, unset HTTP_GO_LOG_HTTP_HEADER, and inject the headers wanted by
+// logging.InjectFields into the request context, in a middleware before HttpInterceptor,
+// or before sending by HttpRoundTripDecorator, as fields of the context are logged.
+func isSensitiveHeader(name string) bool {
+	switch http.CanonicalHeaderKey(name) {
+	case "Authorization", "Www-Authenticate", "Cookie", "Cookie2",
+		"Proxy-Authorization", "Proxy-Authenticate", "Set-Cookie":
+		return true
+	}
+	return false
+}
+
+// redactHeaderValue redacts v of the sensitive header name,
+// keeping the auth scheme of Authorization and alike, such as "Bearer xxxxx".
+func redactHeaderValue(name, v string) string {
+	switch http.CanonicalHeaderKey(name) {
+	case "Authorization", "Www-Authenticate", "Proxy-Authorization", "Proxy-Authenticate":
+		if scheme, _, ok := strings.Cut(v, " "); ok && scheme != "" {
+			return scheme + " " + redacted
+		}
+	}
+	return redacted
+}
+
+// httpHeaderToAttr groups headers h as k, with values of sensitive headers redacted.
 func httpHeaderToAttr(h http.Header, k string) slog.Attr {
 	var attrs []slog.Attr
-	for k, v := range h {
-		attrs = append(attrs, slog.Any(k, v))
+	for name, vs := range h {
+		if isSensitiveHeader(name) {
+			redactedVs := make([]string, len(vs))
+			for i, v := range vs {
+				redactedVs[i] = redactHeaderValue(name, v)
+			}
+			vs = redactedVs
+		}
+		attrs = append(attrs, slog.Any(name, vs))
 	}
 	return slog.GroupAttrs(k, attrs...)
 }
