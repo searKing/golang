@@ -22,6 +22,8 @@ import (
 // list fields in dst. The entries of every map field in src is copied into
 // the corresponding map field in dst, possibly replacing existing entries.
 // The unknown fields of src are appended to the unknown fields of dst.
+//
+// Merge is not safe for concurrent use with the same dst, as dst is a plain Go map.
 func Merge(dst map[any]any, src proto.Message, opts ...MergeOption) {
 	var opt mergeOptions
 	opt.ApplyOptions(opts...)

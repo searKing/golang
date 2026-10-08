@@ -862,7 +862,6 @@ func TestMergeAberrant(t *testing.T) {
 }
 
 func TestMergeRace(t *testing.T) {
-	dst := map[any]any{}
 	srcs := []*testpb.TestAllTypes{
 		{OptionalInt32: proto.Int32(1)},
 		{OptionalString: proto.String("hello")},
@@ -881,15 +880,25 @@ func TestMergeRace(t *testing.T) {
 		}(),
 	}
 
-	// It should be safe to concurrently merge non-overlapping fields.
-	var wg sync.WaitGroup
-	defer wg.Wait()
+	// It should be safe to concurrently merge the same src into different dst maps.
+	// Unlike proto.Merge, concurrent merges into the same dst map are not safe, as Go maps are not.
 	for _, src := range srcs {
-		wg.Add(1)
-		go func(src proto.Message) {
-			defer wg.Done()
-			proto_.Merge(dst, src)
-		}(src)
+		want := map[any]any{}
+		proto_.Merge(want, src, proto_.WithMergeEmitUnknown(true))
+
+		const n = 8
+		dsts := make([]map[any]any, n)
+		var wg sync.WaitGroup
+		for i := range dsts {
+			dsts[i] = map[any]any{}
+			wg.Go(func() { proto_.Merge(dsts[i], src, proto_.WithMergeEmitUnknown(true)) })
+		}
+		wg.Wait()
+		for i, got := range dsts {
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("Merge #%d of %v = %v, want %v", i, src, got, want)
+			}
+		}
 	}
 }
 
