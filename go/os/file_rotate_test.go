@@ -241,6 +241,66 @@ func TestRotateFile_CopyTruncateRotateOncePerInterval(t *testing.T) {
 	}
 }
 
+func TestRotateFile_CopyRename(t *testing.T) {
+	dir := t.TempDir()
+	f := os_.NewRotateFile("2006-01-02_15-04-05")
+	f.FilePathPrefix = filepath.Join(dir, "app.")
+	f.RotateMode = os_.RotateModeCopyRename
+	f.RotateInterval = time.Second
+	var rotated []string
+	f.PostRotateHandler = func(name string) { rotated = append(rotated, name) }
+	defer f.Close()
+
+	sleepToNextSecond()
+	if _, err := f.WriteString("a"); err != nil {
+		t.Fatal(err)
+	}
+	sleepToNextSecond()
+	if _, err := f.WriteString("b"); err != nil {
+		t.Fatal(err)
+	}
+	if len(rotated) != 2 || rotated[0] == rotated[1] {
+		t.Fatalf("rotated = %q, want 2 different files", rotated)
+	}
+	for i, want := range []string{"a", "b"} {
+		if got := readFile(t, rotated[i]); got != want {
+			t.Errorf("content of %s = %q, want %q", rotated[i], got, want)
+		}
+	}
+}
+
+func TestRotateFile_CopyRenameFailed(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "app.")
+	layout := "2006-01-02_15-04-05"
+	f := os_.NewRotateFile(layout)
+	f.FilePathPrefix = prefix
+	f.RotateMode = os_.RotateModeCopyRename
+	f.RotateInterval = time.Second
+	defer f.Close()
+
+	sleepToNextSecond()
+	if _, err := f.WriteString("a"); err != nil {
+		t.Fatal(err)
+	}
+	// the next rotate file is a dir not empty, failed to rename to
+	next := prefix + time.Now().Truncate(time.Second).Add(time.Second).Format(layout)
+	if err := os.MkdirAll(filepath.Join(next, "x"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	sleepToNextSecond()
+	if _, err := f.WriteString("b"); err != nil {
+		t.Fatalf("write after rotate failed: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	live := prefix + time.Now().Truncate(time.Second).Add(-time.Second).Format(layout)
+	if got := readFile(t, live); got != "ab" {
+		t.Errorf("content of %s = %q, want %q", live, got, "ab")
+	}
+}
+
 func readFile(t *testing.T, name string) string {
 	t.Helper()
 	b, err := os.ReadFile(name)

@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -409,7 +410,7 @@ func (f *RotateFile) rotateLocked(newName string) (_ *os.File, err error) {
 			mode = "copy_rename"
 			_, err = os.Stat(oldName)
 			if err == nil {
-				err = CopyRenameTruncateAll(newName, oldName)
+				err = f.copyRenameTruncateLocked(newName, oldName)
 			} else if os.IsNotExist(err) {
 				err = nil
 			}
@@ -519,6 +520,22 @@ func (f *RotateFile) serializedClean(protectedPath string) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// copyRenameTruncateLocked is CopyRenameTruncateAll of the writing file src.
+// A file opened can not be renamed on windows, so the writing file is closed before,
+// and reopened if failed, to keep writing to src as other platforms.
+func (f *RotateFile) copyRenameTruncateLocked(dst, src string) error {
+	if runtime.GOOS != "windows" || f.writingFile == nil {
+		return CopyRenameTruncateAll(dst, src)
+	}
+	_ = f.writingFile.Close()
+	f.writingFile = nil
+	err := CopyRenameTruncateAll(dst, src)
+	if err != nil {
+		_ = f.makeUsingFileReadyLocked()
+	}
+	return err
 }
 
 func (f *RotateFile) handleCleanError(err error) {
