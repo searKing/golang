@@ -363,6 +363,26 @@ func TestPutTokenNInOrder(t *testing.T) {
 	}
 }
 
+func TestWaitReserveExpired(t *testing.T) {
+	lim := NewEmptyBurstLimiter(1)
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	r := lim.Reserve(ctx)
+
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), d)
+	defer waitCancel()
+	done := make(chan error, 1)
+	go func() { done <- r.Wait(waitCtx) }()
+	select {
+	case err := <-done:
+		if err != context.DeadlineExceeded {
+			t.Errorf("r.Wait() = %v; want %v", err, context.DeadlineExceeded)
+		}
+	case <-time.After(10 * d):
+		t.Fatalf("r.Wait() blocks after ctx is done")
+	}
+}
+
 func BenchmarkAllowN(b *testing.B) {
 	lim := NewFullBurstLimiter(1)
 	b.ReportAllocs()

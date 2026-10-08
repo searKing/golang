@@ -98,9 +98,7 @@ func (r *Reservation) Wait(ctx context.Context) error {
 				return nil
 			}
 			// Wait if necessary
-			if !timer.Stop() {
-				<-timer.C
-			}
+			// Reset needs no drain of timer.C since Go 1.23, which may block forever otherwise.
 			timer.Reset(starvationThresholdNs)
 
 			select {
