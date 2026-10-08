@@ -10,6 +10,7 @@ package rate
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 )
@@ -224,16 +225,11 @@ func (lim *BurstLimiter) PutTokenN(n int) {
 		lim.tokens = lim.burst
 	}
 
-	for i := 0; i < len(lim.tokensChangedListeners); i++ {
-		tokensGot := lim.tokensChangedListeners[i]
-		r := tokensGot.Value(expectTokensKey).(*reservation)
+	// Serve reservations in order, the first one always, as notified ones are removed.
+	for len(lim.tokensChangedListeners) > 0 {
+		r := lim.tokensChangedListeners[0].Value(expectTokensKey).(*reservation)
 		if r.burst <= 0 {
-			// remove notified
-			if i == len(lim.tokensChangedListeners)-1 {
-				lim.tokensChangedListeners = lim.tokensChangedListeners[:i]
-			} else {
-				lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
-			}
+			lim.tokensChangedListeners = slices.Delete(lim.tokensChangedListeners, 0, 1)
 			r.notifyTokensReady()
 			continue
 		}
@@ -250,14 +246,8 @@ func (lim *BurstLimiter) PutTokenN(n int) {
 		// enough
 		r.tokens = r.burst
 		lim.tokens -= tokensWait
-		// remove notified
-		if i == len(lim.tokensChangedListeners)-1 {
-			lim.tokensChangedListeners = lim.tokensChangedListeners[:i]
-		} else {
-			lim.tokensChangedListeners = append(lim.tokensChangedListeners[:i], lim.tokensChangedListeners[i+1:]...)
-		}
+		lim.tokensChangedListeners = slices.Delete(lim.tokensChangedListeners, 0, 1)
 		r.notifyTokensReady()
-		continue
 	}
 }
 

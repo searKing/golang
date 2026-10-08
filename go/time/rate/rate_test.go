@@ -345,6 +345,24 @@ func TestWaitBlock(t *testing.T) {
 
 }
 
+func TestPutTokenNInOrder(t *testing.T) {
+	lim := NewEmptyBurstLimiter(3)
+	var rs []*Reservation
+	for range 3 {
+		rs = append(rs, lim.Reserve(context.Background()))
+	}
+	lim.PutTokenN(2)
+	for i, want := range []bool{true, true, false} {
+		if got := rs[i].Ready(); got != want {
+			t.Errorf("r%d.Ready() = %t; want %t", i+1, got, want)
+		}
+	}
+	lim.PutToken()
+	if !rs[2].Ready() {
+		t.Errorf("r3.Ready() = false; want true")
+	}
+}
+
 func BenchmarkAllowN(b *testing.B) {
 	lim := NewFullBurstLimiter(1)
 	b.ReportAllocs()
