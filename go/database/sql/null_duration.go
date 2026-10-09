@@ -30,27 +30,28 @@ func (nj *NullDuration) Scan(src any) error {
 		nj.Data, nj.Valid = nilTimeDurationValue, false
 		return nil
 	}
-	nj.Valid = true
 
+	var data time.Duration
 	var err error
 	switch src := src.(type) {
 	case string:
-		nj.Data, err = time.ParseDuration(src)
+		data, err = time.ParseDuration(src)
 	case []byte:
-		nj.Data, err = time.ParseDuration(string(src))
+		data, err = time.ParseDuration(string(src))
 	case time.Duration:
-		nj.Data, err = time.ParseDuration(src.String())
-	case nil:
-		nj.Data = nilTimeDurationValue
-		err = nil
+		data = src
+	case int64:
+		// nanoseconds, as time.Duration
+		data = time.Duration(src)
 	default:
-		nj.Data, err = time.ParseDuration(fmt.Sprintf("%s", src))
+		data, err = time.ParseDuration(fmt.Sprintf("%s", src))
 	}
-	if err == nil {
-		return nil
+	if err != nil {
+		nj.Data, nj.Valid = nilTimeDurationValue, false
+		return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T : %w", src, nj.Data, err)
 	}
-
-	return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T : %w", src, nj.Data, err)
+	nj.Data, nj.Valid = data, true
+	return nil
 }
 
 // Value implements the driver.Valuer interface.
