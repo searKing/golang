@@ -34,6 +34,19 @@ func TestCompliantName(t *testing.T) {
 			Q: `'::ABC:_:'`,
 			R: `___ABC____`,
 		},
+		{
+			Q: `1a.b2`,
+			R: `_a_b2`,
+		},
+		{
+			Q: "表.a",
+			R: `__a`,
+		},
+		{
+			// U+10061 is not 'a', though its low 16 bits are.
+			Q: "a\U00010061.b",
+			R: `a__b`,
+		},
 	}
 
 	for i, test := range table {

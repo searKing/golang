@@ -13,8 +13,8 @@ import "strings"
 func CompliantName(in string) string {
 	var buf strings.Builder
 	for i, c := range in {
-		if !isLetter(uint16(c)) {
-			if i == 0 || !isDigit(uint16(c)) {
+		if !isLetter(c) {
+			if i == 0 || !isDigit(c) {
 				buf.WriteByte('_')
 				continue
 			}
@@ -24,9 +24,9 @@ func CompliantName(in string) string {
 	return buf.String()
 }
 
-func isDigit(ch uint16) bool {
+func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9'
 }
-func isLetter(ch uint16) bool {
+func isLetter(ch rune) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch == '$'
 }
