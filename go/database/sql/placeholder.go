@@ -16,9 +16,9 @@ func Placeholders(n int) string {
 	return strings_.JoinRepeat("?", ",", n)
 }
 
-// Pagination returns the "LIMIT %d, OFFSET %d"
+// Pagination returns the "LIMIT %d OFFSET %d", or "" if limit or offset is negative.
 // query := Pagination(0, 0)
-// // "LIMIT 0, OFFSET 0"
+// // "LIMIT 0 OFFSET 0"
 func Pagination(limit, offset int) string {
 	if limit < 0 || offset < 0 {
 		return ""
@@ -39,7 +39,7 @@ func ExpandAsColumns(cols ...string) []string {
 }
 
 // TableColumns returns the []string{table.value1, table.value2 ...}
-// query := Columns("table", "foo", "bar")
+// query := TableColumns("table", "foo", "bar")
 // // []string{"table.foo", "table.bar"}
 func TableColumns(table string, cols ...string) []string {
 	cols = strings_.SliceTrimEmpty(cols...)
@@ -54,7 +54,7 @@ func TableColumns(table string, cols ...string) []string {
 	return namedCols
 }
 
-// TableValues returns the []string{:value1, :value2 ...}
+// TableValues returns the []string{?, ? ...}
 // query := TableValues("foo", "bar")
 // // []string{"?", "?"}
 func TableValues(cols ...string) []string {
@@ -67,9 +67,9 @@ func TableValues(cols ...string) []string {
 	return namedCols
 }
 
-// TableColumnsValues returns the []string{table.value1=:value1, table.value2=:value2 ...}
-// query := ColumnsValues("table", "foo", "bar")
-// // []string{"table.foo=?", "table.bar=?"}
+// TableColumnsValues returns the []string{table.value1 cmp ?, table.value2 cmp ? ...}
+// query := TableColumnsValues("=", "table", "foo", "bar")
+// // []string{"table.foo = ?", "table.bar = ?"}
 func TableColumnsValues(cmp string, table string, cols ...string) []string {
 	cols = strings_.SliceTrimEmpty(cols...)
 	var namedCols []string
@@ -85,7 +85,7 @@ func TableColumnsValues(cmp string, table string, cols ...string) []string {
 
 // JoinTableColumns concatenates the elements of cols to column1, column2, ...
 // query := JoinTableColumns("table", "foo", "bar")
-// // "table.foo, table.bar"
+// // "table.foo,table.bar"
 func JoinTableColumns(table string, cols ...string) string {
 	//cols = strings_.SliceTrimEmpty(cols...)
 	return strings.Join(TableColumns(table, cols...), ",")
@@ -93,7 +93,7 @@ func JoinTableColumns(table string, cols ...string) string {
 
 // JoinTableColumnsWithAs concatenates the elements of cols to column1, column2, ...
 // query := JoinTableColumnsWithAs("table", "foo", "bar")
-// // "table.foo AS table.foo, table.bar AS table.bar"
+// // "table.foo AS table_foo,table.bar AS table_bar"
 func JoinTableColumnsWithAs(table string, cols ...string) string {
 	//cols = strings_.SliceTrimEmpty(cols...)
 	return strings.Join(ExpandAsColumns(TableColumns(table, cols...)...), ",")
@@ -113,7 +113,7 @@ func JoinColumnsWithAs(cols ...string) string {
 	return JoinTableColumnsWithAs("", cols...)
 }
 
-// JoinTableValues concatenates the elements of values to :value1, :value2, ...
+// JoinTableValues concatenates the elements of values to ?,?,...
 // query := JoinTableValues("foo", "bar")
 // // "?,?"
 // query := JoinTableValues()
@@ -128,9 +128,9 @@ func JoinTableValues(cols ...string) string {
 	return strings.Join(TableValues(cols...), ",")
 }
 
-// JoinTableColumnsValues concatenates the elements of values to table.value1=:value1, table.value2=:value2 ...
-// query := JoinTableColumnsValues("table", "foo", "bar")
-// // "table.foo=?, table.bar=?"
+// JoinTableColumnsValues concatenates the elements of values to table.value1 cmp ?,table.value2 cmp ?,...
+// query := JoinTableColumnsValues("=", "table", "foo", "bar")
+// // "table.foo = ?,table.bar = ?"
 func JoinTableColumnsValues(cmp string, table string, cols ...string) string {
 	//cols = strings_.SliceTrimEmpty(cols...)
 	return strings.Join(TableColumnsValues(cmp, table, cols...), ",")

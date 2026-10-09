@@ -1,3 +1,7 @@
+// Copyright 2021 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package dsn
 
 import (
@@ -19,7 +23,7 @@ func GetDriverName(dsn string) string {
 // Split splits dsn into a driver name(scheme) and left component.
 // If there is no :// in dsn, Split returns an empty driver name and
 // dsn without schema.
-// The returned values have the property that dsn = driver+dsnSchemaOmitted.
+// Join(Split(dsn)) is equivalent to dsn, but the query is encoded and sorted by key.
 // schema://[user[:password]@][net[(addr)]]/dbname[?param1=value1&paramN=valueN]
 // =>
 // [user[:password]@][net[(addr)]]/dbname[?param1=value1&paramN=valueN]
@@ -66,8 +70,8 @@ func queryIndex(connect string) int {
 	return -1
 }
 
-// Join joins driver name(scheme) and dsn without schema into a single path,
-// separating them with slashes.
+// Join joins driver name(scheme), dsn without schema and query into a dsn,
+// separating them with "://" and "?".
 func Join(scheme string, connect string, query url.Values) (dsn string) {
 	rawQuery := query.Encode()
 	if rawQuery != "" {
