@@ -37,14 +37,33 @@ func Split(dsn string) (scheme string, connect string, query url.Values) {
 			connect = parts[1]
 		}
 	}
-	{
-		parts := strings.SplitN(connect, "?", 2)
-		if len(parts) == 2 {
-			connect = parts[0]
-			query, _ = url.ParseQuery(parts[1])
-		}
+	if i := queryIndex(connect); i >= 0 {
+		query, _ = url.ParseQuery(connect[i+1:])
+		connect = connect[:i]
 	}
 	return
+}
+
+// queryIndex returns the index of '?' starting the query in connect, or -1 if there is none.
+// '?' before '@' is taken as part of password if no '/' is before it,
+// like "user:pa?ss@tcp(host)/dbname", as '/' always precedes the query after host.
+func queryIndex(connect string) int {
+	q := strings.Index(connect, "?")
+	if q < 0 || strings.Contains(connect[:q], "/") {
+		return q
+	}
+	rest := connect[q:]
+	if slash := strings.Index(rest, "/"); slash >= 0 {
+		rest = rest[:slash]
+	}
+	at := strings.LastIndex(rest, "@")
+	if at < 0 {
+		return q
+	}
+	if i := strings.Index(connect[q+at:], "?"); i >= 0 {
+		return q + at + i
+	}
+	return -1
 }
 
 // Join joins driver name(scheme) and dsn without schema into a single path,
