@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"weak"
 
 	"github.com/searKing/golang/go/exp/container/queue"
 	"github.com/searKing/golang/go/pragma"
@@ -363,32 +364,45 @@ func (p *FixedPool[E]) tryAllocateLocked() (x *FixedPoolElement[E], allocated bo
 }
 
 type FixedPoolElement[E any] struct {
+	*fixedPoolElement[E]
+	pool *FixedPool[E]
+}
+
+// fixedPoolElement is the real representation of *FixedPoolElement.
+// The extra level of indirection lets the cleanup attached to *FixedPoolElement
+// recycle the value into a new *FixedPoolElement, as an unreachable object can not be resurrected.
+// fixedPoolElement must not refer to *FixedPoolElement, even through the pool, or the cleanup will never run.
+type fixedPoolElement[E any] struct {
 	// The value stored with this element.
 	Value E
 
 	available bool // available as idle for the pool
-	pool      *FixedPool[E]
+	pool      weak.Pointer[FixedPool[E]]
 }
 
-func newFixedPoolElement[E any](Value E, pool *FixedPool[E]) *FixedPoolElement[E] {
-	e := &FixedPoolElement[E]{
-		Value: Value,
-		pool:  pool,
-	}
-	e.pool.capacity.Add(1)
-	runtime.SetFinalizer(e, (*FixedPoolElement[E]).Finalize)
+func newFixedPoolElement[E any](value E, pool *FixedPool[E]) *FixedPoolElement[E] {
+	x := &fixedPoolElement[E]{Value: value, pool: weak.Make(pool)}
+	e := &FixedPoolElement[E]{fixedPoolElement: x, pool: pool}
+	pool.capacity.Add(1)
+	runtime.AddCleanup(e, (*fixedPoolElement[E]).recycle, x)
 	return e.markAvailable(true)
 }
 
-func (e *FixedPoolElement[E]) Finalize() {
-	stored := e.pool.putSlow(e, false)
-	if stored {
-		runtime.SetFinalizer(e, (*FixedPoolElement[E]).Finalize)
+// recycle puts the value of an unreachable *FixedPoolElement back to the pool,
+// or drops it if the pool is overcapacity or has been garbage collected.
+func (x *fixedPoolElement[E]) recycle() {
+	p := x.pool.Value()
+	if p == nil {
 		return
 	}
+	e := &FixedPoolElement[E]{fixedPoolElement: x, pool: p}
+	cleanup := runtime.AddCleanup(e, (*fixedPoolElement[E]).recycle, x)
+	if p.putSlow(e, false) {
+		return
+	}
+	// no need for a cleanup anymore
+	cleanup.Stop()
 	e.markAvailable(false).pool.capacity.Add(-1)
-	// no need for a finalizer anymore
-	runtime.SetFinalizer(e, nil)
 }
 
 func (e *FixedPoolElement[E]) Get() E {

@@ -14,8 +14,9 @@ import (
 )
 
 type LockedFile[T File] struct {
-	File   T
-	closed bool
+	File    T
+	closed  bool
+	cleanup runtime.Cleanup
 }
 
 // NewLockedFile returns a locked file.
@@ -28,11 +29,11 @@ func NewLockedFile(file *os.File) (*LockedFile[*os.File], error) {
 	// Although the operating system will drop locks for open files when the go
 	// command exits, we want to hold locks for as little time as possible, and we
 	// especially don't want to leave a file locked after we're done with it. Our
-	// Close method is what releases the locks, so use a finalizer to report
+	// Close method is what releases the locks, so use a cleanup to report
 	// missing Close calls on a best-effort basis.
-	runtime.SetFinalizer(&f, func(f *LockedFile[*os.File]) {
-		panic(fmt.Sprintf("lockedfile.File %s became unreachable without a call to Close", f.File.Name()))
-	})
+	f.cleanup = runtime.AddCleanup(&f, func(name string) {
+		panic(fmt.Sprintf("lockedfile.File %s became unreachable without a call to Close", name))
+	}, file.Name())
 	return &f, nil
 }
 
@@ -51,7 +52,8 @@ func (f *LockedFile[T]) Close() error {
 	f.closed = true
 
 	err := closeFile(f.File)
-	runtime.SetFinalizer(f, nil)
+	f.cleanup.Stop()
+	runtime.KeepAlive(f)
 	return err
 }
 func (f *LockedFile[T]) Lock() error {

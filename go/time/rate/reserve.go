@@ -15,12 +15,12 @@ import (
 // A Reservation may be canceled, which may enable the BurstLimiter to permit additional events.
 type Reservation struct {
 	*reservation
+	cleanup runtime.Cleanup
 }
 
 // reservation is the real representation of *Reservation.
-// The extra level of indirection ensures that a Reservation
-// with a finalizer, that cycle in cyclic structure is not
-// guaranteed to be garbage collected
+// The extra level of indirection lets the cleanup attached to *Reservation
+// cancel the reservation, as reservation never refers back to *Reservation.
 // https://tip.golang.org/doc/gc-guide#Where_Go_Values_Live
 type reservation struct {
 	ok  bool
@@ -41,14 +41,8 @@ type reservation struct {
 func newReservation(gc bool) *Reservation {
 	r := &Reservation{reservation: &reservation{}}
 	if gc {
-		runtime.SetFinalizer(r, (*Reservation).Cancel)
+		r.cleanup = runtime.AddCleanup(r, (*reservation).cancel, r.reservation)
 	}
-	return r
-}
-
-func (r *Reservation) removeGC() *Reservation {
-	// no need for a finalizer anymore
-	runtime.SetFinalizer(r, nil)
 	return r
 }
 
@@ -136,10 +130,13 @@ func (r *Reservation) Wait(ctx context.Context) error {
 // and reverses the effects of this Reservation on the rate limit as much as possible,
 // considering that other reservations may have already been made.
 func (r *Reservation) Cancel() {
-	defer func() {
-		// no need for a finalizer anymore
-		runtime.SetFinalizer(r, nil)
-	}()
+	r.reservation.cancel()
+	// no need for a cleanup anymore
+	r.cleanup.Stop()
+	runtime.KeepAlive(r)
+}
+
+func (r *reservation) cancel() {
 	if r.canceled != nil {
 		r.canceled()
 	}
@@ -147,7 +144,7 @@ func (r *Reservation) Cancel() {
 		return
 	}
 	defer func() { r.burst = 0 }() // set Reservation as empty
-	r.lim.trackReservationRemove(r.reservation)
+	r.lim.trackReservationRemove(r)
 	r.lim.PutTokenN(r.tokens)
 	r.tokens = 0
 	return

@@ -144,13 +144,11 @@ func TestIssue40999(t *testing.T) {
 
 	var finalized uint32
 
-	// Set finalizers that count for collected keys. A non-zero count
+	// Set cleanups that count for collected keys. A non-zero count
 	// indicates that keys have not been leaked.
 	for atomic.LoadUint32(&finalized) == 0 {
 		p := new(int)
-		runtime.SetFinalizer(p, func(*int) {
-			atomic.AddUint32(&finalized, 1)
-		})
+		runtime.AddCleanup(p, func(c *uint32) { atomic.AddUint32(c, 1) }, &finalized)
 		m.Store([]*int{p}, struct{}{})
 		m.Delete([]*int{p})
 		runtime.GC()

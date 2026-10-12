@@ -164,23 +164,27 @@ func TestSimpleReserve(t *testing.T) {
 func TestSimpleReserveGC(t *testing.T) {
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
-	var rc bool
+	var rc atomic.Bool
 	{
 		lim := NewEmptyBurstLimiter(1)
 		r := lim.Reserve(context.Background())
 		r.canceled = func() {
-			rc = true
+			rc.Store(true)
 		}
 		// After one GC, the BurstLimiter should keep the reservation alive.
 		runtime.GC()
-		if rc {
+		if rc.Load() {
 			t.Errorf("reservation should be alive after gc")
 		}
 		runtime.KeepAlive(r)
 
 		// A second GC should drop the reservation.
 		runtime.GC()
-		if !rc {
+		// Cleanups queued by a GC run asynchronously.
+		for deadline := time.Now().Add(time.Second); !rc.Load() && time.Now().Before(deadline); {
+			time.Sleep(time.Millisecond)
+		}
+		if !rc.Load() {
 			t.Errorf("reservation should be dropped after gc")
 		}
 	}

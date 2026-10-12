@@ -40,9 +40,16 @@ func caller() string {
 }
 
 func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int) {
+	mismatch := func(gotLen, gotCap int) bool { return (gotLen != l && c >= 0) || (gotCap != c && c >= 0) }
 	gotLen := p.Len()
 	gotCap := p.Cap()
-	if (gotLen != l && c >= 0) || (gotCap != c && c >= 0) {
+	// Cleanups queued by a GC run asynchronously, wait for them to recycle or drop items.
+	for deadline := time.Now().Add(time.Second); mismatch(gotLen, gotCap) && time.Now().Before(deadline); {
+		time.Sleep(time.Millisecond)
+		gotLen = p.Len()
+		gotCap = p.Cap()
+	}
+	if mismatch(gotLen, gotCap) {
 		t.Fatalf("%s, got %d|%d; want %d|%d", caller(), gotLen, gotCap, l, c)
 	}
 }
@@ -502,9 +509,9 @@ loop:
 		var fin, fin1 uint32
 		for i := 0; i < N; i++ {
 			v := new(string)
-			runtime.SetFinalizer(v, func(vv *string) {
+			runtime.AddCleanup(v, func(struct{}) {
 				atomic.AddUint32(&fin, 1)
-			})
+			}, struct{}{})
 			p.Emplace(v)
 		}
 		if drain {
