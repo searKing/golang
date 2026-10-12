@@ -27,7 +27,10 @@ var bufCachedPool = sync_.NewCachedPool[*bytes.Buffer](func() *bytes.Buffer {
 	fmt.Println("allocating new buffer")
 	return new(bytes.Buffer)
 })
-var bufTempPool = sync_.NewTempPool[*bytes.Buffer](nil)
+var bufTempPool = sync_.NewTempPool[*bytes.Buffer](func() *bytes.Buffer {
+	// Get returns nil without New, if the emplaced item is dropped.
+	return new(bytes.Buffer)
+})
 
 // timeNow is a fake version of time.Now for tests.
 func timeNow() time.Time {

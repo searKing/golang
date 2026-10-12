@@ -270,9 +270,7 @@ func (p *FixedPool[E]) getSlow(ctx context.Context, maxIter int) (*FixedPoolElem
 			return nil, nil
 		}
 		if timer != nil {
-			if !timer.Stop() {
-				<-timer.C
-			}
+			// Reset needs no drain of timer.C since Go 1.23, which may block forever otherwise.
 			timer.Reset(starvationThresholdNs)
 		} else {
 			timer = time.NewTimer(starvationThresholdNs)

@@ -5,6 +5,7 @@
 package sync_test
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -47,6 +48,9 @@ func testFixedPoolLenAndCap[E any](t *testing.T, p *sync_.FixedPool[E], l, c int
 }
 
 func TestNewFixedPool(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	fixGC()
 
 	// disable GC so we can control when it happens.
@@ -160,6 +164,9 @@ func TestNewCachePool(t *testing.T) {
 }
 
 func TestNewTempPool(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	fixGC()
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
@@ -207,6 +214,9 @@ func TestNewTempPool(t *testing.T) {
 }
 
 func TestFixedPoolNilNew(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	fixGC()
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
@@ -316,6 +326,9 @@ func TestFixedPoolNew(t *testing.T) {
 }
 
 func TestFixedPoolGCRetryPut(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	const LEN = 1
@@ -380,6 +393,9 @@ func TestFixedPoolGCRetryPut(t *testing.T) {
 }
 
 func TestFixedPoolGCReFillLocal(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	const LEN = 1
@@ -438,6 +454,32 @@ func TestFixedPoolGCReFillLocal(t *testing.T) {
 	testFixedPoolLenAndCap(t, p, 0, LEN)
 }
 
+func TestFixedPoolGetWait(t *testing.T) {
+	p := sync_.NewFixedPool[string](func() string { return "a" }, 1)
+	x := p.Get()
+	go func() {
+		// longer than starvationThresholdNs, so that Get waits more than one round.
+		time.Sleep(10 * time.Millisecond)
+		p.Put(x)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	done := make(chan *sync_.FixedPoolElement[string], 1)
+	go func() {
+		e, _ := p.GetContext(ctx)
+		done <- e
+	}()
+	select {
+	case e := <-done:
+		if e != x {
+			t.Errorf("GetContext() = %v; want %v", e, x)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("GetContext() blocks after the item is put back")
+	}
+}
+
 // Test that Pool does not hold pointers to previously cached resources.
 func TestFixedPoolGC(t *testing.T) {
 	testFixedPool(t, true)
@@ -483,6 +525,9 @@ loop:
 }
 
 func TestFixedPoolStress(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	const P = 10
 	N := int(1e6)
 	if testing.Short() {

@@ -13,6 +13,9 @@ import (
 )
 
 func TestPool(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 	var p sync_.Pool[any]
@@ -54,6 +57,9 @@ func TestPool(t *testing.T) {
 }
 
 func TestPoolNew(t *testing.T) {
+	if raceEnabled {
+		t.Skip("sync.Pool drops items randomly under race detector")
+	}
 	// disable GC so we can control when it happens.
 	defer debug.SetGCPercent(debug.SetGCPercent(-1))
 
