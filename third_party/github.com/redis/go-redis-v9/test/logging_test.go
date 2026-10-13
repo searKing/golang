@@ -202,12 +202,12 @@ func TestHookPayload(t *testing.T) {
 		response string // "" if left out.
 	}
 	wants := []want{
-		{"[set k1 v1]", "OK"},
-		{"[get k1]", "v1"},
-		{"[[get k1] [incr n]]", "[v1 1]"},
-		{"[[get k1] [get missing]]", "[v1 redis: nil]"},
+		{"set k1 v1", "OK"},
+		{"get k1", "v1"},
+		{"[get k1 incr n]", "[v1 1]"},
+		{"[get k1 get missing]", "[v1 redis: nil]"},
 		// AUTH failed, of which the reply is left out.
-		{"[auth xxxxx xxxxx]", ""},
+		{"auth xxxxx xxxxx", ""},
 	}
 	started, finished := r.logged("started call"), r.finished()
 	if len(started) != len(wants) || len(finished) != len(wants) {

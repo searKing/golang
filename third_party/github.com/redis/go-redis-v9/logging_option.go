@@ -67,8 +67,10 @@ const (
 type Payload uint
 
 const (
-	// RequestPayload logs arguments of commands in "redis.request.content" field, of all logs of the call,
-	// with those which may carry credentials redacted, such as passwords of AUTH.
+	// RequestPayload logs commands in "redis.request.content" field, of all logs of the call,
+	// as lines of redis-cli, quoted and escaped as redis-cli parses, such as `set k1 "hello world"`,
+	// which can be run by redis-cli as is, and lines of commands of pipelines,
+	// with arguments which may carry credentials redacted, such as passwords of AUTH.
 	RequestPayload Payload = iota
 	// ResponsePayload logs replies of commands in "redis.response.content" field, of FinishCall,
 	// with those which may carry credentials redacted, such as passwords of CONFIG GET requirepass.

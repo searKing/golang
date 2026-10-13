@@ -19,6 +19,9 @@ redis_.Instrument(rdb, slog.Default())
 - Arguments and replies of commands are logged as fields `redis.request.content` and `redis.response.content`
   of the call only if enabled by `WithPayloads`, or by the environment variable `REDIS_GO_LOG_PAYLOAD=true`
   read on `Hook`, as `HTTP_GO_LOG_HTTP_HEADER` does for headers of HTTP logs; `WithPayloads` takes precedence.
+  Commands are logged as lines of redis-cli, quoted and escaped as redis-cli parses, such as `set k1 "hello world"`,
+  which can be run by redis-cli as is, unless redacted or truncated;
+  pipelines are logged as arrays of lines by JSON handlers, or lines joined by `\n` by text handlers.
 - Results are logged as `redis.code`: the prefix of errors replied by the server,
   such as `WRONGTYPE` or `NOAUTH`, or the outcome of the client, such as `OK`, `NIL`, `TIMEOUT` or `IO`.
 - Logs are leveled from errors by `DefaultErrorToLevel`, customized by `WithLevels`:

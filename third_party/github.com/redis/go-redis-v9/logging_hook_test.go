@@ -55,16 +55,16 @@ func TestCommandPayloadRedacted(t *testing.T) {
 		wantArgs  string
 		wantReply string
 	}{
-		{[]any{"get", "k1"}, "[get k1]", "pw"},
-		{[]any{"config", "get", "requirepass"}, "[config get xxxxx]", redacted},
-		{[]any{"hello", 3, "auth", "user", "secret"}, "[hello 3 xxxxx xxxxx xxxxx]", redacted},
-		{[]any{"acl", "setuser", "user", ">secret"}, "[acl setuser xxxxx xxxxx]", redacted},
-		{[]any{"migrate", "host", 6379, "k1", 0, 1000, "auth", "secret"}, "[migrate xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx]", redacted},
+		{[]any{"get", "k1"}, "get k1", "pw"},
+		{[]any{"config", "get", "requirepass"}, "config get xxxxx", redacted},
+		{[]any{"hello", 3, "auth", "user", "secret"}, "hello 3 xxxxx xxxxx xxxxx", redacted},
+		{[]any{"acl", "setuser", "user", ">secret"}, "acl setuser xxxxx xxxxx", redacted},
+		{[]any{"migrate", "host", 6379, "k1", 0, 1000, "auth", "secret"}, "migrate xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx", redacted},
 	}
 	for _, tt := range tests {
 		cmd := redis.NewCmd(ctx, tt.args...)
 		cmd.SetVal("pw")
-		if got := fmt.Sprint(commandArgs(cmd)); got != tt.wantArgs {
+		if got := commandArgs(cmd); got != tt.wantArgs {
 			t.Errorf("commandArgs(%v) = %s, want %s", tt.args, got, tt.wantArgs)
 		}
 		if got := fmt.Sprint(commandReply(cmd)); got != tt.wantReply {
@@ -312,7 +312,7 @@ func TestPayloadsFromEnv(t *testing.T) {
 		request, hasRequest := e.fields["redis.request.content"]
 		response, hasResponse := e.fields["redis.response.content"]
 		if hasRequest != tt.wantRequest || hasResponse != tt.wantResponse ||
-			(hasRequest && fmt.Sprint(request) != "[get k1]") || (hasResponse && response != "v1") {
+			(hasRequest && request != "get k1") || (hasResponse && response != "v1") {
 			t.Errorf("case %d: got %+v", i, e)
 		}
 	}
@@ -367,24 +367,65 @@ func TestCommandStatement(t *testing.T) {
 	}
 }
 
+func TestCommandArgsFormat(t *testing.T) {
+	ctx := context.Background()
+	s := "v1"
+	tests := []struct {
+		args []any
+		want string
+	}{
+		{[]any{"set", "k1", "hello world", "ex", 10}, `set k1 "hello world" ex 10`},
+		{[]any{"set", "k1", ""}, `set k1 ""`},
+		{[]any{"set", "k1", []byte("v1")}, `set k1 v1`},
+		{[]any{"set", "k1", `a"b'c\d`}, `set k1 "a\"b'c\\d"`},
+		{[]any{"set", "k1", "a\nb\r\t\x00\xff中"}, `set k1 "a\nb\r\t\x00\xff\xe4\xb8\xad"`},
+		{[]any{"set", "k1", true, false, 1.5, float32(0.5), 2 * time.Second, &s, (*string)(nil), nil},
+			`set k1 1 0 1.5 0.5 2000000000 v1 "" ""`},
+		{[]any{"set", "k1", time.Date(2026, 10, 14, 3, 0, 0, 0, time.UTC)}, `set k1 2026-10-14T03:00:00Z`},
+	}
+	for _, tt := range tests {
+		if got := commandArgs(redis.NewCmd(ctx, tt.args...)); got != tt.want {
+			t.Errorf("commandArgs(%q) = %s, want %s", tt.args, got, tt.want)
+		}
+	}
+	if got, want := commandStatement(redis.NewCmd(ctx, "set", "my key", "v1")), `set "my key" ?`; got != want {
+		t.Errorf("commandStatement = %s, want %s", got, want)
+	}
+
+	cmds := []redis.Cmder{redis.NewCmd(ctx, "get", "k1"), redis.NewCmd(ctx, "set", "k1", "hello world")}
+	for _, tt := range []struct {
+		handler func(io.Writer) slog.Handler
+		want    string
+	}{
+		{func(w io.Writer) slog.Handler { return slog.NewTextHandler(w, nil) },
+			`redis.request.content="get k1\nset k1 \"hello world\""`},
+		{func(w io.Writer) slog.Handler { return slog.NewJSONHandler(w, nil) },
+			`"redis.request.content":["get k1","set k1 \"hello world\""]`},
+	} {
+		var b strings.Builder
+		_ = Hook(slog.New(tt.handler(&b)), WithPayloads(RequestPayload), WithLevels(func(error) slog.Level { return slog.LevelInfo })).
+			ProcessPipelineHook(func(context.Context, []redis.Cmder) error { return nil })(ctx, cmds)
+		if !strings.Contains(b.String(), tt.want) {
+			t.Errorf("got %s, want %s", b.String(), tt.want)
+		}
+	}
+}
+
 func TestTruncate(t *testing.T) {
 	ctx := context.Background()
 	long := strings.Repeat("v", maxLoggedBytes+10)
-	if got, want := fmt.Sprint(commandArgs(redis.NewCmd(ctx, "set", "k1", long))),
-		"[set k1 "+long[:maxLoggedBytes]+"... (10 more bytes)]"; got != want {
+	if got, want := commandArgs(redis.NewCmd(ctx, "set", "k1", long)),
+		`set k1 "`+long[:maxLoggedBytes]+`... (10 more bytes)"`; got != want {
 		t.Errorf("long argument: got %s want %s", got, want)
-	}
-	if got := fmt.Sprint(commandArgs(redis.NewCmd(ctx, "set", "k1", []byte("v1")))); got != "[set k1 v1]" {
-		t.Errorf("bytes argument: got %s, want bytes logged as strings", got)
 	}
 
 	args := []any{"mget"}
 	for i := range 40 {
 		args = append(args, fmt.Sprintf("k%d", i))
 	}
-	got := commandArgs(redis.NewCmd(ctx, args...))
-	if len(got) != maxLoggedElems || got[maxLoggedElems-1] != "... (10 more arguments)" {
-		t.Errorf("many arguments: got %d arguments, the last %v", len(got), got[len(got)-1])
+	if got := strings.Fields(commandArgs(redis.NewCmd(ctx, args...))); len(got) != maxLoggedElems+3 ||
+		strings.Join(got[maxLoggedElems-2:], " ") != "k29 ... (10 more arguments)" {
+		t.Errorf("many arguments: got %v", got)
 	}
 	if statement := commandStatement(redis.NewCmd(ctx, args...)); !strings.HasSuffix(statement, "k29 ... (10 more arguments)") {
 		t.Errorf("many arguments of statement: got %s", statement)
@@ -416,11 +457,15 @@ func TestPipelineFields(t *testing.T) {
 		t.Fatalf("got %d entries want 1: %+v", len(r.entries), r.entries)
 	}
 	e := r.entries[0]
-	for _, key := range []string{CommandsFieldKey, KeysFieldKey, "redis.statement"} {
+	for _, key := range []string{CommandsFieldKey, KeysFieldKey} {
 		v, _ := e.fields[key].([]any)
 		if len(v) != maxLoggedElems || v[maxLoggedElems-1] != "... (9 more commands)" {
 			t.Errorf("%s: got %v", key, e.fields[key])
 		}
+	}
+	if v, _ := e.fields["redis.statement"].(commandLines); len(v) != maxLoggedElems || v[0] != "get k0" ||
+		v[maxLoggedElems-1] != "... (9 more commands)" {
+		t.Errorf("redis.statement: got %v", e.fields["redis.statement"])
 	}
 	if e.fields[PipelineLengthFieldKey] != int64(40) {
 		t.Errorf("%s: got %v want 40", PipelineLengthFieldKey, e.fields[PipelineLengthFieldKey])

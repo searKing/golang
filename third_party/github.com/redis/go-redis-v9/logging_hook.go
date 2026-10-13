@@ -205,10 +205,11 @@ func (r *reporter) statement() (any, bool) {
 	for _, cmd := range r.Cmds {
 		statements = append(statements, commandStatement(cmd))
 	}
-	return truncateElems(statements, "commands"), true
+	return truncateLines(statements), true
 }
 
-// requestContent returns arguments of the commands, with credentials redacted, if RequestPayload is enabled.
+// requestContent returns the commands as lines of redis-cli, with credentials redacted,
+// if RequestPayload is enabled.
 func (r *reporter) requestContent() (any, bool) {
 	if r.Typ == Dial || !r.opts.hasPayload(RequestPayload) {
 		return nil, false
@@ -216,11 +217,11 @@ func (r *reporter) requestContent() (any, bool) {
 	if r.Typ == Command {
 		return commandArgs(r.Cmds[0]), true
 	}
-	args := make([][]any, 0, len(r.Cmds))
+	lines := make([]string, 0, len(r.Cmds))
 	for _, cmd := range r.Cmds {
-		args = append(args, commandArgs(cmd))
+		lines = append(lines, commandArgs(cmd))
 	}
-	return truncateElems(args, "commands"), true
+	return truncateLines(lines), true
 }
 
 // responseContent returns replies of the commands, with credentials redacted, if ResponsePayload is enabled.

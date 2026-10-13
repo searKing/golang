@@ -6,11 +6,15 @@ package redis
 
 import (
 	"cmp"
+	"encoding"
+	"encoding/json"
 	"fmt"
+	"net"
 	"reflect"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -175,20 +179,16 @@ func isBlocking(cmd redis.Cmder) bool {
 }
 
 // commandStatement returns cmd with keys and subcommands only, and other arguments replaced by "?",
-// such as "set k1 ?", as db.query.text of OpenTelemetry for redis, truncated by truncateArgs.
+// such as "set k1 ?", as db.query.text of OpenTelemetry for redis, formatted by commandLine.
 func commandStatement(cmd redis.Cmder) string {
-	args := cmd.Args()
 	keys := commandKeys(cmd)
 	_, hasSubcommand := subcommandCommands[cmd.Name()]
-	parts := make([]any, len(args))
-	for i, a := range args {
+	return commandLine(cmd.Args(), func(i int, arg any) string {
 		if i == 0 || (i == 1 && hasSubcommand) || slices.Contains(keys, i) {
-			parts[i] = a
-			continue
+			return quoteArg(truncateString(argString(arg)))
 		}
-		parts[i] = "?"
-	}
-	return strings.TrimSuffix(strings.TrimPrefix(fmt.Sprint(truncateArgs(parts)), "["), "]")
+		return "?"
+	})
 }
 
 // redacted replaces arguments and replies which may carry credentials in logs,
@@ -208,16 +208,127 @@ func sensitiveArgsFrom(cmd redis.Cmder) int {
 	return 0
 }
 
-// commandArgs returns arguments of cmd, with those which may carry credentials redacted,
-// truncated by truncateArgs.
-func commandArgs(cmd redis.Cmder) []any {
-	args := slices.Clone(cmd.Args())
-	if from := sensitiveArgsFrom(cmd); from != 0 {
-		for i := from; i < len(args); i++ {
-			args[i] = redacted
+// commandArgs returns arguments of cmd as a line of redis-cli, such as `set k1 "hello world"`,
+// with those which may carry credentials redacted, formatted by commandLine.
+func commandArgs(cmd redis.Cmder) string {
+	from := sensitiveArgsFrom(cmd)
+	return commandLine(cmd.Args(), func(i int, arg any) string {
+		if from != 0 && i >= from {
+			return redacted
+		}
+		return quoteArg(truncateString(argString(arg)))
+	})
+}
+
+// commandLine returns args formatted by format, joined by spaces as a line of redis-cli,
+// truncated to maxLoggedElems, with the rest replaced by "... (N more arguments)", as SLOWLOG of redis does.
+func commandLine(args []any, format func(i int, arg any) string) string {
+	n := len(args)
+	if n > maxLoggedElems {
+		n = maxLoggedElems - 1
+	}
+	parts := make([]string, 0, n+1)
+	for i, arg := range args[:n] {
+		parts = append(parts, format(i, arg))
+	}
+	if n < len(args) {
+		parts = append(parts, fmt.Sprintf("... (%d more arguments)", len(args)-n))
+	}
+	return strings.Join(parts, " ")
+}
+
+// argString returns arg as sent to the redis server, as WriteArg of go-redis encodes it,
+// such as 1 for true and RFC 3339 for time.Time.
+func argString(arg any) string {
+	switch arg := arg.(type) {
+	case nil:
+		return ""
+	case string:
+		return arg
+	case []byte:
+		return string(arg)
+	case bool:
+		if arg {
+			return "1"
+		}
+		return "0"
+	case float32:
+		return strconv.FormatFloat(float64(arg), 'f', -1, 64)
+	case float64:
+		return strconv.FormatFloat(arg, 'f', -1, 64)
+	case time.Time:
+		return arg.Format(time.RFC3339Nano)
+	case time.Duration:
+		return strconv.FormatInt(arg.Nanoseconds(), 10)
+	case net.IP:
+		return string(arg)
+	case encoding.BinaryMarshaler:
+		if b, err := arg.MarshalBinary(); err == nil {
+			return string(b)
 		}
 	}
-	return truncateArgs(args)
+	// Pointers are sent as their elements, or zero values if nil.
+	if rv := reflect.ValueOf(arg); rv.Kind() == reflect.Pointer {
+		if rv.IsNil() {
+			return argString(reflect.Zero(rv.Type().Elem()).Interface())
+		}
+		return argString(rv.Elem().Interface())
+	}
+	return fmt.Sprint(arg)
+}
+
+// quoteArg quotes s as an argument of redis-cli, if empty or containing spaces, quotes, backslashes
+// or unprintable bytes, escaped as sdscatrepr of redis does, such as "hello world" and "\x00", or s otherwise.
+func quoteArg(s string) string {
+	if s != "" && !strings.ContainsFunc(s, func(r rune) bool {
+		return r <= ' ' || r >= 0x7f || r == '"' || r == '\'' || r == '\\'
+	}) {
+		return s
+	}
+	var b strings.Builder
+	b.WriteByte('"')
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; c {
+		case '\\', '"':
+			b.WriteByte('\\')
+			b.WriteByte(c)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '\a':
+			b.WriteString(`\a`)
+		case '\b':
+			b.WriteString(`\b`)
+		default:
+			if c < ' ' || c >= 0x7f {
+				fmt.Fprintf(&b, `\x%02x`, c)
+			} else {
+				b.WriteByte(c)
+			}
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
+}
+
+// commandLines are lines of commands of a pipeline, logged as an array by JSON,
+// or lines joined by "\n" by text, as fed to redis-cli by stdin.
+type commandLines []string
+
+func (l commandLines) MarshalText() ([]byte, error) { return []byte(strings.Join(l, "\n")), nil }
+func (l commandLines) MarshalJSON() ([]byte, error) { return json.Marshal([]string(l)) }
+
+// truncateLines truncates lines of commands of a pipeline to maxLoggedElems,
+// with the rest replaced by "... (N more commands)", keeping each line as is.
+func truncateLines(lines []string) commandLines {
+	if len(lines) > maxLoggedElems {
+		n := maxLoggedElems - 1
+		lines = append(lines[:n:n], fmt.Sprintf("... (%d more commands)", len(lines)-n))
+	}
+	return lines
 }
 
 // commandReply returns the reply of cmd by its Val method, redacted if cmd may carry credentials,
@@ -249,11 +360,6 @@ func truncateString(s string) string {
 		return s
 	}
 	return fmt.Sprintf("%s... (%d more bytes)", s[:maxLoggedBytes], len(s)-maxLoggedBytes)
-}
-
-// truncateArgs truncates args to maxLoggedElems, and each of args by truncateValue, as SLOWLOG of redis does.
-func truncateArgs(args []any) []any {
-	return truncateElems(args, "arguments")
 }
 
 // truncateElems truncates elems to maxLoggedElems, replacing the rest by "... (N more what)",
