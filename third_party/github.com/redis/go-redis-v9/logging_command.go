@@ -5,7 +5,6 @@
 package redis
 
 import (
-	"cmp"
 	"encoding"
 	"encoding/json"
 	"fmt"
@@ -142,14 +141,6 @@ func indexes(first, last, step, n int) []int {
 	return is
 }
 
-// commandKey returns the first key of cmd, or "" if cmd has no key.
-func commandKey(cmd redis.Cmder) string {
-	if keys := commandKeys(cmd); len(keys) > 0 {
-		return truncateString(fmt.Sprint(cmd.Args()[keys[0]]))
-	}
-	return ""
-}
-
 // blockingCommands are commands which block until their timeouts, if nothing to pop.
 var blockingCommands = map[string]struct{}{
 	"blpop": {}, "brpop": {}, "brpoplpush": {}, "blmove": {}, "blmpop": {},
@@ -191,7 +182,7 @@ func commandStatement(cmd redis.Cmder) string {
 	})
 }
 
-// redacted replaces arguments and replies which may carry credentials in logs,
+// redacted replaces arguments which may carry credentials in logs,
 // as [net/url.URL.Redacted] does for passwords.
 const redacted = "xxxxx"
 
@@ -331,24 +322,9 @@ func truncateLines(lines []string) commandLines {
 	return lines
 }
 
-// commandReply returns the reply of cmd by its Val method, redacted if cmd may carry credentials,
-// such as passwords of CONFIG GET requirepass, or the error of cmd if failed, truncated by truncateValue.
-func commandReply(cmd redis.Cmder) any {
-	if err := cmd.Err(); err != nil {
-		return err.Error()
-	}
-	if sensitiveArgsFrom(cmd) != 0 {
-		return redacted
-	}
-	if val := reflect.ValueOf(cmd).MethodByName("Val"); val.IsValid() && val.Type().NumIn() == 0 && val.Type().NumOut() == 1 {
-		return truncateValue(val.Call(nil)[0].Interface())
-	}
-	return truncateString(cmd.String())
-}
-
-// Limits of payloads logged, as SLOWLOG of redis does, which logs up to 32 arguments of a command,
+// Limits of commands logged, as SLOWLOG of redis does, which logs up to 32 arguments of a command,
 // replacing the rest by "... (N more arguments)", and up to 128 bytes of an argument,
-// followed by "... (N more bytes)".
+// followed by "... (N more bytes)", and up to 32 commands of a pipeline here.
 const (
 	maxLoggedElems = 32
 	maxLoggedBytes = 128
@@ -360,67 +336,4 @@ func truncateString(s string) string {
 		return s
 	}
 	return fmt.Sprintf("%s... (%d more bytes)", s[:maxLoggedBytes], len(s)-maxLoggedBytes)
-}
-
-// truncateElems truncates elems to maxLoggedElems, replacing the rest by "... (N more what)",
-// and each of elems by truncateValue.
-func truncateElems[E any](elems []E, what string) []any {
-	n := min(len(elems), maxLoggedElems)
-	if len(elems) > maxLoggedElems {
-		n = maxLoggedElems - 1
-	}
-	out := make([]any, 0, min(len(elems), maxLoggedElems))
-	for _, e := range elems[:n] {
-		out = append(out, truncateValue(e))
-	}
-	if n < len(elems) {
-		out = append(out, fmt.Sprintf("... (%d more %s)", len(elems)-n, what))
-	}
-	return out
-}
-
-// truncateValue truncates strings and bytes by truncateString, and slices and maps to maxLoggedElems,
-// recursively, logging bytes as strings.
-func truncateValue(v any) any {
-	switch v := v.(type) {
-	case string:
-		return truncateString(v)
-	case []byte:
-		return truncateString(string(v))
-	case nil:
-		return nil
-	}
-	rv := reflect.ValueOf(v)
-	switch rv.Kind() {
-	case reflect.Slice, reflect.Array:
-		elems := make([]any, rv.Len())
-		for i := range elems {
-			elems[i] = rv.Index(i).Interface()
-		}
-		return truncateElems(elems, "elements")
-	case reflect.Map:
-		type entry struct {
-			key string
-			val any
-		}
-		entries := make([]entry, 0, rv.Len())
-		for it := rv.MapRange(); it.Next(); {
-			entries = append(entries, entry{fmt.Sprint(it.Key().Interface()), it.Value().Interface()})
-		}
-		slices.SortFunc(entries, func(a, b entry) int { return cmp.Compare(a.key, b.key) })
-		n := min(len(entries), maxLoggedElems)
-		if len(entries) > maxLoggedElems {
-			n = maxLoggedElems - 1
-		}
-		out := make(map[string]any, n+1)
-		for _, e := range entries[:n] {
-			out[truncateString(e.key)] = truncateValue(e.val)
-		}
-		if n < len(entries) {
-			out["..."] = fmt.Sprintf("(%d more entries)", len(entries)-n)
-		}
-		return out
-	default:
-		return v
-	}
 }

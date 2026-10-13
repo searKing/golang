@@ -15,11 +15,11 @@ import (
 )
 
 // WithSlogLogger returns a redis.Hook that logs dials, commands and pipelines of go-redis clients to h,
-// customized by opts, and logs internal logs of go-redis to h, by redis.SetLogger globally.
-func WithSlogLogger(h slog.Handler, opts ...LoggingOption) redis.Hook {
+// by NewHook with config, and logs internal logs of go-redis to h, by redis.SetLogger globally.
+func WithSlogLogger(h slog.Handler, config Config) redis.Hook {
 	l := slog.New(h)
 	redis.SetLogger(InternalLogger(l))
-	return Hook(l, opts...)
+	return NewHook(l, config)
 }
 
 // PrintfFunc is an adapter to allow the use of ordinary functions as the logger of go-redis set by redis.SetLogger.
@@ -29,7 +29,7 @@ func (f PrintfFunc) Printf(ctx context.Context, format string, v ...any) { f(ctx
 
 // InternalLogger returns the logger of go-redis to be set by redis.SetLogger, which logs internal logs of go-redis,
 // such as failures of the connection pool and reconnections, to l, slog.Default() if nil,
-// at warn level, with fields of SystemTag, sourced from go-redis where it logs.
+// at warn level, sourced from go-redis where it logs.
 func InternalLogger(l *slog.Logger) PrintfFunc {
 	return func(ctx context.Context, format string, v ...any) {
 		logger := l
@@ -43,7 +43,6 @@ func InternalLogger(l *slog.Logger) PrintfFunc {
 			return
 		}
 		r := slog.NewRecord(time.Now(), slog.LevelWarn, strings.TrimSpace(fmt.Sprintf(format, v...)), callerPC(isOfThisPackage))
-		r.Add(SystemTag[0], SystemTag[1])
 		_ = logger.Handler().Handle(ctx, r)
 	}
 }
