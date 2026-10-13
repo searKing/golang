@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -25,6 +26,7 @@ type entry struct {
 	level  slog.Level
 	msg    string
 	fields map[string]any
+	source runtime.Frame
 }
 
 // recorder is a slog.Handler recording logs.
@@ -45,7 +47,8 @@ func (r *recorder) Handle(_ context.Context, record slog.Record) error {
 	})
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.entries = append(r.entries, entry{level: record.Level, msg: record.Message, fields: m})
+	source, _ := runtime.CallersFrames([]uintptr{record.PC}).Next()
+	r.entries = append(r.entries, entry{level: record.Level, msg: record.Message, fields: m, source: source})
 	return nil
 }
 
@@ -336,5 +339,45 @@ func TestInstrument(t *testing.T) {
 	if e := r.finished()[i]; e.fields[redis_.DBFieldKey] != int64(2) || e.fields[redis_.AddrFieldKey] != mr.Addr() ||
 		e.fields["redis.statement"] != "set k1 ?" {
 		t.Errorf("got %+v", e)
+	}
+}
+
+// TestHookSource checks sources of logs, which are callers of redis rather than the hook.
+func TestHookSource(t *testing.T) {
+	rdb, r := newClient(t, redis_.WithLogOnEvents(redis_.StartCall, redis_.FinishCall))
+	ctx := context.Background()
+	_, _, line, _ := runtime.Caller(0)
+	_ = rdb.Set(ctx, "k1", "v1", 0).Err() // The first command dials and runs HELLO nested.
+	_, _ = rdb.Pipelined(ctx, func(p redis.Pipeliner) error {
+		p.Get(ctx, "k1")
+		return nil
+	})
+	// Dials have no source, as go-redis dials in goroutines of connection pools.
+	wantLines := map[string]int{"dial": 0, "hello": line + 1, "set": line + 1, "pipeline": line + 2}
+	if len(r.entries) != 2*len(wantLines) {
+		t.Fatalf("got %d entries want %d: %+v", len(r.entries), 2*len(wantLines), r.entries)
+	}
+	for _, e := range r.entries {
+		call := fmt.Sprint(e.fields[redis_.CommandFieldKey])
+		if e.fields[redis_.CallTypeFieldKey] != string(redis_.Command) {
+			call = fmt.Sprint(e.fields[redis_.CallTypeFieldKey])
+		}
+		if e.source.Line != wantLines[call] || (wantLines[call] != 0 && !strings.HasSuffix(e.source.File, "/test/logging_test.go")) {
+			t.Errorf("%s of %s: got source %s:%d (%s), want line %d of this file",
+				e.msg, call, e.source.File, e.source.Line, e.source.Function, wantLines[call])
+		}
+	}
+}
+
+// TestInternalLoggerSource checks sources of internal logs, which are where go-redis logs, the caller of Printf.
+func TestInternalLoggerSource(t *testing.T) {
+	r := &recorder{}
+	_, _, line, _ := runtime.Caller(0)
+	redis_.InternalLogger(slog.New(r)).Printf(context.Background(), "redis: connection pool: %s", "failed")
+	if len(r.entries) != 1 {
+		t.Fatalf("got %d entries want 1", len(r.entries))
+	}
+	if source := r.entries[0].source; !strings.HasSuffix(source.File, "/test/logging_test.go") || source.Line != line+1 {
+		t.Errorf("got source %s:%d (%s), want line %d of this file", source.File, source.Line, source.Function, line+1)
 	}
 }

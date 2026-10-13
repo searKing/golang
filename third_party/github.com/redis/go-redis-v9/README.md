@@ -25,6 +25,8 @@ redis_.Instrument(rdb, slog.Default())
   `OK`, `NIL`, `CANCELED` and `NOSCRIPT` at debug level,
   `NOAUTH`, `WRONGPASS`, `NOPERM` and `OOM` at error level, and others at warn level.
 - Credentials of `AUTH`, `HELLO`, `ACL`, `CONFIG` and `MIGRATE` are redacted.
+- Logs are sourced, if `AddSource` of handlers is enabled, from callers of redis, such as the caller of `rdb.Get`,
+  rather than the hook, as redisotel locates callers for `code.function`; dials of connection pools have no source.
 - Payloads are truncated as `SLOWLOG` of redis does: up to 32 arguments, elements or commands,
   and up to 128 bytes of each.
 

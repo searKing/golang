@@ -286,6 +286,7 @@ func truncateValue(v any) any {
 			out["..."] = fmt.Sprintf("(%d more entries)", len(entries)-n)
 		}
 		return out
+	default:
+		return v
 	}
-	return v
 }

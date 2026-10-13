@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -28,13 +29,21 @@ func (f PrintfFunc) Printf(ctx context.Context, format string, v ...any) { f(ctx
 
 // InternalLogger returns the logger of go-redis to be set by redis.SetLogger, which logs internal logs of go-redis,
 // such as failures of the connection pool and reconnections, to l, slog.Default() if nil,
-// at warn level, with fields of SystemTag.
+// at warn level, with fields of SystemTag, sourced from go-redis where it logs.
 func InternalLogger(l *slog.Logger) PrintfFunc {
 	return func(ctx context.Context, format string, v ...any) {
 		logger := l
 		if logger == nil {
 			logger = slog.Default()
 		}
-		logger.Log(ctx, slog.LevelWarn, strings.TrimSpace(fmt.Sprintf(format, v...)), SystemTag[0], SystemTag[1])
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		if !logger.Enabled(ctx, slog.LevelWarn) {
+			return
+		}
+		r := slog.NewRecord(time.Now(), slog.LevelWarn, strings.TrimSpace(fmt.Sprintf(format, v...)), callerPC(isOfThisPackage))
+		r.Add(SystemTag[0], SystemTag[1])
+		_ = logger.Handler().Handle(ctx, r)
 	}
 }

@@ -8,7 +8,10 @@ import (
 	"context"
 	"log/slog"
 	"net"
+	"reflect"
+	"runtime"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -233,8 +236,46 @@ func (r *reporter) log(level slog.Level, msg string, extra func() Fields) {
 	if extra != nil {
 		fields = fields.appendUnique(extra())
 	}
-	r.logger.Log(r.ctx, level, msg, fields...)
+	record := slog.NewRecord(time.Now(), level, msg, callerPC(isOfRedis))
+	record.Add(fields...)
+	_ = r.logger.Handler().Handle(r.ctx, record)
 }
+
+// callerPC returns the program counter of the first caller outside frames skipped by skip,
+// for the source of logs, as Logger.Log does for its caller,
+// or 0 if none, such as dials of connection pools of go-redis in goroutines of their own.
+func callerPC(skip func(function string) bool) uintptr {
+	var pcs [64]uintptr
+	// Skip runtime.Callers, callerPC and the caller of callerPC.
+	frames := runtime.CallersFrames(pcs[:runtime.Callers(3, pcs[:])])
+	for {
+		f, more := frames.Next()
+		if !skip(f.Function) && !strings.HasPrefix(f.Function, "runtime.") {
+			// The PC of the frame is of the call, while the record takes the return address as runtime.Callers,
+			// which works for frames of inlined calls too, of which the PC is of the inlined call.
+			return f.PC + 1
+		}
+		if !more {
+			return 0
+		}
+	}
+}
+
+// isOfRedis reports whether the function is of go-redis, including its extra packages, such as redisotel,
+// or of this package, skipped to locate the caller of redis, such as the caller of rdb.Get,
+// as redisotel does for code.function of spans.
+func isOfRedis(function string) bool {
+	return strings.HasPrefix(function, "github.com/redis/go-redis/") || isOfThisPackage(function)
+}
+
+// isOfThisPackage reports whether the function is of this package, excluding its subpackages.
+func isOfThisPackage(function string) bool {
+	rest, ok := strings.CutPrefix(function, thisPackage)
+	return ok && strings.HasPrefix(rest, ".")
+}
+
+// thisPackage is the import path of this package.
+var thisPackage = reflect.TypeFor[hook]().PkgPath()
 
 // callFields returns fields shared by all logs of the call.
 func (r *reporter) callFields() Fields {
