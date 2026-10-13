@@ -84,6 +84,7 @@ type LoggingOption func(*loggingOptions)
 
 type loggingOptions struct {
 	levelFunc               ErrorToLevel
+	slowThreshold           time.Duration
 	loggableEvents          []LoggableEvent
 	payloads                []Payload
 	errorToFieldsFunc       ErrorToFields
@@ -98,6 +99,7 @@ type loggingOptions struct {
 func evaluateLoggingOptions(opts []LoggingOption) *loggingOptions {
 	o := &loggingOptions{
 		levelFunc:         DefaultErrorToLevel,
+		slowThreshold:     DefaultSlowThreshold,
 		loggableEvents:    []LoggableEvent{FinishCall},
 		payloads:          payloadsFromEnv(),
 		durationFieldFunc: DefaultDurationToFields,
@@ -205,6 +207,22 @@ func WithErrorFields(f ErrorToFields) LoggingOption {
 func WithLevels(f ErrorToLevel) LoggingOption {
 	return func(o *loggingOptions) {
 		o.levelFunc = f
+	}
+}
+
+// DefaultSlowThreshold is the default threshold of WithSlowThreshold.
+// It is looser than 10ms of slowlog-log-slower-than of redis, which counts the execution of the server only,
+// as calls are timed by the client, including round trips, waits for connections of the pool and dials.
+const DefaultSlowThreshold = 100 * time.Millisecond
+
+// WithSlowThreshold logs calls taking longer than threshold on FinishCall at warn level at least,
+// with "redis.slow" field of true, as SlowThreshold of the logger of gorm does,
+// DefaultSlowThreshold by default, or disabled if not positive.
+// Commands blocking by design, such as BLPOP or XREAD with BLOCK, and pipelines of them,
+// are never slow, as SLOWLOG of redis does.
+func WithSlowThreshold(threshold time.Duration) LoggingOption {
+	return func(o *loggingOptions) {
+		o.slowThreshold = threshold
 	}
 }
 

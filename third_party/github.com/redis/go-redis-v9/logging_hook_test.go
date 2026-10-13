@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -233,6 +234,54 @@ func TestHookProcess(t *testing.T) {
 	if len(r.entries) != 1 || r.entries[0].level != slog.LevelWarn || r.entries[0].fields[KeyFieldKey] != "k1" ||
 		r.entries[0].fields["redis.code"] != "WRONGTYPE" {
 		t.Errorf("got %+v", r.entries)
+	}
+}
+
+func TestSlowThreshold(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		opts      []LoggingOption
+		cmds      [][]any
+		err       error
+		wantLevel slog.Level
+		wantSlow  bool
+	}{
+		{nil, [][]any{{"get", "k1"}}, nil, slog.LevelDebug, false},
+		{[]LoggingOption{WithSlowThreshold(0)}, [][]any{{"get", "k1"}}, nil, slog.LevelDebug, false},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"get", "k1"}}, nil, slog.LevelWarn, true},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond), WithSlowThreshold(0)}, [][]any{{"get", "k1"}}, nil, slog.LevelDebug, false},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"get", "k1"}}, replyError("NOAUTH auth"), slog.LevelError, true},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"blpop", "k1", 1}}, nil, slog.LevelDebug, false},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"xread", "count", 1, "block", 10, "streams", "k1", "$"}}, nil, slog.LevelDebug, false},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"xread", "streams", "block", "$"}}, nil, slog.LevelWarn, true},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"get", "k1"}, {"get", "k2"}}, nil, slog.LevelWarn, true},
+		{[]LoggingOption{WithSlowThreshold(time.Millisecond)}, [][]any{{"get", "k1"}, {"brpop", "k2", 1}}, nil, slog.LevelDebug, false},
+	}
+	for i, tt := range tests {
+		r := &recorder{}
+		h := Hook(slog.New(r), tt.opts...)
+		cmds := make([]redis.Cmder, 0, len(tt.cmds))
+		for _, args := range tt.cmds {
+			cmds = append(cmds, redis.NewCmd(ctx, args...))
+		}
+		if len(cmds) == 1 {
+			_ = h.ProcessHook(func(context.Context, redis.Cmder) error {
+				time.Sleep(2 * time.Millisecond)
+				return tt.err
+			})(ctx, cmds[0])
+		} else {
+			_ = h.ProcessPipelineHook(func(context.Context, []redis.Cmder) error {
+				time.Sleep(2 * time.Millisecond)
+				return tt.err
+			})(ctx, cmds)
+		}
+		if len(r.entries) != 1 {
+			t.Fatalf("case %d: got %d entries want 1: %+v", i, len(r.entries), r.entries)
+		}
+		e := r.entries[0]
+		if _, slow := e.fields["redis.slow"]; e.level != tt.wantLevel || slow != tt.wantSlow {
+			t.Errorf("case %d: got %+v, want level %v and slow %v", i, e, tt.wantLevel, tt.wantSlow)
+		}
 	}
 }
 

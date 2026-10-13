@@ -160,8 +160,17 @@ func (r *reporter) PostCall(err error) {
 	if !r.opts.has(FinishCall) {
 		return
 	}
-	r.log(r.opts.levelFunc(err), "finished call", func() Fields {
+	duration := time.Since(r.start)
+	level := r.opts.levelFunc(err)
+	slow := r.isSlow(duration)
+	if slow {
+		level = max(level, slog.LevelWarn)
+	}
+	r.log(level, "finished call", func() Fields {
 		fields := Fields{"redis.code", string(errorToCode(err))}
+		if slow {
+			fields = append(fields, "redis.slow", true)
+		}
 		if err != nil {
 			fields = fields.appendUnique(Fields{"redis.error", err.Error()})
 			if r.opts.errorToFieldsFunc != nil {
@@ -171,8 +180,16 @@ func (r *reporter) PostCall(err error) {
 		if content, ok := r.responseContent(err); ok {
 			fields = fields.appendUnique(Fields{"redis.response.content", content})
 		}
-		return fields.appendUnique(r.opts.durationFieldFunc(time.Since(r.start)))
+		return fields.appendUnique(r.opts.durationFieldFunc(duration))
 	})
+}
+
+// isSlow reports whether the call taking duration is slow, by WithSlowThreshold.
+func (r *reporter) isSlow(duration time.Duration) bool {
+	if r.opts.slowThreshold <= 0 || duration <= r.opts.slowThreshold {
+		return false
+	}
+	return !slices.ContainsFunc(r.Cmds, isBlocking)
 }
 
 // statement returns the commands with keys and subcommands only, and other arguments replaced by "?",

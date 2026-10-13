@@ -146,6 +146,34 @@ func commandKey(cmd redis.Cmder) string {
 	return ""
 }
 
+// blockingCommands are commands which block until their timeouts, if nothing to pop.
+var blockingCommands = map[string]struct{}{
+	"blpop": {}, "brpop": {}, "brpoplpush": {}, "blmove": {}, "blmpop": {},
+	"bzpopmin": {}, "bzpopmax": {}, "bzmpop": {}, "wait": {}, "waitaof": {},
+}
+
+// isBlocking reports whether cmd may block by design, such as BLPOP, or XREAD with BLOCK,
+// of which the duration is not counted as slow, as SLOWLOG of redis does not count blocking.
+func isBlocking(cmd redis.Cmder) bool {
+	name := cmd.Name()
+	if _, ok := blockingCommands[name]; ok {
+		return true
+	}
+	if name != "xread" && name != "xreadgroup" {
+		return false
+	}
+	// XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id [id ...]
+	for _, arg := range cmd.Args()[1:] {
+		switch strings.ToLower(fmt.Sprint(arg)) {
+		case "block":
+			return true
+		case "streams":
+			return false
+		}
+	}
+	return false
+}
+
 // commandStatement returns cmd with keys and subcommands only, and other arguments replaced by "?",
 // such as "set k1 ?", as db.query.text of OpenTelemetry for redis, truncated by truncateArgs.
 func commandStatement(cmd redis.Cmder) string {

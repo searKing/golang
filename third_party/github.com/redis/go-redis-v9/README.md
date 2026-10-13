@@ -24,6 +24,8 @@ redis_.Instrument(rdb, slog.Default())
 - Logs are leveled from errors by `DefaultErrorToLevel`, customized by `WithLevels`:
   `OK`, `NIL`, `CANCELED` and `NOSCRIPT` at debug level,
   `NOAUTH`, `WRONGPASS`, `NOPERM` and `OOM` at error level, and others at warn level.
+- Calls slower than `WithSlowThreshold`, 100ms by default and disabled by `WithSlowThreshold(0)`, are logged at warn level at least with `redis.slow=true`,
+  as `SlowThreshold` of gorm does, except blocking commands, such as `BLPOP` or `XREAD BLOCK`, as `SLOWLOG` does.
 - Credentials of `AUTH`, `HELLO`, `ACL`, `CONFIG` and `MIGRATE` are redacted.
 - Logs are sourced, if `AddSource` of handlers is enabled, from callers of redis, such as the caller of `rdb.Get`,
   rather than the hook, as redisotel locates callers for `code.function`; dials of connection pools have no source.
