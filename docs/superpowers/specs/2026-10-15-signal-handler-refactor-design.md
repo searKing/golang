@@ -31,9 +31,9 @@ runtime for synchronous faults. There are no signal-chain users in this
 repository other than the example, and the README only promises native
 stacktraces around `signal.Notify`.
 
-`PreviousStacktrace` reads the most recently dumped native stack in the current
-process. The default dump path is process-specific, so it does not by itself
-persist a crash across process restarts.
+`PreviousStacktrace` reads the most recent native stack dump at the currently
+configured path. The default path is process-specific; a caller-selected
+persistent path may contain a dump captured by a previous process.
 
 ## Compatibility boundary
 
@@ -46,9 +46,11 @@ Keep these supported APIs and behavior:
 - `PreviousStacktrace`
 - `Signum`
 
-Keep `SetSigInvokeChain` and `SetSigInvokeChainContext` so existing callers
-continue to compile, but mark both deprecated and make them non-blocking no-ops
-on every platform. Remove their native ABI and C++ implementation.
+Keep `SetSigInvokeChain` and `SetSigInvokeChainContext` in `go/os/signal`, and
+keep `SetSigInvokeChain` and `SetSigInvokeChainCancelable` in the importable
+`go/os/signal/cgo` package, so existing callers continue to compile. Mark them
+deprecated and make them non-blocking no-ops. Remove their native ABI and C++
+implementation.
 
 Do not add the unfinished `SetSigInvokeChainWithTimeout` API.
 

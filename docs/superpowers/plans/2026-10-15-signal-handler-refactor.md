@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Preserve `Notify`, stack dump/read, `Signum`, and no-CGO behavior.
-- Keep `SetSigInvokeChain` and `SetSigInvokeChainContext` source-compatible, deprecated, non-blocking no-ops.
+- Keep the deprecated signal-chain APIs in both importable Go packages source-compatible as non-blocking no-ops.
 - Do not add `SetSigInvokeChainWithTimeout`.
 - Never allocate, lock, wait, sleep, invoke Go, or access mutable C++ state in an asynchronous handler.
 - Unix wrappers must use `SA_ONSTACK` and forward synchronous faults with their original `siginfo` and context.
@@ -41,39 +41,39 @@
 
   ```go
   func TestDeprecatedSigInvokeChainDoesNotBlock(t *testing.T) {
-  	if mode := os.Getenv("SEARKING_SIGNAL_CHAIN_TEST"); mode != "" {
-  		switch mode {
-  		case "plain":
-  			signal_.SetSigInvokeChain(syscall.SIGUSR1, syscall.SIGTTOU, 10, syscall.SIGWINCH)
-  		case "context":
-  			signal_.SetSigInvokeChainContext(context.Background(), syscall.SIGUSR1, syscall.SIGTTOU, 10*time.Second, syscall.SIGWINCH)
-  		default:
-  			t.Fatalf("unknown child mode %q", mode)
-  		}
-  		c := make(chan os.Signal, 1)
-  		signal_.Notify(c, syscall.SIGWINCH)
-  		if err := syscall.Kill(syscall.Getpid(), syscall.SIGWINCH); err != nil {
-  			t.Fatal(err)
-  		}
-  		select {
-  		case <-c:
-  		case <-time.After(500 * time.Millisecond):
-  			t.Fatal("deprecated signal chain blocked delivery")
-  		}
-  		return
-  	}
+    if mode := os.Getenv("SEARKING_SIGNAL_CHAIN_TEST"); mode != "" {
+      switch mode {
+      case "plain":
+        signal_.SetSigInvokeChain(syscall.SIGUSR1, syscall.SIGTTOU, 10, syscall.SIGWINCH)
+      case "context":
+        signal_.SetSigInvokeChainContext(context.Background(), syscall.SIGUSR1, syscall.SIGTTOU, 10*time.Second, syscall.SIGWINCH)
+      default:
+        t.Fatalf("unknown child mode %q", mode)
+      }
+      c := make(chan os.Signal, 1)
+      signal_.Notify(c, syscall.SIGWINCH)
+      if err := syscall.Kill(syscall.Getpid(), syscall.SIGWINCH); err != nil {
+        t.Fatal(err)
+      }
+      select {
+      case <-c:
+      case <-time.After(500 * time.Millisecond):
+        t.Fatal("deprecated signal chain blocked delivery")
+      }
+      return
+    }
 
-  	for _, mode := range []string{"plain", "context"} {
-  		t.Run(mode, func(t *testing.T) {
-  			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-  			defer cancel()
-  			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestDeprecatedSigInvokeChainDoesNotBlock$")
-  			cmd.Env = append(os.Environ(), "SEARKING_SIGNAL_CHAIN_TEST="+mode)
-  			if output, err := cmd.CombinedOutput(); err != nil {
-  				t.Fatalf("child failed: %v\n%s", err, output)
-  			}
-  		})
-  	}
+    for _, mode := range []string{"plain", "context"} {
+      t.Run(mode, func(t *testing.T) {
+        ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+        defer cancel()
+        cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestDeprecatedSigInvokeChainDoesNotBlock$")
+        cmd.Env = append(os.Environ(), "SEARKING_SIGNAL_CHAIN_TEST="+mode)
+        if output, err := cmd.CombinedOutput(); err != nil {
+          t.Fatalf("child failed: %v\n%s", err, output)
+        }
+      })
+    }
   }
   ```
 
@@ -108,7 +108,7 @@
   }
   ```
 
-  Remove `setSigInvokeChain` and `setSigInvokeChainCancelable` from `signal_cgo.go` and `signal_not_cgo.go`. Remove `SetSigInvokeChain` and `SetSigInvokeChainCancelable` from `cgo/signal.go`.
+  Remove `setSigInvokeChain` and `setSigInvokeChainCancelable` from `signal_cgo.go` and `signal_not_cgo.go`. Keep deprecated no-op `SetSigInvokeChain` and `SetSigInvokeChainCancelable` functions in the public `cgo` package without restoring the C ABI.
 
 - [ ] **Step 4: Run Go-layer tests in both build modes**
 
@@ -150,31 +150,31 @@
 
   ```go
   func TestDumpStacktracePathConcurrentUpdate(t *testing.T) {
-  	dir := t.TempDir()
-  	paths := []string{filepath.Join(dir, "a.dump"), filepath.Join(dir, "b.dump")}
-  	c := make(chan os.Signal, 32)
-  	signal_.Notify(c, syscall.SIGUSR2)
-  	defer signal.Stop(c)
+    dir := t.TempDir()
+    paths := []string{filepath.Join(dir, "a.dump"), filepath.Join(dir, "b.dump")}
+    c := make(chan os.Signal, 32)
+    signal_.Notify(c, syscall.SIGUSR2)
+    defer signal.Stop(c)
 
-  	var wg sync.WaitGroup
-  	wg.Add(1)
-  	go func() {
-  		defer wg.Done()
-  		for i := 0; i < 32; i++ {
-  			signal_.DumpStacktraceTo(paths[i%len(paths)])
-  		}
-  	}()
-  	for i := 0; i < 32; i++ {
-  		if err := syscall.Kill(syscall.Getpid(), syscall.SIGUSR2); err != nil {
-  			t.Fatal(err)
-  		}
-  		select {
-  		case <-c:
-  		case <-time.After(5 * time.Second):
-  			t.Fatal("SIGUSR2 not relayed")
-  		}
-  	}
-  	wg.Wait()
+    var wg sync.WaitGroup
+    wg.Add(1)
+    go func() {
+      defer wg.Done()
+      for i := 0; i < 32; i++ {
+        signal_.DumpStacktraceTo(paths[i%len(paths)])
+      }
+    }()
+    for i := 0; i < 32; i++ {
+      if err := syscall.Kill(syscall.Getpid(), syscall.SIGUSR2); err != nil {
+        t.Fatal(err)
+      }
+      select {
+      case <-c:
+      case <-time.After(5 * time.Second):
+        t.Fatal("SIGUSR2 not relayed")
+      }
+    }
+    wg.Wait()
   }
   ```
 
@@ -279,31 +279,31 @@
 
   ```go
   func TestNotifyConcurrent(t *testing.T) {
-  	const workers = 8
-  	channels := make([]chan os.Signal, workers)
-  	var wg sync.WaitGroup
-  	for i := range channels {
-  		channels[i] = make(chan os.Signal, 1)
-  		wg.Add(1)
-  		go func(c chan os.Signal) {
-  			defer wg.Done()
-  			signal_.Notify(c, syscall.SIGUSR2)
-  		}(channels[i])
-  	}
-  	wg.Wait()
-  	for _, c := range channels {
-  		defer signal.Stop(c)
-  	}
-  	if err := syscall.Kill(syscall.Getpid(), syscall.SIGUSR2); err != nil {
-  		t.Fatal(err)
-  	}
-  	for i, c := range channels {
-  		select {
-  		case <-c:
-  		case <-time.After(5 * time.Second):
-  			t.Fatalf("channel %d did not receive SIGUSR2", i)
-  		}
-  	}
+    const workers = 8
+    channels := make([]chan os.Signal, workers)
+    var wg sync.WaitGroup
+    for i := range channels {
+      channels[i] = make(chan os.Signal, 1)
+      wg.Add(1)
+      go func(c chan os.Signal) {
+        defer wg.Done()
+        signal_.Notify(c, syscall.SIGUSR2)
+      }(channels[i])
+    }
+    wg.Wait()
+    for _, c := range channels {
+      defer signal.Stop(c)
+    }
+    if err := syscall.Kill(syscall.Getpid(), syscall.SIGUSR2); err != nil {
+      t.Fatal(err)
+    }
+    for i, c := range channels {
+      select {
+      case <-c:
+      case <-time.After(5 * time.Second):
+        t.Fatalf("channel %d did not receive SIGUSR2", i)
+      }
+    }
   }
   ```
 
@@ -482,7 +482,7 @@
 
 - [ ] **Step 2: Correct stacktrace API documentation**
 
-  Document `PreviousStacktrace` as the most recently captured native stack in the current process. Explain that `DumpStacktraceTo` can use a caller-selected persistent path; the default path is process-specific.
+  Document `PreviousStacktrace` as the most recent native stack dump at the currently configured path. Explain that a caller-selected persistent path may contain a dump from a previous process; the default path is process-specific.
 
   Keep the README promise narrow:
 

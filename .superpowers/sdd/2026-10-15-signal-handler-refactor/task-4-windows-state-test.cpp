@@ -49,6 +49,7 @@ int main() {
   searking::SignalHandler &instance = searking::SignalHandler::GetInstance();
   instance.go_registered_handlers_.Store(kSignal, nullptr);
 
+  // A first installation has no previous published record.
   expected_install = &searking::SignalHandler::HandleSignal;
   returned_handler = &HandlerA;
   assert(searking::SignalHandler::SetSig(kSignal) == 0);
@@ -56,22 +57,25 @@ int main() {
   const Handler *saved = instance.go_registered_handlers_.Load(kSignal);
   assert(saved != nullptr && *saved == &HandlerA);
 
-  returned_handler = &searking::SignalHandler::HandleSignal;
-  assert(searking::SignalHandler::SetSig(kSignal) == 0);
-  assert(observed_record == nullptr);
-  assert(instance.go_registered_handlers_.Load(kSignal) == saved);
-
-  returned_handler = SIG_ERR;
-  assert(searking::SignalHandler::SetSig(kSignal) == -1);
-  assert(observed_record == nullptr);
-  assert(instance.go_registered_handlers_.Load(kSignal) == saved);
-
+  // Reinstallation keeps the old record visible until signal() returns and
+  // publishes the newly returned previous handler.
   returned_handler = &HandlerB;
   assert(searking::SignalHandler::SetSig(kSignal) == 0);
-  assert(observed_record == nullptr);
+  assert(observed_record == saved);
   const Handler *replacement = instance.go_registered_handlers_.Load(kSignal);
   assert(replacement != nullptr && replacement != saved);
   assert(*replacement == &HandlerB);
+
+  // Seeing our wrapper or an error leaves the published record unchanged.
+  returned_handler = &searking::SignalHandler::HandleSignal;
+  assert(searking::SignalHandler::SetSig(kSignal) == 0);
+  assert(observed_record == replacement);
+  assert(instance.go_registered_handlers_.Load(kSignal) == replacement);
+
+  returned_handler = SIG_ERR;
+  assert(searking::SignalHandler::SetSig(kSignal) == -1);
+  assert(observed_record == replacement);
+  assert(instance.go_registered_handlers_.Load(kSignal) == replacement);
 
   instance.go_registered_handlers_.Store(kSignal, nullptr);
   expected_install = SIG_DFL;

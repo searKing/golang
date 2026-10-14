@@ -51,3 +51,18 @@ func PreviousStacktrace() string {
 	defer C.free(unsafe.Pointer(stacktraceChars))
 	return C.GoString(stacktraceChars)
 }
+
+// SetSigInvokeChain is retained for source compatibility.
+//
+// Deprecated: signal handlers no longer block, raise auxiliary signals, or
+// sleep before forwarding to the Go runtime.
+func SetSigInvokeChain(from, to, wait, sleepInSeconds int) {
+}
+
+// SetSigInvokeChainCancelable is retained for source compatibility.
+//
+// Deprecated: signal handlers no longer block, raise auxiliary signals, or
+// sleep before forwarding to the Go runtime.
+func SetSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) func() {
+	return func() {}
+}
