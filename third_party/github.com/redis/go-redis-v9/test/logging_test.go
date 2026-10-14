@@ -121,7 +121,7 @@ func TestHook(t *testing.T) {
 		{"redis executed", slog.LevelDebug, "hset h f v", ""},
 		{"redis executed", slog.LevelWarn, "incr h", "WRONGTYPE Operation against a key holding the wrong kind of value"},
 		{"redis executed", slog.LevelDebug, "evalsha 0000000000000000000000000000000000000000 0", "NOSCRIPT No matching script. Please use EVAL."},
-		{"redis executed", slog.LevelError, "auth xxxxx xxxxx", "WRONGPASS invalid username-password pair"},
+		{"redis executed", slog.LevelError, "auth user xxxxx", "WRONGPASS invalid username-password pair"},
 	}
 	got := r.executed()
 	if len(got) != len(wants) {

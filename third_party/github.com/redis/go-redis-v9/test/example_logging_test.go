@@ -63,7 +63,7 @@ func Example_newHook() {
 
 	// Output:
 	// level=DEBUG msg="redis dialed" redis.network=tcp
-	// level=DEBUG msg="redis executed" tenant=t1 redis.cmd="hello 3"
-	// level=DEBUG msg="redis executed" tenant=t1 redis.cmd="set k1 \"hello world\""
-	// level=DEBUG msg="redis executed" tenant=t1 redis.cmd="get missing" redis.error="redis: nil"
+	// level=DEBUG msg="redis executed" tenant=t1 redis.name=hello redis.cmd="hello 3"
+	// level=DEBUG msg="redis executed" tenant=t1 redis.name=set redis.cmd="set k1 \"hello world\""
+	// level=DEBUG msg="redis executed" tenant=t1 redis.name=get redis.cmd="get missing" redis.error="redis: nil"
 }

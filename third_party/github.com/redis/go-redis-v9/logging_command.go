@@ -186,29 +186,94 @@ func commandStatement(cmd redis.Cmder) string {
 // as [net/url.URL.Redacted] does for passwords.
 const redacted = "xxxxx"
 
-// sensitiveArgsFrom returns the index of the first argument of cmd which may carry credentials,
-// such as passwords of AUTH and requirepass of CONFIG SET, or 0 if none.
-func sensitiveArgsFrom(cmd redis.Cmder) int {
+// secretConfigParams are parameters of CONFIG SET of which the values are credentials.
+var secretConfigParams = []string{"requirepass", "masterauth", "tls-key-file-pass", "tls-client-key-file-pass"}
+
+// secretArgs returns indexes of arguments of cmd which are credentials, nil if none,
+// as secretArgs of rediscmd of go-redis does for db.statement of redisotel,
+// such as the password of AUTH, keeping others, such as the username, for debugging.
+// go-redis sends HELLO with AUTH on handshakes, and AUTH on rotations of credentials, through hooks.
+func secretArgs(cmd redis.Cmder) []int {
+	args := cmd.Args()
+	is := func(i int, want string) bool { return i < len(args) && strings.EqualFold(argString(args[i]), want) }
+	var secrets []int
 	switch cmd.Name() {
-	case "auth", "migrate":
-		return 1
-	case "hello", "acl", "config":
-		// HELLO protover [AUTH username password], ACL subcommand ..., CONFIG subcommand ...
-		return 2
+	case "auth":
+		// AUTH [username] password
+		if len(args) > 1 {
+			secrets = append(secrets, len(args)-1)
+		}
+	case "hello":
+		// HELLO protover [AUTH username password] [SETNAME clientname]
+		if is(2, "auth") && len(args) > 4 {
+			secrets = append(secrets, 4)
+		}
+	case "config":
+		// CONFIG SET parameter value [parameter value ...]
+		if !is(1, "set") {
+			break
+		}
+		for i := 2; i+1 < len(args); i += 2 {
+			if slices.ContainsFunc(secretConfigParams, func(param string) bool { return is(i, param) }) {
+				secrets = append(secrets, i+1)
+			}
+		}
+	case "acl":
+		// ACL SETUSER username [rule ...], where rules >password, <password, #hash and !hash carry credentials.
+		if !is(1, "setuser") {
+			break
+		}
+		for i := 3; i < len(args); i++ {
+			if rule := argString(args[i]); len(rule) > 1 && strings.ContainsRune("><#!", rune(rule[0])) {
+				secrets = append(secrets, i)
+			}
+		}
+	case "migrate":
+		// MIGRATE host port key destination-db timeout [COPY] [REPLACE] [AUTH password | AUTH2 username password]
+		// [KEYS key [key ...]]
+		for i := 6; i < len(args) && !is(i, "keys"); i++ {
+			switch {
+			case is(i, "auth") && i+1 < len(args):
+				secrets = append(secrets, i+1)
+			case is(i, "auth2") && i+2 < len(args):
+				secrets = append(secrets, i+2)
+			}
+		}
 	}
-	return 0
+	return secrets
 }
 
 // commandArgs returns arguments of cmd as a line of redis-cli, such as `set k1 "hello world"`,
-// with those which may carry credentials redacted, formatted by commandLine.
+// with credentials redacted, formatted by commandLine.
 func commandArgs(cmd redis.Cmder) string {
-	from := sensitiveArgsFrom(cmd)
+	secrets := secretArgs(cmd)
 	return commandLine(cmd.Args(), func(i int, arg any) string {
-		if from != 0 && i >= from {
+		if slices.Contains(secrets, i) {
 			return redacted
 		}
 		return quoteArg(truncateString(argString(arg)))
 	})
+}
+
+// commandName returns the name of cmd in lower case, with its subcommand if any, such as "config get",
+// as the operation name of OpenTelemetry for redis.
+func commandName(cmd redis.Cmder) string {
+	name := cmd.Name()
+	if _, ok := subcommandCommands[name]; ok && len(cmd.Args()) > 1 {
+		return name + " " + strings.ToLower(truncateString(argString(cmd.Args()[1])))
+	}
+	return name
+}
+
+// commandNames returns unique names of cmds by commandName, in order, truncated to maxLoggedElems.
+func commandNames(cmds []redis.Cmder) []string {
+	var names []string
+	for _, cmd := range cmds {
+		if name := commandName(cmd); !slices.Contains(names, name) {
+			names = append(names, name)
+		}
+	}
+	return truncateLines(names)
 }
 
 // commandLine returns args formatted by format, joined by spaces as a line of redis-cli,

@@ -72,7 +72,7 @@ func TestHookProcess(t *testing.T) {
 	if len(r.entries) != 2 {
 		t.Fatalf("got %d entries want 2: %+v", len(r.entries), r.entries)
 	}
-	if e := r.entries[0]; e.msg != "redis executed" || e.level != slog.LevelDebug ||
+	if e := r.entries[0]; e.msg != "redis executed" || e.level != slog.LevelDebug || e.fields["redis.name"] != "set" ||
 		e.fields["redis.cmd"] != `set k1 "hello world"` || !strings.HasSuffix(fmt.Sprint(e.fields["redis.duration"]), "ms") {
 		t.Errorf("got %+v", e)
 	}
@@ -114,6 +114,52 @@ func TestHookConfig(t *testing.T) {
 	}
 	if e := r.entries[0]; e.level != slog.LevelError || e.fields["tenant"] != "t1" || e.fields["redis.cmd"] != "set k1 ?" {
 		t.Errorf("got %+v", e)
+	}
+}
+
+func TestHookSkip(t *testing.T) {
+	ctx := context.Background()
+	r := &recorder{}
+	var skipped [][]redis.Cmder
+	h := NewHook(slog.New(r), Config{Skip: func(cmds []redis.Cmder) bool {
+		skipped = append(skipped, cmds)
+		return cmds == nil || cmds[0].Name() == "ping"
+	}})
+	ok := func(context.Context, redis.Cmder) error { return nil }
+	_, _ = h.DialHook(func(context.Context, string, string) (net.Conn, error) { return nil, nil })(ctx, "tcp", "127.0.0.1:0")
+	_ = h.ProcessHook(ok)(ctx, redis.NewCmd(ctx, "ping"))
+	_ = h.ProcessHook(ok)(ctx, redis.NewCmd(ctx, "get", "k1"))
+	_ = h.ProcessPipelineHook(func(context.Context, []redis.Cmder) error { return nil })(ctx,
+		[]redis.Cmder{redis.NewCmd(ctx, "ping"), redis.NewCmd(ctx, "get", "k1")})
+	if len(skipped) != 4 || skipped[0] != nil || len(skipped[3]) != 2 {
+		t.Errorf("Skip is called with %v", skipped)
+	}
+	if len(r.entries) != 1 || r.entries[0].fields["redis.cmd"] != "get k1" {
+		t.Errorf("got %+v, want get k1 only", r.entries)
+	}
+}
+
+func TestCommandName(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		args []any
+		want string
+	}{
+		{[]any{"GET", "k1"}, "get"},
+		{[]any{"config", "GET", "maxmemory"}, "config get"},
+		{[]any{"client", "setname", "app"}, "client setname"},
+		{[]any{"xgroup", "create", "s1", "g1", "$"}, "xgroup create"},
+		{[]any{"config"}, "config"},
+	}
+	for _, tt := range tests {
+		if got := commandName(redis.NewCmd(ctx, tt.args...)); got != tt.want {
+			t.Errorf("commandName(%v) = %q, want %q", tt.args, got, tt.want)
+		}
+	}
+	cmds := []redis.Cmder{redis.NewCmd(ctx, "multi"), redis.NewCmd(ctx, "get", "k1"), redis.NewCmd(ctx, "set", "k1", "v1"),
+		redis.NewCmd(ctx, "get", "k2"), redis.NewCmd(ctx, "exec")}
+	if got := fmt.Sprint(commandNames(cmds)); got != "[multi get set exec]" {
+		t.Errorf("commandNames = %s, want [multi get set exec]", got)
 	}
 }
 
@@ -251,10 +297,20 @@ func TestCommandArgsRedacted(t *testing.T) {
 		want string
 	}{
 		{[]any{"get", "k1"}, "get k1"},
-		{[]any{"config", "get", "requirepass"}, "config get xxxxx"},
-		{[]any{"hello", 3, "auth", "user", "secret"}, "hello 3 xxxxx xxxxx xxxxx"},
-		{[]any{"acl", "setuser", "user", ">secret"}, "acl setuser xxxxx xxxxx"},
-		{[]any{"migrate", "host", 6379, "k1", 0, 1000, "auth", "secret"}, "migrate xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx"},
+		{[]any{"auth", "secret"}, "auth xxxxx"},
+		{[]any{"AUTH", "user", "secret"}, "AUTH user xxxxx"},
+		{[]any{"auth"}, "auth"},
+		{[]any{"hello", 3}, "hello 3"},
+		{[]any{"hello", 3, "AUTH", "user", "secret", "setname", "app"}, "hello 3 AUTH user xxxxx setname app"},
+		{[]any{"config", "get", "requirepass"}, "config get requirepass"},
+		{[]any{"config", "set", "maxmemory", "1gb", "requirepass", "secret", "MasterAuth", "secret"},
+			"config set maxmemory 1gb requirepass xxxxx MasterAuth xxxxx"},
+		{[]any{"acl", "setuser", "user", "on", ">secret", "<secret", "#hash", "!hash", "~*", "+@all", ">"},
+			"acl setuser user on xxxxx xxxxx xxxxx xxxxx ~* +@all >"},
+		{[]any{"acl", "getuser", ">user"}, "acl getuser >user"},
+		{[]any{"migrate", "host", 6379, "k1", 0, 1000, "auth", "secret"}, "migrate host 6379 k1 0 1000 auth xxxxx"},
+		{[]any{"migrate", "host", 6379, "", 0, 1000, "copy", "auth2", "user", "secret", "keys", "auth", "k2"},
+			`migrate host 6379 "" 0 1000 copy auth2 user xxxxx keys auth k2`},
 	}
 	for _, tt := range tests {
 		if got := commandArgs(redis.NewCmd(ctx, tt.args...)); got != tt.want {
@@ -296,7 +352,7 @@ func TestCommandArgsFormat(t *testing.T) {
 		{func(w io.Writer) slog.Handler { return slog.NewTextHandler(w, nil) },
 			`redis.cmd="get k1\nset k1 \"hello world\""`},
 		{func(w io.Writer) slog.Handler { return slog.NewJSONHandler(w, nil) },
-			`"redis":{"cmd":["get k1","set k1 \"hello world\""]`},
+			`"redis":{"name":["get","set"],"cmd":["get k1","set k1 \"hello world\""]`},
 	} {
 		var b strings.Builder
 		_ = NewHook(slog.New(tt.handler(&b)), Config{Levels: func(error) slog.Level { return slog.LevelInfo }}).

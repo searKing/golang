@@ -24,9 +24,11 @@ var _ redis.Hook = (*hook)(nil)
 // slog.Default() if nil, as the slog logger of gorm logs SQL, with a command in place of SQL.
 //
 // Each call is logged in a single line, leveled by Config.Levels, with fields grouped by "redis":
+//   - name: the name of the command in lower case, with its subcommand if any, such as "config get",
+//     or unique names of commands of pipelines;
 //   - cmd: the command as a line of redis-cli, such as `set k1 "hello world"`, which can be run by redis-cli as is,
-//     or commands of pipelines as lines, with arguments which may carry credentials redacted,
-//     such as passwords of AUTH, and truncated as SLOWLOG of redis does;
+//     or commands of pipelines as lines, with credentials redacted, such as the password of AUTH,
+//     and truncated as SLOWLOG of redis does;
 //   - network and addr: the network and address dialed, of dials only;
 //   - duration: the duration of the call, such as 0.123ms;
 //   - slow: true if the call is slower than Config.SlowThreshold, left out otherwise;
@@ -45,6 +47,9 @@ type hook struct {
 
 func (h *hook) DialHook(next redis.DialHook) redis.DialHook {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		if h.config.Skip != nil && h.config.Skip(nil) {
+			return next(ctx, network, addr)
+		}
 		start := time.Now()
 		conn, err := next(ctx, network, addr)
 		h.log(ctx, "redis dialed", start, false, err, func() []slog.Attr {
@@ -56,10 +61,13 @@ func (h *hook) DialHook(next redis.DialHook) redis.DialHook {
 
 func (h *hook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 	return func(ctx context.Context, cmd redis.Cmder) error {
+		if h.config.Skip != nil && h.config.Skip([]redis.Cmder{cmd}) {
+			return next(ctx, cmd)
+		}
 		start := time.Now()
 		err := next(ctx, cmd)
 		h.log(ctx, "redis executed", start, isBlocking(cmd), err, func() []slog.Attr {
-			return []slog.Attr{slog.String("cmd", h.command(cmd))}
+			return []slog.Attr{slog.String("name", commandName(cmd)), slog.String("cmd", h.command(cmd))}
 		})
 		return err
 	}
@@ -67,6 +75,9 @@ func (h *hook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 
 func (h *hook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
 	return func(ctx context.Context, cmds []redis.Cmder) error {
+		if h.config.Skip != nil && h.config.Skip(cmds) {
+			return next(ctx, cmds)
+		}
 		start := time.Now()
 		// The pipeline returns the first error of its commands, such as redis.Nil if any command misses its key,
 		// while the rest are executed as usual.
@@ -76,7 +87,7 @@ func (h *hook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.Process
 			for _, cmd := range cmds {
 				lines = append(lines, h.command(cmd))
 			}
-			return []slog.Attr{slog.Any("cmd", truncateLines(lines))}
+			return []slog.Attr{slog.Any("name", commandNames(cmds)), slog.Any("cmd", truncateLines(lines))}
 		})
 		return err
 	}
