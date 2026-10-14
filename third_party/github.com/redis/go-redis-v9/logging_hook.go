@@ -32,7 +32,7 @@ var _ redis.Hook = (*hook)(nil)
 //   - network and addr: the network and address dialed, of dials only;
 //   - duration: the duration of the call, such as 0.123ms;
 //   - slow: true if the call is slower than Config.SlowThreshold, left out otherwise;
-//   - error: the error of the call, left out if succeeded.
+//   - error: the error of the call, left out if succeeded, or the most severe error of commands of pipelines.
 func NewHook(l *slog.Logger, config Config) redis.Hook {
 	if config.Levels == nil {
 		config.Levels = DefaultErrorToLevel
@@ -79,10 +79,8 @@ func (h *hook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.Process
 			return next(ctx, cmds)
 		}
 		start := time.Now()
-		// The pipeline returns the first error of its commands, such as redis.Nil if any command misses its key,
-		// while the rest are executed as usual.
 		err := next(ctx, cmds)
-		h.log(ctx, "redis pipeline executed", start, slices.ContainsFunc(cmds, isBlocking), err, func() []slog.Attr {
+		h.log(ctx, "redis pipeline executed", start, slices.ContainsFunc(cmds, isBlocking), h.worstError(err, cmds), func() []slog.Attr {
 			lines := make([]string, 0, len(cmds))
 			for _, cmd := range cmds {
 				lines = append(lines, h.command(cmd))
@@ -91,6 +89,21 @@ func (h *hook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.Process
 		})
 		return err
 	}
+}
+
+// worstError returns the error of the most severe level by Config.Levels among err of the pipeline and errors of
+// its commands, the first if tied, as the pipeline returns the first error of its commands only,
+// such as redis.Nil of a missing key, which would hide errors of the rest, such as WRONGTYPE.
+func (h *hook) worstError(err error, cmds []redis.Cmder) error {
+	level := h.config.Levels(err)
+	for _, cmd := range cmds {
+		if e := cmd.Err(); e != nil {
+			if l := h.config.Levels(e); l > level {
+				err, level = e, l
+			}
+		}
+	}
+	return err
 }
 
 // command returns cmd as a line of redis-cli, parameterized if Config.Parameterized.

@@ -73,7 +73,7 @@ func commandKeys(cmd redis.Cmder) []int {
 	args := cmd.Args()
 	arg := func(i int) string {
 		if i < len(args) {
-			return strings.ToLower(fmt.Sprint(args[i]))
+			return strings.ToLower(argString(args[i]))
 		}
 		return ""
 	}
@@ -159,7 +159,7 @@ func isBlocking(cmd redis.Cmder) bool {
 	}
 	// XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id [id ...]
 	for _, arg := range cmd.Args()[1:] {
-		switch strings.ToLower(fmt.Sprint(arg)) {
+		switch strings.ToLower(argString(arg)) {
 		case "block":
 			return true
 		case "streams":
@@ -296,6 +296,20 @@ func commandLine(args []any, format func(i int, arg any) string) string {
 // argString returns arg as sent to the redis server, as WriteArg of go-redis encodes it,
 // such as 1 for true and RFC 3339 for time.Time.
 func argString(arg any) string {
+	if rv := reflect.ValueOf(arg); rv.Kind() == reflect.Pointer {
+		_, marshaler := arg.(encoding.BinaryMarshaler)
+		switch {
+		case !marshaler || rv.Type().Elem() == reflect.TypeFor[time.Time]():
+			// Pointers of other types, and *time.Time, are sent as their elements, or zero values if nil.
+			if rv.IsNil() {
+				return argString(reflect.Zero(rv.Type().Elem()).Interface())
+			}
+			return argString(rv.Elem().Interface())
+		case rv.IsNil() && rv.Type().Elem().Implements(reflect.TypeFor[encoding.BinaryMarshaler]()):
+			// MarshalBinary of value receivers panics on nil pointers, unlike of pointer receivers.
+			return ""
+		}
+	}
 	switch arg := arg.(type) {
 	case nil:
 		return ""
@@ -319,16 +333,12 @@ func argString(arg any) string {
 	case net.IP:
 		return string(arg)
 	case encoding.BinaryMarshaler:
+		// MarshalBinary is called again here, after go-redis has called it to send arg, as the encoded bytes are
+		// not exposed by go-redis, so MarshalBinary with side effects or costs is called twice if logged,
+		// which is left as is, rather than leaving such arguments out of logs.
 		if b, err := arg.MarshalBinary(); err == nil {
 			return string(b)
 		}
-	}
-	// Pointers are sent as their elements, or zero values if nil.
-	if rv := reflect.ValueOf(arg); rv.Kind() == reflect.Pointer {
-		if rv.IsNil() {
-			return argString(reflect.Zero(rv.Type().Elem()).Interface())
-		}
-		return argString(rv.Elem().Interface())
 	}
 	return fmt.Sprint(arg)
 }

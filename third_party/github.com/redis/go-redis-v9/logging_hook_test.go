@@ -204,6 +204,34 @@ func TestHookPipeline(t *testing.T) {
 	}
 }
 
+func TestHookPipelineWorstError(t *testing.T) {
+	ctx := context.Background()
+	r := &recorder{}
+	cmds := []redis.Cmder{redis.NewCmd(ctx, "get", "missing"), redis.NewCmd(ctx, "incr", "h"), redis.NewCmd(ctx, "get", "k1")}
+	err := NewHook(slog.New(r), Config{}).ProcessPipelineHook(func(context.Context, []redis.Cmder) error {
+		cmds[0].SetErr(redis.Nil)
+		cmds[1].SetErr(replyError("WRONGTYPE wrong"))
+		return redis.Nil
+	})(ctx, cmds)
+	if !errors.Is(err, redis.Nil) {
+		t.Errorf("got error %v, want the error of the pipeline as is", err)
+	}
+	if len(r.entries) != 1 || r.entries[0].level != slog.LevelWarn || r.entries[0].fields["redis.error"] != "WRONGTYPE wrong" {
+		t.Errorf("got %+v, want WRONGTYPE at warn level", r.entries)
+	}
+}
+
+func TestByteArgs(t *testing.T) {
+	ctx := context.Background()
+	cmd := redis.NewCmd(ctx, "xread", []byte("BLOCK"), 10, []byte("STREAMS"), "s1", "$")
+	if !isBlocking(cmd) || !slices.Equal(commandKeys(cmd), []int{4}) {
+		t.Errorf("isBlocking = %v, commandKeys = %v, want true and [4]", isBlocking(cmd), commandKeys(cmd))
+	}
+	if got := commandArgs(redis.NewCmd(ctx, "auth", []byte("user"), []byte("secret"))); got != "auth user xxxxx" {
+		t.Errorf("got %s", got)
+	}
+}
+
 func TestInternalLogger(t *testing.T) {
 	r := &recorder{}
 	InternalLogger(slog.New(r)).Printf(context.Background(), "redis: connection pool: %s\n", "failed")
@@ -319,9 +347,19 @@ func TestCommandArgsRedacted(t *testing.T) {
 	}
 }
 
+// ptrBinary and valueBinary are arguments encoded by MarshalBinary of pointer and value receivers.
+type ptrBinary struct{}
+
+func (*ptrBinary) MarshalBinary() ([]byte, error) { return []byte("ptr"), nil }
+
+type valueBinary struct{}
+
+func (valueBinary) MarshalBinary() ([]byte, error) { return []byte("value"), nil }
+
 func TestCommandArgsFormat(t *testing.T) {
 	ctx := context.Background()
 	s := "v1"
+	ts := time.Date(2026, 10, 14, 3, 0, 0, 0, time.UTC)
 	tests := []struct {
 		args []any
 		want string
@@ -334,6 +372,9 @@ func TestCommandArgsFormat(t *testing.T) {
 		{[]any{"set", "k1", true, false, 1.5, float32(0.5), 2 * time.Second, &s, (*string)(nil), nil},
 			`set k1 1 0 1.5 0.5 2000000000 v1 "" ""`},
 		{[]any{"set", "k1", time.Date(2026, 10, 14, 3, 0, 0, 0, time.UTC)}, `set k1 2026-10-14T03:00:00Z`},
+		{[]any{"set", "k1", &ts, (*time.Time)(nil)}, `set k1 2026-10-14T03:00:00Z 0001-01-01T00:00:00Z`},
+		{[]any{"set", "k1", ptrBinary{}, &ptrBinary{}, (*ptrBinary)(nil), valueBinary{}, &valueBinary{}, (*valueBinary)(nil)},
+			`set k1 {} ptr ptr value value ""`},
 	}
 	for _, tt := range tests {
 		if got := commandArgs(redis.NewCmd(ctx, tt.args...)); got != tt.want {
