@@ -21,7 +21,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+        # Run stress and long-running tests once on Linux. The other systems
+        # exercise cross-platform behavior with the short paths of those tests.
+        - os: ubuntu-latest
+          gotest_flags: ''
+        - os: macos-latest
+          gotest_flags: '-short'
+        - os: windows-latest
+          gotest_flags: '-short'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     defaults:
@@ -43,7 +51,7 @@ jobs:
         C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed make
         "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
     - name: Test
-      run: make test
+      run: make test GOTEST_FLAGS="${{ matrix.gotest_flags }}"
 
   lint:
     runs-on: ubuntu-latest
