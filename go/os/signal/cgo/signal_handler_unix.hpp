@@ -16,9 +16,6 @@
 // POSIX compliant
 
 #include <csignal>
-#include <functional>
-#include <map>
-#include <memory>
 #include <utility>
 
 #include "base_signal_handler.hpp"
@@ -30,12 +27,10 @@ namespace searking {
 typedef void (*SignalHandlerSigActionHandler)(int signum, siginfo_t *info,
                                               void *context);
 typedef void (*SignalHandlerSignalHandler)(int signum);
-typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum,
-                                      siginfo_t *info, void *context);
 
-class SignalHandler : public BaseSignalHandler<SignalHandler> {
+class SignalHandler : public BaseSignalHandler {
  protected:
-  SignalHandler() : on_signal_(nullptr) {}
+  SignalHandler() = default;
 
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
@@ -47,28 +42,14 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
   static SignalHandler &GetInstance();
 
   void operator()(int signum, siginfo_t *info, void *context);
-  // never invoke a go function, see
-  // https://github.com/golang/go/issues/35814
-  void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
-                                           siginfo_t *info, void *context)>
-                            callback,
-                        void *ctx);
 
   static int SetSig(int signum);
   static int SetSig(int signum, SignalHandlerSigActionHandler action,
                     SignalHandlerSignalHandler handler);
 
  private:
-  struct OnSignal {
-    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                       void *context)>
-        callback;
-    void *ctx;
-  };
-  // The previous one is never freed, as signal handlers may be reading it.
-  std::atomic<const OnSignal *> on_signal_;
-  SignalTable<std::pair<SignalHandlerSigActionHandler,
-                        SignalHandlerSignalHandler> >
+  SignalTable<
+      std::pair<SignalHandlerSigActionHandler, SignalHandlerSignalHandler> >
       go_registered_handlers_;
 };
 }  // namespace searking

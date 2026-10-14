@@ -12,11 +12,7 @@
 
 #include <string.h>
 
-#include <boost/stacktrace.hpp>
 #include <cstdlib>
-#include <fstream>
-#include <memory>
-#include <sstream>
 
 namespace searking {
 
@@ -27,16 +23,6 @@ SignalHandler &SignalHandler::GetInstance() {
 // https://github.com/boostorg/stacktrace/blob/5c6740b68067cbd7070d2965bfbce32e81f680c9/example/terminate_handler.cpp
 void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   WriteSignalStacktrace(signum);
-
-  const OnSignal *on_signal = on_signal_.load(std::memory_order_acquire);
-  if (on_signal != nullptr && on_signal->callback) {
-    on_signal->callback(on_signal->ctx, SignalDumpToFd(), signum, info,
-                        context);
-  }
-
-  RunSigChain(signum, [this, info, context](int to) {
-    InvokeGoSignalHandler(to, info, context);
-  });
 
   InvokeGoSignalHandler(signum, info, context);
 }
@@ -73,19 +59,15 @@ void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
   }
 }
 
-void SignalHandler::RegisterOnSignal(
-    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                       void *context)>
-        callback,
-    void *ctx) {
-  on_signal_.store(new OnSignal{callback, ctx}, std::memory_order_release);
-}
-
 void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
     int signum, SignalHandlerSigActionHandler action,
     SignalHandlerSignalHandler handler) {
   // register once, avoid go's signal actions are lost.
-  go_registered_handlers_.StoreIfEmpty(signum, std::make_pair(action, handler));
+  if (go_registered_handlers_.Load(signum) == nullptr) {
+    go_registered_handlers_.Store(
+        signum, new std::pair<SignalHandlerSigActionHandler,
+                              SignalHandlerSignalHandler>(action, handler));
+  }
 }
 
 // for CGO

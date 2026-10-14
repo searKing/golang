@@ -10,13 +10,6 @@
 
 #include "signal_handler_windows.hpp"
 
-#include <string.h>
-
-#include <boost/stacktrace.hpp>
-#include <fstream>
-#include <memory>
-#include <sstream>
-
 namespace searking {
 
 SignalHandler &SignalHandler::GetInstance() {
@@ -27,13 +20,6 @@ SignalHandler &SignalHandler::GetInstance() {
 // trigger once, and user must register this signum again
 void SignalHandler::operator()(int signum) {
   WriteSignalStacktrace(signum);
-
-  const OnSignal *on_signal = on_signal_.load(std::memory_order_acquire);
-  if (on_signal != nullptr && on_signal->callback) {
-    on_signal->callback(on_signal->ctx, SignalDumpToFd(), signum);
-  }
-
-  RunSigChain(signum, [this](int to) { InvokeGoSignalHandler(to); });
 
   InvokeGoSignalHandler(signum);
 }
@@ -46,15 +32,13 @@ void SignalHandler::InvokeGoSignalHandler(int signum) {
   }
 }
 
-void SignalHandler::RegisterOnSignal(
-    std::function<void(void *ctx, int fd, int signum)> callback, void *ctx) {
-  on_signal_.store(new OnSignal{callback, ctx}, std::memory_order_release);
-}
-
 void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
     int signum, SignalHandlerSignalHandler handler) {
   // register once, avoid go's signal actions are lost.
-  go_registered_handlers_.StoreIfEmpty(signum, handler);
+  if (go_registered_handlers_.Load(signum) == nullptr) {
+    go_registered_handlers_.Store(signum,
+                                  new SignalHandlerSignalHandler(handler));
+  }
 }
 
 int SignalHandler::SetSig(int signum) {

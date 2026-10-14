@@ -13,7 +13,9 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -55,6 +57,34 @@ func TestDeprecatedSigInvokeChainDoesNotBlock(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDumpStacktracePathConcurrentUpdate(t *testing.T) {
+	dir := t.TempDir()
+	paths := []string{filepath.Join(dir, "a.dump"), filepath.Join(dir, "b.dump")}
+	c := make(chan os.Signal, 32)
+	signal_.Notify(c, syscall.SIGUSR2)
+	defer signal.Stop(c)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 32; i++ {
+			signal_.DumpStacktraceTo(paths[i%len(paths)])
+		}
+	}()
+	for i := 0; i < 32; i++ {
+		if err := syscall.Kill(syscall.Getpid(), syscall.SIGUSR2); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case <-c:
+		case <-time.After(5 * time.Second):
+			t.Fatal("SIGUSR2 not relayed")
+		}
+	}
+	wg.Wait()
 }
 
 func TestNotifySkipsRuntimeSignals(t *testing.T) {
