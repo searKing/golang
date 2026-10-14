@@ -19,9 +19,47 @@ import (
 	"syscall"
 	"testing"
 	"time"
+	"unsafe"
 
 	signal_ "github.com/searKing/golang/go/os/signal"
 )
+
+const fatalForwardingSentinel = "reached after synchronous SIGSEGV"
+
+func TestNotifyForwardsSynchronousFatalSignal(t *testing.T) {
+	if os.Getenv("SEARKING_SIGNAL_FATAL_FORWARDING_TEST") == "1" {
+		signal_.DumpSignalTo(-1)
+		signal_.DumpStacktraceTo(os.Getenv("SEARKING_SIGNAL_FATAL_DUMP_PATH"))
+		c := make(chan os.Signal, 1)
+		signal_.Notify(c, syscall.SIGSEGV)
+		triggerSynchronousSIGSEGV()
+		fmt.Print(fatalForwardingSentinel)
+		os.Exit(0)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestNotifyForwardsSynchronousFatalSignal$")
+	cmd.Env = append(os.Environ(),
+		"SEARKING_SIGNAL_FATAL_FORWARDING_TEST=1",
+		"SEARKING_SIGNAL_FATAL_DUMP_PATH="+filepath.Join(t.TempDir(), "fatal.dump"),
+	)
+	output, err := cmd.CombinedOutput()
+	if ctx.Err() != nil {
+		t.Fatalf("fatal-forwarding child timed out: %v", ctx.Err())
+	}
+	if err == nil {
+		t.Fatalf("fatal-forwarding child exited successfully\n%s", output)
+	}
+	if strings.Contains(string(output), fatalForwardingSentinel) {
+		t.Fatalf("fatal-forwarding child reached sentinel\n%s", output)
+	}
+}
+
+//go:nocheckptr
+func triggerSynchronousSIGSEGV() {
+	*(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(nil)) + 0x123)) = 1
+}
 
 func TestNotifyConcurrent(t *testing.T) {
 	const workers = 8

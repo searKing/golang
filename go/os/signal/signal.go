@@ -69,8 +69,9 @@ func DumpSignalTo(fd int) {
 	dumpSignalTo(fd)
 }
 
-// DumpStacktraceTo set dump file path of stacktrace when signal is triggered
-// "*.stacktrace.dump" under a temp dir if not set.
+// DumpStacktraceTo sets the persistent path used to capture native stacktraces.
+// Callers may select the path; the default is a process-specific file in the
+// system temporary directory.
 func DumpStacktraceTo(name string) {
 	dumpStacktraceTo(name)
 }
@@ -80,7 +81,8 @@ func DumpPreviousStacktrace() {
 	dumpPreviousStacktrace()
 }
 
-// PreviousStacktrace returns a human readable stacktrace
+// PreviousStacktrace returns the most recently captured native stacktrace in
+// the current process.
 func PreviousStacktrace() string {
 	return previousStacktrace()
 }
