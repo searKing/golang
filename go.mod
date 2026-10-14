@@ -228,3 +228,6 @@ replace github.com/searKing/golang/pkg/instrumentation/otel => ./pkg/instrumenta
 replace github.com/searKing/golang/pkg/log/redislog => ./pkg/log/redislog
 
 replace github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus => ./third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

@@ -8,6 +8,9 @@
 # Tools installed by 'make tools'
 /.tools/
 
+# Agent-generated working files
+/.superpowers/
+
 # Binaries built by 'go build' in directories of tools and examples
 /tools/go-*/go-*
 /third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example/example

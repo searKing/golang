@@ -73,3 +73,6 @@ replace github.com/searKing/golang/third_party/github.com/gin-gonic/gin => ../..
 replace github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 => ../../third_party/github.com/grpc-ecosystem/grpc-gateway-v2
 
 replace github.com/searKing/golang/third_party/google.golang.org/grpc => ../../third_party/google.golang.org/grpc
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

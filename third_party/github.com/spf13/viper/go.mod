@@ -30,3 +30,6 @@ require (
 replace github.com/searKing/golang/go => ../../../../go
 
 replace github.com/searKing/golang/third_party/google.golang.org/protobuf => ../../../../third_party/google.golang.org/protobuf
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

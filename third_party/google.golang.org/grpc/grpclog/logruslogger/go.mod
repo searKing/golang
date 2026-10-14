@@ -11,3 +11,6 @@ require (
 require golang.org/x/sys v0.48.0 // indirect
 
 replace github.com/searKing/golang/go => ../../../../../go
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

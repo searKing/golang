@@ -12,3 +12,6 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 )
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

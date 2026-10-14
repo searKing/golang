@@ -10,3 +10,6 @@ require (
 require golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 
 replace github.com/searKing/golang/go => ../../../../go
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

@@ -48,3 +48,6 @@ replace (
 	github.com/searKing/golang/go => ../../../../go
 	github.com/searKing/golang/third_party/google.golang.org/grpc => ../../../../third_party/google.golang.org/grpc
 )
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

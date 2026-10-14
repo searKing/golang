@@ -11,3 +11,6 @@ require (
 )
 
 require golang.org/x/text v0.37.0 // indirect
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

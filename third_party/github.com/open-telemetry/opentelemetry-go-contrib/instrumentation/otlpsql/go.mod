@@ -15,3 +15,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 )
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148

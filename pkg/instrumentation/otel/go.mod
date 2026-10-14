@@ -46,3 +46,6 @@ require (
 )
 
 replace github.com/searKing/golang/go => ../../../go
+
+// v1.2.148 was published with incorrect commit author metadata.
+retract v1.2.148
