@@ -13,21 +13,18 @@
 #include <atomic>
 #include <boost/core/noncopyable.hpp>
 #include <boost/stacktrace.hpp>
-#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <memory>
 #include <sstream>
 #include <string>
-#include <time.h>
 
 #include "write_int.hpp"
 
 // Signal handlers read the state by atomics, which must not lock.
-static_assert(ATOMIC_POINTER_LOCK_FREE == 2, "atomic pointers must be lock free");
+static_assert(ATOMIC_POINTER_LOCK_FREE == 2,
+              "atomic pointers must be lock free");
 static_assert(ATOMIC_INT_LOCK_FREE == 2, "atomic ints must be lock free");
-static_assert(ATOMIC_BOOL_LOCK_FREE == 2, "atomic bools must be lock free");
 
 namespace searking {
 
@@ -61,50 +58,22 @@ class SignalTable : private boost::noncopyable {
     entries_[signum].store(v, std::memory_order_release);
   }
 
-  // RemoveIf removes the value of signum only if it is v, rather than one
-  // stored after v.
-  void RemoveIf(int signum, const V *v) {
-    if (signum < 0 || signum >= kMaxSignum) {
-      return;
-    }
-    const V *expected = v;
-    entries_[signum].compare_exchange_strong(expected, nullptr,
-                                             std::memory_order_acq_rel);
-  }
-
-  // StoreIfEmpty stores v only if no value of signum is stored.
-  void StoreIfEmpty(int signum, const V &v) {
-    if (signum < 0 || signum >= kMaxSignum) {
-      return;
-    }
-    const V *expected = nullptr;
-    const V *value = new V(v);
-    if (!entries_[signum].compare_exchange_strong(expected, value,
-                                                  std::memory_order_acq_rel)) {
-      delete value;
-    }
-  }
-
  private:
   std::atomic<const V *> entries_[kMaxSignum];
 };
 
-// SigChain raises {to} when {from} is received, then waits for {wait} until
-// canceled, and then sleeps {sleepInSeconds}s.
-struct SigChain {
-  SigChain(int to, int wait, int sleepInSeconds)
-      : to(to), wait(wait), sleepInSeconds(sleepInSeconds), canceled(false) {}
+struct DumpPath {
+  explicit DumpPath(const std::string &name)
+      : length(name.size()), path(new char[length + 1]) {
+    memcpy(path, name.data(), length);
+    path[length] = '\0';
+  }
 
-  const int to;
-  const int wait;
-  const int sleepInSeconds;
-  // canceled is set when the chain is removed, so that its wait returns.
-  mutable std::atomic<bool> canceled;
+  const size_t length;
+  char *const path;
 };
 
-template <class T>
-class BaseSignalHandler : private boost::noncopyable,
-                          public std::enable_shared_from_this<T> {
+class BaseSignalHandler : private boost::noncopyable {
  protected:
   BaseSignalHandler()
       : signal_dump_to_fd_(-1), stacktrace_dump_to_file_(nullptr) {}
@@ -118,13 +87,13 @@ class BaseSignalHandler : private boost::noncopyable,
 
   // The previous name is never freed, as signal handlers may be reading it.
   void SetStacktraceDumpToFile(const std::string &name) {
-    stacktrace_dump_to_file_.store(new std::string(name),
+    stacktrace_dump_to_file_.store(new DumpPath(name),
                                    std::memory_order_release);
   }
 
   void WriteSignalStacktrace(int signum) {
     int fd = SignalDumpToFd();
-    const std::string *file = StacktraceDumpToFile();
+    const DumpPath *file = StacktraceDumpToFile();
     if (fd >= 0) {
       (void)!write(fd, "Signal received(", strlen("Signal received("));
       (void)!WriteInt(fd, signum);
@@ -136,14 +105,14 @@ class BaseSignalHandler : private boost::noncopyable,
       //    write(fd, "\n", strlen("\n"));
     }
 
-    if (file != nullptr && !file->empty()) {
+    if (file != nullptr && file->length != 0) {
       if (fd >= 0) {
         (void)!write(fd, "Stacktrace dumped to file: ",
                      strlen("Stacktrace dumped to file: "));
-        (void)!write(fd, file->c_str(), file->length());
+        (void)!write(fd, file->path, file->length);
         (void)!write(fd, ".\n", strlen(".\n"));
       }
-      boost::stacktrace::safe_dump_to(file->c_str());
+      boost::stacktrace::safe_dump_to(file->path);
     }
   }
 
@@ -162,12 +131,12 @@ class BaseSignalHandler : private boost::noncopyable,
   }
 
   std::string PreviousStacktrace() {
-    const std::string *file = StacktraceDumpToFile();
-    if (file == nullptr || file->empty()) {
+    const DumpPath *file = StacktraceDumpToFile();
+    if (file == nullptr || file->length == 0) {
       return "";
     }
 
-    std::ifstream ifs(*file);
+    std::ifstream ifs(file->path);
     if (!ifs.good()) {
       return "";
     }
@@ -181,116 +150,18 @@ class BaseSignalHandler : private boost::noncopyable,
     return msg.str();
   }
 
-  void SetSigInvokeChain(const int from, const int to, const int wait,
-                         const int sleepInSeconds) {
-    NewSigInvokeChain(from, to, wait, sleepInSeconds);
-  }
-
-  // NewSigInvokeChain sets a SigChain of {from}, and returns it for
-  // CancelSigInvokeChain. It is never freed, as signal handlers may be
-  // reading it.
-  const SigChain *NewSigInvokeChain(const int from, const int to,
-                                    const int wait, const int sleepInSeconds) {
-    const SigChain *chain = new SigChain(to, wait, sleepInSeconds);
-    sig_invoke_chains_.Store(from, chain);
-    return chain;
-  }
-
-  // CancelSigInvokeChain removes chain of {from}, if not replaced yet, and
-  // returns its wait in progress.
-  void CancelSigInvokeChain(const int from, const SigChain *chain) {
-    if (chain == nullptr) {
-      return;
-    }
-    chain->canceled.store(true, std::memory_order_release);
-    sig_invoke_chains_.RemoveIf(from, chain);
-  }
-
  protected:
   int SignalDumpToFd() const {
     return signal_dump_to_fd_.load(std::memory_order_acquire);
   }
 
-  const std::string *StacktraceDumpToFile() const {
+  const DumpPath *StacktraceDumpToFile() const {
     return stacktrace_dump_to_file_.load(std::memory_order_acquire);
   }
 
-  // RunSigChain runs the SigChain of signum, see SigChain.
-  // invoke raises a signal to the Go signal handler.
-  template <class Invoke>
-  void RunSigChain(int signum, Invoke invoke) {
-    if (signum >= 0 && signum < kMaxSignum) {
-      GotSignals()[signum] = 1;
-    }
-    const SigChain *chain = sig_invoke_chains_.Load(signum);
-    if (chain == nullptr) {
-      return;
-    }
-    int to = chain->to;
-    int wait = chain->wait;
-    bool waiting = wait >= 0 && wait < kMaxSignum && wait != signum;
-
-    // Reset before raising {to}, or {wait} received in between is lost.
-    if (waiting) {
-      GotSignals()[wait] = 0;
-    }
-    if (to >= 0 && to != signum) {
-      invoke(to);
-    }
-    if (waiting && !WaitSignal(wait, chain)) {
-      int fd = SignalDumpToFd();
-      if (fd >= 0) {
-        (void)!write(fd, "wait Signal(", strlen("wait Signal("));
-        (void)!WriteInt(fd, wait);
-        (void)!write(fd, ") for Signal(", strlen(") for Signal("));
-        (void)!WriteInt(fd, signum);
-        (void)!write(fd, ") canceled.\n", strlen(") canceled.\n"));
-      }
-    }
-    if (chain->sleepInSeconds > 0) {
-      sleep(chain->sleepInSeconds);
-    }
-  }
-
  private:
-  // GotSignals marks signals received, set by signal handlers of any thread.
-  static volatile sig_atomic_t *GotSignals() {
-    static volatile sig_atomic_t got_signals[kMaxSignum];
-    return got_signals;
-  }
-
-  // WaitSignal waits {wait} until chain is canceled, by polling rather than
-  // sigsuspend, which can not be canceled, and blocks forever sometimes, as
-  // {wait} may be handled by another thread.
-  static bool WaitSignal(int wait, const SigChain *chain) {
-    volatile sig_atomic_t *got = GotSignals();
-    for (;;) {
-      if (got[wait]) {
-        got[wait] = 0;
-        return true;
-      }
-      if (chain->canceled.load(std::memory_order_acquire)) {
-        return false;
-      }
-      SleepMillis(10);
-    }
-  }
-
-  // SleepMillis is async-signal-safe.
-  static void SleepMillis(int ms) {
-#if defined(_WIN32)
-    usleep(ms * 1000);
-#else
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = ms * 1000000L;
-    nanosleep(&ts, nullptr);
-#endif
-  }
-
   std::atomic<int> signal_dump_to_fd_;
-  std::atomic<const std::string *> stacktrace_dump_to_file_;
-  SignalTable<SigChain> sig_invoke_chains_;
+  std::atomic<const DumpPath *> stacktrace_dump_to_file_;
 };
 }  // namespace searking
 #endif  // GO_OS_SIGNAL_CGO_BASE_SIGNAL_HANDLER_HPP_

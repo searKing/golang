@@ -52,14 +52,17 @@ func PreviousStacktrace() string {
 	return C.GoString(stacktraceChars)
 }
 
-// SetSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
+// SetSigInvokeChain is retained for source compatibility.
+//
+// Deprecated: signal handlers no longer block, raise auxiliary signals, or
+// sleep before forwarding to the Go runtime.
 func SetSigInvokeChain(from, to, wait, sleepInSeconds int) {
-	C.CGO_SetSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
 }
 
-// SetSigInvokeChainCancelable acts as SetSigInvokeChain, and returns cancel,
-// which removes the chain, if not replaced yet, and returns its wait in progress.
-func SetSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) (cancel func()) {
-	chain := C.CGO_NewSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
-	return func() { C.CGO_CancelSigInvokeChain(C.int(from), chain) }
+// SetSigInvokeChainCancelable is retained for source compatibility.
+//
+// Deprecated: signal handlers no longer block, raise auxiliary signals, or
+// sleep before forwarding to the Go runtime.
+func SetSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) func() {
+	return func() {}
 }

@@ -16,30 +16,21 @@
 // POSIX compliant
 
 #include <csignal>
-#include <functional>
-#include <map>
-#include <memory>
-#include <utility>
+#include <mutex>
 
 #include "base_signal_handler.hpp"
 
 namespace searking {
 
-// Callbacks Predefinations
+struct SignalDisposition {
+  explicit SignalDisposition(const struct sigaction &action) : action(action) {}
+  const struct sigaction action;
+};
 
-typedef void (*SignalHandlerSigActionHandler)(int signum, siginfo_t *info,
-                                              void *context);
-typedef void (*SignalHandlerSignalHandler)(int signum);
-typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum,
-                                      siginfo_t *info, void *context);
-
-class SignalHandler : public BaseSignalHandler<SignalHandler> {
+class SignalHandler : public BaseSignalHandler {
  protected:
-  SignalHandler() : on_signal_(nullptr) {}
+  SignalHandler() = default;
 
-  void SetGoRegisteredSignalHandlersIfEmpty(
-      int signum, SignalHandlerSigActionHandler action,
-      SignalHandlerSignalHandler handler);
   void InvokeGoSignalHandler(int signum, siginfo_t *info, void *context);
 
  public:
@@ -47,29 +38,14 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
   static SignalHandler &GetInstance();
 
   void operator()(int signum, siginfo_t *info, void *context);
-  // never invoke a go function, see
-  // https://github.com/golang/go/issues/35814
-  void RegisterOnSignal(std::function<void(void *ctx, int fd, int signum,
-                                           siginfo_t *info, void *context)>
-                            callback,
-                        void *ctx);
 
   static int SetSig(int signum);
-  static int SetSig(int signum, SignalHandlerSigActionHandler action,
-                    SignalHandlerSignalHandler handler);
 
  private:
-  struct OnSignal {
-    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                       void *context)>
-        callback;
-    void *ctx;
-  };
-  // The previous one is never freed, as signal handlers may be reading it.
-  std::atomic<const OnSignal *> on_signal_;
-  SignalTable<std::pair<SignalHandlerSigActionHandler,
-                        SignalHandlerSignalHandler> >
-      go_registered_handlers_;
+  static void HandleSignal(int signum, siginfo_t *info, void *context);
+
+  std::mutex install_mutex_;
+  SignalTable<SignalDisposition> go_registered_handlers_;
 };
 }  // namespace searking
 #endif

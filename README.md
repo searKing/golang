@@ -70,8 +70,8 @@ various libs or tools for Golang
       happen.
 * [generator](https://pkg.go.dev/github.com/searKing/golang/go/go/generator#Generator) — Generator behaves
   like `Generator` in python or ES6, with yield and next statements.
-* [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal#Notify) — Signal enhances signal.Notify with the
-  stacktrace of cgo.
+* [signal](https://pkg.go.dev/github.com/searKing/golang/go/os/signal#Notify) — wraps `signal.Notify`
+  to dump the native C/C++ stack before preserving the Go runtime's signal behavior.
 * [sql](https://pkg.go.dev/github.com/searKing/golang/go/database/sql#NullDuration) — Enhance go std sql.
     - NullDuration
       -

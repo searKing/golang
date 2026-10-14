@@ -10,13 +10,6 @@
 
 #include "signal_handler_windows.hpp"
 
-#include <string.h>
-
-#include <boost/stacktrace.hpp>
-#include <fstream>
-#include <memory>
-#include <sstream>
-
 namespace searking {
 
 SignalHandler &SignalHandler::GetInstance() {
@@ -28,52 +21,30 @@ SignalHandler &SignalHandler::GetInstance() {
 void SignalHandler::operator()(int signum) {
   WriteSignalStacktrace(signum);
 
-  const OnSignal *on_signal = on_signal_.load(std::memory_order_acquire);
-  if (on_signal != nullptr && on_signal->callback) {
-    on_signal->callback(on_signal->ctx, SignalDumpToFd(), signum);
-  }
-
-  RunSigChain(signum, [this](int to) { InvokeGoSignalHandler(to); });
-
   InvokeGoSignalHandler(signum);
 }
 
+void SignalHandler::HandleSignal(int signum) { GetInstance()(signum); }
+
 void SignalHandler::InvokeGoSignalHandler(int signum) {
-  auto handler = go_registered_handlers_.Load(signum);
-  if (handler != nullptr) {
-    ::signal(signum, *handler);
-    ::raise(signum);
-  }
-}
-
-void SignalHandler::RegisterOnSignal(
-    std::function<void(void *ctx, int fd, int signum)> callback, void *ctx) {
-  on_signal_.store(new OnSignal{callback, ctx}, std::memory_order_release);
-}
-
-void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
-    int signum, SignalHandlerSignalHandler handler) {
-  // register once, avoid go's signal actions are lost.
-  go_registered_handlers_.StoreIfEmpty(signum, handler);
+  const SignalHandlerSignalHandler *handler =
+      go_registered_handlers_.Load(signum);
+  ::signal(signum, handler == nullptr ? SIG_DFL : *handler);
+  ::raise(signum);
 }
 
 int SignalHandler::SetSig(int signum) {
-  SignalHandlerSignalHandler handler = [](int signum) {
-    GetInstance()(signum);
-  };
+  SignalHandler &instance = GetInstance();
+  std::lock_guard<std::mutex> lock(instance.install_mutex_);
 
-  return SetSig(signum, handler);
-}
-
-int SignalHandler::SetSig(int signum, SignalHandlerSignalHandler handler) {
-  SignalHandlerSignalHandler prev_handler = ::signal(signum, SIG_DFL);
-
-  if (SIG_ERR == prev_handler) {
+  SignalHandlerSignalHandler previous = ::signal(signum, &HandleSignal);
+  if (previous == SIG_ERR) {
     return -1;
   }
-  GetInstance().SetGoRegisteredSignalHandlersIfEmpty(signum, prev_handler);
-
-  ::signal(signum, handler);
+  if (previous != &HandleSignal) {
+    instance.go_registered_handlers_.Store(
+        signum, new SignalHandlerSignalHandler(previous));
+  }
   return 0;
 }
 
