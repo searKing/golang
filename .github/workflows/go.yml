@@ -51,7 +51,9 @@ jobs:
         C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed make
         "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
     - name: Test
-      run: make test GOTEST_FLAGS="${{ matrix.gotest_flags }}"
+      # Modules are independent. Two-way parallelism roughly halves local
+      # uncached short-suite time without overwhelming smaller hosted runners.
+      run: make -j2 test GOTEST_FLAGS="${{ matrix.gotest_flags }}"
 
   lint:
     runs-on: ubuntu-latest

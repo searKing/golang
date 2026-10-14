@@ -8,6 +8,8 @@ Reduce pull-request feedback time without hiding correctness failures.
 ## Test policy
 
 - All CI operating systems run `go test -short`.
+- CI runs two independent modules at a time. Modules are isolated by `GOWORK=off`, and two-way
+  parallelism reduces orchestration overhead without heavily oversubscribing hosted runners.
 - Local `make test` remains the complete suite, including stress and wall-clock tests.
 - Tests that already scale work under `testing.Short` keep their full local coverage.
 - Tests that use real sleeps or wall-clock boundaries should either:
@@ -22,7 +24,8 @@ PR #79 will contain:
 
 1. The publishable-tool fix already on the branch.
 2. All CI test jobs using `-short`.
-3. Focused optimizations for measured slow tests.
+3. Two-way module parallelism in CI.
+4. Focused optimizations for measured slow tests.
 
 It will not contain incremental module selection.
 

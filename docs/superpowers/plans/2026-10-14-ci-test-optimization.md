@@ -108,3 +108,14 @@
   ```
 
 - [ ] **Step 4:** Do not push. Report full and short timings and wait for approval.
+
+### Task 4: Run independent modules concurrently in CI
+
+**Files:**
+- Modify: `.github/workflows/go.yml`
+- Modify: `docs/superpowers/specs/2026-10-14-ci-test-optimization-design.md`
+
+- [ ] **Step 1:** Benchmark `make -j2 test GOTEST_FLAGS="-short -count=1"` against the sequential
+  module-by-module short-suite timing.
+- [ ] **Step 2:** Run CI tests with `make -j2`, preserving `-short` on every platform.
+- [ ] **Step 3:** Parse the workflow, rerun the short suite, and commit the change.
