@@ -5,16 +5,16 @@ with [multimod](https://github.com/open-telemetry/opentelemetry-go-build-tools/t
 as [opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go/blob/main/RELEASING.md) does.
 All modules of a module set are released together with the same version.
 
-Tools are pinned by the module [internal/tools](internal/tools/go.mod), and run by [devops.sh](devops.sh).
+Tools are pinned by the module [internal/tools](internal/tools/go.mod), and run by targets of [Makefile](Makefile). Run `make help` for all targets.
 
 ## Module sets
 
 Every module of the repo must be listed in exactly one module set, or in `excluded-modules`
 if it is never released, such as tests, examples and testdata.
-Run `./devops.sh verify` after adding or removing a module.
+Run `make verify-mods` after adding or removing a module.
 
 Modules require each other with replace directives to their paths, so that they are built against
-local changes rather than the released versions. Run `./devops.sh crosslink` after requiring a
+local changes rather than the released versions. Run `make crosslink` after requiring a
 module of this repo, to add the missing replace directives and prune the unused ones.
 
 ## Release
@@ -23,21 +23,21 @@ module of this repo, to add the missing replace directives and prune the unused 
 2. Update requires of modules of this repo to the new version, and run `go mod tidy`.
 
    ```sh
-   ./devops.sh prerelease -m stable-v1
+   make prerelease MODSET=stable-v1
    ```
 
    It commits to a new branch `prerelease_stable-v1_<VERSION>`. Review and merge it.
 3. Tag modules of the module set at the merged commit.
 
    ```sh
-   ./devops.sh tag -m stable-v1 -c <COMMIT>
+   make add-tags MODSET=stable-v1 COMMIT=<COMMIT>
    ```
 
-   Run `./devops.sh untag -m stable-v1` to delete the local tags created by mistake.
+   Run `make delete-tags MODSET=stable-v1` to delete the local tags created by mistake.
 4. Push the tags.
 
    ```sh
-   ./devops.sh push -m stable-v1
+   make push-tags MODSET=stable-v1
    ```
 
 Tags are lightweight, in the form `<module-dir>/<VERSION>`, or `<VERSION>` for the root module.

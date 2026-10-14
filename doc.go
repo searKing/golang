@@ -42,7 +42,7 @@ import _ "github.com/searKing/golang/pkg/webserver"
 // https://github.com/ugorji/go/blob/master/FAQ.md#resolving-module-issues
 // https://github.com/spf13/cobra/pull/1233
 
-// ./devops.sh tidy
+// make go-mod-tidy
 // See RELEASING.md for tagging and releasing modules.
 //
 // go clean -modcache
