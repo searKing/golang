@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -58,12 +57,17 @@ func TestForwardSAInfoSpecialDispositions(t *testing.T) {
 		t.Fatal(err)
 	}
 	cxx := strings.TrimSpace(string(cxxOutput))
-
-	_, testFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("cannot locate signal test source")
+	goosOutput, err := exec.Command("go", "env", "GOOS").Output()
+	if err != nil {
+		t.Fatal(err)
 	}
-	cgoDir := filepath.Join(filepath.Dir(testFile), "cgo")
+	goos := strings.TrimSpace(string(goosOutput))
+
+	testDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cgoDir := filepath.Join(testDir, "cgo")
 	dir := t.TempDir()
 	source := filepath.Join(dir, "signal_disposition_test.cpp")
 	program := `#include <csignal>
@@ -110,7 +114,7 @@ int main(int argc, char **argv) {
 		filepath.Join(cgoDir, "write_int.cpp"),
 		"-o", helper,
 	}
-	if runtime.GOOS == "linux" {
+	if goos == "linux" {
 		args = append(args, "-ldl")
 	}
 	if output, err := exec.Command(cxx, args...).CombinedOutput(); err != nil {
