@@ -6,18 +6,24 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-//go:build cgo && unix && !linux
+//go:build cgo && unix
 
 #include "signal_handler_unix.hpp"
 
 #include <string.h>
 
 #include <boost/stacktrace.hpp>
+#include <cstdlib>
 #include <fstream>
 #include <memory>
 #include <sstream>
 
 namespace searking {
+#if defined(__linux__)
+// sig nums must be in [0,255)
+static volatile sig_atomic_t gotSignals[256];
+#endif
+
 SignalHandler &SignalHandler::GetInstance() {
   static SignalHandler instance;
   return instance;
@@ -38,13 +44,18 @@ void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
 }
 
 void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
+#if defined(__linux__)
+  if (signum >= 0 && signum < 256) {
+    gotSignals[signum] = true;
+  }
+#endif
   auto it = sig_invoke_signal_chains_.find(signum);
   if (it == sig_invoke_signal_chains_.end()) {
     return;
   }
   auto &sig_chain = it->second;
   int from = std::get<0>(sig_chain);
-  // consist validation_
+  // consist validation
   if (from != signum) {
     return;
   }
@@ -52,6 +63,25 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
   int wait = std::get<2>(sig_chain);
   int sleepInSeconds = std::get<3>(sig_chain);
 
+#if defined(__linux__)
+  if (to >= 0 && to != signum) {
+    InvokeGoSignalHandler(to, info, context);
+  }
+
+  // sigsuspend blocks forever sometimes on linux, so poll as on windows.
+  if (wait >= 0 && wait < 256 && wait != signum) {
+    gotSignals[wait] = false;
+    for (;;) {
+      bool got = gotSignals[wait];
+      if (got) {
+        gotSignals[wait] = false;
+        break;
+      }
+      // sleep 1s at most, will awake when an unmasked signal is received
+      sleep(1);
+    }
+  }
+#else
   do {
     sigset_t new_set, old_set;
     if (wait >= 0 && wait != signum) {
@@ -83,6 +113,7 @@ void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
       sigprocmask(SIG_SETMASK, &old_set, nullptr);
     }
   } while (0);
+#endif
 
   if (sleepInSeconds > 0) {
     sleep(sleepInSeconds);
@@ -155,20 +186,27 @@ int SignalHandler::SetSig(int signum) {
 
 int SignalHandler::SetSig(int signum, SignalHandlerSigActionHandler action,
                           SignalHandlerSignalHandler handler) {
+  // The alternate signal stack is per thread, and Go installs one for every
+  // thread of its own, which must not be replaced.
   stack_t ss;
-  sigaltstack(NULL, &ss);
-  ss.ss_sp = malloc(SIGSTKSZ * 100);
-  ss.ss_size = SIGSTKSZ * 100;
-  ss.ss_flags = 0;
-  if (sigaltstack(&ss, NULL) == -1) {
-    return EXIT_FAILURE;
+  if (sigaltstack(nullptr, &ss) == 0 && (ss.ss_flags & SS_DISABLE)) {
+    ss.ss_size = SIGSTKSZ * 100;
+    ss.ss_sp = malloc(ss.ss_size);
+    ss.ss_flags = 0;
+    if (ss.ss_sp == nullptr) {
+      return EXIT_FAILURE;
+    }
+    if (sigaltstack(&ss, nullptr) == -1) {
+      free(ss.ss_sp);
+      return EXIT_FAILURE;
+    }
   }
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
   sigaction(signum, nullptr, &sa);
   //  sigemptyset(&sa.sa_mask);
   //  sigfillset(&sa.sa_mask);
-  if (sa.sa_flags | SA_SIGINFO) {
+  if (sa.sa_flags & SA_SIGINFO) {
     GetInstance().SetGoRegisteredSignalHandlersIfEmpty(signum, sa.sa_sigaction,
                                                        nullptr);
   } else {

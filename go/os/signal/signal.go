@@ -49,12 +49,18 @@ func (f OnSignalHandlerFunc) OnSignal(signum os.Signal) {
 // Notify must be called again when one sig is called on windows system
 // as windows is based on signal(), which will reset sig's handler to SIG_DFL before sig's handler is called
 // While unix-like os will remain sig's handler always.
+// Signals raised by the Go runtime frequently, such as SIGURG and SIGPROF, are relayed to c only,
+// without stacktraces dumped.
 func Notify(c chan<- os.Signal, sigs ...os.Signal) {
 	if len(sigs) == 0 {
 		sigs = allSignals()
 	}
 	signal.Notify(c, sigs...)
-	setSig(sigs...)
+	for _, sig := range sigs {
+		if !isRuntimeSignal(sig) {
+			setSig(sig)
+		}
+	}
 }
 
 // DumpSignalTo redirects log to fd, -1 if not set; muted if < 0.
