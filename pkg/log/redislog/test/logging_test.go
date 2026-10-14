@@ -18,7 +18,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
 
-	redis_ "github.com/searKing/golang/third_party/github.com/redis/go-redis-v9"
+	"github.com/searKing/golang/pkg/log/redislog"
 )
 
 type entry struct {
@@ -71,7 +71,7 @@ func (r *recorder) executed() []entry {
 	return es
 }
 
-func newClient(t *testing.T, config redis_.Config) (*redis.Client, *recorder) {
+func newClient(t *testing.T, config redislog.Config) (*redis.Client, *recorder) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{
 		Addr:                     mr.Addr(),
@@ -80,12 +80,12 @@ func newClient(t *testing.T, config redis_.Config) (*redis.Client, *recorder) {
 	})
 	t.Cleanup(func() { _ = rdb.Close() })
 	r := &recorder{}
-	rdb.AddHook(redis_.NewHook(slog.New(r), config))
+	rdb.AddHook(redislog.NewHook(slog.New(r), config))
 	return rdb, r
 }
 
 func TestHook(t *testing.T) {
-	rdb, r := newClient(t, redis_.DefaultConfig)
+	rdb, r := newClient(t, redislog.DefaultConfig)
 	ctx := context.Background()
 	if err := rdb.Set(ctx, "k1", "hello world", 0).Err(); err != nil {
 		t.Fatal(err)
@@ -143,7 +143,7 @@ func TestHook(t *testing.T) {
 }
 
 func TestHookParameterized(t *testing.T) {
-	rdb, r := newClient(t, redis_.Config{Parameterized: true})
+	rdb, r := newClient(t, redislog.Config{Parameterized: true})
 	if err := rdb.Set(context.Background(), "k1", "hello world", 0).Err(); err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestHookParameterized(t *testing.T) {
 
 // TestHookSource checks sources of logs, which are callers of redis rather than the hook.
 func TestHookSource(t *testing.T) {
-	rdb, r := newClient(t, redis_.Config{})
+	rdb, r := newClient(t, redislog.Config{})
 	ctx := context.Background()
 	_, _, line, _ := runtime.Caller(0)
 	_ = rdb.Set(ctx, "k1", "v1", 0).Err() // The first command dials and runs HELLO nested.
@@ -187,7 +187,7 @@ func TestHookSource(t *testing.T) {
 func TestInternalLoggerSource(t *testing.T) {
 	r := &recorder{}
 	_, _, line, _ := runtime.Caller(0)
-	redis_.InternalLogger(slog.New(r)).Printf(context.Background(), "redis: connection pool: %s", "failed")
+	redislog.InternalLogger(slog.New(r)).Printf(context.Background(), "redis: connection pool: %s", "failed")
 	if len(r.entries) != 1 {
 		t.Fatalf("got %d entries want 1", len(r.entries))
 	}

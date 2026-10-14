@@ -12,6 +12,7 @@ module-sets:
       - github.com/searKing/golang
       - github.com/searKing/golang/go
       - github.com/searKing/golang/pkg/instrumentation/otel
+      - github.com/searKing/golang/pkg/log/redislog
       - github.com/searKing/golang/pkg/webserver
       - github.com/searKing/golang/third_party/github.com/gin-gonic/gin
       - github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql
@@ -56,6 +57,7 @@ module-sets:
       - github.com/searKing/golang/tools/protoc-gen-go-tag
 excluded-modules:
   - github.com/searKing/golang/internal/tools
+  - github.com/searKing/golang/pkg/log/redislog/test
   - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example
   - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test
   - github.com/searKing/golang/tools/go-nulljson/test

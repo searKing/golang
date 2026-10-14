@@ -1,11 +1,11 @@
-module github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test
+module github.com/searKing/golang/pkg/log/redislog/test
 
 go 1.27.0
 
 require (
 	github.com/alicebob/miniredis/v2 v2.40.0
 	github.com/redis/go-redis/v9 v9.22.0
-	github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 v1.2.146
+	github.com/searKing/golang/pkg/log/redislog v1.2.147
 )
 
 require (
@@ -15,4 +15,4 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 )
 
-replace github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 => ../
+replace github.com/searKing/golang/pkg/log/redislog => ../

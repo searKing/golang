@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package redis_test
+package redislog_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	redis_ "github.com/searKing/golang/third_party/github.com/redis/go-redis-v9"
+	"github.com/searKing/golang/pkg/log/redislog"
 )
 
 type tenantKey struct{}
@@ -25,14 +25,14 @@ func ExampleNewHook() {
 	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	defer rdb.Close()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	config := redis_.DefaultConfig
+	config := redislog.DefaultConfig
 	config.FieldsFromContext = func(ctx context.Context) []any {
 		if tenant, ok := ctx.Value(tenantKey{}).(string); ok {
 			return []any{"tenant", tenant}
 		}
 		return nil
 	}
-	rdb.AddHook(redis_.NewHook(logger, config))
+	rdb.AddHook(redislog.NewHook(logger, config))
 
 	ctx := context.WithValue(context.Background(), tenantKey{}, "t1")
 	_ = rdb.Set(ctx, "k1", "hello world", 0).Err()

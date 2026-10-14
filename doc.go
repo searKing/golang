@@ -39,6 +39,7 @@ import _ "github.com/searKing/golang/third_party/github.com/gtank/cryptopasta"
 import _ "github.com/searKing/golang/third_party/gocloud.dev"
 import _ "github.com/searKing/golang/pkg/webserver"
 import _ "github.com/searKing/golang/pkg/instrumentation/otel"
+import _ "github.com/searKing/golang/pkg/log/redislog"
 
 // Tools of main packages, which can not be imported, are required by tool directives in go.mod.
 

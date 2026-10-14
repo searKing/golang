@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	github.com/searKing/golang/go v1.2.145
 	github.com/searKing/golang/pkg/instrumentation/otel v1.2.147
+	github.com/searKing/golang/pkg/log/redislog v1.2.147
 	github.com/searKing/golang/pkg/webserver v1.2.145
 	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.145
 	github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql v1.2.145
@@ -226,5 +227,7 @@ replace github.com/searKing/golang/tools/go-validator => ./tools/go-validator
 replace github.com/searKing/golang/tools/protoc-gen-go-tag => ./tools/protoc-gen-go-tag
 
 replace github.com/searKing/golang/pkg/instrumentation/otel => ./pkg/instrumentation/otel
+
+replace github.com/searKing/golang/pkg/log/redislog => ./pkg/log/redislog
 
 replace github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus => ./third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus

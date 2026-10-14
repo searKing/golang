@@ -13,7 +13,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
 
-	redis_ "github.com/searKing/golang/third_party/github.com/redis/go-redis-v9"
+	"github.com/searKing/golang/pkg/log/redislog"
 )
 
 // exampleLogger logs to stdout without time and durations, to keep the output stable,
@@ -48,14 +48,14 @@ func Example_newHook() {
 		MaintNotificationsConfig: &maintnotifications.Config{Mode: maintnotifications.ModeDisabled},
 	})
 	defer rdb.Close()
-	config := redis_.DefaultConfig
+	config := redislog.DefaultConfig
 	config.FieldsFromContext = func(ctx context.Context) []any {
 		if tenant, ok := ctx.Value(tenantKey{}).(string); ok {
 			return []any{"tenant", tenant}
 		}
 		return nil
 	}
-	rdb.AddHook(redis_.NewHook(exampleLogger(), config))
+	rdb.AddHook(redislog.NewHook(exampleLogger(), config))
 
 	ctx := context.WithValue(context.Background(), tenantKey{}, "t1")
 	_ = rdb.Set(ctx, "k1", "hello world", 0).Err()
