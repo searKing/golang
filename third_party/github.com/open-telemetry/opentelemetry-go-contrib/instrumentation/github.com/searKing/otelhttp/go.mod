@@ -1,7 +1,7 @@
 // Deprecated: Use the "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp" module instead.
 module github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/otelhttp
 
-go 1.25.0
+go 1.27.0
 
 require (
 	github.com/searKing/golang/go v1.2.120
@@ -17,8 +17,8 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/trace v1.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 )
 

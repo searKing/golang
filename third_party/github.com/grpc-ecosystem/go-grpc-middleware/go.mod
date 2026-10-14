@@ -1,8 +1,6 @@
 module github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware
 
-go 1.23
-
-toolchain go1.23.3
+go 1.27.0
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -11,9 +9,9 @@ require (
 )
 
 require (
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )

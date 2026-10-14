@@ -9,7 +9,7 @@ require (
 
 require (
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
 )
 
 replace github.com/searKing/golang/go => ../../../../go
