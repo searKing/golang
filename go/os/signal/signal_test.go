@@ -23,6 +23,34 @@ import (
 	signal_ "github.com/searKing/golang/go/os/signal"
 )
 
+func TestNotifyConcurrent(t *testing.T) {
+	const workers = 8
+	channels := make([]chan os.Signal, workers)
+	var wg sync.WaitGroup
+	for i := range channels {
+		channels[i] = make(chan os.Signal, 1)
+		wg.Add(1)
+		go func(c chan os.Signal) {
+			defer wg.Done()
+			signal_.Notify(c, syscall.SIGUSR2)
+		}(channels[i])
+	}
+	wg.Wait()
+	for _, c := range channels {
+		defer signal.Stop(c)
+	}
+	if err := syscall.Kill(syscall.Getpid(), syscall.SIGUSR2); err != nil {
+		t.Fatal(err)
+	}
+	for i, c := range channels {
+		select {
+		case <-c:
+		case <-time.After(5 * time.Second):
+			t.Fatalf("channel %d did not receive SIGUSR2", i)
+		}
+	}
+}
+
 func TestDeprecatedSigInvokeChainDoesNotBlock(t *testing.T) {
 	if mode := os.Getenv("SEARKING_SIGNAL_CHAIN_TEST"); mode != "" {
 		switch mode {

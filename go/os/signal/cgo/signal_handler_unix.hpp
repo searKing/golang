@@ -16,25 +16,21 @@
 // POSIX compliant
 
 #include <csignal>
-#include <utility>
+#include <mutex>
 
 #include "base_signal_handler.hpp"
 
 namespace searking {
 
-// Callbacks Predefinations
-
-typedef void (*SignalHandlerSigActionHandler)(int signum, siginfo_t *info,
-                                              void *context);
-typedef void (*SignalHandlerSignalHandler)(int signum);
+struct SignalDisposition {
+  explicit SignalDisposition(const struct sigaction &action) : action(action) {}
+  const struct sigaction action;
+};
 
 class SignalHandler : public BaseSignalHandler {
  protected:
   SignalHandler() = default;
 
-  void SetGoRegisteredSignalHandlersIfEmpty(
-      int signum, SignalHandlerSigActionHandler action,
-      SignalHandlerSignalHandler handler);
   void InvokeGoSignalHandler(int signum, siginfo_t *info, void *context);
 
  public:
@@ -44,13 +40,12 @@ class SignalHandler : public BaseSignalHandler {
   void operator()(int signum, siginfo_t *info, void *context);
 
   static int SetSig(int signum);
-  static int SetSig(int signum, SignalHandlerSigActionHandler action,
-                    SignalHandlerSignalHandler handler);
 
  private:
-  SignalTable<
-      std::pair<SignalHandlerSigActionHandler, SignalHandlerSignalHandler> >
-      go_registered_handlers_;
+  static void HandleSignal(int signum, siginfo_t *info, void *context);
+
+  std::mutex install_mutex_;
+  SignalTable<SignalDisposition> go_registered_handlers_;
 };
 }  // namespace searking
 #endif
