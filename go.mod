@@ -3,39 +3,39 @@ module github.com/searKing/golang
 go 1.27.0
 
 require (
-	github.com/searKing/golang/go v1.2.148
-	github.com/searKing/golang/pkg/instrumentation/otel v1.2.148
-	github.com/searKing/golang/pkg/log/redislog v1.2.148
-	github.com/searKing/golang/pkg/webserver v1.2.148
-	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.148
-	github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql v1.2.148
-	github.com/searKing/golang/third_party/github.com/golang/go v1.2.148
-	github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.148
-	github.com/searKing/golang/third_party/github.com/google/uuid v1.2.148
-	github.com/searKing/golang/third_party/github.com/gorilla/websocket v1.2.148
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware v1.2.148
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2 v1.2.148
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway v1.2.148
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.148
-	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus v1.2.148
-	github.com/searKing/golang/third_party/github.com/gtank/cryptopasta v1.2.148
-	github.com/searKing/golang/third_party/github.com/jmoiron/sqlx v1.2.148
-	github.com/searKing/golang/third_party/github.com/julienschmidt/httprouter v1.2.148
-	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/otelhttp v1.2.148
-	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc v1.2.148
-	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.148
-	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.148
-	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation v1.2.148
-	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.148
-	github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.148
-	github.com/searKing/golang/third_party/github.com/spf13/viper v1.2.148
-	github.com/searKing/golang/third_party/github.com/syndtr/goleveldb v1.2.148
-	github.com/searKing/golang/third_party/github.com/urfave/negroni v1.2.148
-	github.com/searKing/golang/third_party/gocloud.dev v1.2.148
-	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.148
-	github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog/logruslogger v1.2.148
-	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.148
-	github.com/searKing/golang/tools v1.2.148
+	github.com/searKing/golang/go v1.2.149
+	github.com/searKing/golang/pkg/instrumentation/otel v1.2.149
+	github.com/searKing/golang/pkg/log/redislog v1.2.149
+	github.com/searKing/golang/pkg/webserver v1.2.149
+	github.com/searKing/golang/third_party/github.com/gin-gonic/gin v1.2.149
+	github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql v1.2.149
+	github.com/searKing/golang/third_party/github.com/golang/go v1.2.149
+	github.com/searKing/golang/third_party/github.com/golang/protobuf v1.2.149
+	github.com/searKing/golang/third_party/github.com/google/uuid v1.2.149
+	github.com/searKing/golang/third_party/github.com/gorilla/websocket v1.2.149
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware v1.2.149
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2 v1.2.149
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway v1.2.149
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.149
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus v1.2.149
+	github.com/searKing/golang/third_party/github.com/gtank/cryptopasta v1.2.149
+	github.com/searKing/golang/third_party/github.com/jmoiron/sqlx v1.2.149
+	github.com/searKing/golang/third_party/github.com/julienschmidt/httprouter v1.2.149
+	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/otelhttp v1.2.149
+	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc v1.2.149
+	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.149
+	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.149
+	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation v1.2.149
+	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.149
+	github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.149
+	github.com/searKing/golang/third_party/github.com/spf13/viper v1.2.149
+	github.com/searKing/golang/third_party/github.com/syndtr/goleveldb v1.2.149
+	github.com/searKing/golang/third_party/github.com/urfave/negroni v1.2.149
+	github.com/searKing/golang/third_party/gocloud.dev v1.2.149
+	github.com/searKing/golang/third_party/google.golang.org/grpc v1.2.149
+	github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog/logruslogger v1.2.149
+	github.com/searKing/golang/third_party/google.golang.org/protobuf v1.2.149
+	github.com/searKing/golang/tools v1.2.149
 )
 
 require (
@@ -78,17 +78,17 @@ require (
 	github.com/redis/go-redis/v9 v9.23.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
-	github.com/searKing/golang/tools/go-atomicvalue v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-enum v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-import v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-nulljson v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-option v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-sqlx v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-syncmap v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-syncpool v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-union v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-validator v1.2.148 // indirect
-	github.com/searKing/golang/tools/protoc-gen-go-tag v1.2.148 // indirect
+	github.com/searKing/golang/tools/go-atomicvalue v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-enum v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-import v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-nulljson v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-option v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-sqlx v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-syncmap v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-syncpool v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-union v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-validator v1.2.149 // indirect
+	github.com/searKing/golang/tools/protoc-gen-go-tag v1.2.149 // indirect
 	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect

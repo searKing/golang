@@ -41,19 +41,19 @@ require (
 	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/searKing/golang/go v1.2.148 // indirect
-	github.com/searKing/golang/tools v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-atomicvalue v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-enum v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-import v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-nulljson v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-option v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-sqlx v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-syncmap v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-syncpool v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-union v1.2.148 // indirect
-	github.com/searKing/golang/tools/go-validator v1.2.148 // indirect
-	github.com/searKing/golang/tools/protoc-gen-go-tag v1.2.148 // indirect
+	github.com/searKing/golang/go v1.2.149 // indirect
+	github.com/searKing/golang/tools v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-atomicvalue v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-enum v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-import v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-nulljson v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-option v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-sqlx v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-syncmap v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-syncpool v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-union v1.2.149 // indirect
+	github.com/searKing/golang/tools/go-validator v1.2.149 // indirect
+	github.com/searKing/golang/tools/protoc-gen-go-tag v1.2.149 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
