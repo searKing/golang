@@ -1,0 +1,7 @@
+# Update versions of actions in workflows. Go modules are updated by hand, for modules of the repo are released together.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -13,6 +13,8 @@ MULTIMOD := $(GO) tool -modfile=$(TOOLS_MOD) multimod
 CROSSLINK := $(GO) tool -modfile=$(TOOLS_MOD) crosslink
 
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -not -path './.*' -not -path '*/testdata/*' -exec dirname {} \; | sort)
+# Modules of packages, except internal/tools, which requires tools only.
+GO_MOD_DIRS := $(filter-out ./internal/tools,$(ALL_GO_MOD_DIRS))
 
 MODSET ?= stable-v1
 COMMIT ?= HEAD
@@ -37,6 +39,8 @@ help:
 	@echo
 	@echo "Targets:"
 	@echo "  go-mod-tidy   run 'go mod tidy' in every module"
+	@echo "  test          run 'go test ./...' in every module, with GOTEST_FLAGS"
+	@echo "  lint          run 'go vet ./...' in every module, and verify Go files are formatted by gofmt"
 	@echo "  crosslink     add replace directives of intra-repo requires and prune unused ones"
 	@echo "  verify-mods   verify versions.yaml lists every module of the repo, and verify-root-requires"
 	@echo "  verify-root-requires"
@@ -56,6 +60,35 @@ go-mod-tidy/%:
 	@echo "$(GO) mod tidy in $(DIR)" \
 		&& cd $(DIR) \
 		&& $(GO) mod tidy
+
+.PHONY: test
+test: $(GO_MOD_DIRS:%=test/%)
+test/%: DIR=$*
+test/%:
+	@echo "$(GO) test $(GOTEST_FLAGS) ./... in $(DIR)" \
+		&& cd $(DIR) \
+		&& $(GO) test $(GOTEST_FLAGS) ./...
+
+.PHONY: lint
+lint: $(GO_MOD_DIRS:%=vet/%) fmt-check
+vet/%: DIR=$*
+vet/%:
+	@echo "$(GO) vet $(VET_FLAGS) ./... in $(DIR)" \
+		&& cd $(DIR) \
+		&& $(GO) vet $(VET_FLAGS) ./...
+
+# Legacy generated protos copied from protobuf for tests use unkeyed fields of protobuf structs.
+vet/./third_party/github.com/spf13/viper: VET_FLAGS = -composites=false
+
+# Go files of testdata may be malformed on purpose.
+.PHONY: fmt-check
+fmt-check:
+	@unformatted=$$(git ls-files -z '*.go' ':!:**/testdata/**' | xargs -0 gofmt -l); \
+	if [ -n "$$unformatted" ]; then \
+		echo "Go files not formatted by gofmt, run 'gofmt -w' on them:" >&2; \
+		printf '  %s\n' $$unformatted >&2; \
+		exit 1; \
+	fi
 
 .PHONY: crosslink
 crosslink:
