@@ -1,0 +1,60 @@
+# Copyright 2026 The searKing Author. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+# Versioning file of multimod (go.opentelemetry.io/build-tools/multimod).
+# Modules in a module set are always released together with the same version.
+# Every module in the repo must be listed in a module set or excluded-modules.
+module-sets:
+  stable-v1:
+    version: v1.2.147
+    modules:
+      - github.com/searKing/golang
+      - github.com/searKing/golang/go
+      - github.com/searKing/golang/pkg/instrumentation/otel
+      - github.com/searKing/golang/pkg/webserver
+      - github.com/searKing/golang/third_party/github.com/gin-gonic/gin
+      - github.com/searKing/golang/third_party/github.com/go-sql-driver/mysql
+      - github.com/searKing/golang/third_party/github.com/golang/go
+      - github.com/searKing/golang/third_party/github.com/golang/protobuf
+      - github.com/searKing/golang/third_party/github.com/google/uuid
+      - github.com/searKing/golang/third_party/github.com/gorilla/websocket
+      - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware
+      - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway
+      - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2
+      - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus
+      - github.com/searKing/golang/third_party/github.com/gtank/cryptopasta
+      - github.com/searKing/golang/third_party/github.com/jmoiron/sqlx
+      - github.com/searKing/golang/third_party/github.com/julienschmidt/httprouter
+      - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/otelhttp
+      - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc
+      - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql
+      - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric
+      - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9
+      - github.com/searKing/golang/third_party/github.com/sirupsen/logrus
+      - github.com/searKing/golang/third_party/github.com/spf13/pflag
+      - github.com/searKing/golang/third_party/github.com/spf13/viper
+      - github.com/searKing/golang/third_party/github.com/syndtr/goleveldb
+      - github.com/searKing/golang/third_party/github.com/urfave/negroni
+      - github.com/searKing/golang/third_party/gocloud.dev
+      - github.com/searKing/golang/third_party/google.golang.org/grpc
+      - github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog/logruslogger
+      - github.com/searKing/golang/third_party/google.golang.org/protobuf
+      - github.com/searKing/golang/tools
+      - github.com/searKing/golang/tools/go-atomicvalue
+      - github.com/searKing/golang/tools/go-enum
+      - github.com/searKing/golang/tools/go-import
+      - github.com/searKing/golang/tools/go-nulljson
+      - github.com/searKing/golang/tools/go-option
+      - github.com/searKing/golang/tools/go-sqlx
+      - github.com/searKing/golang/tools/go-syncmap
+      - github.com/searKing/golang/tools/go-syncpool
+      - github.com/searKing/golang/tools/go-union
+      - github.com/searKing/golang/tools/go-validator
+      - github.com/searKing/golang/tools/protoc-gen-go-tag
+excluded-modules:
+  - go-grpc-middleware-v2
+  - github.com/searKing/golang/internal/tools
+  - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example
+  - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test
+  - github.com/searKing/golang/tools/go-import/testdata/cgo
