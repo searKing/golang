@@ -36,11 +36,19 @@ void SignalHandler::InvokeGoSignalHandler(int signum) {
 int SignalHandler::SetSig(int signum) {
   SignalHandler &instance = GetInstance();
   std::lock_guard<std::mutex> lock(instance.install_mutex_);
+
+  const SignalHandlerSignalHandler *saved =
+      instance.go_registered_handlers_.Load(signum);
+  instance.go_registered_handlers_.Store(signum, nullptr);
+
   SignalHandlerSignalHandler previous = ::signal(signum, &HandleSignal);
   if (previous == SIG_ERR) {
+    instance.go_registered_handlers_.Store(signum, saved);
     return -1;
   }
-  if (previous != &HandleSignal) {
+  if (previous == &HandleSignal) {
+    instance.go_registered_handlers_.Store(signum, saved);
+  } else {
     instance.go_registered_handlers_.Store(
         signum, new SignalHandlerSignalHandler(previous));
   }
