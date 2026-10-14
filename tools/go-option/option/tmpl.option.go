@@ -32,6 +32,7 @@ type TmplOptionRender struct {
 
 	FormatTypeName string        // The format FieldName of the struct type.
 	Fields         []StructField // fields if target type is struct
+	SkipSelf       bool          // skip With{{FormatTypeName}}(v {{TargetTypeName}}), which copies the target type
 
 	OptionInterfaceName string // option interface name of target type
 	OptionStructName    string // option struct name of target type
@@ -162,7 +163,8 @@ func ApplyOptions{{.TargetTypeGenericDeclaration}}(o *{{.TargetTypeName}}{{.Targ
 }
 {{- end}}
 
-{{- if .TargetTypeName | IsExported }}
+{{- if .SkipSelf }}
+{{- else if .TargetTypeName | IsExported }}
 // With{{.FormatTypeName}} sets {{.TargetTypeName}}.
 func With{{.FormatTypeName}}{{.TargetTypeGenericDeclaration}}(v {{.TargetTypeName}}{{.TargetTypeGenericParams}}) {{.OptionInterfaceName}}{{.TargetTypeGenericParams}} {
 	return {{.OptionInterfaceName}}Func{{$package_scope.TargetTypeGenericParams}} (func( o *{{.TargetTypeName}}{{.TargetTypeGenericParams}}) {

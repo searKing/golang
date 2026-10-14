@@ -23,7 +23,7 @@ import (
 // A Gateway defines parameters for running an HTTP+gRPC-Gateway+gRPC server.
 // The zero value for Gateway is a valid configuration.
 //
-//go:generate go-option -type=Gateway
+//go:generate go-option -type=Gateway -skip-self
 type Gateway struct {
 	// options
 	opt         gatewayOption `option:"-"`

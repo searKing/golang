@@ -27,6 +27,7 @@ var (
 	output                  = flag.String("output", "", "output file name; default srcdir/<type>_option.go")
 	flagSkipPrivateFields   = flag.Bool("skip-unexported", false, "skip unexported Fields")
 	flagSkipAnonymousFields = flag.Bool("skip-anonymous", false, "skip anonymous Fields")
+	flagSkipSelf            = flag.Bool("skip-self", false, "skip the option setting the whole type, such as WithT(v T), for types not to be copied, such as types containing locks")
 	alias                   = flag.String("alias", "", "alias of the generated constant names")
 	trimPrefix              = flag.String("trimprefix", "", "trim the `prefix` from the generated constant names")
 	trim                    = flag.Bool("trim", false, "trim type names as prefix from the generated constant names")
@@ -365,6 +366,7 @@ func (g *Generator) generateOptionOneRun(dir string, value Struct) {
 		TargetTypeGenericParams:      value.StructTypeGenericTypeParams,
 		TrimmedTypeName:              value.trimmedStructTypeName,
 		Fields:                       value.Fields,
+		SkipSelf:                     *flagSkipSelf,
 		ApplyOptionsAsMemberFunction: false,
 	}
 
