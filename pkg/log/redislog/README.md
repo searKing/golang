@@ -26,7 +26,8 @@ level=DEBUG msg="redis dialed" redis.network=tcp redis.addr=localhost:6379 redis
   Commands are truncated as `SLOWLOG` of redis does: up to 32 arguments of 128 bytes each, and 32 commands.
 - Logs are sourced, if `AddSource` of handlers is enabled, from callers of redis, such as the caller of `rdb.Get`,
   rather than the hook, as redisotel locates callers for `code.function`; dials of connection pools have no source.
-- Internal logs of go-redis are logged by `redis.SetLogger(redislog.InternalLogger(logger))`, or by `WithSlogLogger`.
+- Dials and handshakes, such as `HELLO`, are logged on the first command of a connection. Pipelines run on a pool
+  of their own since go-redis v9.23.0, so the first pipeline dials again, unless `PipelinePoolSize` is -1.
 
 `Config` corresponds to `Config` of gorm:
 
@@ -41,6 +42,24 @@ level=DEBUG msg="redis dialed" redis.network=tcp redis.addr=localhost:6379 redis
 |                             | `SkipDials`         | dials logged; skips dials if true, as `WithDialFilter` of redisotel |
 
 Slow calls are logged at warn level at least. Fields of clients, such as addresses, can be added by `slog.Logger.With`.
+
+### Internal logs of go-redis
+
+go-redis logs internally, such as failures of the connection pool, reconnections and handoffs of maintenance
+notifications, by `Printf` of the global logger set by `redis.SetLogger`, rather than by hooks.
+`InternalLogger` logs them to slog, at warn level, for go-redis logs without levels:
+
+```go
+redis.SetLogger(redislog.InternalLogger(logger))
+// go-redis filters internal logs by its own level, error by default, before they reach the logger.
+logging.SetLogLevel(logging.LogLevelInfo)
+rdb.AddHook(redislog.NewHook(logger, redislog.DefaultConfig))
+```
+
+`WithSlogLogger(h, config)` does both `redis.SetLogger` and `NewHook`. The package
+[logging](https://pkg.go.dev/github.com/redis/go-redis/v9/logging) of go-redis sets the level, disables internal
+logs by `logging.Disable()`, or filters them by substrings by `logging.NewBlacklistLogger` and
+`logging.NewWhitelistLogger`, which log by the standard `log` package rather than slog.
 
 ### Cluster and ring
 

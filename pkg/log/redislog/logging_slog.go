@@ -30,6 +30,8 @@ func (f PrintfFunc) Printf(ctx context.Context, format string, v ...any) { f(ctx
 // InternalLogger returns the logger of go-redis to be set by redis.SetLogger, which logs internal logs of go-redis,
 // such as failures of the connection pool and reconnections, to l, slog.Default() if nil,
 // at warn level, sourced from go-redis where it logs.
+// go-redis logs without levels, but filters internal logs by its own level, error by default,
+// which is set by logging.SetLogLevel of github.com/redis/go-redis/v9/logging.
 func InternalLogger(l *slog.Logger) PrintfFunc {
 	return func(ctx context.Context, format string, v ...any) {
 		logger := l

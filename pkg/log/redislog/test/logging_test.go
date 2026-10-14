@@ -164,21 +164,30 @@ func TestHookSource(t *testing.T) {
 		return nil
 	})
 	// Dials have no source, as go-redis dials in goroutines of connection pools.
-	wantLines := map[string]int{"dial": 0, "hello": line + 1, "set": line + 1, "pipeline": line + 2}
-	if len(r.entries) != len(wantLines) {
-		t.Fatalf("got %d entries want %d: %+v", len(r.entries), len(wantLines), r.entries)
+	// Pipelines dial again, for go-redis runs them on a pool of their own.
+	type call struct {
+		name string
+		line int
 	}
-	for _, e := range r.entries {
-		call, _, _ := strings.Cut(fmt.Sprint(e.fields["redis.cmd"]), " ")
+	want := []call{
+		{"dial", 0}, {"hello", line + 1}, {"set", line + 1},
+		{"dial", 0}, {"hello", line + 2}, {"pipeline", line + 2},
+	}
+	if len(r.entries) != len(want) {
+		t.Fatalf("got %d entries want %d: %+v", len(r.entries), len(want), r.entries)
+	}
+	for i, e := range r.entries {
+		name, _, _ := strings.Cut(fmt.Sprint(e.fields["redis.cmd"]), " ")
 		switch e.msg {
 		case "redis dialed":
-			call = "dial"
+			name = "dial"
 		case "redis pipeline executed":
-			call = "pipeline"
+			name = "pipeline"
 		}
-		if e.source.Line != wantLines[call] || (wantLines[call] != 0 && !strings.HasSuffix(e.source.File, "/test/logging_test.go")) {
-			t.Errorf("%s of %s: got source %s:%d (%s), want line %d of this file",
-				e.msg, call, e.source.File, e.source.Line, e.source.Function, wantLines[call])
+		if name != want[i].name || e.source.Line != want[i].line ||
+			(want[i].line != 0 && !strings.HasSuffix(e.source.File, "/test/logging_test.go")) {
+			t.Errorf("entry %d: got %s at %s:%d (%s), want %s at line %d of this file",
+				i, name, e.source.File, e.source.Line, e.source.Function, want[i].name, want[i].line)
 		}
 	}
 }
