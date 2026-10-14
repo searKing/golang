@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -20,55 +21,39 @@ import (
 	signal_ "github.com/searKing/golang/go/os/signal"
 )
 
-func TestSetSigInvokeChainContext(t *testing.T) {
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer r.Close()
-	signal_.DumpSignalTo(int(w.Fd()))
-	defer signal_.DumpSignalTo(int(syscall.Stderr))
-
-	// SIGTTOU is never raised, so the chain of SIGWINCH waits until ctx is done.
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	signal_.SetSigInvokeChainContext(ctx, syscall.SIGWINCH, syscall.SIGTTOU, 0, syscall.SIGWINCH)
-	c := make(chan os.Signal, 1)
-	signal_.Notify(c, syscall.SIGWINCH)
-	defer signal.Stop(c)
-
-	const cancelAfter = 500 * time.Millisecond
-	relay := func() time.Duration {
-		start := time.Now()
+func TestDeprecatedSigInvokeChainDoesNotBlock(t *testing.T) {
+	if mode := os.Getenv("SEARKING_SIGNAL_CHAIN_TEST"); mode != "" {
+		switch mode {
+		case "plain":
+			signal_.SetSigInvokeChain(syscall.SIGUSR1, syscall.SIGTTOU, 10, syscall.SIGWINCH)
+		case "context":
+			signal_.SetSigInvokeChainContext(context.Background(), syscall.SIGUSR1, syscall.SIGTTOU, 10*time.Second, syscall.SIGWINCH)
+		default:
+			t.Fatalf("unknown child mode %q", mode)
+		}
+		c := make(chan os.Signal, 1)
+		signal_.Notify(c, syscall.SIGWINCH)
 		if err := syscall.Kill(syscall.Getpid(), syscall.SIGWINCH); err != nil {
 			t.Fatal(err)
 		}
 		select {
 		case <-c:
-		case <-time.After(10 * time.Second):
-			t.Fatal("SIGWINCH not relayed, the chain waits forever")
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("deprecated signal chain blocked delivery")
 		}
-		return time.Since(start)
+		return
 	}
 
-	time.AfterFunc(cancelAfter, cancel)
-	if elapsed := relay(); elapsed < cancelAfter {
-		t.Errorf("SIGWINCH relayed after %v, want waiting SIGTTOU until ctx is done after %v", elapsed, cancelAfter)
-	}
-	// The chain is removed once ctx is done.
-	if elapsed := relay(); elapsed >= cancelAfter {
-		t.Errorf("SIGWINCH relayed after %v, want no chain after ctx is done", elapsed)
-	}
-
-	signal_.DumpSignalTo(int(syscall.Stderr))
-	_ = w.Close()
-	b, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := fmt.Sprintf("wait Signal(%d) for Signal(%d) canceled.", int(syscall.SIGTTOU), int(syscall.SIGWINCH))
-	if n := strings.Count(string(b), want); n != 1 {
-		t.Errorf("signal log = %q, want containing %q once, got %d", b, want, n)
+	for _, mode := range []string{"plain", "context"} {
+		t.Run(mode, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestDeprecatedSigInvokeChainDoesNotBlock$")
+			cmd.Env = append(os.Environ(), "SEARKING_SIGNAL_CHAIN_TEST="+mode)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("child failed: %v\n%s", err, output)
+			}
+		})
 	}
 }
 

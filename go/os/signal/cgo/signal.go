@@ -51,15 +51,3 @@ func PreviousStacktrace() string {
 	defer C.free(unsafe.Pointer(stacktraceChars))
 	return C.GoString(stacktraceChars)
 }
-
-// SetSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
-func SetSigInvokeChain(from, to, wait, sleepInSeconds int) {
-	C.CGO_SetSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
-}
-
-// SetSigInvokeChainCancelable acts as SetSigInvokeChain, and returns cancel,
-// which removes the chain, if not replaced yet, and returns its wait in progress.
-func SetSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) (cancel func()) {
-	chain := C.CGO_NewSigInvokeChain(C.int(from), C.int(to), C.int(wait), C.int(sleepInSeconds))
-	return func() { C.CGO_CancelSigInvokeChain(C.int(from), chain) }
-}
