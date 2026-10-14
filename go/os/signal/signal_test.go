@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -49,6 +50,95 @@ func TestNotifyConcurrent(t *testing.T) {
 			t.Fatalf("channel %d did not receive SIGUSR2", i)
 		}
 	}
+}
+
+func TestForwardSAInfoSpecialDispositions(t *testing.T) {
+	cxxOutput, err := exec.Command("go", "env", "CXX").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cxx := strings.TrimSpace(string(cxxOutput))
+
+	_, testFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("cannot locate signal test source")
+	}
+	cgoDir := filepath.Join(filepath.Dir(testFile), "cgo")
+	dir := t.TempDir()
+	source := filepath.Join(dir, "signal_disposition_test.cpp")
+	program := `#include <csignal>
+#include <cstring>
+
+#include "signal_handler_unix.hpp"
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    return 2;
+  }
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  sigemptyset(&action.sa_mask);
+  action.sa_flags = SA_SIGINFO;
+  if (strcmp(argv[1], "ignore") == 0) {
+    action.sa_sigaction =
+        reinterpret_cast<decltype(action.sa_sigaction)>(SIG_IGN);
+  } else if (strcmp(argv[1], "default") == 0) {
+    action.sa_sigaction =
+        reinterpret_cast<decltype(action.sa_sigaction)>(SIG_DFL);
+  } else {
+    return 3;
+  }
+  if (sigaction(SIGUSR1, &action, nullptr) != 0 ||
+      searking::SignalHandler::SetSig(SIGUSR1) != 0) {
+    return 4;
+  }
+  raise(SIGUSR1);
+  return strcmp(argv[1], "ignore") == 0 ? 0 : 5;
+}
+`
+	if err := os.WriteFile(source, []byte(program), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	helper := filepath.Join(dir, "signal_disposition_test")
+	args := []string{
+		"-std=c++11",
+		"-D_GNU_SOURCE",
+		"-I", cgoDir,
+		"-I", filepath.Join(cgoDir, "include"),
+		source,
+		filepath.Join(cgoDir, "signal_handler_unix.cpp"),
+		filepath.Join(cgoDir, "write_int.cpp"),
+		"-o", helper,
+	}
+	if runtime.GOOS == "linux" {
+		args = append(args, "-ldl")
+	}
+	if output, err := exec.Command(cxx, args...).CombinedOutput(); err != nil {
+		t.Fatalf("compile C++ disposition helper: %v\n%s", err, output)
+	}
+
+	t.Run("SIG_IGN", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if output, err := exec.CommandContext(ctx, helper, "ignore").CombinedOutput(); err != nil {
+			t.Fatalf("SIG_IGN helper failed: %v\n%s", err, output)
+		}
+	})
+
+	t.Run("SIG_DFL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, helper, "default")
+		output, err := cmd.CombinedOutput()
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok {
+			t.Fatalf("SIG_DFL helper error = %v, want signal termination\n%s", err, output)
+		}
+		status, ok := exitErr.Sys().(syscall.WaitStatus)
+		if !ok || !status.Signaled() || status.Signal() != syscall.SIGUSR1 {
+			t.Fatalf("SIG_DFL helper status = %v, want SIGUSR1 termination\n%s", status, output)
+		}
+	})
 }
 
 func TestDeprecatedSigInvokeChainDoesNotBlock(t *testing.T) {

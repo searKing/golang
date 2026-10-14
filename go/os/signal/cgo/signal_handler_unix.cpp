@@ -43,9 +43,19 @@ void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
   // sa_handler and sa_sigaction may share storage. Inspect only the member
   // selected by SA_SIGINFO.
   if ((action.sa_flags & SA_SIGINFO) != 0) {
-    if (action.sa_sigaction != nullptr &&
-        action.sa_sigaction != &SignalHandler::HandleSignal) {
-      action.sa_sigaction(signum, info, context);
+    using SigAction = void (*)(int, siginfo_t *, void *);
+    const SigAction handler = action.sa_sigaction;
+    if (handler == reinterpret_cast<SigAction>(SIG_IGN)) {
+      return;
+    }
+    if (handler == reinterpret_cast<SigAction>(SIG_DFL)) {
+      if (sigaction(signum, &action, nullptr) == 0) {
+        raise(signum);
+      }
+      return;
+    }
+    if (handler != &SignalHandler::HandleSignal) {
+      handler(signum, info, context);
     }
     return;
   }
