@@ -7,7 +7,7 @@
 //go:build !android
 // +build !android
 
-package main
+package test
 
 import (
 	"go/build"
@@ -77,7 +77,7 @@ func buildNullJson(t *testing.T) (dir string, gonulljson string) {
 		t.Fatal(err)
 	}
 	gonulljson = filepath.Join(dir, "go-nulljson.exe")
-	err = run("go", "build", "-o", gonulljson)
+	err = run("go", "build", "-o", gonulljson, "github.com/searKing/golang/tools/go-nulljson")
 	if err != nil {
 		t.Fatalf("building go-nulljson: %s", err)
 	}

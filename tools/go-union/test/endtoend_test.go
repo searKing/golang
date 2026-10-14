@@ -5,9 +5,8 @@
 // go command is not available on android
 
 //go:build !android
-// +build !android
 
-package main
+package test
 
 import (
 	"go/build"
@@ -26,13 +25,13 @@ import (
 // binary panics if the String method for X is not correct, including for error cases.
 
 func TestEndToEnd(t *testing.T) {
-	dir, gosqlx := buildsqlx(t)
+	dir, gounions := buildUnions(t)
 	defer os.RemoveAll(dir)
 	// Read the testdata directory.
-	walkDir(dir, gosqlx, "testdata", t)
+	walkDir(dir, gounions, "testdata", t)
 }
 
-func walkDir(dir, gosqlx, dirname string, t *testing.T) {
+func walkDir(dir, gounions, dirname string, t *testing.T) {
 	// Generate, compile, and run the test programs.
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -42,22 +41,24 @@ func walkDir(dir, gosqlx, dirname string, t *testing.T) {
 	for _, file := range files {
 		name := file.Name()
 		if file.IsDir() {
-			walkDir(dir, gosqlx, filepath.Join(dirname, name), t)
+			walkDir(dir, gounions, filepath.Join(dirname, name), t)
 			continue
 		}
 		if file.Mode().IsRegular() {
-			if strings.HasSuffix(name, ".sql") {
-				continue
-			}
-			if strings.HasSuffix(name, "_sqlx.go") {
-				continue
-			}
 			if !strings.HasSuffix(name, ".go") {
 				t.Errorf("%s is not a Go file", name)
 				continue
 			}
+			if strings.HasPrefix(name, ".") {
+				// This file is ignored by the build tool since it's name starts with '.'.
+				continue
+			}
 			if strings.HasPrefix(name, "tag_") || strings.HasPrefix(name, "vary_") {
 				// This file is used for tag processing in TestTags or TestConstValueChange, below.
+				continue
+			}
+			if strings.HasSuffix(name, "_union.go") {
+				// This file is ignored by the build tool since it's name ends with '_union.go'.
 				continue
 			}
 			if name == "cgo.go" && !build.Default.CgoEnabled {
@@ -66,29 +67,29 @@ func walkDir(dir, gosqlx, dirname string, t *testing.T) {
 			}
 			// Names are known to be ASCII and long enough.
 			typeName := castFileNameToTypeName(name[:len(name)-len(".go")])
-			gosqlxCompileAndRun(t, dir, gosqlx, typeName, filepath.Join(dirname, name))
+			gounionsCompileAndRun(t, dir, gounions, typeName, filepath.Join(dirname, name))
 		}
 	}
 }
 
-// buildsqlx creates a temporary directory and installs go-sqlx there.
-func buildsqlx(t *testing.T) (dir string, gosqlx string) {
+// buildUnions creates a temporary directory and installs go-union there.
+func buildUnions(t *testing.T) (dir string, gounions string) {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "go-sqlx")
+	dir, err := ioutil.TempDir("", "go-union")
 	if err != nil {
 		t.Fatal(err)
 	}
-	gosqlx = filepath.Join(dir, "go-sqlx.exe")
-	err = run("go", "build", "-o", gosqlx)
+	gounions = filepath.Join(dir, "go-union.exe")
+	err = run("go", "build", "-o", gounions, "github.com/searKing/golang/tools/go-union")
 	if err != nil {
-		t.Fatalf("building go-sqlx: %s", err)
+		t.Fatalf("building go-union: %s", err)
 	}
-	return dir, gosqlx
+	return dir, gounions
 }
 
-// gosqlxCompileAndRun runs stringer for the named file and compiles and
+// gounionsCompileAndRun runs stringer for the named file and compiles and
 // runs the target binary in directory dir. That binary will panic if the String method is incorrect.
-func gosqlxCompileAndRun(t *testing.T, dir, gosqlx, typeName, fileName string) {
+func gounionsCompileAndRun(t *testing.T, dir, gounions, typeName, fileName string) {
 	t.Helper()
 	t.Logf("run: %s %s\n", fileName, typeName)
 	source := filepath.Join(dir, fileName)
@@ -102,14 +103,14 @@ func gosqlxCompileAndRun(t *testing.T, dir, gosqlx, typeName, fileName string) {
 		t.Fatalf("copying file to temporary directory: %s", err)
 	}
 
-	sqlxSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_sqlx.go"))
-	// Run gosqlx in temporary directory.
-	err = run(gosqlx, "-type", typeName, "-flagOutput", sqlxSource, source)
+	unionsSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_union.go"))
+	// Run gounions in temporary directory.
+	err = run(gounions, "-type", typeName, "-output", unionsSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Run the binary in the temporary directory.
-	err = run("go", "run", sqlxSource, source)
+	err = run("go", "run", unionsSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}

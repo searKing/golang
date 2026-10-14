@@ -5,8 +5,9 @@
 // go command is not available on android
 
 //go:build !android
+// +build !android
 
-package main
+package test
 
 import (
 	"go/build"
@@ -25,13 +26,13 @@ import (
 // binary panics if the String method for X is not correct, including for error cases.
 
 func TestEndToEnd(t *testing.T) {
-	dir, gooptions := buildOptions(t)
+	dir, govalidator := buildvalidator(t)
 	defer os.RemoveAll(dir)
 	// Read the testdata directory.
-	walkDir(dir, gooptions, "testdata", t)
+	walkDir(dir, govalidator, "testdata", t)
 }
 
-func walkDir(dir, gooptions, dirname string, t *testing.T) {
+func walkDir(dir, govalidator, dirname string, t *testing.T) {
 	// Generate, compile, and run the test programs.
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -41,24 +42,22 @@ func walkDir(dir, gooptions, dirname string, t *testing.T) {
 	for _, file := range files {
 		name := file.Name()
 		if file.IsDir() {
-			walkDir(dir, gooptions, filepath.Join(dirname, name), t)
+			walkDir(dir, govalidator, filepath.Join(dirname, name), t)
 			continue
 		}
 		if file.Mode().IsRegular() {
+			if strings.HasSuffix(name, ".sql") {
+				continue
+			}
+			if strings.HasSuffix(name, "_validator.go") {
+				continue
+			}
 			if !strings.HasSuffix(name, ".go") {
 				t.Errorf("%s is not a Go file", name)
 				continue
 			}
-			if strings.HasPrefix(name, ".") {
-				// This file is ignored by the build tool since it's name starts with '.'.
-				continue
-			}
 			if strings.HasPrefix(name, "tag_") || strings.HasPrefix(name, "vary_") {
 				// This file is used for tag processing in TestTags or TestConstValueChange, below.
-				continue
-			}
-			if strings.HasSuffix(name, "_options.go") {
-				// This file is ignored by the build tool since it's name ends with '_options.go'.
 				continue
 			}
 			if name == "cgo.go" && !build.Default.CgoEnabled {
@@ -67,29 +66,29 @@ func walkDir(dir, gooptions, dirname string, t *testing.T) {
 			}
 			// Names are known to be ASCII and long enough.
 			typeName := castFileNameToTypeName(name[:len(name)-len(".go")])
-			gooptionsCompileAndRun(t, dir, gooptions, typeName, filepath.Join(dirname, name))
+			govalidatorCompileAndRun(t, dir, govalidator, typeName, filepath.Join(dirname, name))
 		}
 	}
 }
 
-// buildOptions creates a temporary directory and installs go-option there.
-func buildOptions(t *testing.T) (dir string, gooptions string) {
+// buildvalidator creates a temporary directory and installs go-validator there.
+func buildvalidator(t *testing.T) (dir string, govalidator string) {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "go-option")
+	dir, err := ioutil.TempDir("", "go-validator")
 	if err != nil {
 		t.Fatal(err)
 	}
-	gooptions = filepath.Join(dir, "go-option.exe")
-	err = run("go", "build", "-o", gooptions)
+	govalidator = filepath.Join(dir, "go-validator.exe")
+	err = run("go", "build", "-o", govalidator, "github.com/searKing/golang/tools/go-validator")
 	if err != nil {
-		t.Fatalf("building go-option: %s", err)
+		t.Fatalf("building go-validator: %s", err)
 	}
-	return dir, gooptions
+	return dir, govalidator
 }
 
-// gooptionsCompileAndRun runs stringer for the named file and compiles and
+// govalidatorCompileAndRun runs stringer for the named file and compiles and
 // runs the target binary in directory dir. That binary will panic if the String method is incorrect.
-func gooptionsCompileAndRun(t *testing.T, dir, gooptions, typeName, fileName string) {
+func govalidatorCompileAndRun(t *testing.T, dir, govalidator, typeName, fileName string) {
 	t.Helper()
 	t.Logf("run: %s %s\n", fileName, typeName)
 	source := filepath.Join(dir, fileName)
@@ -103,14 +102,14 @@ func gooptionsCompileAndRun(t *testing.T, dir, gooptions, typeName, fileName str
 		t.Fatalf("copying file to temporary directory: %s", err)
 	}
 
-	optionsSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_options.go"))
-	// Run gooptions in temporary directory.
-	err = run(gooptions, "-type", typeName, "-output", optionsSource, source)
+	validatorSource := filepath.Join(filepath.Dir(source), castTypeNameToFileName(typeName+"_validator.go"))
+	// Run govalidator in temporary directory.
+	err = run(govalidator, "-type", typeName, "-flagOutput", validatorSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Run the binary in the temporary directory.
-	err = run("go", "run", optionsSource, source)
+	err = run("go", "run", validatorSource, source)
 	if err != nil {
 		t.Fatal(err)
 	}

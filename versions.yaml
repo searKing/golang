@@ -58,4 +58,9 @@ excluded-modules:
   - github.com/searKing/golang/internal/tools
   - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example
   - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test
+  - github.com/searKing/golang/tools/go-nulljson/test
+  - github.com/searKing/golang/tools/go-option/test
+  - github.com/searKing/golang/tools/go-sqlx/test
+  - github.com/searKing/golang/tools/go-union/test
+  - github.com/searKing/golang/tools/go-validator/test
   - github.com/searKing/golang/tools/go-import/testdata/cgo
