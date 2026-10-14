@@ -25,12 +25,12 @@ const yamlTemplate = `
 //}
 
 // MarshalYAML implements a YAML Marshaler for %[1]s
-func (i %[1]s) MarshalYAML() (interface{}, error) {
+func (i %[1]s) MarshalYAML() (any, error) {
 	return i.String(), nil
 }
 
 // UnmarshalYAML implements a YAML Unmarshaler for %[1]s
-func (i *%[1]s) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *%[1]s) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err

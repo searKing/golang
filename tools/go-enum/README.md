@@ -36,10 +36,10 @@ self-contained Go source file implementing
 		func (t *T) UnmarshalText(text []byte) error
 	sql         ==>  database/sql.Scanner and database/sql/driver.Valuer
 		func (t T) Value() (driver.Value, error)
-		func (t *T) Scan(value interface{}) error
+		func (t *T) Scan(value any) error
 	yaml        ==>  gopkg.in/yaml.v2:yaml.Marshaler and gopkg.in/yaml.v2:yaml.Unmarshaler
-		func (t T) MarshalYAML() (interface{}, error)
-		func (t *T) UnmarshalYAML(unmarshal func(interface{}) error) error
+		func (t T) MarshalYAML() (any, error)
+		func (t *T) UnmarshalYAML(unmarshal func(any) error) error
 ```
 
 The file is created in the same package and directory as the package that defines T. It has helpful defaults designed
@@ -98,7 +98,7 @@ it in the output.
 
 ## Download/Install
 
-The easiest way to install is to run `go get install github.com/searKing/golang/tools/go-enum`
+The easiest way to install is to run `go install github.com/searKing/golang/tools/go-enum@latest`
 . You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/go-enum`.
 
 ## Inspiring projects

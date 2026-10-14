@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+# Tools installed by 'make tools'
+/.tools/
+
 # Test binary, build with `go test -c`
 *.test
 

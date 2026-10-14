@@ -66,6 +66,19 @@ func TestFindGoMod(t *testing.T) {
 			t.Errorf("FindGoMod(%q) = %q, want %q", dir, got, gomod)
 		}
 	}
+
+	t.Chdir(sub)
+	got, err := filepath.EvalSymlinks(modload.FindGoMod("."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := filepath.EvalSymlinks(gomod)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Errorf("FindGoMod(%q) = %q, want %q", ".", got, want)
+	}
 }
 
 func ExampleFindModuleName() {

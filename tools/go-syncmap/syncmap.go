@@ -149,7 +149,7 @@ func main() {
 	// Print the header and package clause.
 
 	var render TmplPackageRender
-	render.GenerateToolArgs = goSyncMapToolName
+	render.GenerateToolName = goSyncMapToolName
 	render.GenerateToolArgs = strings.Join(os.Args[1:], " ")
 	render.WithSyncMapMethod = WithSyncMapMethod
 	render.WithMethodLoadAndDelete = WithMethodLoadAndDelete
