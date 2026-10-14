@@ -18,6 +18,11 @@
 //
 //	path/to/astFile.pb.go
 //
+// The parameter field_tag_number sets extension numbers of FieldOptions read as field_tag, in addition to
+// 1391 of searking.tag.v1.field_tag, 65000 of the deprecated google.protobuf.field_tag by default:
+//
+//	protoc --go-tag_out=paths=source_relative,field_tag_number=60001:. path/to/astFile.proto
+//
 // Run it directly to export tag.proto, which declares the field option field_tag, to the include directory DIR:
 //
 //	protoc-gen-go-tag -export_proto DIR
@@ -28,29 +33,35 @@
 package main
 
 import (
-	_ "embed"
+	"embed"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	gengo "google.golang.org/protobuf/cmd/protoc-gen-go/internal_gengo"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/encoding/protowire"
 
 	"github.com/searKing/golang/tools/protoc-gen-go-tag/ast"
 )
 
-// tagProtoPath is the import path of tag.proto.
-const tagProtoPath = "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto"
+// tagProtos are tag.proto files by their import paths.
+var tagProtos = map[string]string{
+	"searking/tag/v1/tag.proto":                                        "proto/searking/tag/v1/tag.proto",
+	"github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto": "tag/tag.proto", // deprecated
+}
 
-//go:embed tag/tag.proto
-var tagProto []byte
+//go:embed proto/searking/tag/v1/tag.proto tag/tag.proto
+var tagProtoFS embed.FS
 
 func main() {
 	// protoc runs plugins without arguments.
 	if len(os.Args) > 1 {
 		cmd := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-		exportProto := cmd.String("export_proto", "", "export tag.proto to `DIR`/"+tagProtoPath+", to include DIR by protoc -I")
+		exportProto := cmd.String("export_proto", "", "export tag.proto files to `DIR` by their import paths, to include DIR by protoc -I")
 		_ = cmd.Parse(os.Args[1:])
 		if *exportProto == "" || cmd.NArg() > 0 {
 			cmd.Usage()
@@ -63,15 +74,47 @@ func main() {
 		return
 	}
 
-	var flags flag.FlagSet
-	protogen.Options{
-		ParamFunc: flags.Set,
-	}.Run(generate)
+	opts, run := plugin()
+	opts.Run(run)
 }
 
-// generate generates Go code of proto files as protoc-gen-go does, then rewrites struct tags by field_tag options.
+// plugin returns options of protogen, parsing parameters of the plugin, and the function to run the plugin.
+func plugin() (protogen.Options, func(gen *protogen.Plugin) error) {
+	var flags flag.FlagSet
+	var numbers fieldTagNumbers
+	flags.Var(&numbers, "field_tag_number", "extension number of FieldOptions read as field_tag, may be repeated")
+	return protogen.Options{ParamFunc: flags.Set}, func(gen *protogen.Plugin) error {
+		if numbers == nil {
+			numbers = fieldTagNumbers{ast.LegacyFieldTagNumber}
+		}
+		return generate(gen, numbers...)
+	}
+}
+
+// fieldTagNumbers is a flag.Value of extension numbers, set repeatedly.
+type fieldTagNumbers []protowire.Number
+
+func (n *fieldTagNumbers) String() string {
+	var s []string
+	for _, v := range *n {
+		s = append(s, strconv.Itoa(int(v)))
+	}
+	return strings.Join(s, ",")
+}
+
+func (n *fieldTagNumbers) Set(s string) error {
+	v, err := strconv.ParseInt(s, 10, 32)
+	if err != nil || !protowire.Number(v).IsValid() {
+		return fmt.Errorf("invalid extension number %q", s)
+	}
+	*n = append(*n, protowire.Number(v))
+	return nil
+}
+
+// generate generates Go code of proto files as protoc-gen-go does, then rewrites struct tags by field_tag options,
+// of searking.tag.v1.field_tag and fieldTagNumbers, and @gotags comments.
 // gengo, the generator of protoc-gen-go, is internal to the protobuf module and may change without notice.
-func generate(gen *protogen.Plugin) error {
+func generate(gen *protogen.Plugin, fieldTagNumbers ...protowire.Number) error {
 	gen.SupportedFeatures = gengo.SupportedFeatures
 	gen.SupportedEditionsMinimum = gengo.SupportedEditionsMinimum
 	gen.SupportedEditionsMaximum = gengo.SupportedEditionsMaximum
@@ -79,18 +122,27 @@ func generate(gen *protogen.Plugin) error {
 		if !f.Generate {
 			continue
 		}
-		if err := ast.Rewrite(gen, f, gengo.GenerateFile(gen, f)); err != nil {
+		if err := ast.Rewrite(gen, f, gengo.GenerateFile(gen, f), fieldTagNumbers...); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// exportTagProto writes tag.proto to dir, by its import path.
+// exportTagProto writes tag.proto files to dir, by their import paths.
 func exportTagProto(dir string) error {
-	path := filepath.Join(dir, filepath.FromSlash(tagProtoPath))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
+	for importPath, name := range tagProtos {
+		b, err := tagProtoFS.ReadFile(name)
+		if err != nil {
+			return err
+		}
+		path := filepath.Join(dir, filepath.FromSlash(importPath))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, b, 0o644); err != nil {
+			return err
+		}
 	}
-	return os.WriteFile(path, tagProto, 0o644)
+	return nil
 }

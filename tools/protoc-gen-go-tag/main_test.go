@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	gengo "google.golang.org/protobuf/cmd/protoc-gen-go/internal_gengo"
-	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -43,6 +42,7 @@ func TestGolden(t *testing.T) {
 	tests := []struct {
 		name    string
 		files   []string
+		param   string
 		wantErr string
 	}{
 		{name: "example", files: []string{"example.proto"}},
@@ -50,17 +50,22 @@ func TestGolden(t *testing.T) {
 		{name: "comment", files: []string{"comment/comment.proto"}},
 		{name: "samename", files: []string{"samename/a/http.proto", "samename/b/http.proto"}},
 		{name: "reserved_key", files: []string{"invalid/reserved_key.proto"},
-			wantErr: `invalid.ReservedKey.name: field_tag: must not set struct tag "protobuf"`},
+			wantErr: `invalid.ReservedKey.name: field_tag 1391: must not set struct tag "protobuf"`},
 		{name: "comment_reserved_key", files: []string{"invalid/comment_reserved_key.proto"},
 			wantErr: `invalid.CommentReservedKey.name: @gotags: must not set struct tag "protobuf_oneof"`},
+		{name: "legacy", files: []string{"legacy/legacy.proto"}},
+		{name: "legacy_disabled", files: []string{"legacy/legacy.proto"}, param: "field_tag_number=60001"},
+		{name: "custom", files: []string{"custom/custom.proto"}, param: "field_tag_number=60001 field_tag_number=65000"},
+		{name: "invalid_number", files: []string{"custom/custom.proto"}, param: "field_tag_number=0",
+			wantErr: `invalid extension number "0"`},
 		{name: "malformed", files: []string{"invalid/malformed.proto"},
-			wantErr: `invalid.Malformed.name: field_tag: malformed struct tag "validate:\"required"`},
+			wantErr: `invalid.Malformed.name: field_tag 1391: malformed struct tag "validate:\"required"`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp := run(t, &pluginpb.CodeGeneratorRequest{
 				FileToGenerate: tt.files,
-				Parameter:      proto.String("paths=source_relative"),
+				Parameter:      proto.String(strings.Join(append([]string{"paths=source_relative"}, strings.Fields(tt.param)...), ",")),
 				ProtoFile:      protos.GetFile(),
 			})
 			if tt.wantErr != "" {
@@ -80,11 +85,12 @@ func TestGolden(t *testing.T) {
 // run runs the plugin with req, as protoc does.
 func run(t *testing.T, req *pluginpb.CodeGeneratorRequest) *pluginpb.CodeGeneratorResponse {
 	t.Helper()
-	gen, err := protogen.Options{}.New(req)
+	opts, runPlugin := plugin()
+	gen, err := opts.New(req)
 	if err != nil {
-		t.Fatal(err)
+		return &pluginpb.CodeGeneratorResponse{Error: proto.String(err.Error())}
 	}
-	if err := generate(gen); err != nil {
+	if err := runPlugin(gen); err != nil {
 		gen.Error(err)
 	}
 	return gen.Response()

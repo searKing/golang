@@ -5,7 +5,7 @@
 package pb
 
 import (
-	_ "github.com/searKing/golang/tools/protoc-gen-go-tag/tag"
+	_ "github.com/searKing/golang/tools/protoc-gen-go-tag/proto/searking/tag/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -200,29 +200,29 @@ var File_example_proto protoreflect.FileDescriptor
 
 const file_example_proto_rawDesc = "" +
 	"\n" +
-	"\rexample.proto\x12\x02pb\x1a@github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto\"\x89\a\n" +
-	"\x04Http\x12=\n" +
-	"\bprotocol\x18\x01 \x01(\tB!\xc2\xde\x1f\x1d\n" +
-	"\x1bvalidate:\"oneof=http https\"R\bprotocol\x12c\n" +
-	"\x0fversion_default\x18\x02 \x01(\tB:\xc2\xde\x1f6\n" +
-	"4validate:\"gte=0,lte=130\" json:\"version_with_default\"R\x0eVersionDefault\x12`\n" +
-	"\x0eversion_update\x18\x03 \x01(\tB9\xc2\xde\x1f5\n" +
-	"3validate:\"gte=0,lte=130\" json:\"version_with_update\"R\rVersionUpdate\x12e\n" +
-	"\x0fversion_replace\x18\x04 \x01(\tB<\xc2\xde\x1f8\n" +
-	"4validate:\"gte=0,lte=130\" json:\"version_with_replace\"\x10\x01R\x0eVersionReplace\x12>\n" +
-	"\x03url\x18\x05 \x01(\v2\f.pb.Http.UrlB\x1e\xc2\xde\x1f\x1a\n" +
-	"\x18json:\"url_tag,omitempty\"R\x03Url\x12h\n" +
+	"\rexample.proto\x12\x02pb\x1a\x19searking/tag/v1/tag.proto\"\xff\x06\n" +
+	"\x04Http\x12<\n" +
+	"\bprotocol\x18\x01 \x01(\tB \xfaV\x1d\n" +
+	"\x1bvalidate:\"oneof=http https\"R\bprotocol\x12b\n" +
+	"\x0fversion_default\x18\x02 \x01(\tB9\xfaV6\n" +
+	"4validate:\"gte=0,lte=130\" json:\"version_with_default\"R\x0eVersionDefault\x12_\n" +
+	"\x0eversion_update\x18\x03 \x01(\tB8\xfaV5\n" +
+	"3validate:\"gte=0,lte=130\" json:\"version_with_update\"R\rVersionUpdate\x12d\n" +
+	"\x0fversion_replace\x18\x04 \x01(\tB;\xfaV8\n" +
+	"4validate:\"gte=0,lte=130\" json:\"version_with_replace\"\x10\x01R\x0eVersionReplace\x12=\n" +
+	"\x03url\x18\x05 \x01(\v2\f.pb.Http.UrlB\x1d\xfaV\x1a\n" +
+	"\x18json:\"url_tag,omitempty\"R\x03Url\x12g\n" +
 	"\x17test_order_tag_form_v8n\x18\n" +
-	" \x01(\tB2\xc2\xde\x1f.\n" +
-	",form:\"currency_uso,omitempty\" v8n:\"required\"R\x13testOrderTagFormV8n\x12h\n" +
-	"\x17test_order_tag_v8n_form\x18\v \x01(\tB2\xc2\xde\x1f.\n" +
-	",v8n:\"required\" form:\"currency_uso,omitempty\"R\x13testOrderTagV8nForm\x12E\n" +
-	"\x04name\x18\x06 \x01(\tB/\xc2\xde\x1f+\n" +
-	")validate:\"required\" json:\"name,omitempty\"H\x00R\x04Name\x12U\n" +
-	"\x11name_no_json_name\x18\a \x01(\tB(\xc2\xde\x1f$\n" +
-	"\"json:\"name_no_json_name,omitempty\"H\x00R\x0enameNoJsonName\x1aT\n" +
-	"\x03Url\x12M\n" +
-	"\x06scheme\x18\x01 \x01(\tB5\xc2\xde\x1f1\n" +
+	" \x01(\tB1\xfaV.\n" +
+	",form:\"currency_uso,omitempty\" v8n:\"required\"R\x13testOrderTagFormV8n\x12g\n" +
+	"\x17test_order_tag_v8n_form\x18\v \x01(\tB1\xfaV.\n" +
+	",v8n:\"required\" form:\"currency_uso,omitempty\"R\x13testOrderTagV8nForm\x12D\n" +
+	"\x04name\x18\x06 \x01(\tB.\xfaV+\n" +
+	")validate:\"required\" json:\"name,omitempty\"H\x00R\x04Name\x12T\n" +
+	"\x11name_no_json_name\x18\a \x01(\tB'\xfaV$\n" +
+	"\"json:\"name_no_json_name,omitempty\"H\x00R\x0enameNoJsonName\x1aS\n" +
+	"\x03Url\x12L\n" +
+	"\x06scheme\x18\x01 \x01(\tB4\xfaV1\n" +
 	"/validate:\"required\" json:\"schema_tag,omitempty\"R\x06SchemeB\f\n" +
 	"\n" +
 	"test_oneofB@Z>github.com/searKing/golang/tools/protoc-gen-go-tag/examples;pbb\x06proto3"

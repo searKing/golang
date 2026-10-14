@@ -7,7 +7,7 @@ syntax = "proto3";
 package edge;
 
 import "google/protobuf/descriptor.proto";
-import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+import "searking/tag/v1/tag.proto";
 
 option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/edge;edge";
 
@@ -18,22 +18,22 @@ extend google.protobuf.OneofOptions {
 // Edge has fields renamed by protogen, a proto3 optional field and a oneof with options.
 message Edge {
   // reset is generated as Reset_, for Reset is a method of messages.
-  string reset = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"required"'}];
+  string reset = 1 [(searking.tag.v1.field_tag) = {struct_tag: 'validate:"required"'}];
   // descriptor is generated as Descriptor_, for Descriptor is a method of messages.
-  string descriptor = 2 [(google.protobuf.field_tag) = {struct_tag: 'json:"desc"', update_strategy: replace}];
+  string descriptor = 2 [(searking.tag.v1.field_tag) = {struct_tag: 'json:"desc"', update_strategy: UPDATE_STRATEGY_REPLACE}];
   // optional is a field of a synthetic oneof, which is generated in the struct of the message.
-  optional string optional = 3 [(google.protobuf.field_tag) = {struct_tag: 'validate:"omitempty"'}];
+  optional string optional = 3 [(searking.tag.v1.field_tag) = {struct_tag: 'validate:"omitempty"'}];
   // both is tagged by field_tag, then by comments.
   // @gotags: form:"both"
-  string both = 6 [(google.protobuf.field_tag) = {struct_tag: 'json:"both_tag"', update_strategy: replace}]; // @gotags: json:",omitempty"
+  string both = 6 [(searking.tag.v1.field_tag) = {struct_tag: 'json:"both_tag"', update_strategy: UPDATE_STRATEGY_REPLACE}]; // @gotags: json:",omitempty"
 
   oneof choice {
     option (oneof_note) = "oneof with options";
-    string name = 4 [(google.protobuf.field_tag) = {struct_tag: 'validate:"required"'}];
-    Nested nested = 5 [(google.protobuf.field_tag) = {struct_tag: 'json:"nested_tag"'}];
+    string name = 4 [(searking.tag.v1.field_tag) = {struct_tag: 'validate:"required"'}];
+    Nested nested = 5 [(searking.tag.v1.field_tag) = {struct_tag: 'json:"nested_tag"'}];
   }
 
   message Nested {
-    string value = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"max=10"'}];
+    string value = 1 [(searking.tag.v1.field_tag) = {struct_tag: 'validate:"max=10"'}];
   }
 }

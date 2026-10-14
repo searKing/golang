@@ -6,11 +6,11 @@ syntax = "proto3";
 
 package invalid;
 
-import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+import "searking/tag/v1/tag.proto";
 
 option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/invalid;invalid";
 
 // Malformed sets a struct tag without the closing quote.
 message Malformed {
-  string name = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"required'}];
+  string name = 1 [(searking.tag.v1.field_tag) = {struct_tag: 'validate:"required'}];
 }

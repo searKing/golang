@@ -6,11 +6,11 @@ syntax = "proto3";
 
 package samename.b;
 
-import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+import "searking/tag/v1/tag.proto";
 
 option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/samename/b;b";
 
 // Http is declared in both packages samename.a and samename.b, with different field_tag options.
 message Http {
-  string url = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"b"'}];
+  string url = 1 [(searking.tag.v1.field_tag) = {struct_tag: 'validate:"b"'}];
 }

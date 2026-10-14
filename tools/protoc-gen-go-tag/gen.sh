@@ -5,7 +5,8 @@
 # license that can be found in the LICENSE file.
 #
 
-# Regenerates examples/example.pb.go and testdata/protos.binpb by protoc, run by go generate.
+# Regenerates proto/searking/tag/v1/tag.pb.go, examples/example.pb.go and testdata/protos.binpb by protoc,
+# run by go generate.
 # Run 'go test -update' then to update golden files of testdata/golden.
 #
 # PROTOC_INCLUDE is the include directory of google/protobuf/descriptor.proto,
@@ -23,6 +24,13 @@ fi
 
 tmp=$(mktemp -d)
 trap 'rm -rf "${tmp}"' EXIT
+
+# protoc-gen-go-tag depends on tag.pb.go, so generate it by protoc-gen-go of the required version first.
+GOWORK=off go build -o "${tmp}/protoc-gen-go" google.golang.org/protobuf/cmd/protoc-gen-go
+protoc -I proto -I "${protoc_include}" \
+  --plugin=protoc-gen-go="${tmp}/protoc-gen-go" \
+  --go_out=paths=source_relative:proto \
+  searking/tag/v1/tag.proto
 
 GOWORK=off go build -o "${tmp}/protoc-gen-go-tag" .
 "${tmp}/protoc-gen-go-tag" -export_proto "${tmp}/include"

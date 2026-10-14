@@ -1,0 +1,31 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package custom;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/custom;custom";
+
+// field_tag is declared in the proto of users, read by the parameter field_tag_number=60001.
+extend google.protobuf.FieldOptions {
+  FieldTag field_tag = 60001;
+}
+
+// FieldTag is wire compatible with searking.tag.v1.FieldTag.
+message FieldTag {
+  enum UpdateStrategy {
+    UPDATE = 0;
+    REPLACE = 1;
+  }
+  string struct_tag = 1;
+  UpdateStrategy update_strategy = 2;
+}
+
+message Custom {
+  string name = 1 [(field_tag) = {struct_tag: 'validate:"required"'}];
+  string email = 2 [(field_tag) = {struct_tag: 'json:"mail"', update_strategy: REPLACE}];
+}

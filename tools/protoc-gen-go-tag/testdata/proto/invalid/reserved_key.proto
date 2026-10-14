@@ -6,11 +6,11 @@ syntax = "proto3";
 
 package invalid;
 
-import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+import "searking/tag/v1/tag.proto";
 
 option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/invalid;invalid";
 
 // ReservedKey sets the struct tag protobuf, which the protobuf runtime relies on.
 message ReservedKey {
-  string name = 1 [(google.protobuf.field_tag) = {struct_tag: 'protobuf:"bytes,2"'}];
+  string name = 1 [(searking.tag.v1.field_tag) = {struct_tag: 'protobuf:"bytes,2"'}];
 }

@@ -1,3 +1,7 @@
+// Deprecated: Use searking/tag/v1/tag.proto, which declares searking.tag.v1.field_tag of the registered
+// extension number 1391, rather than an extension in the package google.protobuf, of a number in the range for
+// internal use of organizations. protoc-gen-go-tag still reads this field_tag, by field_tag_number=65000 by default.
+
 syntax = "proto3";
 
 package google.protobuf;

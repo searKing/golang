@@ -1,0 +1,17 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package legacy;
+
+import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+
+option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/legacy;legacy";
+
+// Legacy sets struct tags by google.protobuf.field_tag of the deprecated tag.proto, read by default.
+message Legacy {
+  string name = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"required"'}];
+  string email = 2 [(google.protobuf.field_tag) = {struct_tag: 'json:"mail"', update_strategy: replace}];
+}

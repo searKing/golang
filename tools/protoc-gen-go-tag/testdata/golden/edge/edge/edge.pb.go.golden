@@ -9,7 +9,7 @@
 package edge
 
 import (
-	_ "github.com/searKing/golang/tools/protoc-gen-go-tag/tag"
+	_ "github.com/searKing/golang/tools/protoc-gen-go-tag/proto/searking/tag/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
@@ -203,24 +203,24 @@ var File_edge_edge_proto protoreflect.FileDescriptor
 
 const file_edge_edge_proto_rawDesc = "" +
 	"\n" +
-	"\x0fedge/edge.proto\x12\x04edge\x1a google/protobuf/descriptor.proto\x1a@github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto\"\xb5\x03\n" +
-	"\x04Edge\x12/\n" +
-	"\x05reset\x18\x01 \x01(\tB\x19\xc2\xde\x1f\x15\n" +
-	"\x13validate:\"required\"R\x05reset\x123\n" +
+	"\x0fedge/edge.proto\x12\x04edge\x1a google/protobuf/descriptor.proto\x1a\x19searking/tag/v1/tag.proto\"\xae\x03\n" +
+	"\x04Edge\x12.\n" +
+	"\x05reset\x18\x01 \x01(\tB\x18\xfaV\x15\n" +
+	"\x13validate:\"required\"R\x05reset\x122\n" +
 	"\n" +
-	"descriptor\x18\x02 \x01(\tB\x13\xc2\xde\x1f\x0f\n" +
+	"descriptor\x18\x02 \x01(\tB\x12\xfaV\x0f\n" +
 	"\vjson:\"desc\"\x10\x01R\n" +
-	"descriptor\x12;\n" +
-	"\boptional\x18\x03 \x01(\tB\x1a\xc2\xde\x1f\x16\n" +
-	"\x14validate:\"omitempty\"H\x01R\boptional\x88\x01\x01\x12+\n" +
-	"\x04both\x18\x06 \x01(\tB\x17\xc2\xde\x1f\x13\n" +
-	"\x0fjson:\"both_tag\"\x10\x01R\x04both\x12/\n" +
-	"\x04name\x18\x04 \x01(\tB\x19\xc2\xde\x1f\x15\n" +
-	"\x13validate:\"required\"H\x00R\x04name\x12D\n" +
-	"\x06nested\x18\x05 \x01(\v2\x11.edge.Edge.NestedB\x17\xc2\xde\x1f\x13\n" +
-	"\x11json:\"nested_tag\"H\x00R\x06nested\x1a7\n" +
-	"\x06Nested\x12-\n" +
-	"\x05value\x18\x01 \x01(\tB\x17\xc2\xde\x1f\x13\n" +
+	"descriptor\x12:\n" +
+	"\boptional\x18\x03 \x01(\tB\x19\xfaV\x16\n" +
+	"\x14validate:\"omitempty\"H\x01R\boptional\x88\x01\x01\x12*\n" +
+	"\x04both\x18\x06 \x01(\tB\x16\xfaV\x13\n" +
+	"\x0fjson:\"both_tag\"\x10\x01R\x04both\x12.\n" +
+	"\x04name\x18\x04 \x01(\tB\x18\xfaV\x15\n" +
+	"\x13validate:\"required\"H\x00R\x04name\x12C\n" +
+	"\x06nested\x18\x05 \x01(\v2\x11.edge.Edge.NestedB\x16\xfaV\x13\n" +
+	"\x11json:\"nested_tag\"H\x00R\x06nested\x1a6\n" +
+	"\x06Nested\x12,\n" +
+	"\x05value\x18\x01 \x01(\tB\x16\xfaV\x13\n" +
 	"\x11validate:\"max=10\"R\x05valueB \n" +
 	"\x06choice\x12\x16\x82\xb5\x18\x12oneof with optionsB\v\n" +
 	"\t_optional:>\n" +
