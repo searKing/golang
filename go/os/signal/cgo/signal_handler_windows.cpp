@@ -24,40 +24,26 @@ void SignalHandler::operator()(int signum) {
   InvokeGoSignalHandler(signum);
 }
 
-void SignalHandler::InvokeGoSignalHandler(int signum) {
-  auto handler = go_registered_handlers_.Load(signum);
-  if (handler != nullptr) {
-    ::signal(signum, *handler);
-    ::raise(signum);
-  }
-}
+void SignalHandler::HandleSignal(int signum) { GetInstance()(signum); }
 
-void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
-    int signum, SignalHandlerSignalHandler handler) {
-  // register once, avoid go's signal actions are lost.
-  if (go_registered_handlers_.Load(signum) == nullptr) {
-    go_registered_handlers_.Store(signum,
-                                  new SignalHandlerSignalHandler(handler));
-  }
+void SignalHandler::InvokeGoSignalHandler(int signum) {
+  const SignalHandlerSignalHandler *handler =
+      go_registered_handlers_.Load(signum);
+  ::signal(signum, handler == nullptr ? SIG_DFL : *handler);
+  ::raise(signum);
 }
 
 int SignalHandler::SetSig(int signum) {
-  SignalHandlerSignalHandler handler = [](int signum) {
-    GetInstance()(signum);
-  };
-
-  return SetSig(signum, handler);
-}
-
-int SignalHandler::SetSig(int signum, SignalHandlerSignalHandler handler) {
-  SignalHandlerSignalHandler prev_handler = ::signal(signum, SIG_DFL);
-
-  if (SIG_ERR == prev_handler) {
+  SignalHandler &instance = GetInstance();
+  std::lock_guard<std::mutex> lock(instance.install_mutex_);
+  SignalHandlerSignalHandler previous = ::signal(signum, &HandleSignal);
+  if (previous == SIG_ERR) {
     return -1;
   }
-  GetInstance().SetGoRegisteredSignalHandlersIfEmpty(signum, prev_handler);
-
-  ::signal(signum, handler);
+  if (previous != &HandleSignal) {
+    instance.go_registered_handlers_.Store(
+        signum, new SignalHandlerSignalHandler(previous));
+  }
   return 0;
 }
 

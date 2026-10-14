@@ -12,12 +12,11 @@
 #define GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP__
 
 #include <csignal>
+#include <mutex>
 
 #include "base_signal_handler.hpp"
 
 namespace searking {
-
-// Callbacks Predefinations
 
 typedef void (*SignalHandlerSignalHandler)(int signum);
 // Never used this Handler in cgo, for go needs
@@ -25,24 +24,20 @@ class SignalHandler : public BaseSignalHandler {
  protected:
   SignalHandler() = default;
 
-  void SetGoRegisteredSignalHandlersIfEmpty(int signum,
-                                            SignalHandlerSignalHandler handler);
-  void InvokeGoSignalHandler(int signum);
-
  public:
   // Thread safe GetInstance.
   static SignalHandler &GetInstance();
   void operator()(int signum);
 
   static int SetSig(int signum);
-  static int SetSig(int signum, SignalHandlerSignalHandler handler);
 
  private:
+  static void HandleSignal(int signum);
+  void InvokeGoSignalHandler(int signum);
+
+  std::mutex install_mutex_;
   // SIG_DFL is nullptr, so handlers are stored by pointers to tell from unset.
   SignalTable<SignalHandlerSignalHandler> go_registered_handlers_;
-
-  SignalHandler(const SignalHandler &) = delete;
-  void operator=(const SignalHandler &) = delete;
 };
 }  // namespace searking
 #endif  // GO_OS_SIGNAL_CGO_SIGNAL_HANDLER_WINDOWS_HPP__
