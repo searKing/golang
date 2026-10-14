@@ -114,13 +114,13 @@ protoc -I . -I third_party --go-tag_out=paths=source_relative:. example.proto
 
 ### Depend on BSR by buf
 
-`tag.proto` is pushed to the [Buf Schema Registry](https://buf.build/searking/protoc-gen-go-tag) from [proto](proto):
+`tag.proto` is pushed to the [Buf Schema Registry](https://buf.build/searking-proto/protoc-gen-go-tag) from [proto](proto):
 
 ```yaml
 # buf.yaml
 version: v2
 deps:
-  - buf.build/searking/protoc-gen-go-tag
+  - buf.build/searking-proto/protoc-gen-go-tag
 ```
 
 ```yaml
@@ -244,12 +244,13 @@ go generate
 go test -update
 ```
 
-Push `searking/tag/v1/tag.proto` to the BSR module `buf.build/searking/protoc-gen-go-tag`, after `buf registry login`,
+Push `searking/tag/v1/tag.proto` to the BSR module `buf.build/searking-proto/protoc-gen-go-tag`, after `buf registry login`,
 if it is changed:
 
 ```sh
 buf build proto
-buf push proto --label v1.2.147
+# main is the default label, which deps without labels resolve to.
+buf push proto --label main --label v1.2.147
 ```
 
 ## Inspiring projects
