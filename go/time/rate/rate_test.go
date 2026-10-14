@@ -333,7 +333,11 @@ func TestWaitTimeout(t *testing.T) {
 
 func TestWaitBlock(t *testing.T) {
 	lim := NewFullBurstLimiter(1)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	timeout := time.Second
+	if testing.Short() {
+		timeout = 100 * time.Millisecond
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	runWait(t, lim, wait{"act-now", context.Background(), 1, true})
 	runtime.GC()
@@ -341,7 +345,7 @@ func TestWaitBlock(t *testing.T) {
 	// timeout
 	lim.PutToken()
 	{
-		ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel = context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		runWait(t, lim, wait{"act-later", ctx, 1, true})
 		runtime.GC()
@@ -431,8 +435,10 @@ func TestSimultaneousLongRequests(t *testing.T) {
 		timeout = 1 * time.Millisecond
 	)
 	var (
-		wg    sync.WaitGroup
-		numOK = uint32(0)
+		attempted sync.WaitGroup
+		done      sync.WaitGroup
+		numOK     = uint32(0)
+		release   = make(chan struct{})
 	)
 
 	// Very slow replenishing bucket.
@@ -442,7 +448,7 @@ func TestSimultaneousLongRequests(t *testing.T) {
 	// group counter.
 	f := func(i int) {
 		if i < numRequests {
-			defer wg.Done()
+			defer done.Done()
 		}
 		var limiterCtx = context.Background()
 		var cancel context.CancelFunc
@@ -450,24 +456,31 @@ func TestSimultaneousLongRequests(t *testing.T) {
 			limiterCtx, cancel = context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 		}
-		if err := lim.Wait(limiterCtx); err != nil {
+		err := lim.Wait(limiterCtx)
+		if i < numRequests {
+			attempted.Done()
+		}
+		if err != nil {
 			t.Logf("#%d wait expect ready, got err %s", i, err)
 		} else {
 			atomic.AddUint32(&numOK, 1)
 			defer lim.PutToken()
 			t.Logf("#%d got token", i)
-			time.Sleep(time.Second)
+			<-release
 			t.Logf("#%d put token", i)
 		}
 	}
 
-	wg.Add(numRequests)
+	attempted.Add(numRequests)
+	done.Add(numRequests)
 	for i := 0; i < numRequests; i++ {
 		go f(i)
 	}
-	wg.Wait()
+	attempted.Wait()
+	close(release)
+	done.Wait()
 	f(numRequests)
 	if numOK != burst+1 {
-		t.Errorf("numOK = %d, want %d", numOK, numRequests)
+		t.Errorf("numOK = %d, want %d", numOK, burst+1)
 	}
 }

@@ -201,6 +201,9 @@ func sleepToNextSecond() {
 }
 
 func TestRotateFile_CopyTruncateRotateOncePerInterval(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires writes across real one-second rotation intervals")
+	}
 	dir := t.TempDir()
 	f := os_.NewRotateFile("2006-01-02_15-04-05")
 	f.FilePathPrefix = filepath.Join(dir, "app.")
@@ -242,6 +245,9 @@ func TestRotateFile_CopyTruncateRotateOncePerInterval(t *testing.T) {
 }
 
 func TestRotateFile_CopyRename(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires writes across real one-second rotation intervals")
+	}
 	dir := t.TempDir()
 	f := os_.NewRotateFile("2006-01-02_15-04-05")
 	f.FilePathPrefix = filepath.Join(dir, "app.")
@@ -270,6 +276,9 @@ func TestRotateFile_CopyRename(t *testing.T) {
 }
 
 func TestRotateFile_CopyRenameFailed(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires writes across real one-second rotation intervals")
+	}
 	dir := t.TempDir()
 	prefix := filepath.Join(dir, "app.")
 	layout := "2006-01-02_15-04-05"
@@ -311,6 +320,9 @@ func readFile(t *testing.T, name string) string {
 }
 
 func TestRotateFile_CopyTruncateFilePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires writes across real one-second rotation intervals")
+	}
 	dir := t.TempDir()
 	live := filepath.Join(dir, "app.log")
 	f := os_.NewRotateFile("2006-01-02_15-04-05")
@@ -437,6 +449,9 @@ func TestRotateFile_CopyTruncateNoEmptyCopy(t *testing.T) {
 		}
 	})
 	t.Run("log file removed before rotate", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("requires writes across real one-second rotation intervals")
+		}
 		dir := t.TempDir()
 		f := os_.NewRotateFile("2006-01-02_15-04-05")
 		f.FilePathPrefix = filepath.Join(dir, "app.")
