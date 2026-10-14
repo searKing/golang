@@ -35,12 +35,11 @@ typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum,
 
 class SignalHandler : public BaseSignalHandler<SignalHandler> {
  protected:
-  SignalHandler() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
+  SignalHandler() : on_signal_(nullptr) {}
 
   void SetGoRegisteredSignalHandlersIfEmpty(
       int signum, SignalHandlerSigActionHandler action,
       SignalHandlerSignalHandler handler);
-  void DoSignalChan(int signum, siginfo_t *info, void *context);
   void InvokeGoSignalHandler(int signum, siginfo_t *info, void *context);
 
  public:
@@ -60,12 +59,16 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
                     SignalHandlerSignalHandler handler);
 
  private:
-  void *on_signal_ctx_;
-  std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                     void *context)>
-      on_signal_;
-  std::map<int, std::pair<SignalHandlerSigActionHandler,
-                          SignalHandlerSignalHandler> >
+  struct OnSignal {
+    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
+                       void *context)>
+        callback;
+    void *ctx;
+  };
+  // The previous one is never freed, as signal handlers may be reading it.
+  std::atomic<const OnSignal *> on_signal_;
+  SignalTable<std::pair<SignalHandlerSigActionHandler,
+                        SignalHandlerSignalHandler> >
       go_registered_handlers_;
 };
 }  // namespace searking

@@ -45,3 +45,8 @@ func previousStacktrace() string {
 func setSigInvokeChain(from, to, wait, sleepInSeconds int) {
 	cgo.SetSigInvokeChain(from, to, wait, sleepInSeconds)
 }
+
+// setSigInvokeChainCancelable acts as setSigInvokeChain, and returns cancel to remove the chain.
+func setSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) (cancel func()) {
+	return cgo.SetSigInvokeChainCancelable(from, to, wait, sleepInSeconds)
+}

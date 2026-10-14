@@ -5,6 +5,7 @@
 package signal
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -85,8 +86,30 @@ func PreviousStacktrace() string {
 }
 
 // SetSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
+// It waits forever if {wait} is never received, see SetSigInvokeChainContext.
 func SetSigInvokeChain(to os.Signal, wait os.Signal, sleepInSeconds int, froms ...os.Signal) {
 	for _, from := range froms {
 		setSigInvokeChain(Signum(from), Signum(to), Signum(wait), sleepInSeconds)
 	}
+}
+
+// SetSigInvokeChainContext acts as SetSigInvokeChain, with sleep rounded up to seconds,
+// but the chain is removed when ctx is done, and its wait in progress returns.
+// The wait returns within about 10ms after ctx is done, if goroutines can still run.
+func SetSigInvokeChainContext(ctx context.Context, to os.Signal, wait os.Signal, sleep time.Duration, froms ...os.Signal) {
+	if ctx.Err() != nil {
+		return
+	}
+	for _, from := range froms {
+		cancel := setSigInvokeChainCancelable(Signum(from), Signum(to), Signum(wait), ceilSeconds(sleep))
+		context.AfterFunc(ctx, cancel)
+	}
+}
+
+// ceilSeconds returns d in seconds rounded up, 0 if d <= 0.
+func ceilSeconds(d time.Duration) int {
+	if d <= 0 {
+		return 0
+	}
+	return int((d + time.Second - 1) / time.Second)
 }

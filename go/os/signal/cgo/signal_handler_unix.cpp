@@ -19,10 +19,6 @@
 #include <sstream>
 
 namespace searking {
-#if defined(__linux__)
-// sig nums must be in [0,255)
-static volatile sig_atomic_t gotSignals[256];
-#endif
 
 SignalHandler &SignalHandler::GetInstance() {
   static SignalHandler instance;
@@ -32,100 +28,25 @@ SignalHandler &SignalHandler::GetInstance() {
 void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   WriteSignalStacktrace(signum);
 
-  void *on_signal_ctx = on_signal_ctx_;
-  auto on_signal = on_signal_;
-  if (on_signal) {
-    on_signal(on_signal_ctx, signal_dump_to_fd_, signum, info, context);
+  const OnSignal *on_signal = on_signal_.load(std::memory_order_acquire);
+  if (on_signal != nullptr && on_signal->callback) {
+    on_signal->callback(on_signal->ctx, SignalDumpToFd(), signum, info,
+                        context);
   }
 
-  DoSignalChan(signum, info, context);
+  RunSigChain(signum, [this, info, context](int to) {
+    InvokeGoSignalHandler(to, info, context);
+  });
 
   InvokeGoSignalHandler(signum, info, context);
 }
 
-void SignalHandler::DoSignalChan(int signum, siginfo_t *info, void *context) {
-#if defined(__linux__)
-  if (signum >= 0 && signum < 256) {
-    gotSignals[signum] = true;
-  }
-#endif
-  auto it = sig_invoke_signal_chains_.find(signum);
-  if (it == sig_invoke_signal_chains_.end()) {
-    return;
-  }
-  auto &sig_chain = it->second;
-  int from = std::get<0>(sig_chain);
-  // consist validation
-  if (from != signum) {
-    return;
-  }
-  int to = std::get<1>(sig_chain);
-  int wait = std::get<2>(sig_chain);
-  int sleepInSeconds = std::get<3>(sig_chain);
-
-#if defined(__linux__)
-  if (to >= 0 && to != signum) {
-    InvokeGoSignalHandler(to, info, context);
-  }
-
-  // sigsuspend blocks forever sometimes on linux, so poll as on windows.
-  if (wait >= 0 && wait < 256 && wait != signum) {
-    gotSignals[wait] = false;
-    for (;;) {
-      bool got = gotSignals[wait];
-      if (got) {
-        gotSignals[wait] = false;
-        break;
-      }
-      // sleep 1s at most, will awake when an unmasked signal is received
-      sleep(1);
-    }
-  }
-#else
-  do {
-    sigset_t new_set, old_set;
-    if (wait >= 0 && wait != signum) {
-      // Block {wait} and save current signal mask.
-      sigemptyset(&new_set);
-      sigaddset(&new_set, wait);
-      if (sigprocmask(SIG_BLOCK, &new_set, &old_set) < 0) {
-        (void)!write(signal_dump_to_fd_, "block Signal(", strlen("block Signal("));
-        (void)!WriteInt(signal_dump_to_fd_, wait);
-        (void)!write(signal_dump_to_fd_, ") for Signal(", strlen(") for Signal("));
-        (void)!WriteInt(signal_dump_to_fd_, signum);
-        (void)!write(signal_dump_to_fd_, ") failed.\n", strlen(") failed.\n"));
-        break;
-      }
-    }
-    if (to >= 0 && to != signum) {
-      InvokeGoSignalHandler(to, info, context);
-    }
-    if (wait >= 0 && wait != signum) {
-      sigset_t ignoremask;
-      sigfillset(&ignoremask);
-      sigdelset(&ignoremask, wait);
-
-      // Pause, resume when any signal's signal handler is executed,
-      // except {wait}.
-      sigsuspend(&ignoremask);
-
-      // Reset signal mask which unblocks {wait}.
-      sigprocmask(SIG_SETMASK, &old_set, nullptr);
-    }
-  } while (0);
-#endif
-
-  if (sleepInSeconds > 0) {
-    sleep(sleepInSeconds);
-  }
-}
 void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
                                           void *context) {
-  auto it = go_registered_handlers_.find(signum);
-  if (it != go_registered_handlers_.end()) {
-    auto handlers = it->second;
-    SignalHandlerSigActionHandler sigActionHandler = handlers.first;
-    SignalHandlerSignalHandler signalHandler = handlers.second;
+  auto handlers = go_registered_handlers_.Load(signum);
+  if (handlers != nullptr) {
+    SignalHandlerSigActionHandler sigActionHandler = handlers->first;
+    SignalHandlerSignalHandler signalHandler = handlers->second;
 
     // http://man7.org/linux/man-pages/man7/signal.7.html
     if (sigActionHandler) {
@@ -157,19 +78,14 @@ void SignalHandler::RegisterOnSignal(
                        void *context)>
         callback,
     void *ctx) {
-  on_signal_ctx_ = ctx;
-  on_signal_ = callback;
+  on_signal_.store(new OnSignal{callback, ctx}, std::memory_order_release);
 }
 
 void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
     int signum, SignalHandlerSigActionHandler action,
     SignalHandlerSignalHandler handler) {
-  auto it = go_registered_handlers_.find(signum);
-
   // register once, avoid go's signal actions are lost.
-  if (it == go_registered_handlers_.end()) {
-    go_registered_handlers_[signum] = std::make_pair(action, handler);
-  }
+  go_registered_handlers_.StoreIfEmpty(signum, std::make_pair(action, handler));
 }
 
 // for CGO

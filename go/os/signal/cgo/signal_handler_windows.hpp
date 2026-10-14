@@ -27,11 +27,10 @@ typedef void (*SignalHandlerOnSignal)(void *ctx, int fd, int signum);
 // Never used this Handler in cgo, for go needs
 class SignalHandler : public BaseSignalHandler<SignalHandler> {
  protected:
-  SignalHandler() : on_signal_ctx_(nullptr), on_signal_(nullptr) {}
+  SignalHandler() : on_signal_(nullptr) {}
 
   void SetGoRegisteredSignalHandlersIfEmpty(int signum,
                                             SignalHandlerSignalHandler handler);
-  void DoSignalChan(int signum);
   void InvokeGoSignalHandler(int signum);
 
  public:
@@ -47,9 +46,14 @@ class SignalHandler : public BaseSignalHandler<SignalHandler> {
   static int SetSig(int signum, SignalHandlerSignalHandler handler);
 
  private:
-  void *on_signal_ctx_;
-  std::function<void(void *ctx, int fd, int signum)> on_signal_;
-  std::map<int, SignalHandlerSignalHandler> go_registered_handlers_;
+  struct OnSignal {
+    std::function<void(void *ctx, int fd, int signum)> callback;
+    void *ctx;
+  };
+  // The previous one is never freed, as signal handlers may be reading it.
+  std::atomic<const OnSignal *> on_signal_;
+  // SIG_DFL is nullptr, so handlers are stored by pointers to tell from unset.
+  SignalTable<SignalHandlerSignalHandler> go_registered_handlers_;
 
  private:
   SignalHandler(const SignalHandler &) = delete;
