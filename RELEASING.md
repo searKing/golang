@@ -34,6 +34,10 @@ Modules require each other with replace directives to their paths, so that they 
 local changes rather than the released versions. Run `make crosslink` after requiring a
 module of this repo, to add the missing replace directives and prune the unused ones.
 
+Modules providing tools installed by `go install module@version` are the exception: the Go command
+rejects such modules if their go.mod contains any replace directive. `make crosslink` removes replaces
+from the local tool modules tracked by internal/tools/go.mod, and `make verify-mods` checks this.
+
 ## Release
 
 1. Bump the version of the module set in [versions.yaml](versions.yaml), and commit it.

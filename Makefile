@@ -16,6 +16,10 @@ CROSSLINK := $(TOOLS_BIN)/crosslink
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -not -path './.*' -not -path '*/testdata/*' -exec dirname {} \; | sort)
 # Modules of packages, except internal/tools, which requires tools only.
 GO_MOD_DIRS := $(filter-out ./internal/tools,$(ALL_GO_MOD_DIRS))
+# Local tools tracked by tool directives. Modules providing commands installed by
+# 'go install module@version' must not contain replace directives.
+LOCAL_TOOL_MODULES := $(shell awk '/^tool \(/ { found = 1; next } found && /^\)/ { found = 0 } found && $$1 ~ /^github.com\/searKing\/golang\/tools\// { print $$1 }' $(TOOLS_DIR)/go.mod)
+LOCAL_TOOL_MOD_DIRS := $(patsubst github.com/searKing/golang/%,./%,$(LOCAL_TOOL_MODULES))
 
 MODSET ?= stable-v1
 COMMIT ?= HEAD
@@ -44,8 +48,11 @@ help:
 	@echo "  go-mod-tidy   run 'go mod tidy' in every module"
 	@echo "  test          run 'go test ./...' in every module, with GOTEST_FLAGS"
 	@echo "  lint          run 'go vet ./...' in every module, and verify Go files are formatted by gofmt"
-	@echo "  crosslink     add replace directives of intra-repo requires and prune unused ones"
-	@echo "  verify-mods   verify versions.yaml lists every module of the repo, and verify-root-requires"
+	@echo "  crosslink     add replace directives of intra-repo requires and prune unused ones,"
+	@echo "                except modules providing tools installed by 'go install module@version'"
+	@echo "  verify-mods   verify versions.yaml lists every module, root requires, and publishable tools"
+	@echo "  verify-publishable-tools"
+	@echo "                verify modules providing installable tools contain no replace directives"
 	@echo "  verify-root-requires"
 	@echo "                verify the root module requires every module of module sets, against ambiguous imports"
 	@echo "  prerelease    update intra-repo requires of MODSET to its version in versions.yaml,"
@@ -113,10 +120,36 @@ fmt-check:
 crosslink: tools
 	@echo "Updating intra-repo dependencies in all go modules" \
 		&& $(CROSSLINK) --root=$(CURDIR) --prune
+	@$(MAKE) remove-publishable-tool-replaces
+
+# Crosslink adds local replaces for development, but a module providing a command
+# installed by 'go install module@version' is rejected if its go.mod has any replace.
+.PHONY: remove-publishable-tool-replaces
+remove-publishable-tool-replaces:
+	@set -e; \
+	for dir in $(LOCAL_TOOL_MOD_DIRS); do \
+		(cd "$$dir" && $(GO) mod edit -json) \
+			| awk '/"Old": \{/ { old = 1; next } old && /"Path":/ { gsub(/[",]/, "", $$2); print $$2; old = 0 }' \
+			| while IFS= read -r replaced; do \
+				(cd "$$dir" && $(GO) mod edit -dropreplace="$$replaced"); \
+			done; \
+	done
 
 .PHONY: verify-mods
-verify-mods: tools verify-root-requires
+verify-mods: tools verify-root-requires verify-publishable-tools
 	$(MULTIMOD) verify
+
+.PHONY: verify-publishable-tools
+verify-publishable-tools:
+	@failed=; \
+	for dir in $(LOCAL_TOOL_MOD_DIRS); do \
+		if (cd "$$dir" && $(GO) mod edit -json) | grep -q '"Replace":'; then \
+			echo "$$dir/go.mod contains replace directives, which make 'go install module@version' fail" >&2; \
+			failed=1; \
+		fi; \
+	done; \
+	test -z "$$failed"; \
+	echo "PASS: Modules providing installable tools contain no replace directives."
 
 # The root module requires every module of module sets, so that a package moved into a module of its own
 # is not found in both the module and its parent module of an old version, as an ambiguous import.
