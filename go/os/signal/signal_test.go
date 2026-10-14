@@ -28,6 +28,10 @@ const fatalForwardingSentinel = "reached after synchronous SIGSEGV"
 
 func TestNotifyForwardsSynchronousFatalSignal(t *testing.T) {
 	if os.Getenv("SEARKING_SIGNAL_FATAL_FORWARDING_TEST") == "1" {
+		if got := os.Getenv("GOTRACEBACK"); got != "system" {
+			fmt.Fprintf(os.Stderr, "GOTRACEBACK=%q, want system\n", got)
+			os.Exit(2)
+		}
 		signal_.DumpSignalTo(-1)
 		signal_.DumpStacktraceTo(os.Getenv("SEARKING_SIGNAL_FATAL_DUMP_PATH"))
 		c := make(chan os.Signal, 1)
@@ -41,10 +45,9 @@ func TestNotifyForwardsSynchronousFatalSignal(t *testing.T) {
 	defer cancel()
 	dumpPath := filepath.Join(t.TempDir(), "fatal.dump")
 	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestNotifyForwardsSynchronousFatalSignal$")
-	cmd.Env = append(os.Environ(),
-		"SEARKING_SIGNAL_FATAL_FORWARDING_TEST=1",
-		"SEARKING_SIGNAL_FATAL_DUMP_PATH="+dumpPath,
-	)
+	cmd.Env = replaceEnv(os.Environ(), "GOTRACEBACK", "system")
+	cmd.Env = replaceEnv(cmd.Env, "SEARKING_SIGNAL_FATAL_FORWARDING_TEST", "1")
+	cmd.Env = replaceEnv(cmd.Env, "SEARKING_SIGNAL_FATAL_DUMP_PATH", dumpPath)
 	output, err := cmd.CombinedOutput()
 	if ctx.Err() != nil {
 		t.Fatalf("fatal-forwarding child timed out: %v", ctx.Err())
@@ -65,6 +68,17 @@ func TestNotifyForwardsSynchronousFatalSignal(t *testing.T) {
 	if !strings.Contains(string(output), "[signal SIGSEGV:") {
 		t.Fatalf("fatal-forwarding child output does not show Go runtime fault handling\n%s", output)
 	}
+}
+
+func replaceEnv(env []string, key, value string) []string {
+	prefix := key + "="
+	replaced := make([]string, 0, len(env)+1)
+	for _, entry := range env {
+		if !strings.HasPrefix(entry, prefix) {
+			replaced = append(replaced, entry)
+		}
+	}
+	return append(replaced, prefix+value)
 }
 
 //go:nocheckptr
