@@ -33,7 +33,6 @@ import _ "github.com/searKing/golang/third_party/github.com/open-telemetry/opent
 import _ "github.com/searKing/golang/third_party/github.com/sirupsen/logrus"
 import _ "github.com/searKing/golang/third_party/github.com/spf13/viper"
 import _ "github.com/searKing/golang/third_party/github.com/spf13/pflag"
-import _ "github.com/searKing/golang/third_party/github.com/redis/go-redis-v9"
 import _ "github.com/searKing/golang/third_party/github.com/syndtr/goleveldb"
 import _ "github.com/searKing/golang/third_party/github.com/gtank/cryptopasta"
 import _ "github.com/searKing/golang/third_party/gocloud.dev"

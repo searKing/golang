@@ -26,7 +26,6 @@ require (
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.145
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.145
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation v1.2.147
-	github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 v1.2.146
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.145
 	github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.145
 	github.com/searKing/golang/third_party/github.com/spf13/viper v1.2.145
@@ -167,8 +166,6 @@ replace github.com/searKing/golang/third_party/github.com/open-telemetry/opentel
 replace github.com/searKing/golang/third_party/github.com/sirupsen/logrus => ./third_party/github.com/sirupsen/logrus
 
 replace github.com/searKing/golang/third_party/github.com/spf13/pflag => ./third_party/github.com/spf13/pflag
-
-replace github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 => ./third_party/github.com/redis/go-redis-v9
 
 replace github.com/searKing/golang/third_party/github.com/spf13/viper => ./third_party/github.com/spf13/viper
 

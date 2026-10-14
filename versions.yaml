@@ -33,7 +33,6 @@ module-sets:
       - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql
       - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric
       - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation
-      - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9
       - github.com/searKing/golang/third_party/github.com/sirupsen/logrus
       - github.com/searKing/golang/third_party/github.com/spf13/pflag
       - github.com/searKing/golang/third_party/github.com/spf13/viper
@@ -59,7 +58,6 @@ excluded-modules:
   - github.com/searKing/golang/internal/tools
   - github.com/searKing/golang/pkg/log/redislog/test
   - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example
-  - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test
   - github.com/searKing/golang/tools/go-nulljson/test
   - github.com/searKing/golang/tools/go-option/test
   - github.com/searKing/golang/tools/go-sqlx/test
