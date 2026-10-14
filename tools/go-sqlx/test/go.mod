@@ -12,12 +12,12 @@ tool github.com/searKing/golang/tools/go-sqlx
 
 require (
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/searKing/golang/go v1.2.145
-	github.com/searKing/golang/third_party/github.com/jmoiron/sqlx v1.2.145
+	github.com/searKing/golang/go v1.2.147
+	github.com/searKing/golang/third_party/github.com/jmoiron/sqlx v1.2.147
 )
 
 require (
-	github.com/searKing/golang/tools v1.2.122 // indirect
+	github.com/searKing/golang/tools v1.2.147 // indirect
 	github.com/searKing/golang/tools/go-sqlx v1.2.147 // indirect
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect

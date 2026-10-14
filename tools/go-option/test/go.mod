@@ -11,8 +11,8 @@ replace github.com/searKing/golang/go => ../../../go
 tool github.com/searKing/golang/tools/go-option
 
 require (
-	github.com/searKing/golang/go v1.2.122 // indirect
-	github.com/searKing/golang/tools v1.2.122 // indirect
+	github.com/searKing/golang/go v1.2.147 // indirect
+	github.com/searKing/golang/tools v1.2.147 // indirect
 	github.com/searKing/golang/tools/go-option v1.2.147 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/mod v0.38.0 // indirect

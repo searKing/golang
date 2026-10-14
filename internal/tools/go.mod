@@ -41,8 +41,8 @@ require (
 	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/searKing/golang/go v1.2.122 // indirect
-	github.com/searKing/golang/tools v1.2.122 // indirect
+	github.com/searKing/golang/go v1.2.147 // indirect
+	github.com/searKing/golang/tools v1.2.147 // indirect
 	github.com/searKing/golang/tools/go-atomicvalue v1.2.147 // indirect
 	github.com/searKing/golang/tools/go-enum v1.2.147 // indirect
 	github.com/searKing/golang/tools/go-import v1.2.147 // indirect
