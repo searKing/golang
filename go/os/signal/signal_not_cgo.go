@@ -30,3 +30,8 @@ func previousStacktrace() string { return "" }
 // setSigInvokeChain is fake for cgo
 func setSigInvokeChain(from, to, wait, sleepInSeconds int) {
 }
+
+// setSigInvokeChainCancelable is fake for cgo
+func setSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) (cancel func()) {
+	return func() {}
+}

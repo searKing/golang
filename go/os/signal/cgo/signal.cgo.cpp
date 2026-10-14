@@ -48,3 +48,15 @@ void CGO_SetSigInvokeChain(const int from, const int to, const int wait,
   searking::SignalHandler::GetInstance().SetSigInvokeChain(from, to, wait,
                                                            sleepInSeconds);
 }
+
+uintptr_t CGO_NewSigInvokeChain(const int from, const int to, const int wait,
+                                const int sleepInSeconds) {
+  return reinterpret_cast<uintptr_t>(
+      searking::SignalHandler::GetInstance().NewSigInvokeChain(
+          from, to, wait, sleepInSeconds));
+}
+
+void CGO_CancelSigInvokeChain(const int from, uintptr_t chain) {
+  searking::SignalHandler::GetInstance().CancelSigInvokeChain(
+      from, reinterpret_cast<const searking::SigChain *>(chain));
+}

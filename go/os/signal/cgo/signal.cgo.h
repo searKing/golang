@@ -12,6 +12,7 @@
 #define GO_OS_SIGNAL_CGO_SIGNAL_CGO_H_
 #include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +25,10 @@ void CGO_SignalHandlerDumpPreviousStacktrace();
 char *CGO_PreviousStacktrace();
 void CGO_SetSigInvokeChain(const int from, const int to, const int wait,
                            const int sleepInSeconds);
+// CGO_NewSigInvokeChain returns the chain for CGO_CancelSigInvokeChain.
+uintptr_t CGO_NewSigInvokeChain(const int from, const int to, const int wait,
+                                const int sleepInSeconds);
+void CGO_CancelSigInvokeChain(const int from, uintptr_t chain);
 
 #ifdef __cplusplus
 }
