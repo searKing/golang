@@ -3,7 +3,7 @@ module github.com/searKing/golang/third_party/github.com/sirupsen/logrus
 go 1.27.0
 
 require (
-	github.com/searKing/golang/go v1.2.147
+	github.com/searKing/golang/go v1.2.148
 	github.com/sirupsen/logrus v1.10.2
 )
 
