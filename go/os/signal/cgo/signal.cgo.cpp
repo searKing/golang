@@ -6,12 +6,13 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-//go:build cgo && linux
+//go:build cgo
 
 #include <algorithm>
+#include <cstdlib>
 
 #include "signal.cgo.h"
-#include "signal_handler_linux.hpp"
+#include "signal_handler.hpp"
 
 int CGO_SignalHandlerSetSig(int signum) {
   return searking::SignalHandler::SetSig(signum);
@@ -34,6 +35,9 @@ char* CGO_PreviousStacktrace() {
   auto str = searking::SignalHandler::GetInstance().PreviousStacktrace();
 
   char* writable = static_cast<char*>(malloc((str.size() + 1) * sizeof(char)));
+  if (writable == nullptr) {
+    return nullptr;
+  }
   std::copy(str.begin(), str.end(), writable);
   writable[str.size()] = '\0';  // don't forget the terminating 0
   return writable;

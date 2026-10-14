@@ -10,51 +10,27 @@
 
 #include "write_int.hpp"
 
+#include <climits>
+
 namespace searking {
 
-// C++14
-// constexpr int BitNumInDecimal(int n) {
-//  int count = 0;
-//  do {
-//    n = n / 10;
-//    count++;
-//  } while (n > 0);
-//  return count;
-//}
-
-// C++11
-constexpr int BitNumInDecimal(int n) {
-  return n == 0 ? 0 : 1 + BitNumInDecimal(n / 10);
-}
-
+// WriteInt is async-signal-safe, as it neither allocates nor calls stdio.
 ssize_t WriteInt(int fd, int n) {
-  unsigned int unsigned_n = n >= 0 ? n : -n;
-  // + 1 for sign
-  const auto kBits = BitNumInDecimal(unsigned_n) + 1;
-  char nums[kBits];
-  for (auto i = 0; i < kBits; i++) {
-    nums[i] = 0;
-  }
+  // digits of INT_MIN, and a sign
+  char nums[sizeof(int) * CHAR_BIT / 3 + 2];
+  // negate in unsigned, as -INT_MIN overflows int.
+  unsigned int u = n < 0 ? 0u - static_cast<unsigned int>(n)
+                         : static_cast<unsigned int>(n);
 
-  // push bits by a reverse order
-  int idx = 0;
+  // fill digits backwards from the end
+  size_t idx = sizeof(nums);
   do {
-    nums[idx] = '0' + (unsigned_n % 10);
-    idx++;
-    unsigned_n /= 10;
-  } while (unsigned_n && idx < sizeof(nums) / sizeof(nums[0]));
-  if (n < 0 && idx < sizeof(nums) / sizeof(nums[0])) {
-    nums[idx] = '-';
-    idx++;
+    nums[--idx] = static_cast<char>('0' + u % 10);
+    u /= 10;
+  } while (u != 0);
+  if (n < 0) {
+    nums[--idx] = '-';
   }
-
-  // reverse as a stack
-  auto cnt = idx;
-  for (auto i = 0; i < cnt / 2; i++) {
-    nums[i] = nums[i] ^ nums[cnt - 1 - i];
-    nums[cnt - 1 - i] = nums[i] ^ nums[cnt - 1 - i];
-    nums[i] = nums[i] ^ nums[cnt - 1 - i];
-  }
-  return write(fd, nums, cnt);
+  return write(fd, nums + idx, sizeof(nums) - idx);
 }
 }  // namespace searking
