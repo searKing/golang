@@ -5,7 +5,13 @@ with [multimod](https://github.com/open-telemetry/opentelemetry-go-build-tools/t
 as [opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go/blob/main/RELEASING.md) does.
 All modules of a module set are released together with the same version.
 
-Tools are pinned by the module [internal/tools](internal/tools/go.mod), and run by targets of [Makefile](Makefile). Run `make help` for all targets.
+Tools are tracked by tool directives of the module [internal/tools](internal/tools/go.mod), with tools of this repo
+replaced by their local paths, installed into `.tools/bin` by `make tools`, and run by targets of [Makefile](Makefile).
+Run `make help` for all targets.
+
+`make generate` runs `go generate ./...` in every module with these tools, and CI fails if generated files are out of date.
+protoc-gen-go-tag also requires protoc, of the version in the CI workflow, as its version is written into generated files.
+To track a new tool, run `cd internal/tools && go get -tool <TOOL>`, and `make crosslink` if it is of this repo.
 
 ## Module sets
 

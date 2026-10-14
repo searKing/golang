@@ -5,16 +5,24 @@
 package goimport
 
 import (
+	"embed"
 	"sync"
 	"text/template"
 )
+
+//go:embed tmpl
+var tmplFS embed.FS
 
 func importTmplProvider(name string) func() *template.Template {
 	var tmplCache *template.Template
 	var tmplCacheOnce sync.Once
 	tmplProvider := func() *template.Template {
 		tmplCacheOnce.Do(func() {
-			tmplCache = template.Must(template.New(name).Parse(string(MustAsset(name))))
+			text, err := tmplFS.ReadFile(name)
+			if err != nil {
+				panic(err)
+			}
+			tmplCache = template.Must(template.New(name).Parse(string(text)))
 		})
 		return tmplCache
 	}

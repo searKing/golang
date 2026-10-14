@@ -15,8 +15,6 @@ import (
 )
 
 // Format 日志格式
-//
-//go:generate stringer -type=Format
 type Format int32
 
 const (

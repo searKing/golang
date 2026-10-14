@@ -10,22 +10,31 @@ Static Single Assignment form (SSA) representation for Go programs.
 
 ## Download/Install
 
-The easiest way to install is to run `go get install github.com/searKing/golang/tools/...`. You can
-also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/`.
+Each tool is a module of its own. Since Go 1.24, track tools by tool directives of go.mod, and run them by `go tool`:
 
-### Tips
 ```bash
-go get install github.com/searKing/golang/tools/go-atomicvalue
-go get install github.com/searKing/golang/tools/go-enum
-go get install github.com/searKing/golang/tools/go-import
-go get install github.com/searKing/golang/tools/go-nulljson
-go get install github.com/searKing/golang/tools/go-option
-go get install github.com/searKing/golang/tools/go-sqlx
-go get install github.com/searKing/golang/tools/go-syncmap
-go get install github.com/searKing/golang/tools/go-syncpool
-go get install github.com/searKing/golang/tools/go-validator
-go get install github.com/searKing/golang/tools/protoc-gen-go-tag
+go get -tool github.com/searKing/golang/tools/go-option@latest
+go tool go-option -type=Pill
 ```
+
+or install them into GOBIN:
+
+```bash
+go install github.com/searKing/golang/tools/go-atomicvalue@latest
+go install github.com/searKing/golang/tools/go-enum@latest
+go install github.com/searKing/golang/tools/go-import@latest
+go install github.com/searKing/golang/tools/go-nulljson@latest
+go install github.com/searKing/golang/tools/go-option@latest
+go install github.com/searKing/golang/tools/go-sqlx@latest
+go install github.com/searKing/golang/tools/go-syncmap@latest
+go install github.com/searKing/golang/tools/go-syncpool@latest
+go install github.com/searKing/golang/tools/go-union@latest
+go install github.com/searKing/golang/tools/go-validator@latest
+go install github.com/searKing/golang/tools/protoc-gen-go-tag@latest
+```
+
+In this repository, tools are tracked by internal/tools/go.mod, with tools of this repository replaced by local paths,
+and `make generate` runs `go generate` in every module with them.
 
 ## Report Issues / Send Patches
 

@@ -123,6 +123,10 @@ func FindModuleName(modRoot string) (name string, err error) {
 
 // FindGoMod returns the nearest go.mod by walk dir and i's parent and forefathers in order
 func FindGoMod(dir string) string {
+	// findModuleRoot walks up by filepath.Dir, which stops at "." for relative paths.
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs
+	}
 	modRoot := findModuleRoot(dir)
 	if modRoot == "" {
 		return ""

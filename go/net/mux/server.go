@@ -25,7 +25,7 @@ var noTimeoutDeadline time.Time
 
 // NewServer wraps NewServerWithContext using the background context.
 //
-//go:generate go-option -type "Server"
+//go:generate go-option -type "Server" -skip-self
 func NewServer() *Server {
 	return NewServerWithContext(context.Background())
 }
@@ -57,14 +57,14 @@ type Server struct {
 	// underlying FileSystem errors.
 	// If nil, logging is done via the log package's standard logger.
 	errorLog   *log.Logger
-	ctx        context.Context
-	inShutdown atomic.Bool // accessed atomically (non-zero means we're in Shutdown)
+	ctx        context.Context `option:"-"`
+	inShutdown atomic.Bool     `option:"-"` // accessed atomically (non-zero means we're in Shutdown)
 
-	mu         sync.Mutex
-	listeners  map[*net.Listener]struct{}
-	activeConn map[*conn]struct{}
-	doneChan   chan struct{}
-	onShutdown []func()
+	mu         sync.Mutex                 `option:"-"`
+	listeners  map[*net.Listener]struct{} `option:"-"`
+	activeConn map[*conn]struct{}         `option:"-"`
+	doneChan   chan struct{}              `option:"-"`
+	onShutdown []func()                   `option:"-"`
 }
 
 func (srv *Server) getDoneChan() <-chan struct{} {

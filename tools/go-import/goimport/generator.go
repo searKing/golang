@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	_ "unsafe"
 
@@ -181,6 +182,8 @@ func (g *Generator) generateGoImport(toolName string, toolArgs ...string) {
 	for _, pkg := range g.importPkgs {
 		tmplInfo.ImportPaths = append(tmplInfo.ImportPaths, pkg.importPath)
 	}
+	// Sort for reproducible output, as importPkgs is a map.
+	sort.Strings(tmplInfo.ImportPaths)
 
 	tmplInfo.ModuleName = g.outputPkg.Package()
 	if err := tmpl().Execute(&g.buf, tmplInfo); err != nil {

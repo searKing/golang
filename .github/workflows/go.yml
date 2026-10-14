@@ -58,6 +58,38 @@ jobs:
     - name: Lint
       run: make lint
 
+  # Verify generated files are up to date with their generators of this repo.
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # protoc version in headers of generated .pb.go files.
+      PROTOC_VERSION: '32.0'
+    steps:
+    - uses: actions/checkout@v7
+    - name: Set up Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: 'go.mod'
+        cache-dependency-path: '**/go.sum'
+    # The release includes protos of google/protobuf beside bin/protoc, found by gen.sh of protoc-gen-go-tag.
+    - name: Install protoc
+      run: |
+        curl -fsSL -o "$RUNNER_TEMP/protoc.zip" \
+          "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+        unzip -q "$RUNNER_TEMP/protoc.zip" -d "$RUNNER_TEMP/protoc"
+        echo "$RUNNER_TEMP/protoc/bin" >> "$GITHUB_PATH"
+    - name: Generate
+      run: make generate
+    - name: Verify generated files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          git status --short
+          git diff
+          echo "generated files are out of date, run 'make generate' and commit them" >&2
+          exit 1
+        fi
+
   # Verify versions.yaml lists every module, and the root module requires every module of module sets.
   verify-mods:
     runs-on: ubuntu-latest

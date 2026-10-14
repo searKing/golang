@@ -64,7 +64,7 @@ with the -output flag.
 
 ## Download/Install
 
-The easiest way to install is to run `go get install github.com/searKing/golang/tools/go-syncpool`
+The easiest way to install is to run `go install github.com/searKing/golang/tools/go-syncpool@latest`
 . You can also manually git clone the repository to `$GOPATH/src/github.com/searKing/golang/tools/go-syncpool`.
 
 ## Inspiring projects

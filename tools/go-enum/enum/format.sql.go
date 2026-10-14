@@ -27,7 +27,7 @@ func (i %[1]s) Value() (driver.Value, error) {
 	return i.String(), nil
 }
 
-func (i *%[1]s) Scan(value interface{}) error {
+func (i *%[1]s) Scan(value any) error {
 	if value == nil {
 		return nil
 	}

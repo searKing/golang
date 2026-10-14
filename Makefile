@@ -8,9 +8,10 @@
 SHELL := /bin/bash
 
 GO := GOWORK=off go
-TOOLS_MOD := $(CURDIR)/internal/tools/go.mod
-MULTIMOD := $(GO) tool -modfile=$(TOOLS_MOD) multimod
-CROSSLINK := $(GO) tool -modfile=$(TOOLS_MOD) crosslink
+TOOLS_DIR := $(CURDIR)/internal/tools
+TOOLS_BIN := $(CURDIR)/.tools/bin
+MULTIMOD := $(TOOLS_BIN)/multimod
+CROSSLINK := $(TOOLS_BIN)/crosslink
 
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -not -path './.*' -not -path '*/testdata/*' -exec dirname {} \; | sort)
 # Modules of packages, except internal/tools, which requires tools only.
@@ -38,6 +39,8 @@ help:
 	@echo "Usage: make TARGET [MODSET=stable-v1] [COMMIT=HEAD]"
 	@echo
 	@echo "Targets:"
+	@echo "  tools         install tools of internal/tools into .tools/bin, with tools of this repo built from local paths"
+	@echo "  generate      run 'go generate ./...' in every module with tools of .tools/bin"
 	@echo "  go-mod-tidy   run 'go mod tidy' in every module"
 	@echo "  test          run 'go test ./...' in every module, with GOTEST_FLAGS"
 	@echo "  lint          run 'go vet ./...' in every module, and verify Go files are formatted by gofmt"
@@ -52,6 +55,22 @@ help:
 	@echo "  add-tags      tag modules of MODSET at COMMIT by its version in versions.yaml"
 	@echo "  delete-tags   delete local tags of MODSET with its version in versions.yaml"
 	@echo "  push-tags     push tags of MODSET with its version in versions.yaml to origin"
+
+# Install in internal/tools, for replace directives are relative to the main module, even with -modfile.
+.PHONY: tools
+tools:
+	@echo "Installing tools of internal/tools into $(TOOLS_BIN)" \
+		&& cd $(TOOLS_DIR) \
+		&& GOBIN=$(TOOLS_BIN) $(GO) install tool
+
+# protoc-gen-go-tag generates by protoc, which is not a Go tool, with PROTOC_INCLUDE for protos of google/protobuf.
+.PHONY: generate
+generate: tools $(GO_MOD_DIRS:%=generate/%)
+generate/%: DIR=$*
+generate/%: tools
+	@echo "$(GO) generate ./... in $(DIR)" \
+		&& cd $(DIR) \
+		&& PATH="$(TOOLS_BIN):$$PATH" $(GO) generate ./...
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
@@ -91,12 +110,12 @@ fmt-check:
 	fi
 
 .PHONY: crosslink
-crosslink:
+crosslink: tools
 	@echo "Updating intra-repo dependencies in all go modules" \
 		&& $(CROSSLINK) --root=$(CURDIR) --prune
 
 .PHONY: verify-mods
-verify-mods: verify-root-requires
+verify-mods: tools verify-root-requires
 	$(MULTIMOD) verify
 
 # The root module requires every module of module sets, so that a package moved into a module of its own
