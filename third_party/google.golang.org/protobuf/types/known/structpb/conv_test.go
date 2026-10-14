@@ -5,7 +5,8 @@
 package structpb_test
 
 import (
-	"strings"
+	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/searKing/golang/third_party/google.golang.org/protobuf/types/known/structpb"
@@ -83,7 +84,15 @@ func TestToProtoStruct(t *testing.T) {
 		if err != nil {
 			t.Errorf("#%d: json.Marshal(%+v): got: _, %v exp: _, nil", m, tt.input, err)
 		}
-		if strings.Compare(string(humanBytes), tt.want) != 0 {
+		// protojson adds spaces randomly, against depending on its output byte by byte, so compare JSON values.
+		var got, want any
+		if err := json.Unmarshal(humanBytes, &got); err != nil {
+			t.Fatalf("#%d: json.Unmarshal(%s): %v", m, humanBytes, err)
+		}
+		if err := json.Unmarshal([]byte(tt.want), &want); err != nil {
+			t.Fatalf("#%d: json.Unmarshal(%s): %v", m, tt.want, err)
+		}
+		if !reflect.DeepEqual(got, want) {
 			t.Errorf("#%d: json.Marshal(%+v): got(%dB): %v want(%dB): %v", m, tt.input, len(humanBytes), string(humanBytes), len(tt.want), tt.want)
 		}
 	}
