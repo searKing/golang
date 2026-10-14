@@ -24,12 +24,9 @@ fi
 tmp=$(mktemp -d)
 trap 'rm -rf "${tmp}"' EXIT
 
-# tag.proto is imported by its path in the repo github.com/searKing/golang.
-mkdir -p "${tmp}/include/github.com/searKing"
-ln -s "$(cd ../.. && pwd)" "${tmp}/include/github.com/searKing/golang"
-includes=(-I "${tmp}/include" -I "${protoc_include}")
-
 GOWORK=off go build -o "${tmp}/protoc-gen-go-tag" .
+"${tmp}/protoc-gen-go-tag" -export_proto "${tmp}/include"
+includes=(-I "${tmp}/include" -I "${protoc_include}")
 protoc "${includes[@]}" -I examples \
   --plugin=protoc-gen-go-tag="${tmp}/protoc-gen-go-tag" \
   --go-tag_out=paths=source_relative:examples \

@@ -1,0 +1,27 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package comment;
+
+option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/comment;comment";
+
+// Comment sets struct tags by comments, without importing tag.proto.
+message Comment {
+  // name is required.
+  // @gotags: validate:"required" json:"name_tag"
+  string name = 1;
+  string email = 2; // @gotags: validate:"email"
+  // @gotags-replace: json:"age"
+  int32 age = 3;
+  // @gotags: validate:"max=10"
+  // @gotags: form:"tags"
+  repeated string tags = 4;
+
+  oneof choice {
+    // @gotags: validate:"url"
+    string url = 5;
+  }
+}

@@ -23,6 +23,9 @@ message Edge {
   string descriptor = 2 [(google.protobuf.field_tag) = {struct_tag: 'json:"desc"', update_strategy: replace}];
   // optional is a field of a synthetic oneof, which is generated in the struct of the message.
   optional string optional = 3 [(google.protobuf.field_tag) = {struct_tag: 'validate:"omitempty"'}];
+  // both is tagged by field_tag, then by comments.
+  // @gotags: form:"both"
+  string both = 6 [(google.protobuf.field_tag) = {struct_tag: 'json:"both_tag"', update_strategy: replace}]; // @gotags: json:",omitempty"
 
   oneof choice {
     option (oneof_note) = "oneof with options";

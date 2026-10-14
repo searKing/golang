@@ -1,0 +1,3 @@
+# The BSR module of tag.proto, pushed by buf.sh, for tag.proto is laid out by its import path then.
+version: v2
+name: buf.build/searking/protoc-gen-go-tag

@@ -1,0 +1,14 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package invalid;
+
+option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/invalid;invalid";
+
+message CommentReservedKey {
+  // @gotags: protobuf_oneof:"name"
+  string name = 1;
+}

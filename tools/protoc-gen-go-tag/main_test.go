@@ -47,11 +47,14 @@ func TestGolden(t *testing.T) {
 	}{
 		{name: "example", files: []string{"example.proto"}},
 		{name: "edge", files: []string{"edge/edge.proto"}},
+		{name: "comment", files: []string{"comment/comment.proto"}},
 		{name: "samename", files: []string{"samename/a/http.proto", "samename/b/http.proto"}},
 		{name: "reserved_key", files: []string{"invalid/reserved_key.proto"},
-			wantErr: `invalid.ReservedKey.name: field_tag must not set struct tag "protobuf"`},
+			wantErr: `invalid.ReservedKey.name: field_tag: must not set struct tag "protobuf"`},
+		{name: "comment_reserved_key", files: []string{"invalid/comment_reserved_key.proto"},
+			wantErr: `invalid.CommentReservedKey.name: @gotags: must not set struct tag "protobuf_oneof"`},
 		{name: "malformed", files: []string{"invalid/malformed.proto"},
-			wantErr: `invalid.Malformed.name: malformed struct tag "validate:\"required" in field_tag`},
+			wantErr: `invalid.Malformed.name: field_tag: malformed struct tag "validate:\"required"`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
