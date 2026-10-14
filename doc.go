@@ -12,6 +12,7 @@ import _ "github.com/searKing/golang/third_party/github.com/urfave/negroni"
 import _ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 
 import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2"
+import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus"
 import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware"
 import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2"
 
@@ -37,6 +38,9 @@ import _ "github.com/searKing/golang/third_party/github.com/syndtr/goleveldb"
 import _ "github.com/searKing/golang/third_party/github.com/gtank/cryptopasta"
 import _ "github.com/searKing/golang/third_party/gocloud.dev"
 import _ "github.com/searKing/golang/pkg/webserver"
+import _ "github.com/searKing/golang/pkg/instrumentation/otel"
+
+// Tools of main packages, which can not be imported, are required by tool directives in go.mod.
 
 // PlaceHolder file, so this can be seen as a module.
 // https://github.com/ugorji/go/blob/master/FAQ.md#resolving-module-issues

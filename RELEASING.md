@@ -13,6 +13,17 @@ Every module of the repo must be listed in exactly one module set, or in `exclud
 if it is never released, such as tests, examples and testdata.
 Run `make verify-mods` after adding or removing a module.
 
+The root module requires every module of module sets, so that a package moved from a module into a
+module of its own is not found in both of them, which fails as an ambiguous import, as the root module
+selects versions of them after the move. As go mod tidy keeps a require only if its package is imported,
+import the package of a new module in [doc.go](doc.go), or require it by a tool directive if it is main:
+
+```sh
+go get -tool github.com/searKing/golang/tools/<TOOL>
+```
+
+`make verify-mods` checks it by `make verify-root-requires`.
+
 Modules require each other with replace directives to their paths, so that they are built against
 local changes rather than the released versions. Run `make crosslink` after requiring a
 module of this repo, to add the missing replace directives and prune the unused ones.

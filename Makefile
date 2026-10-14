@@ -17,6 +17,9 @@ ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -not -path './.*' -not 
 MODSET ?= stable-v1
 COMMIT ?= HEAD
 
+# Modules of all module sets in versions.yaml.
+MODSET_MODULES = $(shell awk '/^[^ ]/ { found = ($$0 == "module-sets:") } found && $$1 == "-" { print $$2 }' versions.yaml)
+
 # Tags of the module set MODSET with its version in versions.yaml, as <module-dir>/<version>, or <version> for the root module.
 MODSET_TAGS = $(shell awk -v set='  $(MODSET):' ' \
 	$$0 == set { found = 1; next } \
@@ -35,7 +38,9 @@ help:
 	@echo "Targets:"
 	@echo "  go-mod-tidy   run 'go mod tidy' in every module"
 	@echo "  crosslink     add replace directives of intra-repo requires and prune unused ones"
-	@echo "  verify-mods   verify versions.yaml lists every module of the repo"
+	@echo "  verify-mods   verify versions.yaml lists every module of the repo, and verify-root-requires"
+	@echo "  verify-root-requires"
+	@echo "                verify the root module requires every module of module sets, against ambiguous imports"
 	@echo "  prerelease    update intra-repo requires of MODSET to its version in versions.yaml,"
 	@echo "                run 'go mod tidy' and commit to a new branch prerelease_<MODSET>_<VERSION>"
 	@echo "  prerelease-clone"
@@ -58,8 +63,26 @@ crosslink:
 		&& $(CROSSLINK) --root=$(CURDIR) --prune
 
 .PHONY: verify-mods
-verify-mods:
+verify-mods: verify-root-requires
 	$(MULTIMOD) verify
+
+# The root module requires every module of module sets, so that a package moved into a module of its own
+# is not found in both the module and its parent module of an old version, as an ambiguous import.
+# go mod tidy keeps a require only if its package is imported, by doc.go, or a tool directive for main packages.
+.PHONY: verify-root-requires
+verify-root-requires:
+	@set -e; \
+	required=$$(awk '/^require \(/ { found = 1; next } found && /^\)/ { found = 0 } found { print $$1 } /^require [^(]/ { print $$2 }' go.mod); \
+	missing=$$(for mod in $(MODSET_MODULES); do \
+		[ "$$mod" = "github.com/searKing/golang" ] || grep -qx "$$mod" <<< "$$required" || echo "$$mod"; \
+	done); \
+	if [ -n "$$missing" ]; then \
+		echo "modules not required by the root module, import them in doc.go, or by tool directives for main packages:" >&2; \
+		printf '  %s\n' $$missing >&2; \
+		exit 1; \
+	fi; \
+	$(GO) mod tidy -diff >/dev/null || { echo "go.mod of the root module is not tidy, run 'make go-mod-tidy/.'" >&2; exit 1; }; \
+	echo "PASS: Root module requires all modules of module sets."
 
 .PHONY: prerelease
 prerelease: verify-mods
