@@ -60,8 +60,8 @@ func (nj *{{.SqlJsonType}}) Scan(src interface{}) error {
 		srcBytes, _ := json.Marshal(src)
 		var v interface{} = &nj.Data
 		switch v := v.(type) {
-		case proto.Message:
 {{- if .ProtoJson }}
+		case proto.Message:
 			err = protojson.UnmarshalOptions{
 				AllowPartial:   true,
 				DiscardUnknown: true,
