@@ -5,7 +5,8 @@
 package anypb_test
 
 import (
-	"strings"
+	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/searKing/golang/third_party/google.golang.org/protobuf/types/known/anypb"
@@ -87,7 +88,15 @@ func TestToProtoAny(t *testing.T) {
 			t.Errorf("#%d: json.Marshal(%+v): got: _, %v exp: _, nil", m, test.input, err)
 		}
 
-		if strings.Compare(string(humanByte), test.output) != 0 {
+		// protojson adds spaces randomly, against depending on its output byte by byte, so compare JSON values.
+		var got, want any
+		if err := json.Unmarshal(humanByte, &got); err != nil {
+			t.Fatalf("#%d: json.Unmarshal(%s): %v", m, humanByte, err)
+		}
+		if err := json.Unmarshal([]byte(test.output), &want); err != nil {
+			t.Fatalf("#%d: json.Unmarshal(%s): %v", m, test.output, err)
+		}
+		if !reflect.DeepEqual(got, want) {
 			t.Errorf("#%d: json.Marshal(%+v): \ngot: \n%v\nexp: \n%v\n", m, test.input, string(humanByte), test.output)
 		}
 	}
