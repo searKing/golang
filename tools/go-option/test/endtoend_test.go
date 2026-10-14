@@ -146,6 +146,10 @@ func gooptionsCompileAndRun(t *testing.T, dir, gooptions string, fileNames []str
 	if err != nil {
 		t.Fatal(err)
 	}
+	// vet checks the generated code too, such as copies of locks.
+	if err := run("go", append([]string{"vet"}, generated...)...); err != nil {
+		t.Fatal(err)
+	}
 	if isMain {
 		err = run("go", append([]string{"run"}, generated...)...)
 	} else {

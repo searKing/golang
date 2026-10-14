@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-//go:generate go-option -type=Gateway
+//go:generate go-option -type=Gateway -skip-self
 type Gateway struct {
 	// options
 	opt gatewayOption
@@ -29,7 +29,7 @@ type Gateway struct {
 	// runtime
 	grpcServer *grpc.Server
 
-	once sync.Once
+	once sync.Once `option:"-"`
 }
 
 func NewGateway(addr string, opts ...GatewayOption) *Gateway {
