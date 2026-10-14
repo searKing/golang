@@ -47,7 +47,7 @@ type hook struct {
 
 func (h *hook) DialHook(next redis.DialHook) redis.DialHook {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if h.config.Skip != nil && h.config.Skip(nil) {
+		if h.config.SkipDials {
 			return next(ctx, network, addr)
 		}
 		start := time.Now()

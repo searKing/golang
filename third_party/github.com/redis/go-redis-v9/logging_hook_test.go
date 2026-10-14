@@ -121,9 +121,9 @@ func TestHookSkip(t *testing.T) {
 	ctx := context.Background()
 	r := &recorder{}
 	var skipped [][]redis.Cmder
-	h := NewHook(slog.New(r), Config{Skip: func(cmds []redis.Cmder) bool {
+	h := NewHook(slog.New(r), Config{SkipDials: true, Skip: func(cmds []redis.Cmder) bool {
 		skipped = append(skipped, cmds)
-		return cmds == nil || cmds[0].Name() == "ping"
+		return cmds[0].Name() == "ping"
 	}})
 	ok := func(context.Context, redis.Cmder) error { return nil }
 	_, _ = h.DialHook(func(context.Context, string, string) (net.Conn, error) { return nil, nil })(ctx, "tcp", "127.0.0.1:0")
@@ -131,7 +131,7 @@ func TestHookSkip(t *testing.T) {
 	_ = h.ProcessHook(ok)(ctx, redis.NewCmd(ctx, "get", "k1"))
 	_ = h.ProcessPipelineHook(func(context.Context, []redis.Cmder) error { return nil })(ctx,
 		[]redis.Cmder{redis.NewCmd(ctx, "ping"), redis.NewCmd(ctx, "get", "k1")})
-	if len(skipped) != 4 || skipped[0] != nil || len(skipped[3]) != 2 {
+	if len(skipped) != 3 || len(skipped[2]) != 2 {
 		t.Errorf("Skip is called with %v", skipped)
 	}
 	if len(r.entries) != 1 || r.entries[0].fields["redis.cmd"] != "get k1" {

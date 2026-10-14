@@ -37,7 +37,8 @@ level=DEBUG msg="redis dialed" redis.network=tcp redis.addr=localhost:6379 redis
 | `IgnoreRecordNotFoundError` | `Levels`            | `DefaultErrorToLevel`: debug for success, `redis.Nil`, `NOSCRIPT` and canceled; error for `NOAUTH`, `WRONGPASS`, `NOPERM` and `OOM`; warn for others |
 | `LogLevel`                  | levels of handlers  |                                                                   |
 |                             | `FieldsFromContext` | fields of contexts, such as tenants, logged out of the group      |
-|                             | `Skip`              | all calls logged; skips calls of commands, or dials with nil, such as `PING`, as filters of redisotel |
+|                             | `Skip`              | all commands logged; skips commands or pipelines, such as `PING`, as `WithCommandFilter` of redisotel |
+|                             | `SkipDials`         | dials logged; skips dials if true, as `WithDialFilter` of redisotel |
 
 Slow calls are logged at warn level at least. Fields of clients, such as addresses, can be added by `slog.Logger.With`.
 

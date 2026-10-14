@@ -30,9 +30,11 @@ type Config struct {
 	// as arguments of slog.Logger.Log, called only if the log is enabled.
 	// Dials are called with contexts of go-redis, rather than of the callers of commands.
 	FieldsFromContext func(ctx context.Context) []any
-	// Skip reports whether to skip logging the call of cmds, a single command for commands and nil for dials,
-	// such as PING of health checks, as filters of redisotel, logging all calls if nil.
+	// Skip reports whether to skip logging the call of cmds, a single command for commands, or commands of pipelines,
+	// such as PING of health checks, as WithCommandFilter of redisotel, logging all commands if nil.
 	Skip func(cmds []redis.Cmder) bool
+	// SkipDials skips logging dials, as WithDialFilter of redisotel.
+	SkipDials bool
 }
 
 // DefaultSlowThreshold is the threshold of slow calls of DefaultConfig.
