@@ -7,7 +7,7 @@
 # Every module in the repo must be listed in a module set or excluded-modules.
 module-sets:
   stable-v1:
-    version: v1.2.147
+    version: v1.2.148
     modules:
       - github.com/searKing/golang
       - github.com/searKing/golang/go
