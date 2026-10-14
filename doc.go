@@ -13,6 +13,7 @@ import _ "github.com/searKing/golang/third_party/github.com/gin-gonic/gin"
 
 import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2"
 import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware"
+import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2"
 
 import _ "github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway"
 
@@ -24,6 +25,7 @@ import _ "github.com/searKing/golang/third_party/github.com/golang/protobuf"
 import _ "github.com/searKing/golang/third_party/github.com/google/uuid"
 import _ "github.com/searKing/golang/third_party/github.com/julienschmidt/httprouter"
 import _ "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric"
+import _ "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation"
 import _ "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 import _ "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql"
 import _ "github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/github.com/searKing/otelhttp"
@@ -40,8 +42,8 @@ import _ "github.com/searKing/golang/pkg/webserver"
 // https://github.com/ugorji/go/blob/master/FAQ.md#resolving-module-issues
 // https://github.com/spf13/cobra/pull/1233
 
-// find . -type f -name "go.mod" -not -path "./.*" -exec bash -c 'cd $(dirname "$1"); go mod tidy' sh {} \;
-// TAG=v1.2.112 find . -type f -name "go.mod" -not -path "./.*" -exec bash -c 'path=$(dirname "${1#./}");if [ "$path" == "." ]; then git tag "${TAG}"; else git tag "${path}/${TAG}"; fi;' sh {} \;
+// ./devops.sh tidy
+// See RELEASING.md for tagging and releasing modules.
 //
 // go clean -modcache
 // GOPROXY=direct go mod tidy -v

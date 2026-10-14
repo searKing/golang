@@ -20,6 +20,7 @@ module-sets:
       - github.com/searKing/golang/third_party/github.com/google/uuid
       - github.com/searKing/golang/third_party/github.com/gorilla/websocket
       - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware
+      - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2
       - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway
       - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2
       - github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2/grpc/logging/grpclogrus
@@ -30,6 +31,7 @@ module-sets:
       - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc
       - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql
       - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric
+      - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation
       - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9
       - github.com/searKing/golang/third_party/github.com/sirupsen/logrus
       - github.com/searKing/golang/third_party/github.com/spf13/pflag
@@ -53,7 +55,6 @@ module-sets:
       - github.com/searKing/golang/tools/go-validator
       - github.com/searKing/golang/tools/protoc-gen-go-tag
 excluded-modules:
-  - go-grpc-middleware-v2
   - github.com/searKing/golang/internal/tools
   - github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example
   - github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test

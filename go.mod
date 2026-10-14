@@ -12,6 +12,7 @@ require (
 	github.com/searKing/golang/third_party/github.com/google/uuid v1.2.145
 	github.com/searKing/golang/third_party/github.com/gorilla/websocket v1.2.145
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware v1.2.145
+	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2 v1.2.147
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway v1.2.145
 	github.com/searKing/golang/third_party/github.com/grpc-ecosystem/grpc-gateway-v2 v1.2.145
 	github.com/searKing/golang/third_party/github.com/gtank/cryptopasta v1.2.145
@@ -21,6 +22,7 @@ require (
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc v1.2.145
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.145
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.145
+	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation v1.2.147
 	github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 v1.2.146
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.145
 	github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.145
@@ -167,3 +169,7 @@ replace github.com/searKing/golang/third_party/google.golang.org/grpc/grpclog/lo
 replace github.com/searKing/golang/third_party/google.golang.org/protobuf => ./third_party/google.golang.org/protobuf
 
 replace github.com/searKing/golang/tools => ./tools
+
+replace github.com/searKing/golang/third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2 => ./third_party/github.com/grpc-ecosystem/go-grpc-middleware-v2
+
+replace github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/propagation => ./third_party/github.com/open-telemetry/opentelemetry-go/propagation
