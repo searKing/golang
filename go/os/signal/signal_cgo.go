@@ -40,13 +40,3 @@ func dumpPreviousStacktrace() {
 func previousStacktrace() string {
 	return cgo.PreviousStacktrace()
 }
-
-// setSigInvokeChain sets a rule to raise signal to {to} and wait until {wait}, done with sleep {sleepInSeconds}s
-func setSigInvokeChain(from, to, wait, sleepInSeconds int) {
-	cgo.SetSigInvokeChain(from, to, wait, sleepInSeconds)
-}
-
-// setSigInvokeChainCancelable acts as setSigInvokeChain, and returns cancel to remove the chain.
-func setSigInvokeChainCancelable(from, to, wait, sleepInSeconds int) (cancel func()) {
-	return cgo.SetSigInvokeChainCancelable(from, to, wait, sleepInSeconds)
-}

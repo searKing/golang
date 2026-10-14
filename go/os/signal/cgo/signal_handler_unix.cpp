@@ -12,11 +12,7 @@
 
 #include <string.h>
 
-#include <boost/stacktrace.hpp>
 #include <cstdlib>
-#include <fstream>
-#include <memory>
-#include <sstream>
 
 namespace searking {
 
@@ -28,80 +24,61 @@ SignalHandler &SignalHandler::GetInstance() {
 void SignalHandler::operator()(int signum, siginfo_t *info, void *context) {
   WriteSignalStacktrace(signum);
 
-  const OnSignal *on_signal = on_signal_.load(std::memory_order_acquire);
-  if (on_signal != nullptr && on_signal->callback) {
-    on_signal->callback(on_signal->ctx, SignalDumpToFd(), signum, info,
-                        context);
-  }
-
-  RunSigChain(signum, [this, info, context](int to) {
-    InvokeGoSignalHandler(to, info, context);
-  });
-
   InvokeGoSignalHandler(signum, info, context);
+}
+
+void SignalHandler::HandleSignal(int signum, siginfo_t *info, void *context) {
+  GetInstance()(signum, info, context);
 }
 
 void SignalHandler::InvokeGoSignalHandler(int signum, siginfo_t *info,
                                           void *context) {
-  auto handlers = go_registered_handlers_.Load(signum);
-  if (handlers != nullptr) {
-    SignalHandlerSigActionHandler sigActionHandler = handlers->first;
-    SignalHandlerSignalHandler signalHandler = handlers->second;
-
-    // http://man7.org/linux/man-pages/man7/signal.7.html
-    if (sigActionHandler) {
-      sigActionHandler(signum, info, context);
-      return;
-    }
-    if (signalHandler == SIG_IGN) {
-      return;
-    }
-    if (signalHandler == SIG_DFL) {
-      struct sigaction preSa;
-      memset(&preSa, 0, sizeof(preSa));
-      sigaction(signum, nullptr, &preSa);
-
-      preSa.sa_sigaction = nullptr;
-      preSa.sa_handler = SIG_DFL;
-
-      sigaction(signum, &preSa, nullptr);
-      raise(signum);
-      return;
-    }
-
-    signalHandler(signum);
+  const SignalDisposition *disposition =
+      go_registered_handlers_.Load(signum);
+  if (disposition == nullptr) {
+    return;
   }
-}
 
-void SignalHandler::RegisterOnSignal(
-    std::function<void(void *ctx, int fd, int signum, siginfo_t *info,
-                       void *context)>
-        callback,
-    void *ctx) {
-  on_signal_.store(new OnSignal{callback, ctx}, std::memory_order_release);
-}
-
-void SignalHandler::SetGoRegisteredSignalHandlersIfEmpty(
-    int signum, SignalHandlerSigActionHandler action,
-    SignalHandlerSignalHandler handler) {
-  // register once, avoid go's signal actions are lost.
-  go_registered_handlers_.StoreIfEmpty(signum, std::make_pair(action, handler));
+  const struct sigaction &action = disposition->action;
+  // sa_handler and sa_sigaction may share storage. Inspect only the member
+  // selected by SA_SIGINFO.
+  if ((action.sa_flags & SA_SIGINFO) != 0) {
+    using SigAction = void (*)(int, siginfo_t *, void *);
+    const SigAction handler = action.sa_sigaction;
+    if (handler == reinterpret_cast<SigAction>(SIG_IGN)) {
+      return;
+    }
+    if (handler == reinterpret_cast<SigAction>(SIG_DFL)) {
+      if (sigaction(signum, &action, nullptr) == 0) {
+        raise(signum);
+      }
+      return;
+    }
+    if (handler != &SignalHandler::HandleSignal) {
+      handler(signum, info, context);
+    }
+    return;
+  }
+  if (action.sa_handler == SIG_IGN) {
+    return;
+  }
+  if (action.sa_handler == SIG_DFL) {
+    if (sigaction(signum, &action, nullptr) == 0) {
+      raise(signum);
+    }
+    return;
+  }
+  if (action.sa_handler != nullptr) {
+    action.sa_handler(signum);
+  }
 }
 
 // for CGO
 
 int SignalHandler::SetSig(int signum) {
-  SignalHandlerSigActionHandler sa_sigaction_action = nullptr;
-  SignalHandlerSignalHandler sa_sigaction_handler = nullptr;
-  sa_sigaction_action = [](int signum, siginfo_t *info, void *context) {
-    GetInstance()(signum, info, context);
-  };
+  SignalHandler &instance = GetInstance();
+  std::lock_guard<std::mutex> lock(instance.install_mutex_);
 
-  return SetSig(signum, sa_sigaction_action, sa_sigaction_handler);
-}
-
-int SignalHandler::SetSig(int signum, SignalHandlerSigActionHandler action,
-                          SignalHandlerSignalHandler handler) {
   // The alternate signal stack is per thread, and Go installs one for every
   // thread of its own, which must not be replaced.
   stack_t ss;
@@ -117,31 +94,24 @@ int SignalHandler::SetSig(int signum, SignalHandlerSigActionHandler action,
       return EXIT_FAILURE;
     }
   }
-  struct sigaction sa;
-  memset(&sa, 0, sizeof(sa));
-  sigaction(signum, nullptr, &sa);
-  //  sigemptyset(&sa.sa_mask);
-  //  sigfillset(&sa.sa_mask);
-  if (sa.sa_flags & SA_SIGINFO) {
-    GetInstance().SetGoRegisteredSignalHandlersIfEmpty(signum, sa.sa_sigaction,
-                                                       nullptr);
-  } else {
-    GetInstance().SetGoRegisteredSignalHandlersIfEmpty(signum, nullptr,
-                                                       sa.sa_handler);
+
+  struct sigaction previous;
+  memset(&previous, 0, sizeof(previous));
+  if (sigaction(signum, nullptr, &previous) != 0) {
+    return -1;
   }
-  sa.sa_flags = sa.sa_flags & (~SA_SIGINFO);
-  sa.sa_flags = sa.sa_flags | SA_ONSTACK | SA_RESTART;
-  sa.sa_handler = nullptr;
-  if (action) {
-    // If SA_SIGINFO is specified in sa_flags, then sa_sigaction (instead of
-    // sa_handler) specifies the signal-handling function for signum.  This
-    // function receives three arguments, as described below.
-    sa.sa_flags = sa.sa_flags | SA_SIGINFO;
-    sa.sa_sigaction = action;
-  } else if (handler) {
-    sa.sa_handler = handler;
+  if ((previous.sa_flags & SA_SIGINFO) != 0 &&
+      previous.sa_sigaction == &SignalHandler::HandleSignal) {
+    return 0;
   }
-  return sigaction(signum, &sa, nullptr);
+
+  instance.go_registered_handlers_.Store(
+      signum, new SignalDisposition(previous));
+
+  struct sigaction wrapper = previous;
+  wrapper.sa_flags |= SA_SIGINFO | SA_ONSTACK | SA_RESTART;
+  wrapper.sa_sigaction = &SignalHandler::HandleSignal;
+  return sigaction(signum, &wrapper, nullptr);
 }
 
 }  // namespace searking
