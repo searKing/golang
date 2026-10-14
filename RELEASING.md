@@ -27,6 +27,8 @@ module of this repo, to add the missing replace directives and prune the unused 
    ```
 
    It commits to a new branch `prerelease_stable-v1_<VERSION>`. Review and merge it.
+   multimod requires a clean working tree without untracked files, run `make prerelease-clone MODSET=stable-v1`
+   instead to prerelease in a clone of HEAD and fetch the branch back.
 3. Tag modules of the module set at the merged commit.
 
    ```sh

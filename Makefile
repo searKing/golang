@@ -38,6 +38,8 @@ help:
 	@echo "  verify-mods   verify versions.yaml lists every module of the repo"
 	@echo "  prerelease    update intra-repo requires of MODSET to its version in versions.yaml,"
 	@echo "                run 'go mod tidy' and commit to a new branch prerelease_<MODSET>_<VERSION>"
+	@echo "  prerelease-clone"
+	@echo "                prerelease in a clone of HEAD, then fetch the branch, if the working tree is not clean"
 	@echo "  add-tags      tag modules of MODSET at COMMIT by its version in versions.yaml"
 	@echo "  delete-tags   delete local tags of MODSET with its version in versions.yaml"
 	@echo "  push-tags     push tags of MODSET with its version in versions.yaml to origin"
@@ -59,20 +61,21 @@ crosslink:
 verify-mods:
 	$(MULTIMOD) verify
 
-# multimod requires a clean working tree without untracked files, so prerelease in a clone of HEAD.
 .PHONY: prerelease
-prerelease:
+prerelease: verify-mods
+	$(MULTIMOD) prerelease -m $(MODSET)
+
+# prerelease in a clone of HEAD, for multimod requires a clean working tree without untracked files.
+.PHONY: prerelease-clone
+prerelease-clone:
 	@git diff --quiet HEAD || { echo "commit or stash changes of tracked files first" >&2; exit 1; }
 	@set -e; \
 	head=$$(git rev-parse HEAD); \
 	tmp=$$(mktemp -d); \
 	trap 'rm -rf "$$tmp"' EXIT; \
 	git clone -q --no-hardlinks "$(CURDIR)" "$$tmp/repo"; \
-	cd "$$tmp/repo"; \
-	git checkout -q -B release_base "$$head"; \
-	$(MULTIMOD) verify; \
-	$(MULTIMOD) prerelease -m $(MODSET); \
-	cd "$(CURDIR)"; \
+	git -C "$$tmp/repo" checkout -q -B release_base "$$head"; \
+	$(MAKE) -C "$$tmp/repo" prerelease MODSET=$(MODSET); \
 	git fetch -q "$$tmp/repo" 'refs/heads/prerelease_*:refs/heads/prerelease_*'; \
 	git branch --list 'prerelease_*' --contains "$$head"
 
