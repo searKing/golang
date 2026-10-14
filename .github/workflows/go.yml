@@ -1,4 +1,4 @@
-# This workflow will build a golang project
+# Test and lint every module of the repo, and verify modules by multimod.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
 name: Go
@@ -12,37 +12,60 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  test:
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        go-version: [ '1.26.x' ]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
     steps:
-    - uses: actions/checkout@v5
-    - name: Set up Go ${{ matrix.go-version }}
-      uses: actions/setup-go@v5
+    - uses: actions/checkout@v7
+    - name: Set up Go
+      uses: actions/setup-go@v7
       with:
-        check-latest: true
-        go-version: ${{ matrix.go-version }}
-        #go-version-file: 'go/go.mod'
-        #cache-dependency-path: 'go/go.sum'
-        token: ${{ secrets.WORKFLOW_GITHUB_TOKEN }}
-    - name: Display Go version
-      run: go version
-
+        go-version-file: 'go.mod'
+        cache-dependency-path: '**/go.sum'
+    # Windows runners have MSYS2 installed, but neither make nor MSYS2 in PATH.
+    # make of MSYS2 runs recipes by /bin/bash of MSYS2, as SHELL of the Makefile.
+    - name: Install make
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed make
+        "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
     - name: Test
-      working-directory: go
-      run: go test -v ./...
+      run: make test
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v7
+    - name: Set up Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: 'go.mod'
+        cache-dependency-path: '**/go.sum'
+    - name: Lint
+      run: make lint
 
   # Verify versions.yaml lists every module, and the root module requires every module of module sets.
   verify-mods:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
         go-version-file: 'go.mod'
         cache-dependency-path: |
