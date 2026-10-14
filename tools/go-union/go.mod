@@ -1,6 +1,6 @@
 module github.com/searKing/golang/tools/go-union
 
-go 1.25.0
+go 1.27.0
 
 require (
 	github.com/searKing/golang/go v1.2.122
@@ -13,3 +13,7 @@ require (
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 )
+
+replace github.com/searKing/golang/go => ../../go
+
+replace github.com/searKing/golang/tools => ../

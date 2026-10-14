@@ -112,8 +112,6 @@ require (
 
 replace github.com/searKing/golang/go => ./go
 
-replace github.com/searKing/golang/pkg/instrumentation/otel => ./pkg/instrumentation/otel
-
 replace github.com/searKing/golang/pkg/webserver => ./pkg/webserver
 
 replace github.com/searKing/golang/third_party/github.com/gin-gonic/gin => ./third_party/github.com/gin-gonic/gin
