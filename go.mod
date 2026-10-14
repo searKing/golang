@@ -21,9 +21,9 @@ require (
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/google.golang.org/grpc/otelgrpc v1.2.145
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql v1.2.145
 	github.com/searKing/golang/third_party/github.com/open-telemetry/opentelemetry-go/metric v1.2.145
+	github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 v1.2.146
 	github.com/searKing/golang/third_party/github.com/sirupsen/logrus v1.2.145
 	github.com/searKing/golang/third_party/github.com/spf13/pflag v1.2.145
-	github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 v1.2.145
 	github.com/searKing/golang/third_party/github.com/spf13/viper v1.2.145
 	github.com/searKing/golang/third_party/github.com/syndtr/goleveldb v1.2.145
 	github.com/searKing/golang/third_party/github.com/urfave/negroni v1.2.145
@@ -71,6 +71,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.63.0 // indirect
+	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sirupsen/logrus v1.10.2 // indirect
@@ -91,6 +92,7 @@ require (
 	go.opentelemetry.io/otel v1.46.0 // indirect
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/arch v0.31.0 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
@@ -150,7 +152,7 @@ replace github.com/searKing/golang/third_party/github.com/sirupsen/logrus => ./t
 
 replace github.com/searKing/golang/third_party/github.com/spf13/pflag => ./third_party/github.com/spf13/pflag
 
-replace github.com/searKing/golang/third_party/github.com/redis/go-redis-v9/test => ./github.com/redis/go-redis-v9/test
+replace github.com/searKing/golang/third_party/github.com/redis/go-redis-v9 => ./third_party/github.com/redis/go-redis-v9
 
 replace github.com/searKing/golang/third_party/github.com/spf13/viper => ./third_party/github.com/spf13/viper
 
