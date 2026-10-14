@@ -1,0 +1,36 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package edge;
+
+import "google/protobuf/descriptor.proto";
+import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+
+option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/edge;edge";
+
+extend google.protobuf.OneofOptions {
+  string oneof_note = 50000;
+}
+
+// Edge has fields renamed by protogen, a proto3 optional field and a oneof with options.
+message Edge {
+  // reset is generated as Reset_, for Reset is a method of messages.
+  string reset = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"required"'}];
+  // descriptor is generated as Descriptor_, for Descriptor is a method of messages.
+  string descriptor = 2 [(google.protobuf.field_tag) = {struct_tag: 'json:"desc"', update_strategy: replace}];
+  // optional is a field of a synthetic oneof, which is generated in the struct of the message.
+  optional string optional = 3 [(google.protobuf.field_tag) = {struct_tag: 'validate:"omitempty"'}];
+
+  oneof choice {
+    option (oneof_note) = "oneof with options";
+    string name = 4 [(google.protobuf.field_tag) = {struct_tag: 'validate:"required"'}];
+    Nested nested = 5 [(google.protobuf.field_tag) = {struct_tag: 'json:"nested_tag"'}];
+  }
+
+  message Nested {
+    string value = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"max=10"'}];
+  }
+}

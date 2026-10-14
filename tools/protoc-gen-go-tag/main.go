@@ -33,39 +33,25 @@ import (
 )
 
 func main() {
-	var (
-		flags flag.FlagSet
-	)
-	// For Debug Only
-	//{ // Dump
-	//	in, err := io.ReadAll(os.Stdin)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	if err := os.WriteFile("in.pb", in, 0666); err != nil {
-	//		panic(err)
-	//	}
-	//}
-	//{ // Debug
-	//	os.Stdin, _ = os.Open("in.pb")
-	//	os.Stdout, _ = os.Create("out.pb")
-	//}
-
+	var flags flag.FlagSet
 	protogen.Options{
 		ParamFunc: flags.Set,
-	}.Run(func(gen *protogen.Plugin) error {
-		gen.SupportedFeatures = gengo.SupportedFeatures
-		var originFiles []*protogen.GeneratedFile
-		for _, f := range gen.Files {
-			if f.Generate {
-				originFiles = append(originFiles, gengo.GenerateFile(gen, f))
-			}
-		}
-		ast.Rewrite(gen)
+	}.Run(generate)
+}
 
-		for _, f := range originFiles {
-			f.Skip()
+// generate generates Go code of proto files as protoc-gen-go does, then rewrites struct tags by field_tag options.
+// gengo, the generator of protoc-gen-go, is internal to the protobuf module and may change without notice.
+func generate(gen *protogen.Plugin) error {
+	gen.SupportedFeatures = gengo.SupportedFeatures
+	gen.SupportedEditionsMinimum = gengo.SupportedEditionsMinimum
+	gen.SupportedEditionsMaximum = gengo.SupportedEditionsMaximum
+	for _, f := range gen.Files {
+		if !f.Generate {
+			continue
 		}
-		return nil
-	})
+		if err := ast.Rewrite(gen, f, gengo.GenerateFile(gen, f)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

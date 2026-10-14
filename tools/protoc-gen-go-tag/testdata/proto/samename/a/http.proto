@@ -1,0 +1,16 @@
+// Copyright 2026 The searKing Author. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package samename.a;
+
+import "github.com/searKing/golang/tools/protoc-gen-go-tag/tag/tag.proto";
+
+option go_package = "github.com/searKing/golang/tools/protoc-gen-go-tag/testdata/proto/samename/a;a";
+
+// Http is declared in both packages samename.a and samename.b, with different field_tag options.
+message Http {
+  string url = 1 [(google.protobuf.field_tag) = {struct_tag: 'validate:"a"'}];
+}
