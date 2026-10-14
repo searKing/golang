@@ -39,10 +39,11 @@ func TestNotifyForwardsSynchronousFatalSignal(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	dumpPath := filepath.Join(t.TempDir(), "fatal.dump")
 	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestNotifyForwardsSynchronousFatalSignal$")
 	cmd.Env = append(os.Environ(),
 		"SEARKING_SIGNAL_FATAL_FORWARDING_TEST=1",
-		"SEARKING_SIGNAL_FATAL_DUMP_PATH="+filepath.Join(t.TempDir(), "fatal.dump"),
+		"SEARKING_SIGNAL_FATAL_DUMP_PATH="+dumpPath,
 	)
 	output, err := cmd.CombinedOutput()
 	if ctx.Err() != nil {
@@ -53,6 +54,16 @@ func TestNotifyForwardsSynchronousFatalSignal(t *testing.T) {
 	}
 	if strings.Contains(string(output), fatalForwardingSentinel) {
 		t.Fatalf("fatal-forwarding child reached sentinel\n%s", output)
+	}
+	dumpInfo, err := os.Stat(dumpPath)
+	if err != nil {
+		t.Fatalf("fatal-forwarding child did not write native stack dump: %v\n%s", err, output)
+	}
+	if dumpInfo.Size() == 0 {
+		t.Fatalf("fatal-forwarding child wrote an empty native stack dump\n%s", output)
+	}
+	if !strings.Contains(string(output), "[signal SIGSEGV:") {
+		t.Fatalf("fatal-forwarding child output does not show Go runtime fault handling\n%s", output)
 	}
 }
 

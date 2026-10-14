@@ -81,8 +81,9 @@ func DumpPreviousStacktrace() {
 	dumpPreviousStacktrace()
 }
 
-// PreviousStacktrace returns the most recently captured native stacktrace in
-// the current process.
+// PreviousStacktrace returns the most recent native stacktrace at the currently
+// configured dump path. When DumpStacktraceTo selects a persistent path, the
+// stacktrace may have been captured by a previous process.
 func PreviousStacktrace() string {
 	return previousStacktrace()
 }
