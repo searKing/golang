@@ -8,6 +8,17 @@
 # Tools installed by 'make tools'
 /.tools/
 
+# Binaries built by 'go build' in directories of tools and examples
+/tools/go-*/go-*
+/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example/example
+
+# Database of the otlpsql example
+/third_party/github.com/open-telemetry/opentelemetry-go-contrib/instrumentation/otlpsql/example/resource.db
+
+# Logs written by tests of logrus, as configured in testdata/log.json
+/third_party/github.com/sirupsen/logrus/example.log
+/third_party/github.com/sirupsen/logrus/testdata/log/
+
 # Test binary, build with `go test -c`
 *.test
 
