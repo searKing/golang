@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        # Run stress and long-running tests once on Linux. The other systems
-        # exercise cross-platform behavior with the short paths of those tests.
+        # Stress and long-running tests run locally. CI exercises
+        # cross-platform behavior with the short paths of those tests.
         - os: ubuntu-latest
-          gotest_flags: ''
+          gotest_flags: '-short'
         - os: macos-latest
           gotest_flags: '-short'
         - os: windows-latest
