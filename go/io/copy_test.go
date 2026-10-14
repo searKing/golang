@@ -32,7 +32,11 @@ func TestCopyDir(t *testing.T) {
 	if err != nil {
 		t.Errorf("expect nil, got %v", err)
 	}
-	populateSrcDir(t, srcDir, 3)
+	depth := 3
+	if testing.Short() {
+		depth = 2
+	}
+	populateSrcDir(t, srcDir, depth)
 
 	dstDir, err := os.MkdirTemp("", "testdst")
 	if err != nil {

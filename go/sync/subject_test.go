@@ -13,6 +13,13 @@ import (
 	sync_ "github.com/searKing/golang/go/sync"
 )
 
+func subjectTimeout() time.Duration {
+	if testing.Short() {
+		return 100 * time.Millisecond
+	}
+	return time.Second
+}
+
 func TestSubject_PublishSignal(t *testing.T) {
 	var s sync_.Subject
 	n := 2
@@ -37,7 +44,7 @@ func TestSubject_PublishSignal(t *testing.T) {
 		default:
 		}
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), subjectTimeout())
 			defer cancel()
 			err := s.PublishSignal(ctx, nil)
 			if err != nil {
@@ -53,7 +60,7 @@ func TestSubject_PublishSignal(t *testing.T) {
 		}
 		n--
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), subjectTimeout())
 	defer cancel()
 	err := s.PublishSignal(ctx, nil)
 	if !errors.Is(err, context.DeadlineExceeded) {
@@ -85,7 +92,7 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 		default:
 		}
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), subjectTimeout())
 			defer cancel()
 			err := s.PublishBroadcast(ctx, nil)
 			if err != nil {
@@ -103,7 +110,7 @@ func TestSubject_PublishBroadcast(t *testing.T) {
 		default:
 		}
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), subjectTimeout())
 	defer cancel()
 	err := s.PublishBroadcast(ctx, nil)
 	if !errors.Is(err, context.DeadlineExceeded) {

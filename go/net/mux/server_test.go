@@ -29,6 +29,9 @@ const (
 )
 
 func TestTimeout(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires real network timeout boundaries")
+	}
 	defer leakcheck.Check(t)
 	loopbackLis := testListener(t)
 	defer loopbackLis.Close()

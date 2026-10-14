@@ -65,7 +65,7 @@ func ExampleNewFullBurstLimiter() {
 		burst = 3
 	)
 	limiter := rate.NewFullBurstLimiter(burst)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// expect dropped, as limiter is initialized with full tokens(3)
@@ -74,6 +74,9 @@ func ExampleNewFullBurstLimiter() {
 	for i := 0; ; i++ {
 		// fmt.Printf("%03d %s\n", i, time.Now().Format(time.RFC3339))
 		fmt.Printf("Wait %03d, tokens left: %d\n", i, limiter.Tokens())
+		if i == 4 {
+			cancel()
+		}
 		err := limiter.Wait(ctx)
 		if err != nil {
 			fmt.Printf("err: %s\n", err.Error())
@@ -99,7 +102,7 @@ func ExampleNewFullBurstLimiter() {
 	// Wait 003, tokens left: 1
 	// Got 003, tokens left: 0
 	// Wait 004, tokens left: 0
-	// err: context deadline exceeded
+	// err: context canceled
 }
 
 func ExampleNewEmptyBurstLimiter() {

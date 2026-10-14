@@ -23,21 +23,30 @@ func (e *testErrorfer) Errorf(format string, args ...any) {
 	e.errorCount++
 }
 
+func testDurations(t *testing.T) (leak, ignored, detect, cleanup time.Duration) {
+	t.Helper()
+	if testing.Short() {
+		return 200 * time.Millisecond, 300 * time.Millisecond, 100 * time.Millisecond, 500 * time.Millisecond
+	}
+	return 2 * time.Second, 3 * time.Second, time.Second, 3 * time.Second
+}
+
 func TestCheck(t *testing.T) {
+	leakDuration, _, detectTimeout, cleanupTimeout := testDurations(t)
 	const leakCount = 3
 	for i := 0; i < leakCount; i++ {
-		go func() { time.Sleep(2 * time.Second) }()
+		go func() { time.Sleep(leakDuration) }()
 	}
 	if ig := interestingGoroutines(); len(ig) == 0 {
 		t.Error("blah")
 	}
 	e := &testErrorfer{}
-	check(e, time.Second)
+	check(e, detectTimeout)
 	if e.errorCount != leakCount {
 		t.Errorf("check found %v leaks, want %v leaks", e.errorCount, leakCount)
 		t.Logf("leaked goroutines:\n%v", strings.Join(e.errors, "\n"))
 	}
-	check(t, 3*time.Second)
+	check(t, cleanupTimeout)
 }
 
 func ignoredTestingLeak(d time.Duration) {
@@ -46,19 +55,20 @@ func ignoredTestingLeak(d time.Duration) {
 
 func TestCheckRegisterIgnore(t *testing.T) {
 	RegisterIgnoreGoroutine("ignoredTestingLeak")
+	leakDuration, ignoredDuration, detectTimeout, cleanupTimeout := testDurations(t)
 	const leakCount = 3
 	for i := 0; i < leakCount; i++ {
-		go func() { time.Sleep(2 * time.Second) }()
+		go func() { time.Sleep(leakDuration) }()
 	}
-	go func() { ignoredTestingLeak(3 * time.Second) }()
+	go func() { ignoredTestingLeak(ignoredDuration) }()
 	if ig := interestingGoroutines(); len(ig) == 0 {
 		t.Error("blah")
 	}
 	e := &testErrorfer{}
-	check(e, time.Second)
+	check(e, detectTimeout)
 	if e.errorCount != leakCount {
 		t.Errorf("check found %v leaks, want %v leaks", e.errorCount, leakCount)
 		t.Logf("leaked goroutines:\n%v", strings.Join(e.errors, "\n"))
 	}
-	check(t, 3*time.Second)
+	check(t, cleanupTimeout)
 }
