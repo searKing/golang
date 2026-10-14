@@ -137,4 +137,22 @@ various libs or tools for Golang
   files.
 * [go-sqlx](https://pkg.go.dev/github.com/searKing/golang/tools/go-sqlx) — Generates Go code using a package as
   a generic template that implements sqlx.
-                                                                               
+
+# Release
+
+Modules are released together by module sets in [versions.yaml](versions.yaml), as
+[opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go/blob/main/RELEASING.md) does.
+See [RELEASING.md](RELEASING.md) for details, and `make help` for all targets.
+
+```sh
+# 1. Bump the version of the module set stable-v1 in versions.yaml, and commit it.
+# 2. Update requires of modules of this repo to the new version, and go mod tidy,
+#    which commits to a new branch prerelease_stable-v1_<VERSION>.
+#    Use make prerelease instead if the working tree has no untracked files.
+make prerelease-clone MODSET=stable-v1
+git merge prerelease_stable-v1_<VERSION> && git push origin master
+# 3. Tag modules of the module set at the merged commit.
+make add-tags MODSET=stable-v1 COMMIT=HEAD
+# 4. Push the tags.
+make push-tags MODSET=stable-v1
+```
