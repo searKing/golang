@@ -243,6 +243,23 @@ func TestInternalLogger(t *testing.T) {
 	}
 }
 
+func TestWithSlogLoggerNilFollowsDefault(t *testing.T) {
+	ctx := context.Background()
+	defer slog.SetDefault(slog.Default())
+	before := &recorder{}
+	slog.SetDefault(slog.New(before))
+	process := WithSlogLogger(nil, Config{}).ProcessHook(func(context.Context, redis.Cmder) error { return nil })
+
+	after := &recorder{}
+	slog.SetDefault(slog.New(after))
+	if err := process(ctx, redis.NewCmd(ctx, "get", "k1")); err != nil {
+		t.Fatal(err)
+	}
+	if len(before.entries) != 0 || len(after.entries) != 1 {
+		t.Errorf("got %d entries before SetDefault and %d after, want 0 and 1", len(before.entries), len(after.entries))
+	}
+}
+
 func TestDefaultErrorToLevel(t *testing.T) {
 	tests := []struct {
 		err  error

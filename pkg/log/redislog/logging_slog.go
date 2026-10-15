@@ -16,8 +16,12 @@ import (
 
 // WithSlogLogger returns a redis.Hook that logs dials, commands and pipelines of go-redis clients to h,
 // by NewHook with config, and logs internal logs of go-redis to h, by redis.SetLogger globally.
+// If h is nil, both log to slog.Default() at the time of each log, following slog.SetDefault called later.
 func WithSlogLogger(h slog.Handler, config Config) redis.Hook {
-	l := slog.New(h)
+	var l *slog.Logger
+	if h != nil {
+		l = slog.New(h)
+	}
 	redis.SetLogger(InternalLogger(l))
 	return NewHook(l, config)
 }

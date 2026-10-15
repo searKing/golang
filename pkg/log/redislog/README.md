@@ -56,7 +56,8 @@ logging.SetLogLevel(logging.LogLevelInfo)
 rdb.AddHook(redislog.NewHook(logger, redislog.DefaultConfig))
 ```
 
-`WithSlogLogger(h, config)` does both `redis.SetLogger` and `NewHook`. The package
+`WithSlogLogger(h, config)` does both `redis.SetLogger` and `NewHook`, and logs to `slog.Default()` of the time
+of each log if `h` is nil, following `slog.SetDefault` called later. The package
 [logging](https://pkg.go.dev/github.com/redis/go-redis/v9/logging) of go-redis sets the level, disables internal
 logs by `logging.Disable()`, or filters them by substrings by `logging.NewBlacklistLogger` and
 `logging.NewWhitelistLogger`, which log by the standard `log` package rather than slog.
