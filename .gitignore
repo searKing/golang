@@ -10,6 +10,7 @@
 
 # Agent-generated working files
 /.superpowers/
+/docs/superpowers/
 
 # Binaries built by 'go build' in directories of tools and examples
 /tools/go-*/go-*
