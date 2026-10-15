@@ -46,6 +46,9 @@ help:
 	@echo "  tools         install tools of internal/tools into .tools/bin, with tools of this repo built from local paths"
 	@echo "  generate      run 'go generate ./...' in every module with tools of .tools/bin"
 	@echo "  go-mod-tidy   run 'go mod tidy' in every module"
+	@echo "  go-get        upgrade DEPS, as arguments of 'go get', in every module requiring them directly,"
+	@echo "                or indirectly too if INDIRECT=1, then run 'go mod tidy', prompting for them line by line,"
+	@echo "                until an empty line, if DEPS is empty"
 	@echo "  test          run 'go test ./...' in every module, with GOTEST_FLAGS"
 	@echo "  lint          run 'go vet ./...' in every module, and verify Go files are formatted by gofmt"
 	@echo "  crosslink     add replace directives of intra-repo requires and prune unused ones,"
@@ -86,6 +89,39 @@ go-mod-tidy/%:
 	@echo "$(GO) mod tidy in $(DIR)" \
 		&& cd $(DIR) \
 		&& $(GO) mod tidy
+
+# Upgrade only modules requiring DEPS, directly by default, and leave versions of the others to go mod tidy by MVS.
+# INDIRECT=1 upgrades modules requiring them indirectly too, for fixes of vulnerabilities of indirect dependencies..PHONY: go-get
+go-get:
+	@set -e; \
+	deps="$(DEPS)"; indirect="$(INDIRECT)"; \
+	if [ -z "$$deps" ]; then \
+		echo "Dependencies to upgrade, as arguments of go get, one or more separated by spaces a line, such as:"; \
+		echo "  google.golang.org/grpc@v1.70.0 golang.org/x/net"; \
+		echo "Enter an empty line to finish."; \
+		while read -r -p "DEPS: " line && [ -n "$$line" ]; do deps="$$deps $$line"; done; \
+		read -r -p "Upgrade modules requiring them indirectly too? Enter y for INDIRECT=1: " reply || true; \
+		if [ "$$reply" = "y" ]; then indirect=1; fi; \
+	fi; \
+	[ -n "$$deps" ] || { echo "no dependencies to upgrade" >&2; exit 1; }; \
+	updated=0; \
+	for dir in $(ALL_GO_MOD_DIRS); do \
+		requires=$$(awk '/^require \(/ { found = 1; next } found && /^\)/ { found = 0; next } \
+			found { print $$1, (/\/\/ indirect/ ? "indirect" : "direct") } \
+			/^require [^(]/ { print $$2, (/\/\/ indirect/ ? "indirect" : "direct") }' "$$dir/go.mod"); \
+		args=; \
+		for dep in $$deps; do \
+			if grep -qx "$${dep%@*} direct" <<< "$$requires" || \
+				{ [ "$$indirect" = "1" ] && grep -qx "$${dep%@*} indirect" <<< "$$requires"; }; then \
+				args="$$args $$dep"; \
+			fi; \
+		done; \
+		[ -n "$$args" ] || continue; \
+		echo "$(GO) get$$args && $(GO) mod tidy in $$dir"; \
+		(cd "$$dir" && $(GO) get$$args && $(GO) mod tidy); \
+		updated=$$((updated + 1)); \
+	done; \
+	echo "$$updated modules updated. Run 'make verify-mods test' to verify them."
 
 .PHONY: test
 test: $(GO_MOD_DIRS:%=test/%)

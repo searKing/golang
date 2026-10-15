@@ -38,6 +38,19 @@ Modules providing tools installed by `go install module@version` are the excepti
 rejects such modules if their go.mod contains any replace directive. `make crosslink` removes replaces
 from the local tool modules tracked by internal/tools/go.mod, and `make verify-mods` checks this.
 
+## Dependencies
+
+Upgrade dependencies in every module requiring them directly, and leave versions of indirect
+dependencies to `go mod tidy`, which selects the minimal versions required. Run without `DEPS` to be
+prompted for them line by line, until an empty line. `INDIRECT=1` upgrades modules requiring them indirectly too, such as for fixes of
+ vulnerabilities of indirect dependencies.
+
+```sh
+make go-get DEPS="google.golang.org/grpc@v1.70.0 golang.org/x/net"
+make go-get DEPS="golang.org/x/crypto@v0.45.0" INDIRECT=1
+make verify-mods test
+```
+
 ## Release
 
 1. Bump the version of the module set in [versions.yaml](versions.yaml), and commit it.
