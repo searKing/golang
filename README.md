@@ -2,6 +2,7 @@
 [![Report card](https://goreportcard.com/badge/github.com/searKing/golang)](https://goreportcard.com/report/github.com/searKing/golang)
 [<img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2FsearKing%2Fgolang&countColor=%23263759" height="20">](https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2FsearKing%2Fgolang)
 [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg" height="20">](https://jb.gg/OpenSourceSupport)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/searKing/badge.svg)](https://hub.xerj.org/contributors/searKing)
 
 # golang
 
