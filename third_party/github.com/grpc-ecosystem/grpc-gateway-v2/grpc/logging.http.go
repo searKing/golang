@@ -281,18 +281,14 @@ func redactHeaderValue(name, v string) string {
 	return redacted
 }
 
-// httpHeaderToFields groups headers h as k, with values of sensitive headers redacted.
+// httpHeaderToFields groups headers h as k, logging only safe metadata (no header values).
 func httpHeaderToFields(h http.Header, k string) logging.Fields {
 	var attrs []slog.Attr
 	for name, vs := range h {
-		if isSensitiveHeader(name) {
-			redactedVs := make([]string, len(vs))
-			for i, v := range vs {
-				redactedVs[i] = redactHeaderValue(name, v)
-			}
-			vs = redactedVs
-		}
-		attrs = append(attrs, slog.Any(name, vs))
+		attrs = append(attrs, slog.Group(name,
+			slog.Int("count", len(vs)),
+			slog.Bool("redacted", isSensitiveHeader(name)),
+		))
 	}
 	return logging.Fields{k, slog.GroupValue(attrs...)}
 }
