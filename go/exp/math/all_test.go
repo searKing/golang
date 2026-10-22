@@ -34,7 +34,7 @@ var fdim = []int{
 }
 
 func TestDim(t *testing.T) {
-	for i := 0; i < len(vf); i++ {
+	for i := range vf {
 		if f := math_.Dim(vf[i], 0); fdim[i] != f {
 			t.Errorf("Dim(%d, %d) = %d, want %d", vf[i], 0, f, fdim[i])
 		}
@@ -42,7 +42,7 @@ func TestDim(t *testing.T) {
 }
 
 func TestMax(t *testing.T) {
-	for i := 0; i < len(vf); i++ {
+	for i := range vf {
 		if f := math_.Max(vf[i], ceil[i]); ceil[i] != f {
 			t.Errorf("Max(%d, %d) = %d, want %d", vf[i], ceil[i], f, ceil[i])
 		}
@@ -50,7 +50,7 @@ func TestMax(t *testing.T) {
 }
 
 func TestMin(t *testing.T) {
-	for i := 0; i < len(vf); i++ {
+	for i := range vf {
 		if f := math_.Min(vf[i], floor[i]); floor[i] != f {
 			t.Errorf("Min(%d, %d) = %d, want %d", vf[i], floor[i], f, floor[i])
 		}
