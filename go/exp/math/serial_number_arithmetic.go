@@ -5,7 +5,6 @@
 package math
 
 import (
-	"github.com/searKing/golang/go/exp/types"
 	"golang.org/x/exp/constraints"
 )
 
@@ -90,7 +89,7 @@ func (u *Unwrapper[T]) UnwrapWithoutUpdate(value T) int64 {
 
 // UpdateLast only update the internal state to the specified last (unwrapped) value.
 func (u *Unwrapper[T]) UpdateLast(lastValue int64) {
-	u.lastValue = types.Pointer(lastValue)
+	u.lastValue = new(lastValue)
 }
 
 // Unwrap the value and update the internal state.
