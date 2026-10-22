@@ -5,8 +5,12 @@
 package types
 
 // Pointer returns a pointer to the value passed in.
+//
+// Deprecated: Use new(x) instead.
+//
+//go:fix inline
 func Pointer[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 // Value returns the value of the pointer passed in or
