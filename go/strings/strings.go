@@ -133,12 +133,17 @@ func Truncate(s string, n int) string {
 	if n < 0 {
 		n = 0
 	}
-	runes := []rune(s)
-
-	if len(runes) <= n {
-		return s
+	for i := range s {
+		if n == 0 {
+			if prefix := s[:i]; utf8.ValidString(prefix) {
+				return prefix
+			}
+			// Replace invalid bytes with utf8.RuneError, as converting to runes does.
+			return string([]rune(s[:i]))
+		}
+		n--
 	}
-	return string(runes[:n])
+	return s
 }
 
 // PadLeft returns s padded to length n, padded left with repeated pad

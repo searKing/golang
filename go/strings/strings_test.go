@@ -5,6 +5,7 @@
 package strings_test
 
 import (
+	strings_ "strings"
 	"testing"
 	"unicode"
 	"unicode/utf8"
@@ -610,5 +611,38 @@ func TestCountSuffix(t *testing.T) {
 		if qr != test.R {
 			t.Errorf("#%d. got %d, want %d", i, qr, test.R)
 		}
+	}
+}
+
+func TestTruncate(t *testing.T) {
+	tests := []struct {
+		s    string
+		n    int
+		want string
+	}{
+		{s: "hello", n: 3, want: "hel"},
+		{s: "hello", n: 5, want: "hello"},
+		{s: "hello", n: 10, want: "hello"},
+		{s: "hello", n: 0, want: ""},
+		{s: "hello", n: -1, want: ""},
+		{s: "中文字符", n: 2, want: "中文"},
+		{s: "", n: 2, want: ""},
+		{s: "a\xffbc", n: 3, want: "a\uFFFDb"},
+		{s: "a\xffbc", n: 4, want: "a\xffbc"},
+	}
+	for _, tt := range tests {
+		if got := strings.Truncate(tt.s, tt.n); got != tt.want {
+			t.Errorf("Truncate(%q, %d) = %q, want %q", tt.s, tt.n, got, tt.want)
+		}
+	}
+}
+
+func TestTruncate_DoesNotCopyValidUTF8(t *testing.T) {
+	s := strings_.Repeat("中", 1<<16)
+	allocs := testing.AllocsPerRun(10, func() {
+		_ = strings.Truncate(s, 5)
+	})
+	if allocs != 0 {
+		t.Errorf("Truncate allocates %v times, want 0", allocs)
 	}
 }
