@@ -44,6 +44,7 @@ func withEncOpts(v encOpts) EncOptsOption {
 
 // WithEncOptsEscapeHTML sets escapeHTML in encOpts.
 // escapeHTML causes '<', '>', and '&' to be escaped in JSON strings.
+// It defaults to false, unlike encoding/json.Marshal.
 func WithEncOptsEscapeHTML(v bool) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.escapeHTML = v
@@ -130,11 +131,33 @@ func WithEncOptsForceLongUrl(v bool) EncOptsOption {
 	})
 }
 
+// WithEncOptsTruncateMarshalerOutput sets truncateMarshalerOutput in encOpts.
+// truncateMarshalerOutput truncates strings and arrays in the output of
+// slices, arrays and maps marshaled by their own methods, such as MarshalJSON.
+// Objects in the output keep all their members.
+func WithEncOptsTruncateMarshalerOutput(v bool) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.truncateMarshalerOutput = v
+	})
+}
+
 // WithEncOptsOmitEmpty sets omitEmpty in encOpts.
-// omit empty value
+// omitEmpty omits struct fields with zero values as omitZero does, and
+// applies the encoding/json omitempty rules to fields tagged with omitempty.
+// Empty but non-nil slices and maps of untagged fields are kept.
 func WithEncOptsOmitEmpty(v bool) EncOptsOption {
 	return EncOptsOptionFunc(func(o *encOpts) {
 		o.omitEmpty = v
+	})
+}
+
+// WithEncOptsOmitZero sets omitZero in encOpts.
+// omitZero omits struct fields with zero values, as if every field were
+// tagged with omitzero. A value is zero if its IsZero method reports true,
+// or else if it is the zero value of its type.
+func WithEncOptsOmitZero(v bool) EncOptsOption {
+	return EncOptsOptionFunc(func(o *encOpts) {
+		o.omitZero = v
 	})
 }
 

@@ -1,6 +1,8 @@
 package prettyjson
 
 import (
+	"bytes"
+	"encoding"
 	"encoding/base64"
 	jsonv1 "encoding/json"
 	"encoding/json/jsontext"
@@ -24,122 +26,278 @@ func Marshal(v any, options ...EncOptsOption) ([]byte, error) {
 	return jsonv2.Marshal(v, EncOptions(options...)...)
 }
 
-// MarshalWrite serializes a Go value into an [io.Writer] according to the provided
-// marshal and encode options (while ignoring unmarshal or decode options).
+// MarshalIndent is like [Marshal] but applies [jsonv1.Indent] to format the output.
+// Each JSON element in the output will begin on a new line beginning with prefix
+// followed by one or more copies of indent according to the indentation nesting.
+func MarshalIndent(v any, prefix, indent string, options ...EncOptsOption) ([]byte, error) {
+	b, err := Marshal(v, options...)
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	if err := jsonv1.Indent(&buf, b, prefix, indent); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// MarshalWrite is like [Marshal] but writes the JSON to out.
 // It does not terminate the output with a newline.
-// See [Marshal] for details about the conversion of a Go value into JSON.
 func MarshalWrite(out io.Writer, in any, options ...EncOptsOption) (err error) {
 	return jsonv2.MarshalWrite(out, in, EncOptions(options...)...)
 }
 
-// MarshalEncode serializes a Go value into an [jsontext.Encoder] according to
-// the provided marshal or encode options (while ignoring unmarshal or decode options).
-// The options provided take precedence over options already applied on
-// the [jsontext.Encoder] and only apply for the duration of the marshal call.
-//
-// See [Marshal] for details about the conversion of a Go value into JSON.
+// MarshalEncode is like [Marshal] but encodes the JSON to out.
+// The options provided take precedence over options already applied on out,
+// such as indentation, and only apply for the duration of the call.
 func MarshalEncode(out *jsontext.Encoder, in any, options ...EncOptsOption) (err error) {
 	return jsonv2.MarshalEncode(out, in, EncOptions(options...)...)
 }
 
+// EncOptions returns the json/v2 options that [Marshal] applies for options,
+// so that they can be passed to json/v2 functions directly.
 func EncOptions(options ...EncOptsOption) []jsonv2.Options {
 	var opts encOpts
 	opts.ApplyOptions(options...)
 
-	marshalers := AdvancedTruncateMarshalers(opts)
+	marshalers := truncateMarshalers(opts)
 
 	var jsonOpts []jsonv2.Options
 	if marshalers != nil {
 		jsonOpts = append(jsonOpts, jsonv2.WithMarshalers(marshalers))
 	}
-	jsonOpts = append(jsonOpts, jsontext.EscapeForHTML(opts.escapeHTML))
-	jsonOpts = append(jsonOpts, jsonv2.Deterministic(true))
+	return append(jsonOpts, formatOptions(opts)...)
+}
 
+// formatOptions returns the json/v2 options of opts other than truncation.
+func formatOptions(opts encOpts) []jsonv2.Options {
+	jsonOpts := []jsonv2.Options{
+		jsontext.EscapeForHTML(opts.escapeHTML),
+		jsonv2.Deterministic(true),
+	}
 	if opts.omitEmpty {
 		// encoding/json's v1 compatibility option is an encoding/json/v2
 		// Options value and can therefore be passed directly to json/v2.
+		// It only applies to fields tagged with omitempty.
 		jsonOpts = append(jsonOpts, jsonv1.OmitEmptyWithLegacySemantics(true))
-		// OmitZeroStructFields extends omit-empty to zero-value structs,
-		// matching the custom isEmptyValue/v.IsZero() behavior of the old encoder.
+	}
+	if opts.omitEmpty || opts.omitZero {
 		jsonOpts = append(jsonOpts, jsonv2.OmitZeroStructFields(true))
 	}
 	return jsonOpts
 }
 
-// AdvancedTruncateMarshalers returns the type-specific marshalers used by
-// Marshal. Concrete types (string, []byte) are handled by dedicated marshalers.
-// Arbitrary slice/array/map values are handled by the catch-all "any" marshaler
-// which uses reflect.Kind to distinguish maps from structs — something the
-// previous jsontext post-processing pass (truncateContainers) could not do.
-func AdvancedTruncateMarshalers(opts encOpts) *jsonv2.Marshalers {
+// AdvancedTruncateMarshalers returns the type-specific marshalers that [Marshal]
+// truncates values with for options, so that they can be joined with other
+// marshalers by [jsonv2.JoinMarshalers]. Options other than truncation, such as
+// escaping or omitting fields, are ignored; see [EncOptions] for those.
+func AdvancedTruncateMarshalers(options ...EncOptsOption) *jsonv2.Marshalers {
+	var opts encOpts
+	opts.ApplyOptions(options...)
+	return truncateMarshalers(opts)
+}
+
+// truncateMarshalers returns the type-specific marshalers for opts. string is
+// handled by a dedicated marshaler, and all other types by the catch-all "any"
+// marshaler, which uses reflect.Kind to distinguish maps from structs.
+func truncateMarshalers(opts encOpts) *jsonv2.Marshalers {
 	return jsonv2.JoinMarshalers(
 		stringMarshalers(opts),
-		bytesMarshalers(opts),
 		anyMarshalers(opts),
 	)
 }
 
 func anyMarshalers(opts encOpts) *jsonv2.Marshalers {
-	if opts.truncateSliceOrArray <= 0 && opts.truncateMap <= 0 {
+	if opts.truncateString <= 0 && opts.truncateBytes <= 0 && opts.truncateSliceOrArray <= 0 && opts.truncateMap <= 0 {
 		return nil
 	}
+	truncateOutput := opts.truncateMarshalerOutput && (opts.truncateString > 0 || opts.truncateSliceOrArray > 0)
 
 	return jsonv2.MarshalToFunc(func(enc *jsontext.Encoder, v any) error {
+		// json/v2 always passes a non-nil pointer to the value. Nested pointers
+		// and interfaces are left to json/v2, which calls back with their elements.
 		rv := reflect.ValueOf(v)
-		if !rv.IsValid() {
+		if rv.Kind() != reflect.Pointer || rv.IsNil() {
 			return errors.ErrUnsupported
 		}
-		// json/v2 passes an addressable pointer to the value; dereference it.
-		for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
+
+		switch rv.Kind() {
+		case reflect.String:
+			// Named string types; string itself is left to stringMarshalers.
+			if opts.truncateString <= 0 || isObjectName(enc) || hasMarshalMethod(rv.Type()) {
+				return errors.ErrUnsupported
+			}
+			return enc.WriteToken(jsontext.String(truncateStringValue(rv.String(), opts)))
+		case reflect.Slice, reflect.Array:
+			if rv.Kind() == reflect.Slice && rv.IsNil() {
+				return errors.ErrUnsupported
+			}
+			// Byte slices and arrays are base64-encoded by default. Only slices
+			// of byte are truncated as bytes; byte arrays are left untouched.
+			if rv.Type().Elem().Kind() == reflect.Uint8 {
+				if rv.Kind() != reflect.Slice || rv.Type().Elem() != byteType ||
+					opts.truncateBytes <= 0 || hasMarshalMethod(rv.Type()) {
+					return errors.ErrUnsupported
+				}
+				return marshalTruncatedBytes(enc, rv.Bytes(), opts)
+			}
+		case reflect.Map:
 			if rv.IsNil() {
 				return errors.ErrUnsupported
 			}
-			rv = rv.Elem()
-		}
-
-		switch rv.Kind() {
-		case reflect.Slice:
-			if opts.truncateSliceOrArray <= 0 || rv.IsNil() {
-				return errors.ErrUnsupported
-			}
-			// Skip byte slices — the default marshaler base64-encodes them.
-			if rv.Type().Elem().Kind() == reflect.Uint8 {
-				return errors.ErrUnsupported
-			}
-			n := rv.Len()
-			limit, limitIfMoreThan := truncateTo(opts.truncateSliceOrArray, opts.truncateSliceOrArrayIfMoreThan)
-			if n <= limitIfMoreThan || n <= limit {
-				return errors.ErrUnsupported
-			}
-			return marshalTruncatedSliceOrArray(enc, rv, n, limit, opts)
-
-		case reflect.Array:
-			if opts.truncateSliceOrArray <= 0 {
-				return errors.ErrUnsupported
-			}
-			n := rv.Len()
-			limit, limitIfMoreThan := truncateTo(opts.truncateSliceOrArray, opts.truncateSliceOrArrayIfMoreThan)
-			if n <= limitIfMoreThan || n <= limit {
-				return errors.ErrUnsupported
-			}
-			return marshalTruncatedSliceOrArray(enc, rv, n, limit, opts)
-
-		case reflect.Map:
-			if opts.truncateMap <= 0 || rv.IsNil() {
-				return errors.ErrUnsupported
-			}
-			n := rv.Len()
-			limit, limitIfMoreThan := truncateTo(opts.truncateMap, opts.truncateMapIfMoreThan)
-			if n <= limitIfMoreThan || n <= limit {
-				return errors.ErrUnsupported
-			}
-			return marshalTruncatedMap(enc, rv, n, limit, opts)
-
 		default:
 			// Structs and all other types use the default marshaler.
 			return errors.ErrUnsupported
 		}
+
+		if truncateOutput && hasMarshalMethod(rv.Type()) {
+			return marshalTruncatedMarshalerOutput(enc, v, opts)
+		}
+
+		n := rv.Len()
+		if rv.Kind() == reflect.Map {
+			limit, limitIfMoreThan := truncateTo(opts.truncateMap, opts.truncateMapIfMoreThan)
+			if opts.truncateMap <= 0 || n <= limitIfMoreThan || n <= limit || hasMarshalMethod(rv.Type()) {
+				return errors.ErrUnsupported
+			}
+			return marshalTruncatedMap(enc, rv, n, limit, opts)
+		}
+		limit, limitIfMoreThan := truncateTo(opts.truncateSliceOrArray, opts.truncateSliceOrArrayIfMoreThan)
+		if opts.truncateSliceOrArray <= 0 || n <= limitIfMoreThan || n <= limit || hasMarshalMethod(rv.Type()) {
+			return errors.ErrUnsupported
+		}
+		return marshalTruncatedSliceOrArray(enc, rv, n, limit, opts)
 	})
+}
+
+var byteType = reflect.TypeFor[byte]()
+
+// marshalerTypes are the method interfaces json/v2 prefers over its default
+// representation of a type.
+var marshalerTypes = []reflect.Type{
+	reflect.TypeFor[jsonv2.MarshalerTo](),
+	reflect.TypeFor[jsonv2.Marshaler](),
+	reflect.TypeFor[encoding.TextAppender](),
+	reflect.TypeFor[encoding.TextMarshaler](),
+}
+
+// hasMarshalMethod reports whether json/v2 marshals values of t through one of
+// their methods. json/v2 values are addressable, so pointer receivers count.
+func hasMarshalMethod(t reflect.Type) bool {
+	pt := reflect.PointerTo(t)
+	for _, it := range marshalerTypes {
+		if t.Implements(it) || pt.Implements(it) {
+			return true
+		}
+	}
+	return false
+}
+
+// marshalTruncatedMarshalerOutput marshals v through its own method, then
+// writes the output with its strings and arrays truncated. Objects keep all
+// their members, as they cannot be told apart from structs.
+func marshalTruncatedMarshalerOutput(enc *jsontext.Encoder, v any, opts encOpts) error {
+	out, err := jsonv2.Marshal(v, formatOptions(opts)...)
+	if err != nil {
+		return err
+	}
+	return writeTruncatedValue(enc, out, opts)
+}
+
+// writeTruncatedValue writes the JSON value val, truncating the strings and
+// arrays in it like Go strings and slices.
+func writeTruncatedValue(enc *jsontext.Encoder, val jsontext.Value, opts encOpts) error {
+	switch val.Kind() {
+	case '"':
+		s, err := jsontext.AppendUnquote(nil, val)
+		if err != nil {
+			return err
+		}
+		return enc.WriteToken(jsontext.String(truncateStringValue(string(s), opts)))
+	case '[':
+		return writeTruncatedArray(enc, val, opts)
+	case '{':
+		return writeTruncatedObject(enc, val, opts)
+	default:
+		return enc.WriteValue(val)
+	}
+}
+
+// writeTruncatedArray writes the JSON array val, keeping as many elements as
+// a Go slice of the same length keeps.
+func writeTruncatedArray(enc *jsontext.Encoder, val jsontext.Value, opts encOpts) error {
+	dec := jsontext.NewDecoder(bytes.NewReader(val))
+	if _, err := dec.ReadToken(); err != nil {
+		return err
+	}
+	var n int
+	for dec.PeekKind() != ']' {
+		if err := dec.SkipValue(); err != nil {
+			return err
+		}
+		n++
+	}
+
+	limit := n
+	if opts.truncateSliceOrArray > 0 {
+		l, limitIfMoreThan := truncateTo(opts.truncateSliceOrArray, opts.truncateSliceOrArrayIfMoreThan)
+		if n > limitIfMoreThan && n > l {
+			limit = l
+		}
+	}
+
+	dec = jsontext.NewDecoder(bytes.NewReader(val))
+	if _, err := dec.ReadToken(); err != nil {
+		return err
+	}
+	if err := enc.WriteToken(jsontext.BeginArray); err != nil {
+		return err
+	}
+	for range limit {
+		elem, err := dec.ReadValue()
+		if err != nil {
+			return err
+		}
+		if err := writeTruncatedValue(enc, elem, opts); err != nil {
+			return err
+		}
+	}
+	if limit < n && !opts.omitStatistics {
+		if err := enc.WriteToken(jsontext.String(fmt.Sprintf("...%d elems", n))); err != nil {
+			return err
+		}
+	}
+	return enc.WriteToken(jsontext.EndArray)
+}
+
+// writeTruncatedObject writes the JSON object val with all its members,
+// truncating the strings and arrays in their values.
+func writeTruncatedObject(enc *jsontext.Encoder, val jsontext.Value, opts encOpts) error {
+	dec := jsontext.NewDecoder(bytes.NewReader(val))
+	if _, err := dec.ReadToken(); err != nil {
+		return err
+	}
+	if err := enc.WriteToken(jsontext.BeginObject); err != nil {
+		return err
+	}
+	for dec.PeekKind() != '}' {
+		name, err := dec.ReadToken()
+		if err != nil {
+			return err
+		}
+		if err := enc.WriteToken(name); err != nil {
+			return err
+		}
+		elem, err := dec.ReadValue()
+		if err != nil {
+			return err
+		}
+		if err := writeTruncatedValue(enc, elem, opts); err != nil {
+			return err
+		}
+	}
+	return enc.WriteToken(jsontext.EndObject)
 }
 
 // marshalTruncatedSliceOrArray writes at most limit elements from rv,
@@ -173,7 +331,8 @@ func marshalTruncatedMap(enc *jsontext.Encoder, rv reflect.Value, n, limit int, 
 	for k, v := range rv.Seq2() {
 		ks, err := resolveKeyName(k)
 		if err != nil {
-			return fmt.Errorf("json: unsupported type: %s", rv.Type().Key())
+			// Let json/v2 encode (or reject) the whole map without truncation.
+			return errors.ErrUnsupported
 		}
 		entries = append(entries, mapEntry{key: k, value: v, keyStr: ks})
 	}
@@ -230,56 +389,60 @@ func stringMarshalers(opts encOpts) *jsonv2.Marshalers {
 		if isObjectName(enc) {
 			return enc.WriteToken(jsontext.String(s))
 		}
-		var isUrl bool
-		sLen := utf8.RuneCountInString(s)
-		if limit, limitIfMoreThan := truncateTo(opts.truncateString, opts.truncateStringIfMoreThan); limitIfMoreThan > 0 && sLen > limitIfMoreThan {
-			st := s
-			if opts.truncateUrl || opts.forceLongUrl {
-				u, err := url.Parse(s)
-				isUrl = err == nil && u.Scheme != ""
-				if isUrl {
-					if opts.forceLongUrl {
-						st = s // do not truncate url, force long url
-					} else {
-						st = truncateUrl(u, opts)
-					}
-				}
-			}
-			if !isUrl {
-				st = strings_.Truncate(s, limit)
-				if !opts.omitStatistics {
-					st += fmt.Sprintf("...%d chars", len(s))
-				}
-			}
-			if len(st) < len(s) {
-				s = st
-			}
-		}
-		return enc.WriteToken(jsontext.String(s))
+		return enc.WriteToken(jsontext.String(truncateStringValue(s, opts)))
 	})
 }
 
-func bytesMarshalers(opts encOpts) *jsonv2.Marshalers {
-	if opts.truncateBytes <= 0 {
-		return nil
+// truncateStringValue truncates s according to the string and url options.
+func truncateStringValue(s string, opts encOpts) string {
+	if opts.truncateString <= 0 {
+		return s
 	}
-
-	return jsonv2.MarshalFunc(func(b []byte) ([]byte, error) {
-		if limit, limitIfMoreThan := truncateTo(opts.truncateBytes, opts.truncateBytesIfMoreThan); limitIfMoreThan > 0 && len(b) > limitIfMoreThan {
-			var m string
-			if !opts.omitStatistics {
-				m = fmt.Sprintf("...%d bytes", len(b))
-			}
-			bt := bytes_.Truncate(b, limit)
-			encodedLenS := base64.StdEncoding.EncodedLen(len(b))
-			encodedLenT := base64.StdEncoding.EncodedLen(len(bt))
-			if len(m)+encodedLenT < encodedLenS {
-				return jsontext.AppendQuote(nil, base64.StdEncoding.EncodeToString(bt)+m)
+	var isUrl bool
+	sLen := utf8.RuneCountInString(s)
+	if limit, limitIfMoreThan := truncateTo(opts.truncateString, opts.truncateStringIfMoreThan); limitIfMoreThan > 0 && sLen > limitIfMoreThan {
+		st := s
+		if opts.truncateUrl || opts.forceLongUrl {
+			u, err := url.Parse(s)
+			// Require a host so that "Error: ..." or "data:..." stay plain strings.
+			isUrl = err == nil && u.Scheme != "" && u.Host != ""
+			if isUrl {
+				if opts.forceLongUrl {
+					st = s // do not truncate url, force long url
+				} else {
+					st = truncateUrl(s, u, opts)
+				}
 			}
 		}
+		if !isUrl {
+			st = strings_.Truncate(s, limit)
+			if !opts.omitStatistics {
+				st += fmt.Sprintf("...%d chars", sLen)
+			}
+		}
+		if len(st) < len(s) {
+			s = st
+		}
+	}
+	return s
+}
 
-		return jsonv2.Marshal(b)
-	})
+// marshalTruncatedBytes writes b truncated as a base64 string, or returns
+// [errors.ErrUnsupported] if truncating b would not make it shorter.
+func marshalTruncatedBytes(enc *jsontext.Encoder, b []byte, opts encOpts) error {
+	if limit, limitIfMoreThan := truncateTo(opts.truncateBytes, opts.truncateBytesIfMoreThan); limitIfMoreThan > 0 && len(b) > limitIfMoreThan {
+		var m string
+		if !opts.omitStatistics {
+			m = fmt.Sprintf("...%d bytes", len(b))
+		}
+		bt := bytes_.Truncate(b, limit)
+		encodedLenS := base64.StdEncoding.EncodedLen(len(b))
+		encodedLenT := base64.StdEncoding.EncodedLen(len(bt))
+		if len(m)+encodedLenT < encodedLenS {
+			return enc.WriteToken(jsontext.String(base64.StdEncoding.EncodeToString(bt) + m))
+		}
+	}
+	return errors.ErrUnsupported
 }
 
 // isObjectName reports whether a type-specific marshaler is currently being
