@@ -334,9 +334,19 @@ func TestThread_Goexit(t *testing.T) {
 }
 
 func TestThread_ShutdownBeforeUse(t *testing.T) {
-	var started atomic.Int64
-	*sync_.TestHookThreadLoop = func() { started.Add(1) }
-	defer func() { *sync_.TestHookThreadLoop = nil }()
+	// Count per Thread, as worker goroutines of Threads in other tests may still be starting.
+	var mu sync.Mutex
+	starts := make(map[*sync_.Thread]int)
+	defer sync_.SetTestHookThreadLoop(func(thread *sync_.Thread) {
+		mu.Lock()
+		defer mu.Unlock()
+		starts[thread]++
+	})()
+	started := func(thread *sync_.Thread) int {
+		mu.Lock()
+		defer mu.Unlock()
+		return starts[thread]
+	}
 
 	tests := []struct {
 		name     string
@@ -347,7 +357,6 @@ func TestThread_ShutdownBeforeUse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			started.Store(0)
 			var thread sync_.Thread
 			if err := tt.shutdown(&thread); err != nil {
 				t.Fatalf("%s of unused Thread = %v, want nil", tt.name, err)
@@ -359,21 +368,20 @@ func TestThread_ShutdownBeforeUse(t *testing.T) {
 			if do {
 				t.Fatalf("Thread.Do called after Thread.%s", tt.name)
 			}
-			if n := started.Load(); n != 0 {
+			if n := started(&thread); n != 0 {
 				t.Errorf("worker goroutine started %d times, want 0", n)
 			}
 		})
 	}
 
 	// The hook itself works: a used Thread starts the worker goroutine once.
-	started.Store(0)
 	var thread sync_.Thread
 	_ = thread.Do(t.Context(), func() {})
 	_ = thread.Do(t.Context(), func() {})
 	if err := thread.ShutdownContext(t.Context()); err != nil {
 		t.Fatalf("ShutdownContext = %v, want nil", err)
 	}
-	if n := started.Load(); n != 1 {
+	if n := started(&thread); n != 1 {
 		t.Errorf("worker goroutine of used Thread started %d times, want 1", n)
 	}
 }

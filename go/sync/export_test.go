@@ -4,4 +4,9 @@
 
 package sync
 
-var TestHookThreadLoop = &testHookThreadLoop
+// SetTestHookThreadLoop sets the hook called by the worker goroutine of a Thread when it starts,
+// and returns a function restoring no hook.
+func SetTestHookThreadLoop(hook func(t *Thread)) (restore func()) {
+	testHookThreadLoop.Store(&hook)
+	return func() { testHookThreadLoop.Store(nil) }
+}

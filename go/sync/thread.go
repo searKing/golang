@@ -220,13 +220,14 @@ func (t *Thread) initOnce() {
 	})
 }
 
-// testHookThreadLoop, if not nil, is called by the worker goroutine when it starts.
-var testHookThreadLoop func()
+// testHookThreadLoop, if set, is called by the worker goroutine of t when it starts.
+// It is atomic, as worker goroutines of other Threads may still be starting when it is set.
+var testHookThreadLoop atomic.Pointer[func(t *Thread)]
 
 // loop runs f received from Do on the worker goroutine until the Thread is closed.
 func (t *Thread) loop() {
-	if testHookThreadLoop != nil {
-		testHookThreadLoop()
+	if hook := testHookThreadLoop.Load(); hook != nil {
+		(*hook)(t)
 	}
 	// Replace the labels inherited from the goroutine calling Do first,
 	// so the worker can be found by its own label in goroutine profiles.
