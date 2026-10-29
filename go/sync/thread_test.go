@@ -312,6 +312,71 @@ func TestThread_DoContext(t *testing.T) {
 	})
 }
 
+func TestThread_NestedDo(t *testing.T) {
+	skipIfNoOSThreadID := func(t *testing.T) {
+		if _, ok := sync_.OSThreadID(); !ok {
+			t.Skipf("OS thread ID is not supported on %s", runtime.GOOS)
+		}
+	}
+
+	t.Run("inline", func(t *testing.T) {
+		skipIfNoOSThreadID(t)
+		var thread sync_.Thread
+		defer thread.ShutdownContext(t.Context())
+		var outer, inner uint64
+		err := thread.Do(t.Context(), func() {
+			outer, _ = sync_.OSThreadID()
+			if err := thread.Do(t.Context(), func() { inner, _ = sync_.OSThreadID() }); err != nil {
+				t.Errorf("nested Do = %v, want nil", err)
+			}
+		})
+		if err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if inner == 0 || inner != outer {
+			t.Errorf("nested f ran on OS thread %d, want %d of the Thread", inner, outer)
+		}
+	})
+
+	t.Run("goroutine started by f", func(t *testing.T) {
+		skipIfNoOSThreadID(t)
+		var thread sync_.Thread
+		defer thread.ShutdownContext(t.Context())
+		done := make(chan error, 1)
+		err := thread.Do(t.Context(), func() {
+			// Not on the Thread, so its f must wait for this f to return instead of running inline.
+			go func() { done <- thread.Do(t.Context(), func() {}) }()
+			select {
+			case <-done:
+				t.Errorf("Do from a goroutine started by f returned while f is running")
+			case <-time.After(20 * time.Millisecond):
+			}
+		})
+		if err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if err := <-done; err != nil {
+			t.Errorf("Do from a goroutine started by f = %v, want nil", err)
+		}
+	})
+
+	t.Run("GoRoutine", func(t *testing.T) {
+		thread := sync_.Thread{GoRoutine: true}
+		defer thread.ShutdownContext(t.Context())
+		err := thread.Do(t.Context(), func() {
+			// Without a locked OS thread, the caller cannot be told apart, so nested Do still blocks.
+			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
+			defer cancel()
+			if err := thread.Do(ctx, func() {}); !errors.Is(err, context.DeadlineExceeded) {
+				t.Errorf("nested Do with GoRoutine = %v, want %v", err, context.DeadlineExceeded)
+			}
+		})
+		if err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+	})
+}
+
 func TestThread_Goexit(t *testing.T) {
 	var thread sync_.Thread
 	defer thread.ShutdownContext(t.Context())

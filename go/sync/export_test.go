@@ -10,3 +10,5 @@ func SetTestHookThreadLoop(hook func(t *Thread)) (restore func()) {
 	testHookThreadLoop.Store(&hook)
 	return func() { testHookThreadLoop.Store(nil) }
 }
+
+var OSThreadID = osThreadID
