@@ -47,6 +47,10 @@ type threadDo struct {
 // Unless GoRoutine is true, the OS thread is never used by other goroutines: when the Thread exits,
 // the thread is terminated, so f may change its state permanently, e.g. by setns(2) on Linux.
 //
+// A Thread cannot be relied on to run f on the main thread of the process, which some APIs require,
+// e.g. Cocoa on macOS; to run code there, call runtime.LockOSThread in an init function
+// of package main, and run that code from function main.
+//
 // The zero value is ready to use. All exported fields must be set (or WatchStats called)
 // before the first call to Do, DoContext, Shutdown or ShutdownContext,
 // and must not be changed afterwards.
