@@ -7,19 +7,11 @@ package sync
 import (
 	"context"
 	"errors"
-	"expvar"
 	"runtime"
 	"runtime/pprof"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	expvar_ "github.com/searKing/golang/go/expvar"
-)
-
-var (
-	threadStatsOnce                          sync.Once
-	osThreadLeak, goroutineLeak, handlerLeak expvar_.Leak
 )
 
 // pprof label of the Thread's worker goroutine.
@@ -51,9 +43,8 @@ type threadDo struct {
 // e.g. Cocoa on macOS; to run code there, call runtime.LockOSThread in an init function
 // of package main, and run that code from function main.
 //
-// The zero value is ready to use. All exported fields must be set (or WatchStats called)
-// before the first call to Do, DoContext, Shutdown or ShutdownContext,
-// and must not be changed afterwards.
+// The zero value is ready to use. GoRoutine must be set before the first call
+// to Do, DoContext, Shutdown or ShutdownContext, and must not be changed afterwards.
 //
 // The worker goroutine carries the pprof label "sync.Thread"="worker",
 // so live Threads, e.g. ones never shut down, can be found in goroutine profiles.
@@ -61,19 +52,6 @@ type Thread struct {
 	// GoRoutine, if true, runs f on a dedicated goroutine
 	// without locking it to an OS thread.
 	GoRoutine bool
-
-	// GoroutineLeak, if not nil, counts the worker goroutine while it is running.
-	//
-	// Deprecated: Use Stats.
-	GoroutineLeak *expvar_.Leak
-	// OSThreadLeak, if not nil, counts the OS thread while it is locked by the worker goroutine.
-	//
-	// Deprecated: Use Stats.
-	OSThreadLeak *expvar_.Leak
-	// HandlerLeak, if not nil, counts calls to Do that have not returned.
-	//
-	// Deprecated: Use Stats.
-	HandlerLeak *expvar_.Leak
 
 	once       sync.Once
 	inShutdown atomic.Bool // true when Thread is in shutdown
@@ -116,23 +94,6 @@ func (t *Thread) Stats() ThreadStats {
 	}
 }
 
-// WatchStats sets the Thread's Leak counters to process-wide counters
-// published by expvar as "sync.Thread".
-// All Threads calling WatchStats share the same counters.
-//
-// Deprecated: Use Stats, and publish it by expvar.Func if needed.
-func (t *Thread) WatchStats() {
-	threadStatsOnce.Do(func() {
-		stats := expvar.NewMap("sync.Thread")
-		stats.Set("goroutine_leak", &goroutineLeak)
-		stats.Set("os_thread_leak", &osThreadLeak)
-		stats.Set("handler_leak", &handlerLeak)
-	})
-	t.GoroutineLeak = &goroutineLeak
-	t.OSThreadLeak = &osThreadLeak
-	t.HandlerLeak = &handlerLeak
-}
-
 // Do calls f on the Thread, or in the caller's goroutine if WithThreadDoEscapeThread(true) is given,
 // and waits for f to return.
 //
@@ -154,10 +115,6 @@ func (t *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error
 	t.calls.Add(1)
 	t.active.Add(1)
 	defer t.active.Add(-1)
-	if t.HandlerLeak != nil {
-		t.HandlerLeak.Add(1)
-		defer t.HandlerLeak.Done()
-	}
 	// Check done first, since select chooses randomly among ready cases;
 	// a closed Thread then fails fast, and never calls f with WithThreadDoEscapeThread(true).
 	select {
@@ -258,8 +215,14 @@ func (t *Thread) initOnce() {
 	})
 }
 
+// testHookThreadLoop, if not nil, is called by the worker goroutine when it starts.
+var testHookThreadLoop func()
+
 // loop runs f received from Do on the worker goroutine until the Thread is closed.
 func (t *Thread) loop() {
+	if testHookThreadLoop != nil {
+		testHookThreadLoop()
+	}
 	// Replace the labels inherited from the goroutine calling Do first,
 	// so the worker can be found by its own label in goroutine profiles.
 	pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels(threadLabelKey, threadLabelWorker)))
@@ -267,18 +230,10 @@ func (t *Thread) loop() {
 	defer t.cancel(ErrThreadClosed) // also closes the Thread if f calls runtime.Goexit
 	t.running.Store(true)
 	defer t.running.Store(false)
-	if t.GoroutineLeak != nil {
-		t.GoroutineLeak.Add(1)
-		defer t.GoroutineLeak.Done()
-	}
 	if !t.GoRoutine {
 		// Never unlock: f may change the state of the OS thread permanently,
 		// so the thread is terminated with the worker goroutine instead of running other goroutines.
 		runtime.LockOSThread()
-		if t.OSThreadLeak != nil {
-			t.OSThreadLeak.Add(1)
-			defer t.OSThreadLeak.Done()
-		}
 	}
 	for {
 		// Check done first, since select chooses randomly among ready cases;

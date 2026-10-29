@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"expvar"
-	"fmt"
 	"runtime"
 	"runtime/pprof"
 	"strings"
@@ -18,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	expvar_ "github.com/searKing/golang/go/expvar"
 	sync_ "github.com/searKing/golang/go/sync"
 )
 
@@ -167,88 +164,6 @@ func BenchmarkThread(b *testing.B) {
 			_ = thread.Do(b.Context(), f)
 		}
 	})
-}
-
-var osThreadLeak = expvar_.NewLeak("os_thread_leak")
-var goroutineLeak = expvar_.NewLeak("goroutine_leak")
-var handlerLeak = expvar_.NewLeak("handler_leak")
-
-func BenchmarkThreadWithLeak(b *testing.B) {
-	var thread sync_.Thread
-	thread.OSThreadLeak = osThreadLeak
-	thread.GoroutineLeak = goroutineLeak
-	thread.HandlerLeak = handlerLeak
-	defer b.Logf("%s %s %s ", osThreadLeak, goroutineLeak, handlerLeak)
-	defer thread.ShutdownContext(b.Context())
-	f := func() {}
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			_ = thread.Do(b.Context(), f)
-		}
-	})
-}
-
-func TestThreadWithLeak(t *testing.T) {
-	o := new(one)
-	thread := new(sync_.Thread)
-	thread.OSThreadLeak = osThreadLeak
-	thread.GoroutineLeak = goroutineLeak
-	thread.HandlerLeak = handlerLeak
-
-	defer thread.ShutdownContext(t.Context())
-	c := make(chan bool)
-	const N = 10
-	for range N {
-		go run(t.Context(), thread, o, c)
-	}
-	for range N {
-		<-c
-	}
-	if *o != N {
-		t.Errorf("once failed outside run: %d is not %d", *o, N)
-	}
-	if got := thread.OSThreadLeak.String(); got != "[1 1]" {
-		t.Errorf("OSThreadLeak.String() = %q, want %q", got, "[1 1]")
-	}
-	if got := thread.GoroutineLeak.String(); got != "[1 1]" {
-		t.Errorf("GoroutineLeak.String() = %q, want %q", got, "[1 1]")
-	}
-
-	want := fmt.Sprintf("[0 %d]", N)
-	if got := thread.HandlerLeak.String(); got != want {
-		t.Errorf("HandlerLeak.String() = %q, want %q", got, want)
-	}
-}
-
-func TestThread_WatchStats(t *testing.T) {
-	o := new(one)
-	thread := new(sync_.Thread)
-	thread.WatchStats()
-
-	defer thread.ShutdownContext(t.Context())
-	c := make(chan bool)
-	const N = 10
-	for range N {
-		go run(t.Context(), thread, o, c)
-	}
-	for range N {
-		<-c
-	}
-	if *o != N {
-		t.Errorf("once failed outside run: %d is not %d", *o, N)
-	}
-	if got := thread.OSThreadLeak.String(); got != "[1 1]" {
-		t.Errorf("OSThreadLeak.String() = %q, want %q", got, "[1 1]")
-	}
-	if got := thread.GoroutineLeak.String(); got != "[1 1]" {
-		t.Errorf("GoroutineLeak.String() = %q, want %q", got, "[1 1]")
-	}
-
-	want := fmt.Sprintf("[0 %d]", N)
-	if got := thread.HandlerLeak.String(); got != want {
-		t.Errorf("HandlerLeak.String() = %q, want %q", got, want)
-	}
-	t.Logf("sync.Thread: %s", expvar.Get("sync.Thread"))
 }
 
 func TestThread_Stats(t *testing.T) {
@@ -403,24 +318,47 @@ func TestThread_Goexit(t *testing.T) {
 }
 
 func TestThread_ShutdownBeforeUse(t *testing.T) {
+	var started atomic.Int64
+	*sync_.TestHookThreadLoop = func() { started.Add(1) }
+	defer func() { *sync_.TestHookThreadLoop = nil }()
+
+	tests := []struct {
+		name     string
+		shutdown func(thread *sync_.Thread) error
+	}{
+		{"Shutdown", func(thread *sync_.Thread) error { thread.Shutdown(); return nil }},
+		{"ShutdownContext", func(thread *sync_.Thread) error { return thread.ShutdownContext(t.Context()) }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			started.Store(0)
+			var thread sync_.Thread
+			if err := tt.shutdown(&thread); err != nil {
+				t.Fatalf("%s of unused Thread = %v, want nil", tt.name, err)
+			}
+			var do bool
+			if err := thread.Do(t.Context(), func() { do = true }); !errors.Is(err, sync_.ErrThreadClosed) {
+				t.Fatalf("Do after %s = %v, want %v", tt.name, err, sync_.ErrThreadClosed)
+			}
+			if do {
+				t.Fatalf("Thread.Do called after Thread.%s", tt.name)
+			}
+			if n := started.Load(); n != 0 {
+				t.Errorf("worker goroutine started %d times, want 0", n)
+			}
+		})
+	}
+
+	// The hook itself works: a used Thread starts the worker goroutine once.
+	started.Store(0)
 	var thread sync_.Thread
-	thread.GoroutineLeak = new(expvar_.Leak)
-	thread.OSThreadLeak = new(expvar_.Leak)
+	_ = thread.Do(t.Context(), func() {})
+	_ = thread.Do(t.Context(), func() {})
 	if err := thread.ShutdownContext(t.Context()); err != nil {
-		t.Fatalf("ShutdownContext of unused Thread = %v, want nil", err)
+		t.Fatalf("ShutdownContext = %v, want nil", err)
 	}
-	var do bool
-	if err := thread.Do(t.Context(), func() { do = true }); !errors.Is(err, sync_.ErrThreadClosed) {
-		t.Fatalf("Do after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
-	}
-	if do {
-		t.Fatalf("Thread.Do called after Thread.Shutdown")
-	}
-	if n := thread.GoroutineLeak.New.Value(); n != 0 {
-		t.Errorf("worker goroutine started %d times, want 0", n)
-	}
-	if n := thread.OSThreadLeak.New.Value(); n != 0 {
-		t.Errorf("OS thread locked %d times, want 0", n)
+	if n := started.Load(); n != 1 {
+		t.Errorf("worker goroutine of used Thread started %d times, want 1", n)
 	}
 }
 
