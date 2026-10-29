@@ -28,7 +28,9 @@ var ErrThreadClosed = errors.New("sync: Thread closed")
 //go:generate go-option -type=threadDo
 type threadDo struct {
 	// EscapeThread runs f directly in the caller's goroutine instead of on the Thread,
-	// e.g. when calling Do from within f.
+	// e.g. when calling Do from within f. f is then neither run on the Thread's OS thread,
+	// nor serialized with other f; so outside of f, use it only for functions safe
+	// to call concurrently from any thread.
 	EscapeThread bool
 }
 
