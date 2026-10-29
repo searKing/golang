@@ -10,121 +10,167 @@ import (
 	"expvar"
 	"runtime"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	expvar_ "github.com/searKing/golang/go/expvar"
 )
 
-var threadStatsOnce sync.Once
-var threadStats *expvar.Map
-var osThreadLeak, goroutineLeak, handlerLeak expvar_.Leak
+var (
+	threadStatsOnce                          sync.Once
+	osThreadLeak, goroutineLeak, handlerLeak expvar_.Leak
+)
+
+// ErrThreadClosed is returned by the Thread's Do method
+// after a call to Shutdown or ShutdownContext,
+// or after f called runtime.Goexit on the Thread.
+var ErrThreadClosed = errors.New("sync: Thread closed")
 
 //go:generate go-option -type=threadDo
 type threadDo struct {
-	// call the function f in the same thread or escape thread
+	// EscapeThread runs f directly in the caller's goroutine instead of on the Thread,
+	// e.g. when calling Do from within f.
 	EscapeThread bool
 }
 
-// Thread should be used for such as calling OS services or
-// non-Go library functions that depend on per-thread state, as runtime.LockOSThread().
+// Thread runs functions on a single dedicated goroutine locked to an OS thread
+// (see runtime.LockOSThread), for calling OS services or non-Go libraries
+// that depend on per-thread state.
+//
+// The zero value is ready to use. All exported fields must be set (or WatchStats called)
+// before the first call to Do, Shutdown or ShutdownContext,
+// and must not be changed afterwards.
 type Thread struct {
-	GoRoutine bool // Use thread as goroutine, that is without runtime.LockOSThread()
+	// GoRoutine, if true, runs f on a dedicated goroutine
+	// without locking it to an OS thread.
+	GoRoutine bool
 
-	// The Leak is published as a variable directly.
-	GoroutineLeak *expvar_.Leak // represents whether goroutine is leaked, take effects if not nil
-	OSThreadLeak  *expvar_.Leak // represents whether runtime.LockOSThread is leaked, take effects  if not nil
-	HandlerLeak   *expvar_.Leak // represents whether handler in Do is blocked is leaked, take effects  if not nil
+	// GoroutineLeak, if not nil, counts the worker goroutine while it is running.
+	//
+	// Deprecated: Use Stats.
+	GoroutineLeak *expvar_.Leak
+	// OSThreadLeak, if not nil, counts the OS thread while it is locked by the worker goroutine.
+	//
+	// Deprecated: Use Stats.
+	OSThreadLeak *expvar_.Leak
+	// HandlerLeak, if not nil, counts calls to Do that have not returned.
+	//
+	// Deprecated: Use Stats.
+	HandlerLeak *expvar_.Leak
 
-	once sync.Once
-	// fCh optionally specifies a function to generate
-	// a value when Get would otherwise return nil.
-	// It may not be changed concurrently with calls to Get.
-	fCh chan func()
+	once       sync.Once
+	inShutdown atomic.Bool // true when Thread is in shutdown
 
-	mu     sync.Mutex
-	ctx    context.Context
+	// stats
+	running      atomic.Bool
+	active       atomic.Int64
+	calls        atomic.Int64
+	waitDuration atomic.Int64 // in nanoseconds
+
+	fCh  chan func()   // delivers f to the worker goroutine
+	done chan struct{} // closed when the worker goroutine has exited
+
+	ctx    context.Context // canceled with ErrThreadClosed when Thread is closed
 	cancel context.CancelCauseFunc
 }
 
-// WatchStats bind Leak var to "sync.Thread"
+// ThreadStats contains Thread statistics.
+type ThreadStats struct {
+	// Thread Status
+	Running bool // Whether the worker goroutine is running.
+	Active  int  // The number of calls to Do that have not returned.
+
+	// Counters
+	Calls        int64         // The total number of calls to Do.
+	WaitDuration time.Duration // The total time blocked waiting for the Thread to take f.
+}
+
+// Stats returns Thread statistics.
+//
+// To publish them by expvar, use expvar.Func:
+//
+//	expvar.Publish("thread", expvar.Func(func() any { return t.Stats() }))
+func (t *Thread) Stats() ThreadStats {
+	return ThreadStats{
+		Running:      t.running.Load(),
+		Active:       int(t.active.Load()),
+		Calls:        t.calls.Load(),
+		WaitDuration: time.Duration(t.waitDuration.Load()),
+	}
+}
+
+// WatchStats sets the Thread's Leak counters to process-wide counters
+// published by expvar as "sync.Thread".
+// All Threads calling WatchStats share the same counters.
+//
+// Deprecated: Use Stats, and publish it by expvar.Func if needed.
 func (t *Thread) WatchStats() {
 	threadStatsOnce.Do(func() {
-		threadStats = expvar.NewMap("sync.Thread")
-		threadStats.Set("goroutine_leak", &goroutineLeak)
-		threadStats.Set("os_thread_leak", &osThreadLeak)
-		threadStats.Set("handler_leak", &handlerLeak)
+		stats := expvar.NewMap("sync.Thread")
+		stats.Set("goroutine_leak", &goroutineLeak)
+		stats.Set("os_thread_leak", &osThreadLeak)
+		stats.Set("handler_leak", &handlerLeak)
 	})
 	t.GoroutineLeak = &goroutineLeak
 	t.OSThreadLeak = &osThreadLeak
 	t.HandlerLeak = &handlerLeak
 }
 
-// ErrThreadClosed is returned by the Thread's Do methods after a call to `Shutdown`.
-var ErrThreadClosed = errors.New("sync: Thread closed")
-
-func (t *Thread) Shutdown() {
-	t.initOnce()
-	t.cancel(ErrThreadClosed)
-}
-
-func (t *Thread) initOnce() {
-	t.once.Do(func() {
-		t.mu.Lock()
-		defer t.mu.Unlock()
-
-		t.ctx, t.cancel = context.WithCancelCause(context.Background())
-		t.fCh = make(chan func())
-		go t.lockOSThreadForever()
-	})
-}
-
-// Do will call the function f in the same thread or escape thread.
-// f is enqueued only if ctx is not canceled and Thread is not Shutdown and Not escape
+// Do calls f on the Thread, or in the caller's goroutine if WithThreadDoEscapeThread(true) is given,
+// and waits for f to return.
+//
+// Do returns ErrThreadClosed without calling f if the Thread is closed,
+// or the cause of ctx if ctx is done before f starts running.
+// Once f starts running, ctx is ignored and Do waits until f returns.
+//
+// If f panics, Do panics in the caller's goroutine with the same value.
+// If f calls runtime.Goexit, Do calls runtime.Goexit in the caller's goroutine;
+// if f was running on the Thread, the Thread is closed as well.
+//
+// Calling Do from within f without WithThreadDoEscapeThread(true) blocks until ctx is done,
+// as the Thread is busy running f.
 func (t *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error {
 	var opt threadDo
 	opt.ApplyOptions(opts...)
-	return t.do(ctx, f, opt.EscapeThread)
-}
 
-func (t *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 	t.initOnce()
+	t.calls.Add(1)
+	t.active.Add(1)
+	defer t.active.Add(-1)
 	if t.HandlerLeak != nil {
 		t.HandlerLeak.Add(1)
 		defer t.HandlerLeak.Done()
 	}
+	// Check done first, since select chooses randomly among ready cases;
+	// a closed Thread then fails fast, and never calls f with WithThreadDoEscapeThread(true).
 	select {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	case <-t.ctx.Done():
 		return context.Cause(t.ctx)
 	default:
-		break
 	}
 
-	var r any
-	defer func() {
-		if r != nil {
-			panic(r) // rethrow panic if panic in f
-		}
-	}()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	neverPanic := func() {
-		defer wg.Done() // Mark f is called or panic
-		defer func() {
-			r = recover()
-		}()
-		f()
-	}
-
-	if escapeThread {
-		neverPanic()
+	c := &threadCall{f: f, done: make(chan struct{})}
+	if opt.EscapeThread {
+		c.run()
+		c.result()
 		return nil
 	}
+	if err := t.enqueue(ctx, c.run); err != nil {
+		return err
+	}
+	<-c.done
+	c.result()
+	return nil
+}
 
+// enqueue blocks until the worker goroutine takes f, ctx is done or the Thread is closed.
+func (t *Thread) enqueue(ctx context.Context, f func()) error {
+	waitStart := time.Now()
+	defer func() { t.waitDuration.Add(int64(time.Since(waitStart))) }()
 	select {
-	case t.fCh <- neverPanic:
-		wg.Wait() // wait for f has been executed or panic
+	case t.fCh <- f:
 		return nil
 	case <-ctx.Done():
 		return context.Cause(ctx)
@@ -133,8 +179,61 @@ func (t *Thread) do(ctx context.Context, f func(), escapeThread bool) error {
 	}
 }
 
-func (t *Thread) lockOSThreadForever() {
-	defer t.cancel(ErrThreadClosed)
+// Shutdown is like ShutdownContext, but returns without waiting for the running f to return
+// and the worker goroutine to exit.
+func (t *Thread) Shutdown() {
+	t.close()
+}
+
+// ShutdownContext gracefully shuts down the Thread without interrupting a running f.
+// ShutdownContext works by first stopping acceptance of new calls to Do, then waiting
+// for the f running on the Thread to return and the worker goroutine to exit,
+// which releases the OS thread. f running in the caller's goroutine with
+// WithThreadDoEscapeThread(true) is not waited for.
+// If the provided context expires before the shutdown is complete,
+// ShutdownContext returns the context's cause.
+//
+// Once Shutdown or ShutdownContext has been called on a Thread, it may not be reused;
+// future calls to Do will return ErrThreadClosed.
+// ShutdownContext may be called multiple times and concurrently.
+// Calling ShutdownContext from within f blocks until ctx is done, as the Thread is busy running f.
+func (t *Thread) ShutdownContext(ctx context.Context) error {
+	t.close()
+	select {
+	case <-t.done:
+		return nil
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	}
+}
+
+// close stops the Thread from accepting new f, and signals the worker goroutine to exit.
+func (t *Thread) close() {
+	t.inShutdown.Store(true) // must precede initOnce, so a never used Thread does not start the worker
+	t.initOnce()
+	t.cancel(ErrThreadClosed)
+}
+
+func (t *Thread) initOnce() {
+	t.once.Do(func() {
+		t.ctx, t.cancel = context.WithCancelCause(context.Background())
+		t.fCh = make(chan func())
+		t.done = make(chan struct{})
+		if t.inShutdown.Load() {
+			t.cancel(ErrThreadClosed)
+			close(t.done)
+			return
+		}
+		go t.loop()
+	})
+}
+
+// loop runs f received from Do on the worker goroutine until the Thread is closed.
+func (t *Thread) loop() {
+	defer close(t.done)
+	defer t.cancel(ErrThreadClosed) // also closes the Thread if f calls runtime.Goexit
+	t.running.Store(true)
+	defer t.running.Store(false)
 	if t.GoroutineLeak != nil {
 		t.GoroutineLeak.Add(1)
 		defer t.GoroutineLeak.Done()
@@ -148,17 +247,47 @@ func (t *Thread) lockOSThreadForever() {
 		}
 	}
 	for {
+		// Check done first, since select chooses randomly among ready cases;
+		// a closed Thread then exits instead of taking new f.
 		select {
-		case handler, ok := <-t.fCh:
-			if !ok {
-				return
-			}
-			if handler == nil {
-				continue
-			}
-			handler()
+		case <-t.ctx.Done():
+			return
+		default:
+		}
+		select {
+		case f := <-t.fCh:
+			f()
 		case <-t.ctx.Done():
 			return
 		}
+	}
+}
+
+// threadCall is a single f submitted to Do.
+type threadCall struct {
+	f          func()
+	done       chan struct{} // closed when f has returned, panicked or called runtime.Goexit
+	returned   bool          // f returned normally
+	panicValue any           // value f panicked with
+}
+
+func (c *threadCall) run() {
+	defer close(c.done)
+	defer func() {
+		if !c.returned {
+			c.panicValue = recover() // nil if f called runtime.Goexit
+		}
+	}()
+	c.f()
+	c.returned = true
+}
+
+// result replays in the caller's goroutine how f ended: panic, runtime.Goexit or normal return.
+func (c *threadCall) result() {
+	if c.panicValue != nil {
+		panic(c.panicValue)
+	}
+	if !c.returned {
+		runtime.Goexit()
 	}
 }

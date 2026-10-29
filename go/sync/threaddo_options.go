@@ -43,7 +43,8 @@ func withThreadDo(v threadDo) ThreadDoOption {
 }
 
 // WithThreadDoEscapeThread sets EscapeThread in threadDo.
-// call the function f in the same thread or escape thread
+// EscapeThread runs f directly in the caller's goroutine instead of on the Thread,
+// e.g. when calling Do from within f.
 func WithThreadDoEscapeThread(v bool) ThreadDoOption {
 	return ThreadDoOptionFunc(func(o *threadDo) {
 		o.EscapeThread = v

@@ -9,8 +9,11 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
+	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	expvar_ "github.com/searKing/golang/go/expvar"
 	sync_ "github.com/searKing/golang/go/sync"
@@ -22,21 +25,21 @@ func (o *one) Increment() {
 	*o++
 }
 
-func run(thread *sync_.Thread, o *one, c chan bool) {
-	_ = thread.Do(context.Background(), func() { o.Increment() })
+func run(ctx context.Context, thread *sync_.Thread, o *one, c chan bool) {
+	_ = thread.Do(ctx, func() { o.Increment() })
 	c <- true
 }
 
 func TestThread(t *testing.T) {
 	o := new(one)
 	thread := new(sync_.Thread)
-	defer thread.Shutdown()
+	defer thread.ShutdownContext(t.Context())
 	c := make(chan bool)
 	const N = 10
-	for i := 0; i < N; i++ {
-		go run(thread, o, c)
+	for range N {
+		go run(t.Context(), thread, o, c)
 	}
-	for i := 0; i < N; i++ {
+	for range N {
 		<-c
 	}
 	if *o != N {
@@ -48,18 +51,22 @@ func TestThreadPanic(t *testing.T) {
 	var thread sync_.Thread
 	func() {
 		defer func() {
-			if r := recover(); r == nil {
+			r := recover()
+			if r == nil {
 				t.Fatalf("Thread.Do did not panic")
 			}
+			if r != "failed" {
+				t.Fatalf("Thread.Do panic with %v, want %v", r, "failed")
+			}
 		}()
-		_ = thread.Do(context.Background(), func() {
+		_ = thread.Do(t.Context(), func() {
 			panic("failed")
 		})
 	}()
 
 	{
 		var do bool
-		_ = thread.Do(context.Background(), func() {
+		_ = thread.Do(t.Context(), func() {
 			do = true
 		})
 		if !do {
@@ -70,7 +77,7 @@ func TestThreadPanic(t *testing.T) {
 
 	{
 		var do bool
-		_ = thread.Do(context.Background(), func() {
+		_ = thread.Do(t.Context(), func() {
 			do = true
 		})
 		if do {
@@ -85,7 +92,7 @@ func TestThreadCancel(t *testing.T) {
 	{
 		var wg sync.WaitGroup
 		wg.Add(1)
-		ctx, cancel := context.WithCancelCause(context.Background())
+		ctx, cancel := context.WithCancelCause(t.Context())
 
 		go func() {
 			defer wg.Done()
@@ -107,24 +114,30 @@ func TestThreadCancel(t *testing.T) {
 		wg.Wait()
 	}
 
-	{
-		go func() {
-			// Block until canceled
-			err := thread.Do(context.Background(), func() {
-				select {}
-			})
-			if err == nil {
-				t.Errorf("Thread.Do did not return error")
-				return
-			}
-		}()
-	}
+	var wg sync.WaitGroup
+	release := make(chan struct{})
+	wg.Go(func() {
+		// Either rejected by Shutdown, or run on the Thread until released.
+		err := thread.Do(t.Context(), func() {
+			<-release
+		})
+		if err != nil && !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Thread.Do = %v, want nil or %v", err, sync_.ErrThreadClosed)
+		}
+	})
+	defer func() {
+		close(release)
+		wg.Wait()
+		if err := thread.ShutdownContext(t.Context()); err != nil {
+			t.Errorf("ShutdownContext after f released = %v, want nil", err)
+		}
+	}()
 
 	thread.Shutdown()
 
 	{
 		var do bool
-		err := thread.Do(context.Background(), func() {
+		err := thread.Do(t.Context(), func() {
 			do = true
 		})
 		if do {
@@ -144,11 +157,11 @@ func TestThreadCancel(t *testing.T) {
 
 func BenchmarkThread(b *testing.B) {
 	var thread sync_.Thread
-	defer thread.Shutdown()
+	defer thread.ShutdownContext(b.Context())
 	f := func() {}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = thread.Do(context.Background(), f)
+			_ = thread.Do(b.Context(), f)
 		}
 	})
 }
@@ -163,11 +176,11 @@ func BenchmarkThreadWithLeak(b *testing.B) {
 	thread.GoroutineLeak = goroutineLeak
 	thread.HandlerLeak = handlerLeak
 	defer b.Logf("%s %s %s ", osThreadLeak, goroutineLeak, handlerLeak)
-	defer thread.Shutdown()
+	defer thread.ShutdownContext(b.Context())
 	f := func() {}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = thread.Do(context.Background(), f)
+			_ = thread.Do(b.Context(), f)
 		}
 	})
 }
@@ -179,13 +192,13 @@ func TestThreadWithLeak(t *testing.T) {
 	thread.GoroutineLeak = goroutineLeak
 	thread.HandlerLeak = handlerLeak
 
-	defer thread.Shutdown()
+	defer thread.ShutdownContext(t.Context())
 	c := make(chan bool)
 	const N = 10
-	for i := 0; i < N; i++ {
-		go run(thread, o, c)
+	for range N {
+		go run(t.Context(), thread, o, c)
 	}
-	for i := 0; i < N; i++ {
+	for range N {
 		<-c
 	}
 	if *o != N {
@@ -209,13 +222,13 @@ func TestThread_WatchStats(t *testing.T) {
 	thread := new(sync_.Thread)
 	thread.WatchStats()
 
-	defer thread.Shutdown()
+	defer thread.ShutdownContext(t.Context())
 	c := make(chan bool)
 	const N = 10
-	for i := 0; i < N; i++ {
-		go run(thread, o, c)
+	for range N {
+		go run(t.Context(), thread, o, c)
 	}
-	for i := 0; i < N; i++ {
+	for range N {
 		<-c
 	}
 	if *o != N {
@@ -233,4 +246,144 @@ func TestThread_WatchStats(t *testing.T) {
 		t.Errorf("HandlerLeak.String() = %q, want %q", got, want)
 	}
 	t.Logf("sync.Thread: %s", expvar.Get("sync.Thread"))
+}
+
+func TestThread_Stats(t *testing.T) {
+	var thread sync_.Thread
+	if got, want := thread.Stats(), (sync_.ThreadStats{}); got != want {
+		t.Fatalf("Stats of unused Thread = %+v, want %+v", got, want)
+	}
+
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		_ = thread.Do(t.Context(), func() {
+			close(started)
+			<-release
+		})
+	})
+	<-started
+	if s := thread.Stats(); !s.Running || s.Active != 1 || s.Calls != 1 {
+		t.Errorf("Stats with f running = %+v, want Running, Active 1, Calls 1", s)
+	}
+	close(release)
+	wg.Wait()
+	if s := thread.Stats(); !s.Running || s.Active != 0 || s.Calls != 1 || s.WaitDuration <= 0 {
+		t.Errorf("Stats after f returned = %+v, want Running, Active 0, Calls 1, WaitDuration > 0", s)
+	}
+
+	if err := thread.ShutdownContext(t.Context()); err != nil {
+		t.Fatalf("ShutdownContext = %v, want nil", err)
+	}
+	if s := thread.Stats(); s.Running {
+		t.Errorf("Stats after Shutdown = %+v, want not Running", s)
+	}
+}
+
+func TestThread_Goexit(t *testing.T) {
+	var thread sync_.Thread
+	defer thread.ShutdownContext(t.Context())
+	// Escape first, as runtime.Goexit on the Thread closes it.
+	for _, escape := range []bool{true, false} {
+		var returned bool
+		var wg sync.WaitGroup
+		wg.Go(func() {
+			_ = thread.Do(t.Context(), runtime.Goexit, sync_.WithThreadDoEscapeThread(escape))
+			returned = true
+		})
+		wg.Wait()
+		if returned {
+			t.Fatalf("Do of f calling runtime.Goexit returned in caller's goroutine, escape=%v", escape)
+		}
+	}
+	if err := thread.Do(t.Context(), func() {}); !errors.Is(err, sync_.ErrThreadClosed) {
+		t.Fatalf("Do after runtime.Goexit = %v, want %v", err, sync_.ErrThreadClosed)
+	}
+}
+
+func TestThread_ShutdownBeforeUse(t *testing.T) {
+	var thread sync_.Thread
+	thread.GoroutineLeak = new(expvar_.Leak)
+	thread.OSThreadLeak = new(expvar_.Leak)
+	if err := thread.ShutdownContext(t.Context()); err != nil {
+		t.Fatalf("ShutdownContext of unused Thread = %v, want nil", err)
+	}
+	var do bool
+	if err := thread.Do(t.Context(), func() { do = true }); !errors.Is(err, sync_.ErrThreadClosed) {
+		t.Fatalf("Do after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
+	}
+	if do {
+		t.Fatalf("Thread.Do called after Thread.Shutdown")
+	}
+	if n := thread.GoroutineLeak.New.Value(); n != 0 {
+		t.Errorf("worker goroutine started %d times, want 0", n)
+	}
+	if n := thread.OSThreadLeak.New.Value(); n != 0 {
+		t.Errorf("OS thread locked %d times, want 0", n)
+	}
+}
+
+func TestThread_ShutdownNoWait(t *testing.T) {
+	var thread sync_.Thread
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		_ = thread.Do(t.Context(), func() {
+			close(started)
+			<-release
+		})
+	})
+	<-started
+
+	thread.Shutdown() // must return while f is still running
+	if err := thread.Do(t.Context(), func() {}); !errors.Is(err, sync_.ErrThreadClosed) {
+		t.Errorf("Do after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
+	}
+	if !thread.Stats().Running {
+		t.Errorf("worker goroutine exited before running f returned")
+	}
+
+	close(release)
+	wg.Wait()
+	if err := thread.ShutdownContext(t.Context()); err != nil {
+		t.Errorf("ShutdownContext after Shutdown = %v, want nil", err)
+	}
+}
+
+func TestThread_ShutdownGraceful(t *testing.T) {
+	var thread sync_.Thread
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var finished atomic.Bool
+	doErr := make(chan error, 1)
+	go func() {
+		doErr <- thread.Do(t.Context(), func() {
+			close(started)
+			<-release
+			finished.Store(true)
+		})
+	}()
+	<-started
+
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+	if err := thread.ShutdownContext(ctx); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("ShutdownContext with running f = %v, want %v", err, context.DeadlineExceeded)
+	}
+	if err := thread.Do(t.Context(), func() {}); !errors.Is(err, sync_.ErrThreadClosed) {
+		t.Fatalf("Do after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
+	}
+
+	close(release)
+	if err := thread.ShutdownContext(t.Context()); err != nil {
+		t.Fatalf("ShutdownContext after f returned = %v, want nil", err)
+	}
+	if !finished.Load() {
+		t.Fatalf("ShutdownContext returned before running f finished")
+	}
+	if err := <-doErr; err != nil {
+		t.Fatalf("Do of running f = %v, want nil", err)
+	}
 }
