@@ -44,6 +44,9 @@ type threadDo struct {
 // (see runtime.LockOSThread), for calling OS services or non-Go libraries
 // that depend on per-thread state.
 //
+// Unless GoRoutine is true, the OS thread is never used by other goroutines: when the Thread exits,
+// the thread is terminated, so f may change its state permanently, e.g. by setns(2) on Linux.
+//
 // The zero value is ready to use. All exported fields must be set (or WatchStats called)
 // before the first call to Do, Shutdown or ShutdownContext,
 // and must not be changed afterwards.
@@ -198,7 +201,7 @@ func (t *Thread) Shutdown() {
 // ShutdownContext gracefully shuts down the Thread without interrupting a running f.
 // ShutdownContext works by first stopping acceptance of new calls to Do, then waiting
 // for the f running on the Thread to return and the worker goroutine to exit,
-// which releases the OS thread. f running in the caller's goroutine with
+// which terminates the OS thread. f running in the caller's goroutine with
 // WithThreadDoEscapeThread(true) is not waited for.
 // If the provided context expires before the shutdown is complete,
 // ShutdownContext returns the context's cause.
@@ -252,8 +255,9 @@ func (t *Thread) loop() {
 		defer t.GoroutineLeak.Done()
 	}
 	if !t.GoRoutine {
+		// Never unlock: f may change the state of the OS thread permanently,
+		// so the thread is terminated with the worker goroutine instead of running other goroutines.
 		runtime.LockOSThread()
-		defer runtime.UnlockOSThread()
 		if t.OSThreadLeak != nil {
 			t.OSThreadLeak.Add(1)
 			defer t.OSThreadLeak.Done()
