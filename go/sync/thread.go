@@ -28,7 +28,7 @@ const (
 	threadLabelWorker = "worker"
 )
 
-// ErrThreadClosed is returned by the Thread's Do method
+// ErrThreadClosed is returned by the Thread's Do and DoContext methods
 // after a call to Shutdown or ShutdownContext,
 // or after f called runtime.Goexit on the Thread.
 var ErrThreadClosed = errors.New("sync: Thread closed")
@@ -48,7 +48,7 @@ type threadDo struct {
 // the thread is terminated, so f may change its state permanently, e.g. by setns(2) on Linux.
 //
 // The zero value is ready to use. All exported fields must be set (or WatchStats called)
-// before the first call to Do, Shutdown or ShutdownContext,
+// before the first call to Do, DoContext, Shutdown or ShutdownContext,
 // and must not be changed afterwards.
 //
 // The worker goroutine carries the pprof label "sync.Thread"="worker",
@@ -178,6 +178,18 @@ func (t *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error
 	return nil
 }
 
+// DoContext is like Do, but passes f a context derived from ctx, which is also canceled
+// with ErrThreadClosed when Shutdown or ShutdownContext is called, so a long-running f can return early.
+// The context is canceled when DoContext returns.
+func (t *Thread) DoContext(ctx context.Context, f func(ctx context.Context), opts ...ThreadDoOption) error {
+	t.initOnce()
+	fctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	stop := context.AfterFunc(t.ctx, func() { cancel(context.Cause(t.ctx)) })
+	defer stop()
+	return t.Do(ctx, func() { f(fctx) }, opts...)
+}
+
 // enqueue blocks until the worker goroutine takes f, ctx is done or the Thread is closed.
 func (t *Thread) enqueue(ctx context.Context, f func()) error {
 	waitStart := time.Now()
@@ -199,7 +211,8 @@ func (t *Thread) Shutdown() {
 }
 
 // ShutdownContext gracefully shuts down the Thread without interrupting a running f.
-// ShutdownContext works by first stopping acceptance of new calls to Do, then waiting
+// ShutdownContext works by first stopping acceptance of new calls to Do,
+// and canceling the contexts passed to f by DoContext, then waiting
 // for the f running on the Thread to return and the worker goroutine to exit,
 // which terminates the OS thread. f running in the caller's goroutine with
 // WithThreadDoEscapeThread(true) is not waited for.

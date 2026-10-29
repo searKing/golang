@@ -311,6 +311,76 @@ func TestThread_PprofLabels(t *testing.T) {
 	}
 }
 
+type ctxKey struct{}
+
+func TestThread_DoContext(t *testing.T) {
+	t.Run("caller canceled", func(t *testing.T) {
+		var thread sync_.Thread
+		defer thread.ShutdownContext(t.Context())
+		errCaller := errors.New("caller canceled")
+		ctx, cancel := context.WithCancelCause(context.WithValue(t.Context(), ctxKey{}, "v"))
+		var value any
+		var cause error
+		err := thread.DoContext(ctx, func(ctx context.Context) {
+			value = ctx.Value(ctxKey{})
+			cancel(errCaller)
+			<-ctx.Done()
+			cause = context.Cause(ctx)
+		})
+		if err != nil {
+			t.Fatalf("DoContext = %v, want nil", err)
+		}
+		if value != "v" {
+			t.Errorf("value of ctx passed to f = %v, want %v", value, "v")
+		}
+		if !errors.Is(cause, errCaller) {
+			t.Errorf("cause of ctx passed to f = %v, want %v", cause, errCaller)
+		}
+	})
+
+	t.Run("shutdown", func(t *testing.T) {
+		var thread sync_.Thread
+		started := make(chan struct{})
+		var cause error
+		var wg sync.WaitGroup
+		wg.Go(func() {
+			err := thread.DoContext(t.Context(), func(ctx context.Context) {
+				close(started)
+				<-ctx.Done()
+				cause = context.Cause(ctx)
+			})
+			if err != nil {
+				t.Errorf("DoContext = %v, want nil", err)
+			}
+		})
+		<-started
+		if err := thread.ShutdownContext(t.Context()); err != nil {
+			t.Fatalf("ShutdownContext = %v, want nil", err)
+		}
+		wg.Wait()
+		if !errors.Is(cause, sync_.ErrThreadClosed) {
+			t.Errorf("cause of ctx passed to f = %v, want %v", cause, sync_.ErrThreadClosed)
+		}
+	})
+
+	t.Run("escape thread", func(t *testing.T) {
+		var thread sync_.Thread
+		var ok bool
+		err := thread.DoContext(t.Context(), func(ctx context.Context) {
+			// Shutdown from within f is safe with escape, as f does not run on the Thread.
+			_ = thread.ShutdownContext(ctx)
+			<-ctx.Done()
+			ok = errors.Is(context.Cause(ctx), sync_.ErrThreadClosed)
+		}, sync_.WithThreadDoEscapeThread(true))
+		if err != nil {
+			t.Fatalf("DoContext = %v, want nil", err)
+		}
+		if !ok {
+			t.Errorf("ctx passed to f is not canceled with %v by Shutdown", sync_.ErrThreadClosed)
+		}
+	})
+}
+
 func TestThread_Goexit(t *testing.T) {
 	var thread sync_.Thread
 	defer thread.ShutdownContext(t.Context())
