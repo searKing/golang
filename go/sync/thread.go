@@ -38,23 +38,18 @@ type threadDo struct {
 // (see runtime.LockOSThread), for calling OS services or non-Go libraries
 // that depend on per-thread state.
 //
-// Unless GoRoutine is true, the OS thread is never used by other goroutines: when the Thread exits,
+// The OS thread is never used by other goroutines: when the Thread exits,
 // the thread is terminated, so f may change its state permanently, e.g. by setns(2) on Linux.
 //
 // A Thread cannot be relied on to run f on the main thread of the process, which some APIs require,
 // e.g. Cocoa on macOS; to run code there, call runtime.LockOSThread in an init function
 // of package main, and run that code from function main.
 //
-// The zero value is ready to use. GoRoutine must be set before the first call
-// to Do, DoContext, Shutdown or ShutdownContext, and must not be changed afterwards.
+// The zero value is ready to use.
 //
 // The worker goroutine carries the pprof label "sync.Thread"="worker",
 // so live Threads, e.g. ones never shut down, can be found in goroutine profiles.
 type Thread struct {
-	// GoRoutine, if true, runs f on a dedicated goroutine
-	// without locking it to an OS thread.
-	GoRoutine bool
-
 	once       sync.Once
 	inShutdown atomic.Bool   // true when Thread is in shutdown
 	osThread   atomic.Uint64 // ID of the OS thread locked by the worker goroutine, 0 if unknown
@@ -108,7 +103,7 @@ func (t *Thread) Stats() ThreadStats {
 // If f calls runtime.Goexit, Do calls runtime.Goexit in the caller's goroutine;
 // if f was running on the Thread, the Thread is closed as well.
 //
-// Calling Do from within f calls the inner f directly on Linux and Windows unless GoRoutine is true,
+// Calling Do from within f calls the inner f directly on Linux and Windows,
 // as the caller is already on the Thread. Elsewhere it blocks until ctx is done,
 // as the Thread is busy running f; pass WithThreadDoEscapeThread(true) there.
 func (t *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error {
@@ -249,15 +244,13 @@ func (t *Thread) loop() {
 	defer t.cancel(ErrThreadClosed) // also closes the Thread if f calls runtime.Goexit
 	t.running.Store(true)
 	defer t.running.Store(false)
-	if !t.GoRoutine {
-		// Never unlock: f may change the state of the OS thread permanently,
-		// so the thread is terminated with the worker goroutine instead of running other goroutines.
-		runtime.LockOSThread()
-		if id, ok := osThreadID(); ok {
-			t.osThread.Store(id)
-			// Clear before the thread is terminated, as its ID may be reused by a new thread.
-			defer t.osThread.Store(0)
-		}
+	// Never unlock: f may change the state of the OS thread permanently,
+	// so the thread is terminated with the worker goroutine instead of running other goroutines.
+	runtime.LockOSThread()
+	if id, ok := osThreadID(); ok {
+		t.osThread.Store(id)
+		// Clear before the thread is terminated, as its ID may be reused by a new thread.
+		defer t.osThread.Store(0)
 	}
 	for {
 		// Check done first, since select chooses randomly among ready cases;

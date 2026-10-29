@@ -360,15 +360,18 @@ func TestThread_NestedDo(t *testing.T) {
 		}
 	})
 
-	t.Run("GoRoutine", func(t *testing.T) {
-		thread := sync_.Thread{GoRoutine: true}
+	t.Run("no OS thread ID", func(t *testing.T) {
+		if _, ok := sync_.OSThreadID(); ok {
+			t.Skip("OS thread ID supported on " + runtime.GOOS)
+		}
+		var thread sync_.Thread
 		defer thread.ShutdownContext(t.Context())
 		err := thread.Do(t.Context(), func() {
-			// Without a locked OS thread, the caller cannot be told apart, so nested Do still blocks.
+			// The caller cannot be told apart, so nested Do still blocks.
 			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
 			defer cancel()
 			if err := thread.Do(ctx, func() {}); !errors.Is(err, context.DeadlineExceeded) {
-				t.Errorf("nested Do with GoRoutine = %v, want %v", err, context.DeadlineExceeded)
+				t.Errorf("nested Do = %v, want %v", err, context.DeadlineExceeded)
 			}
 		})
 		if err != nil {
