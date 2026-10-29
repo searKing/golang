@@ -5,11 +5,14 @@
 package sync_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"expvar"
 	"fmt"
 	"runtime"
+	"runtime/pprof"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -278,6 +281,33 @@ func TestThread_Stats(t *testing.T) {
 	}
 	if s := thread.Stats(); s.Running {
 		t.Errorf("Stats after Shutdown = %+v, want not Running", s)
+	}
+}
+
+func TestThread_PprofLabels(t *testing.T) {
+	var thread sync_.Thread
+	defer thread.ShutdownContext(t.Context())
+	// Start the worker from a labeled goroutine, whose labels must not be inherited by the worker.
+	pprof.Do(t.Context(), pprof.Labels("caller", "test"), func(ctx context.Context) {
+		_ = thread.Do(ctx, func() {})
+	})
+
+	var buf bytes.Buffer
+	if err := pprof.Lookup("goroutine").WriteTo(&buf, 1); err != nil {
+		t.Fatalf("write goroutine profile: %v", err)
+	}
+	var found bool
+	for record := range strings.SplitSeq(buf.String(), "\n\n") {
+		if !strings.Contains(record, "(*Thread).loop") {
+			continue
+		}
+		if !strings.Contains(record, `# labels: {"sync.Thread":"worker"}`) {
+			t.Errorf("worker goroutine labels, want only \"sync.Thread\":\"worker\":\n%s", record)
+		}
+		found = true
+	}
+	if !found {
+		t.Fatalf("worker goroutine not found in goroutine profile:\n%s", buf.String())
 	}
 }
 

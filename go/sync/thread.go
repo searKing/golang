@@ -9,6 +9,7 @@ import (
 	"errors"
 	"expvar"
 	"runtime"
+	"runtime/pprof"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,6 +20,12 @@ import (
 var (
 	threadStatsOnce                          sync.Once
 	osThreadLeak, goroutineLeak, handlerLeak expvar_.Leak
+)
+
+// pprof label of the Thread's worker goroutine.
+const (
+	threadLabelKey    = "sync.Thread"
+	threadLabelWorker = "worker"
 )
 
 // ErrThreadClosed is returned by the Thread's Do method
@@ -40,6 +47,9 @@ type threadDo struct {
 // The zero value is ready to use. All exported fields must be set (or WatchStats called)
 // before the first call to Do, Shutdown or ShutdownContext,
 // and must not be changed afterwards.
+//
+// The worker goroutine carries the pprof label "sync.Thread"="worker",
+// so live Threads, e.g. ones never shut down, can be found in goroutine profiles.
 type Thread struct {
 	// GoRoutine, if true, runs f on a dedicated goroutine
 	// without locking it to an OS thread.
@@ -230,6 +240,9 @@ func (t *Thread) initOnce() {
 
 // loop runs f received from Do on the worker goroutine until the Thread is closed.
 func (t *Thread) loop() {
+	// Replace the labels inherited from the goroutine calling Do first,
+	// so the worker can be found by its own label in goroutine profiles.
+	pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels(threadLabelKey, threadLabelWorker)))
 	defer close(t.done)
 	defer t.cancel(ErrThreadClosed) // also closes the Thread if f calls runtime.Goexit
 	t.running.Store(true)
