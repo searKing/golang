@@ -278,6 +278,22 @@ func TestThread_DoContext(t *testing.T) {
 		}
 	})
 
+	t.Run("closed", func(t *testing.T) {
+		var thread sync_.Thread
+		thread.Shutdown()
+		var do bool
+		err := thread.DoContext(t.Context(), func(ctx context.Context) { do = true })
+		if !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("DoContext on closed Thread = %v, want %v", err, sync_.ErrThreadClosed)
+		}
+		if do {
+			t.Errorf("f called on closed Thread")
+		}
+		if s := thread.Stats(); s.Calls != 1 {
+			t.Errorf("Stats.Calls = %d, want 1", s.Calls)
+		}
+	})
+
 	t.Run("escape thread", func(t *testing.T) {
 		var thread sync_.Thread
 		var ok bool

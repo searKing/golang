@@ -146,8 +146,11 @@ func (t *Thread) DoContext(ctx context.Context, f func(ctx context.Context), opt
 	t.initOnce()
 	fctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
-	stop := context.AfterFunc(t.ctx, func() { cancel(context.Cause(t.ctx)) })
-	defer stop()
+	// Do rejects f on a closed Thread, so skip AfterFunc, which would start a goroutine at once.
+	if t.ctx.Err() == nil {
+		stop := context.AfterFunc(t.ctx, func() { cancel(context.Cause(t.ctx)) })
+		defer stop()
+	}
 	return t.Do(ctx, func() { f(fctx) }, opts...)
 }
 
