@@ -8,6 +8,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"os/exec"
 	"runtime"
 	"runtime/pprof"
 	"strings"
@@ -26,14 +29,14 @@ func (o *one) Increment() {
 }
 
 func run(ctx context.Context, thread *sync_.Thread, o *one, c chan bool) {
-	_ = thread.Do(ctx, func() { o.Increment() })
+	_ = thread.Do(ctx, func(context.Context) { o.Increment() })
 	c <- true
 }
 
 func TestThread(t *testing.T) {
 	o := new(one)
 	thread := new(sync_.Thread)
-	defer thread.ShutdownContext(t.Context())
+	defer thread.Shutdown(t.Context())
 	c := make(chan bool)
 	const N = 10
 	for range N {
@@ -47,42 +50,34 @@ func TestThread(t *testing.T) {
 	}
 }
 
-func TestThreadPanic(t *testing.T) {
-	var thread sync_.Thread
-	func() {
-		defer func() {
-			r := recover()
-			if r == nil {
-				t.Fatalf("Thread.Do did not panic")
-			}
-			if r != "failed" {
-				t.Fatalf("Thread.Do panic with %v, want %v", r, "failed")
-			}
-		}()
-		_ = thread.Do(t.Context(), func() {
-			panic("failed")
-		})
-	}()
+func threadPanicker(context.Context) { panic("failed") }
 
-	{
-		var do bool
-		_ = thread.Do(t.Context(), func() {
-			do = true
-		})
-		if !do {
-			t.Fatalf("Thread.Do did not called")
+func TestThreadPanic(t *testing.T) {
+	if os.Getenv("SYNC_TEST_THREAD_PANIC") == "1" {
+		var thread sync_.Thread
+		_ = thread.Do(context.Background(), threadPanicker)
+		fmt.Println("Do returned")
+		return
+	}
+	switch runtime.GOOS {
+	case "js", "wasip1", "ios", "android":
+		t.Skipf("cannot exec subprocess on %s", runtime.GOOS)
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=^TestThreadPanic$")
+	cmd.Env = append(os.Environ(), "SYNC_TEST_THREAD_PANIC=1")
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatalf("panic in f did not crash the program:\n%s", out)
+	}
+	// The crash must report where f panicked, not where it was rethrown.
+	for _, want := range []string{"panic: failed", "sync_test.threadPanicker("} {
+		if !bytes.Contains(out, []byte(want)) {
+			t.Errorf("crash output does not contain %q:\n%s", want, out)
 		}
 	}
-	thread.Shutdown()
-
-	{
-		var do bool
-		_ = thread.Do(t.Context(), func() {
-			do = true
-		})
-		if do {
-			t.Fatalf("Thread.Do called after Thread.Shutdown")
-		}
+	if bytes.Contains(out, []byte("Do returned")) {
+		t.Errorf("Do returned after f panicked:\n%s", out)
 	}
 }
 
@@ -90,15 +85,26 @@ func TestThreadCancel(t *testing.T) {
 	var thread sync_.Thread
 	var errThreadClosedByUser = errors.New("sync: Thread closed by user")
 	{
+		// Keep the Thread busy, so f below waits to be taken until canceled.
+		busy := make(chan struct{})
+		release := make(chan struct{})
+		var busyWG sync.WaitGroup
+		busyWG.Go(func() {
+			_ = thread.Do(t.Context(), func(context.Context) {
+				close(busy)
+				<-release
+			})
+		})
+		<-busy
+
 		var wg sync.WaitGroup
 		wg.Add(1)
 		ctx, cancel := context.WithCancelCause(t.Context())
 
 		go func() {
 			defer wg.Done()
-			// Block until canceled
-			err := thread.Do(ctx, func() {
-				select {}
+			err := thread.Do(ctx, func(context.Context) {
+				t.Errorf("Thread.Do called f with ctx canceled before f was taken")
 			})
 			if err == nil {
 				t.Errorf("Thread.Do did not return error")
@@ -112,13 +118,15 @@ func TestThreadCancel(t *testing.T) {
 		}()
 		cancel(errThreadClosedByUser)
 		wg.Wait()
+		close(release)
+		busyWG.Wait()
 	}
 
 	var wg sync.WaitGroup
 	release := make(chan struct{})
 	wg.Go(func() {
-		// Either rejected by Shutdown, or run on the Thread until released.
-		err := thread.Do(t.Context(), func() {
+		// Either rejected by Close, or run on the Thread until released.
+		err := thread.Do(t.Context(), func(context.Context) {
 			<-release
 		})
 		if err != nil && !errors.Is(err, sync_.ErrThreadClosed) {
@@ -128,20 +136,20 @@ func TestThreadCancel(t *testing.T) {
 	defer func() {
 		close(release)
 		wg.Wait()
-		if err := thread.ShutdownContext(t.Context()); err != nil {
-			t.Errorf("ShutdownContext after f released = %v, want nil", err)
+		if err := thread.Shutdown(t.Context()); err != nil {
+			t.Errorf("Shutdown after f released = %v, want nil", err)
 		}
 	}()
 
-	thread.Shutdown()
+	thread.Close()
 
 	{
 		var do bool
-		err := thread.Do(t.Context(), func() {
+		err := thread.Do(t.Context(), func(context.Context) {
 			do = true
 		})
 		if do {
-			t.Fatalf("Thread.Do called after Thread.Shutdown")
+			t.Fatalf("Thread.Do called after Thread.Close")
 		}
 		if err == nil {
 			t.Errorf("Thread.Do did not return error")
@@ -157,8 +165,8 @@ func TestThreadCancel(t *testing.T) {
 
 func BenchmarkThread(b *testing.B) {
 	var thread sync_.Thread
-	defer thread.ShutdownContext(b.Context())
-	f := func() {}
+	defer thread.Shutdown(b.Context())
+	f := func(context.Context) {}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			_ = thread.Do(b.Context(), f)
@@ -176,7 +184,7 @@ func TestThread_Stats(t *testing.T) {
 	release := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		_ = thread.Do(t.Context(), func() {
+		_ = thread.Do(t.Context(), func(context.Context) {
 			close(started)
 			<-release
 		})
@@ -191,8 +199,8 @@ func TestThread_Stats(t *testing.T) {
 		t.Errorf("Stats after f returned = %+v, want Running, Active 0, Calls 1, WaitDuration > 0", s)
 	}
 
-	if err := thread.ShutdownContext(t.Context()); err != nil {
-		t.Fatalf("ShutdownContext = %v, want nil", err)
+	if err := thread.Shutdown(t.Context()); err != nil {
+		t.Fatalf("Shutdown = %v, want nil", err)
 	}
 	if s := thread.Stats(); s.Running {
 		t.Errorf("Stats after Shutdown = %+v, want not Running", s)
@@ -201,10 +209,10 @@ func TestThread_Stats(t *testing.T) {
 
 func TestThread_PprofLabels(t *testing.T) {
 	var thread sync_.Thread
-	defer thread.ShutdownContext(t.Context())
+	defer thread.Shutdown(t.Context())
 	// Start the worker from a labeled goroutine, whose labels must not be inherited by the worker.
 	pprof.Do(t.Context(), pprof.Labels("caller", "test"), func(ctx context.Context) {
-		_ = thread.Do(ctx, func() {})
+		_ = thread.Do(ctx, func(context.Context) {})
 	})
 
 	var buf bytes.Buffer
@@ -228,22 +236,22 @@ func TestThread_PprofLabels(t *testing.T) {
 
 type ctxKey struct{}
 
-func TestThread_DoContext(t *testing.T) {
+func TestThread_Context(t *testing.T) {
 	t.Run("caller canceled", func(t *testing.T) {
 		var thread sync_.Thread
-		defer thread.ShutdownContext(t.Context())
+		defer thread.Shutdown(t.Context())
 		errCaller := errors.New("caller canceled")
 		ctx, cancel := context.WithCancelCause(context.WithValue(t.Context(), ctxKey{}, "v"))
 		var value any
 		var cause error
-		err := thread.DoContext(ctx, func(ctx context.Context) {
+		err := thread.Do(ctx, func(ctx context.Context) {
 			value = ctx.Value(ctxKey{})
 			cancel(errCaller)
 			<-ctx.Done()
 			cause = context.Cause(ctx)
 		})
 		if err != nil {
-			t.Fatalf("DoContext = %v, want nil", err)
+			t.Fatalf("Do = %v, want nil", err)
 		}
 		if value != "v" {
 			t.Errorf("value of ctx passed to f = %v, want %v", value, "v")
@@ -259,18 +267,18 @@ func TestThread_DoContext(t *testing.T) {
 		var cause error
 		var wg sync.WaitGroup
 		wg.Go(func() {
-			err := thread.DoContext(t.Context(), func(ctx context.Context) {
+			err := thread.Do(t.Context(), func(ctx context.Context) {
 				close(started)
 				<-ctx.Done()
 				cause = context.Cause(ctx)
 			})
 			if err != nil {
-				t.Errorf("DoContext = %v, want nil", err)
+				t.Errorf("Do = %v, want nil", err)
 			}
 		})
 		<-started
-		if err := thread.ShutdownContext(t.Context()); err != nil {
-			t.Fatalf("ShutdownContext = %v, want nil", err)
+		if err := thread.Shutdown(t.Context()); err != nil {
+			t.Fatalf("Shutdown = %v, want nil", err)
 		}
 		wg.Wait()
 		if !errors.Is(cause, sync_.ErrThreadClosed) {
@@ -278,13 +286,32 @@ func TestThread_DoContext(t *testing.T) {
 		}
 	})
 
+	t.Run("close from within f", func(t *testing.T) {
+		var thread sync_.Thread
+		var cause error
+		err := thread.Do(t.Context(), func(ctx context.Context) {
+			thread.Close()
+			<-ctx.Done()
+			cause = context.Cause(ctx)
+		})
+		if err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if !errors.Is(cause, sync_.ErrThreadClosed) {
+			t.Errorf("cause of ctx passed to f = %v, want %v", cause, sync_.ErrThreadClosed)
+		}
+		if err := thread.Shutdown(t.Context()); err != nil {
+			t.Errorf("Shutdown = %v, want nil", err)
+		}
+	})
+
 	t.Run("closed", func(t *testing.T) {
 		var thread sync_.Thread
-		thread.Shutdown()
+		thread.Close()
 		var do bool
-		err := thread.DoContext(t.Context(), func(ctx context.Context) { do = true })
+		err := thread.Do(t.Context(), func(context.Context) { do = true })
 		if !errors.Is(err, sync_.ErrThreadClosed) {
-			t.Errorf("DoContext on closed Thread = %v, want %v", err, sync_.ErrThreadClosed)
+			t.Errorf("Do on closed Thread = %v, want %v", err, sync_.ErrThreadClosed)
 		}
 		if do {
 			t.Errorf("f called on closed Thread")
@@ -293,40 +320,16 @@ func TestThread_DoContext(t *testing.T) {
 			t.Errorf("Stats.Calls = %d, want 1", s.Calls)
 		}
 	})
-
-	t.Run("escape thread", func(t *testing.T) {
-		var thread sync_.Thread
-		var ok bool
-		err := thread.DoContext(t.Context(), func(ctx context.Context) {
-			// Shutdown from within f is safe with escape, as f does not run on the Thread.
-			_ = thread.ShutdownContext(ctx)
-			<-ctx.Done()
-			ok = errors.Is(context.Cause(ctx), sync_.ErrThreadClosed)
-		}, sync_.WithThreadDoEscapeThread(true))
-		if err != nil {
-			t.Fatalf("DoContext = %v, want nil", err)
-		}
-		if !ok {
-			t.Errorf("ctx passed to f is not canceled with %v by Shutdown", sync_.ErrThreadClosed)
-		}
-	})
 }
 
 func TestThread_NestedDo(t *testing.T) {
-	skipIfNoOSThreadID := func(t *testing.T) {
-		if _, ok := sync_.OSThreadID(); !ok {
-			t.Skipf("OS thread ID is not supported on %s", runtime.GOOS)
-		}
-	}
-
 	t.Run("inline", func(t *testing.T) {
-		skipIfNoOSThreadID(t)
 		var thread sync_.Thread
-		defer thread.ShutdownContext(t.Context())
+		defer thread.Shutdown(t.Context())
 		var outer, inner uint64
-		err := thread.Do(t.Context(), func() {
-			outer, _ = sync_.OSThreadID()
-			if err := thread.Do(t.Context(), func() { inner, _ = sync_.OSThreadID() }); err != nil {
+		err := thread.Do(t.Context(), func(ctx context.Context) {
+			outer = sync_.CallerID()
+			if err := thread.Do(ctx, func(context.Context) { inner = sync_.CallerID() }); err != nil {
 				t.Errorf("nested Do = %v, want nil", err)
 			}
 		})
@@ -334,18 +337,51 @@ func TestThread_NestedDo(t *testing.T) {
 			t.Fatalf("Do = %v, want nil", err)
 		}
 		if inner == 0 || inner != outer {
-			t.Errorf("nested f ran on OS thread %d, want %d of the Thread", inner, outer)
+			t.Errorf("nested f ran on %d, want %d of the Thread", inner, outer)
+		}
+	})
+
+	t.Run("unrelated ctx", func(t *testing.T) {
+		var thread sync_.Thread
+		defer thread.Shutdown(t.Context())
+		err := thread.Do(t.Context(), func(context.Context) {
+			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
+			defer cancel()
+			err := thread.Do(ctx, func(context.Context) {})
+			if !errors.Is(err, context.DeadlineExceeded) {
+				t.Errorf("nested Do with unrelated ctx = %v, want %v", err, context.DeadlineExceeded)
+			}
+		})
+		if err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+	})
+
+	t.Run("panic", func(t *testing.T) {
+		var thread sync_.Thread
+		defer thread.Shutdown(t.Context())
+		var r any
+		err := thread.Do(t.Context(), func(ctx context.Context) {
+			defer func() { r = recover() }()
+			_ = thread.Do(ctx, threadPanicker)
+		})
+		if err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if r != "failed" {
+			t.Errorf("outer f recovered %v from nested Do, want %v", r, "failed")
 		}
 	})
 
 	t.Run("goroutine started by f", func(t *testing.T) {
-		skipIfNoOSThreadID(t)
 		var thread sync_.Thread
-		defer thread.ShutdownContext(t.Context())
+		defer thread.Shutdown(t.Context())
 		done := make(chan error, 1)
-		err := thread.Do(t.Context(), func() {
-			// Not on the Thread, so its f must wait for this f to return instead of running inline.
-			go func() { done <- thread.Do(t.Context(), func() {}) }()
+		err := thread.Do(t.Context(), func(ctx context.Context) {
+			// Not on the Thread, so its f must wait for this f to return instead of running inline,
+			// even with the ctx passed to f.
+			ctx = context.WithoutCancel(ctx)
+			go func() { done <- thread.Do(ctx, func(context.Context) {}) }()
 			select {
 			case <-done:
 				t.Errorf("Do from a goroutine started by f returned while f is running")
@@ -359,45 +395,30 @@ func TestThread_NestedDo(t *testing.T) {
 			t.Errorf("Do from a goroutine started by f = %v, want nil", err)
 		}
 	})
-
-	t.Run("no OS thread ID", func(t *testing.T) {
-		if _, ok := sync_.OSThreadID(); ok {
-			t.Skip("OS thread ID supported on " + runtime.GOOS)
-		}
-		var thread sync_.Thread
-		defer thread.ShutdownContext(t.Context())
-		err := thread.Do(t.Context(), func() {
-			// The caller cannot be told apart, so nested Do still blocks.
-			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
-			defer cancel()
-			if err := thread.Do(ctx, func() {}); !errors.Is(err, context.DeadlineExceeded) {
-				t.Errorf("nested Do = %v, want %v", err, context.DeadlineExceeded)
-			}
-		})
-		if err != nil {
-			t.Fatalf("Do = %v, want nil", err)
-		}
-	})
 }
 
 func TestThread_Goexit(t *testing.T) {
-	var thread sync_.Thread
-	defer thread.ShutdownContext(t.Context())
-	// Escape first, as runtime.Goexit on the Thread closes it.
-	for _, escape := range []bool{true, false} {
-		var returned bool
-		var wg sync.WaitGroup
-		wg.Go(func() {
-			_ = thread.Do(t.Context(), runtime.Goexit, sync_.WithThreadDoEscapeThread(escape))
-			returned = true
-		})
-		wg.Wait()
-		if returned {
-			t.Fatalf("Do of f calling runtime.Goexit returned in caller's goroutine, escape=%v", escape)
+	for _, nested := range []bool{false, true} {
+		var thread sync_.Thread
+		defer thread.Shutdown(t.Context())
+		f := func(context.Context) { runtime.Goexit() }
+		if nested {
+			f = func(ctx context.Context) { _ = thread.Do(ctx, func(context.Context) { runtime.Goexit() }) }
 		}
-	}
-	if err := thread.Do(t.Context(), func() {}); !errors.Is(err, sync_.ErrThreadClosed) {
-		t.Fatalf("Do after runtime.Goexit = %v, want %v", err, sync_.ErrThreadClosed)
+		// f has been called, so Do reports no error, as ErrThreadClosed means f was not called.
+		if err := thread.Do(t.Context(), f); err != nil {
+			t.Fatalf("Do of f calling runtime.Goexit = %v, want nil, nested=%v", err, nested)
+		}
+		if !sync_.ThreadClosed(&thread) {
+			t.Fatalf("Thread not closed when Do of f calling runtime.Goexit returned, nested=%v", nested)
+		}
+		err := thread.Do(t.Context(), func(context.Context) {})
+		if !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Fatalf("Do after runtime.Goexit = %v, want %v, nested=%v", err, sync_.ErrThreadClosed, nested)
+		}
+		if !strings.Contains(err.Error(), "runtime.Goexit") {
+			t.Errorf("Do after runtime.Goexit = %v, want it to report runtime.Goexit, nested=%v", err, nested)
+		}
 	}
 }
 
@@ -420,8 +441,8 @@ func TestThread_ShutdownBeforeUse(t *testing.T) {
 		name     string
 		shutdown func(thread *sync_.Thread) error
 	}{
-		{"Shutdown", func(thread *sync_.Thread) error { thread.Shutdown(); return nil }},
-		{"ShutdownContext", func(thread *sync_.Thread) error { return thread.ShutdownContext(t.Context()) }},
+		{"Close", func(thread *sync_.Thread) error { thread.Close(); return nil }},
+		{"Shutdown", func(thread *sync_.Thread) error { return thread.Shutdown(t.Context()) }},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -430,7 +451,7 @@ func TestThread_ShutdownBeforeUse(t *testing.T) {
 				t.Fatalf("%s of unused Thread = %v, want nil", tt.name, err)
 			}
 			var do bool
-			if err := thread.Do(t.Context(), func() { do = true }); !errors.Is(err, sync_.ErrThreadClosed) {
+			if err := thread.Do(t.Context(), func(context.Context) { do = true }); !errors.Is(err, sync_.ErrThreadClosed) {
 				t.Fatalf("Do after %s = %v, want %v", tt.name, err, sync_.ErrThreadClosed)
 			}
 			if do {
@@ -444,32 +465,32 @@ func TestThread_ShutdownBeforeUse(t *testing.T) {
 
 	// The hook itself works: a used Thread starts the worker goroutine once.
 	var thread sync_.Thread
-	_ = thread.Do(t.Context(), func() {})
-	_ = thread.Do(t.Context(), func() {})
-	if err := thread.ShutdownContext(t.Context()); err != nil {
-		t.Fatalf("ShutdownContext = %v, want nil", err)
+	_ = thread.Do(t.Context(), func(context.Context) {})
+	_ = thread.Do(t.Context(), func(context.Context) {})
+	if err := thread.Shutdown(t.Context()); err != nil {
+		t.Fatalf("Shutdown = %v, want nil", err)
 	}
 	if n := started(&thread); n != 1 {
 		t.Errorf("worker goroutine of used Thread started %d times, want 1", n)
 	}
 }
 
-func TestThread_ShutdownNoWait(t *testing.T) {
+func TestThread_Close(t *testing.T) {
 	var thread sync_.Thread
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		_ = thread.Do(t.Context(), func() {
+		_ = thread.Do(t.Context(), func(context.Context) {
 			close(started)
 			<-release
 		})
 	})
 	<-started
 
-	thread.Shutdown() // must return while f is still running
-	if err := thread.Do(t.Context(), func() {}); !errors.Is(err, sync_.ErrThreadClosed) {
-		t.Errorf("Do after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
+	thread.Close() // must return while f is still running
+	if err := thread.Do(t.Context(), func(context.Context) {}); !errors.Is(err, sync_.ErrThreadClosed) {
+		t.Errorf("Do after Close = %v, want %v", err, sync_.ErrThreadClosed)
 	}
 	if !thread.Stats().Running {
 		t.Errorf("worker goroutine exited before running f returned")
@@ -477,19 +498,19 @@ func TestThread_ShutdownNoWait(t *testing.T) {
 
 	close(release)
 	wg.Wait()
-	if err := thread.ShutdownContext(t.Context()); err != nil {
-		t.Errorf("ShutdownContext after Shutdown = %v, want nil", err)
+	if err := thread.Shutdown(t.Context()); err != nil {
+		t.Errorf("Shutdown after Close = %v, want nil", err)
 	}
 }
 
-func TestThread_ShutdownGraceful(t *testing.T) {
+func TestThread_Shutdown(t *testing.T) {
 	var thread sync_.Thread
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var finished atomic.Bool
 	doErr := make(chan error, 1)
 	go func() {
-		doErr <- thread.Do(t.Context(), func() {
+		doErr <- thread.Do(t.Context(), func(context.Context) {
 			close(started)
 			<-release
 			finished.Store(true)
@@ -499,19 +520,19 @@ func TestThread_ShutdownGraceful(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer cancel()
-	if err := thread.ShutdownContext(ctx); !errors.Is(err, context.DeadlineExceeded) {
-		t.Fatalf("ShutdownContext with running f = %v, want %v", err, context.DeadlineExceeded)
+	if err := thread.Shutdown(ctx); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("Shutdown with running f = %v, want %v", err, context.DeadlineExceeded)
 	}
-	if err := thread.Do(t.Context(), func() {}); !errors.Is(err, sync_.ErrThreadClosed) {
+	if err := thread.Do(t.Context(), func(context.Context) {}); !errors.Is(err, sync_.ErrThreadClosed) {
 		t.Fatalf("Do after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
 	}
 
 	close(release)
-	if err := thread.ShutdownContext(t.Context()); err != nil {
-		t.Fatalf("ShutdownContext after f returned = %v, want nil", err)
+	if err := thread.Shutdown(t.Context()); err != nil {
+		t.Fatalf("Shutdown after f returned = %v, want nil", err)
 	}
 	if !finished.Load() {
-		t.Fatalf("ShutdownContext returned before running f finished")
+		t.Fatalf("Shutdown returned before running f finished")
 	}
 	if err := <-doErr; err != nil {
 		t.Fatalf("Do of running f = %v, want nil", err)

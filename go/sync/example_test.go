@@ -27,7 +27,7 @@ func ExampleWalk() {
 		return nil
 	})
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		walkChan <- fmt.Sprintf("%d", i)
 	}
 	close(walkChan)
@@ -41,12 +41,12 @@ func ExampleWalk() {
 
 func ExampleThread() {
 	var thread sync.Thread
-	defer thread.ShutdownContext(context.Background())
+	defer thread.Shutdown(context.Background())
 
 	// Every f runs on the same OS thread, one at a time,
 	// so calls depending on per-thread state can be split across calls to Do.
 	for _, step := range []string{"init", "use", "release"} {
-		err := thread.Do(context.Background(), func() {
+		err := thread.Do(context.Background(), func(ctx context.Context) {
 			fmt.Println(step)
 		})
 		if err != nil {
@@ -60,12 +60,12 @@ func ExampleThread() {
 	// release
 }
 
-func ExampleThread_DoContext() {
+func ExampleThread_Do() {
 	var thread sync.Thread
 	started := make(chan struct{})
 	done := make(chan error)
 	go func() {
-		done <- thread.DoContext(context.Background(), func(ctx context.Context) {
+		done <- thread.Do(context.Background(), func(ctx context.Context) {
 			close(started)
 			// A long-running f returns early when the Thread shuts down.
 			<-ctx.Done()
@@ -74,36 +74,36 @@ func ExampleThread_DoContext() {
 	}()
 	<-started
 
-	if err := thread.ShutdownContext(context.Background()); err != nil {
+	if err := thread.Shutdown(context.Background()); err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("DoContext:", <-done)
+	fmt.Println("Do:", <-done)
 	// Output:
 	// f: sync: Thread closed
-	// DoContext: <nil>
+	// Do: <nil>
 }
 
-func ExampleThread_ShutdownContext() {
+func ExampleThread_Shutdown() {
 	var thread sync.Thread
 	started := make(chan struct{})
 	release := make(chan struct{})
-	go thread.Do(context.Background(), func() {
+	go thread.Do(context.Background(), func(ctx context.Context) {
 		close(started)
 		<-release
 	})
 	<-started
 
-	// ShutdownContext waits for the running f, which is still blocked.
+	// Shutdown waits for the running f, which is still blocked.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
-	fmt.Println(thread.ShutdownContext(ctx))
+	fmt.Println(thread.Shutdown(ctx))
 
 	// The Thread no longer accepts f, even though it has not exited yet.
-	fmt.Println(thread.Do(context.Background(), func() {}))
+	fmt.Println(thread.Do(context.Background(), func(ctx context.Context) {}))
 
 	close(release)
-	fmt.Println(thread.ShutdownContext(context.Background()))
+	fmt.Println(thread.Shutdown(context.Background()))
 	// Output:
 	// context deadline exceeded
 	// sync: Thread closed
@@ -112,12 +112,12 @@ func ExampleThread_ShutdownContext() {
 
 func ExampleThread_Stats() {
 	var thread sync.Thread
-	defer thread.ShutdownContext(context.Background())
+	defer thread.Shutdown(context.Background())
 
 	// To publish the stats, use expvar:
 	//
 	//	expvar.Publish("thread", expvar.Func(func() any { return thread.Stats() }))
-	_ = thread.Do(context.Background(), func() {})
+	_ = thread.Do(context.Background(), func(ctx context.Context) {})
 	stats := thread.Stats()
 	fmt.Println(stats.Running, stats.Active, stats.Calls)
 	// Output:

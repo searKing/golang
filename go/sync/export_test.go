@@ -11,4 +11,7 @@ func SetTestHookThreadLoop(hook func(t *Thread)) (restore func()) {
 	return func() { testHookThreadLoop.Store(nil) }
 }
 
-var OSThreadID = osThreadID
+var CallerID = callerID
+
+// ThreadClosed reports whether t is closed, without waiting.
+func ThreadClosed(t *Thread) bool { return t.ctx != nil && t.ctx.Err() != nil }

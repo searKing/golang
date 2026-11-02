@@ -7,6 +7,7 @@ package sync
 import (
 	"context"
 	"errors"
+	"fmt"
 	"runtime"
 	"runtime/pprof"
 	"sync"
@@ -20,19 +21,13 @@ const (
 	threadLabelWorker = "worker"
 )
 
-// ErrThreadClosed is returned by the Thread's Do and DoContext methods
-// after a call to Shutdown or ShutdownContext,
-// or after f called runtime.Goexit on the Thread.
+// ErrThreadClosed is returned by the Thread's Do method, without calling f,
+// after a call to Close or Shutdown, or after an earlier f called runtime.Goexit.
+// In the latter case it is wrapped to report why, so use errors.Is(err, ErrThreadClosed).
 var ErrThreadClosed = errors.New("sync: Thread closed")
 
-//go:generate go-option -type=threadDo
-type threadDo struct {
-	// EscapeThread runs f directly in the caller's goroutine instead of on the Thread,
-	// e.g. when calling Do from within f. f is then neither run on the Thread's OS thread,
-	// nor serialized with other f; so outside of f, use it only for functions safe
-	// to call concurrently from any thread.
-	EscapeThread bool
-}
+// errThreadGoexit closes a Thread whose f called runtime.Goexit.
+var errThreadGoexit = fmt.Errorf("%w: f called runtime.Goexit", ErrThreadClosed)
 
 // Thread runs functions on a single dedicated goroutine locked to an OS thread
 // (see runtime.LockOSThread), for calling OS services or non-Go libraries
@@ -45,14 +40,16 @@ type threadDo struct {
 // e.g. Cocoa on macOS; to run code there, call runtime.LockOSThread in an init function
 // of package main, and run that code from function main.
 //
-// The zero value is ready to use.
+// The zero value is ready to use. A Thread must not be copied after first use.
 //
+// A Thread that has been used holds its goroutine and OS thread until it is closed,
+// even if it is no longer referenced; call Close or Shutdown when it is no longer needed.
 // The worker goroutine carries the pprof label "sync.Thread"="worker",
-// so live Threads, e.g. ones never shut down, can be found in goroutine profiles.
+// so leaked Threads can be found in goroutine profiles.
 type Thread struct {
-	once       sync.Once
-	inShutdown atomic.Bool   // true when Thread is in shutdown
-	osThread   atomic.Uint64 // ID of the OS thread locked by the worker goroutine, 0 if unknown
+	once   sync.Once
+	closed atomic.Bool   // true once Close has been called
+	worker atomic.Uint64 // callerID of the worker goroutine, 0 if not running
 
 	// stats
 	running      atomic.Bool
@@ -60,8 +57,8 @@ type Thread struct {
 	calls        atomic.Int64
 	waitDuration atomic.Int64 // in nanoseconds
 
-	fCh  chan func()   // delivers f to the worker goroutine
-	done chan struct{} // closed when the worker goroutine has exited
+	callCh chan *threadCall // delivers calls to the worker goroutine
+	done   chan struct{}    // closed when the worker goroutine has exited
 
 	ctx    context.Context // canceled with ErrThreadClosed when Thread is closed
 	cancel context.CancelCauseFunc
@@ -92,30 +89,36 @@ func (t *Thread) Stats() ThreadStats {
 	}
 }
 
-// Do calls f on the Thread, or in the caller's goroutine if WithThreadDoEscapeThread(true) is given,
-// and waits for f to return.
+// Do calls f on the Thread's goroutine and waits for f to return.
+// Called from another goroutine, Do runs f as if f were started there by a go statement;
+// called from within f, as described below, Do calls f as a plain function call.
 //
-// Do returns ErrThreadClosed without calling f if the Thread is closed,
-// or the cause of ctx if ctx is done before f starts running.
-// Once f starts running, ctx is ignored and Do waits until f returns.
+// The context passed to f is derived from ctx, and is also canceled
+// with ErrThreadClosed by Close or Shutdown, so a long-running f can return early.
+// The context passed to f is canceled when Do returns.
 //
-// If f panics, Do panics in the caller's goroutine with the same value.
-// If f calls runtime.Goexit, Do calls runtime.Goexit in the caller's goroutine;
-// if f was running on the Thread, the Thread is closed as well.
+// Do waits for the Thread to finish running any other f before running f.
+// If the Thread is closed, or ctx is done, before f starts running,
+// Do returns an error matching ErrThreadClosed, or the cause of ctx,
+// and f is never called.
+// Once f starts running, Do waits until f returns, even if ctx is done.
 //
-// Calling Do from within f calls the inner f directly on Linux and Windows,
-// as the caller is already on the Thread. Elsewhere it blocks until ctx is done,
-// as the Thread is busy running f; pass WithThreadDoEscapeThread(true) there.
-func (t *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error {
-	var opt threadDo
-	opt.ApplyOptions(opts...)
-
+// As on any goroutine, a panic in f that is not recovered on the Thread's goroutine
+// crashes the program. If f calls runtime.Goexit, which exits the Thread's goroutine,
+// the Thread is closed before Do returns nil, as f has been called.
+//
+// Calling Do from within f with the context passed to f, or one derived from it,
+// calls the inner f directly, as the caller is already on the Thread;
+// so a panic or runtime.Goexit in the inner f unwinds the outer f, as with any function call.
+// Calling it with any other context blocks until that context is done,
+// as the Thread is busy running f.
+func (t *Thread) Do(ctx context.Context, f func(ctx context.Context)) error {
 	t.initOnce()
 	t.calls.Add(1)
 	t.active.Add(1)
 	defer t.active.Add(-1)
 	// Check done first, since select chooses randomly among ready cases;
-	// a closed Thread then fails fast, and never calls f with WithThreadDoEscapeThread(true).
+	// a closed Thread then fails fast.
 	select {
 	case <-ctx.Done():
 		return context.Cause(ctx)
@@ -124,52 +127,43 @@ func (t *Thread) Do(ctx context.Context, f func(), opts ...ThreadDoOption) error
 	default:
 	}
 
-	c := &threadCall{f: f, done: make(chan struct{})}
-	if opt.EscapeThread || t.onThread() {
-		c.run()
-		c.result()
+	fctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	stop := context.AfterFunc(t.ctx, func() { cancel(context.Cause(t.ctx)) })
+	defer stop()
+
+	if t.onThread(ctx) {
+		f(fctx)
 		return nil
 	}
-	if err := t.enqueue(ctx, c.run); err != nil {
+	c := &threadCall{ctx: fctx, f: f, done: make(chan struct{})}
+	if err := t.enqueue(ctx, c); err != nil {
 		return err
 	}
 	<-c.done
-	c.result()
 	return nil
 }
 
-// DoContext is like Do, but passes f a context derived from ctx, which is also canceled
-// with ErrThreadClosed when Shutdown or ShutdownContext is called, so a long-running f can return early.
-// The context is canceled when DoContext returns.
-func (t *Thread) DoContext(ctx context.Context, f func(ctx context.Context), opts ...ThreadDoOption) error {
-	t.initOnce()
-	fctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(nil)
-	// Do rejects f on a closed Thread, so skip AfterFunc, which would start a goroutine at once.
-	if t.ctx.Err() == nil {
-		stop := context.AfterFunc(t.ctx, func() { cancel(context.Cause(t.ctx)) })
-		defer stop()
-	}
-	return t.Do(ctx, func() { f(fctx) }, opts...)
-}
+// threadCtxKey is the context key marking the contexts passed to f by the worker goroutine of a Thread.
+type threadCtxKey struct{}
 
-// onThread reports whether the caller is the worker goroutine, i.e. calling Do from within f.
-// It is sound, as no other goroutine runs on the OS thread locked by the worker goroutine.
-func (t *Thread) onThread() bool {
-	worker := t.osThread.Load()
-	if worker == 0 {
+// onThread reports whether the caller is the worker goroutine, i.e. calling Do from within f with ctx.
+func (t *Thread) onThread(ctx context.Context) bool {
+	// ctx alone is not enough, as f may pass it to other goroutines.
+	// Check it first, as callerID is slow on some platforms.
+	if ctx.Value(threadCtxKey{}) != t {
 		return false
 	}
-	id, ok := osThreadID()
-	return ok && id == worker
+	worker := t.worker.Load()
+	return worker != 0 && callerID() == worker
 }
 
-// enqueue blocks until the worker goroutine takes f, ctx is done or the Thread is closed.
-func (t *Thread) enqueue(ctx context.Context, f func()) error {
+// enqueue blocks until the worker goroutine takes c, ctx is done or the Thread is closed.
+func (t *Thread) enqueue(ctx context.Context, c *threadCall) error {
 	waitStart := time.Now()
 	defer func() { t.waitDuration.Add(int64(time.Since(waitStart))) }()
 	select {
-	case t.fCh <- f:
+	case t.callCh <- c:
 		return nil
 	case <-ctx.Done():
 		return context.Cause(ctx)
@@ -178,27 +172,29 @@ func (t *Thread) enqueue(ctx context.Context, f func()) error {
 	}
 }
 
-// Shutdown is like ShutdownContext, but returns without waiting for the running f to return
-// and the worker goroutine to exit.
-func (t *Thread) Shutdown() {
-	t.close()
+// Close stops the Thread from accepting new f, and cancels the contexts passed to f
+// with ErrThreadClosed. Close does not wait for the running f to return
+// and the worker goroutine to exit; for that, use Shutdown.
+//
+// Once Close or Shutdown has been called on a Thread, it may not be reused;
+// future calls to Do will return ErrThreadClosed.
+// Close may be called multiple times and concurrently.
+func (t *Thread) Close() {
+	t.closed.Store(true) // must precede initOnce, so a never used Thread does not start the worker
+	t.initOnce()
+	t.cancel(ErrThreadClosed)
 }
 
-// ShutdownContext gracefully shuts down the Thread without interrupting a running f.
-// ShutdownContext works by first stopping acceptance of new calls to Do,
-// and canceling the contexts passed to f by DoContext, then waiting
-// for the f running on the Thread to return and the worker goroutine to exit,
-// which terminates the OS thread. f running in the caller's goroutine with
-// WithThreadDoEscapeThread(true) is not waited for.
+// Shutdown gracefully shuts down the Thread without interrupting a running f.
+// Shutdown works by first calling Close, then waiting for the running f to return
+// and the worker goroutine to exit, which terminates the OS thread.
 // If the provided context expires before the shutdown is complete,
-// ShutdownContext returns the context's cause.
+// Shutdown returns the context's cause.
 //
-// Once Shutdown or ShutdownContext has been called on a Thread, it may not be reused;
-// future calls to Do will return ErrThreadClosed.
-// ShutdownContext may be called multiple times and concurrently.
-// Calling ShutdownContext from within f blocks until ctx is done, as the Thread is busy running f.
-func (t *Thread) ShutdownContext(ctx context.Context) error {
-	t.close()
+// Shutdown may be called multiple times and concurrently.
+// Calling Shutdown from within f blocks until ctx is done, as the Thread is busy running f.
+func (t *Thread) Shutdown(ctx context.Context) error {
+	t.Close()
 	select {
 	case <-t.done:
 		return nil
@@ -207,19 +203,12 @@ func (t *Thread) ShutdownContext(ctx context.Context) error {
 	}
 }
 
-// close stops the Thread from accepting new f, and signals the worker goroutine to exit.
-func (t *Thread) close() {
-	t.inShutdown.Store(true) // must precede initOnce, so a never used Thread does not start the worker
-	t.initOnce()
-	t.cancel(ErrThreadClosed)
-}
-
 func (t *Thread) initOnce() {
 	t.once.Do(func() {
 		t.ctx, t.cancel = context.WithCancelCause(context.Background())
-		t.fCh = make(chan func())
+		t.callCh = make(chan *threadCall)
 		t.done = make(chan struct{})
-		if t.inShutdown.Load() {
+		if t.closed.Load() {
 			t.cancel(ErrThreadClosed)
 			close(t.done)
 			return
@@ -232,7 +221,7 @@ func (t *Thread) initOnce() {
 // It is atomic, as worker goroutines of other Threads may still be starting when it is set.
 var testHookThreadLoop atomic.Pointer[func(t *Thread)]
 
-// loop runs f received from Do on the worker goroutine until the Thread is closed.
+// loop runs calls received from Do on the worker goroutine until the Thread is closed.
 func (t *Thread) loop() {
 	if hook := testHookThreadLoop.Load(); hook != nil {
 		(*hook)(t)
@@ -241,17 +230,14 @@ func (t *Thread) loop() {
 	// so the worker can be found by its own label in goroutine profiles.
 	pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels(threadLabelKey, threadLabelWorker)))
 	defer close(t.done)
-	defer t.cancel(ErrThreadClosed) // also closes the Thread if f calls runtime.Goexit
 	t.running.Store(true)
 	defer t.running.Store(false)
 	// Never unlock: f may change the state of the OS thread permanently,
 	// so the thread is terminated with the worker goroutine instead of running other goroutines.
 	runtime.LockOSThread()
-	if id, ok := osThreadID(); ok {
-		t.osThread.Store(id)
-		// Clear before the thread is terminated, as its ID may be reused by a new thread.
-		defer t.osThread.Store(0)
-	}
+	t.worker.Store(callerID())
+	// Clear before the thread is terminated, as its ID may be reused by a new thread.
+	defer t.worker.Store(0)
 	for {
 		// Check done first, since select chooses randomly among ready cases;
 		// a closed Thread then exits instead of taking new f.
@@ -261,8 +247,9 @@ func (t *Thread) loop() {
 		default:
 		}
 		select {
-		case f := <-t.fCh:
-			f()
+		case c := <-t.callCh:
+			c.ctx = context.WithValue(c.ctx, threadCtxKey{}, t)
+			t.run(c)
 		case <-t.ctx.Done():
 			return
 		}
@@ -271,29 +258,27 @@ func (t *Thread) loop() {
 
 // threadCall is a single f submitted to Do.
 type threadCall struct {
-	f          func()
-	done       chan struct{} // closed when f has returned, panicked or called runtime.Goexit
-	returned   bool          // f returned normally
-	panicValue any           // value f panicked with
+	ctx  context.Context // passed to f
+	f    func(ctx context.Context)
+	done chan struct{} // closed when f has returned or called runtime.Goexit
 }
 
-func (c *threadCall) run() {
-	defer close(c.done)
+// run calls c.f on the worker goroutine.
+func (t *Thread) run(c *threadCall) {
+	returned := false
 	defer func() {
-		if !c.returned {
-			c.panicValue = recover() // nil if f called runtime.Goexit
+		if x := recover(); x != nil {
+			// f panicked, which is fatal, as on any goroutine.
+			// Leave done open, so Do does not return and race with the crash.
+			panic(x)
 		}
+		if !returned {
+			// f called runtime.Goexit, which exits the worker goroutine;
+			// close the Thread before Do returns.
+			t.cancel(errThreadGoexit)
+		}
+		close(c.done)
 	}()
-	c.f()
-	c.returned = true
-}
-
-// result replays in the caller's goroutine how f ended: panic, runtime.Goexit or normal return.
-func (c *threadCall) result() {
-	if c.panicValue != nil {
-		panic(c.panicValue)
-	}
-	if !c.returned {
-		runtime.Goexit()
-	}
+	c.f(c.ctx)
+	returned = true
 }

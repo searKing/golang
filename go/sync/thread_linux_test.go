@@ -5,6 +5,7 @@
 package sync_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -19,11 +20,11 @@ import (
 func TestThread_OSThreadTerminated(t *testing.T) {
 	var thread sync_.Thread
 	var tid int
-	if err := thread.Do(t.Context(), func() { tid = syscall.Gettid() }); err != nil {
+	if err := thread.Do(t.Context(), func(context.Context) { tid = syscall.Gettid() }); err != nil {
 		t.Fatalf("Do = %v, want nil", err)
 	}
-	if err := thread.ShutdownContext(t.Context()); err != nil {
-		t.Fatalf("ShutdownContext = %v, want nil", err)
+	if err := thread.Shutdown(t.Context()); err != nil {
+		t.Fatalf("Shutdown = %v, want nil", err)
 	}
 
 	// The runtime terminates the OS thread shortly after the worker goroutine exits.
