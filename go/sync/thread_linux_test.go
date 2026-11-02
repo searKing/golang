@@ -23,6 +23,9 @@ func TestThread_OSThreadTerminated(t *testing.T) {
 	if err := thread.Do(t.Context(), func(context.Context) { tid = syscall.Gettid() }); err != nil {
 		t.Fatalf("Do = %v, want nil", err)
 	}
+	if tid == os.Getpid() {
+		t.Fatalf("f ran on the main thread %d, which the runtime never terminates", tid)
+	}
 	if err := thread.Shutdown(t.Context()); err != nil {
 		t.Fatalf("Shutdown = %v, want nil", err)
 	}
@@ -35,7 +38,8 @@ func TestThread_OSThreadTerminated(t *testing.T) {
 			return
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("OS thread %d of the Thread is not terminated after Shutdown: stat %s: %v", tid, task, err)
+			t.Fatalf("OS thread %d of the Thread is not terminated after Shutdown (process %d, main thread: %v): stat %s: %v",
+				tid, os.Getpid(), tid == os.Getpid(), task, err)
 		}
 	}
 }

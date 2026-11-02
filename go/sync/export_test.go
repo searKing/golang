@@ -12,7 +12,18 @@ func SetTestHookThreadLoop(hook func(state any)) (restore func()) {
 	return func() { testHookThreadLoop.Store(nil) }
 }
 
-var CallerID = callerID
+// SetTestHookOnStartupThread sets the hook replacing OnStartupThread for the worker goroutine of a Thread,
+// with the ThreadState of the Thread, and returns a function restoring no hook.
+func SetTestHookOnStartupThread(hook func(state any) bool) (restore func()) {
+	f := func(s *threadState) bool { return hook(s) }
+	testHookOnStartupThread.Store(&f)
+	return func() { testHookOnStartupThread.Store(nil) }
+}
+
+var (
+	CallerID        = callerID
+	OnStartupThread = onStartupThread
+)
 
 // ThreadState returns the state of t shared with its worker goroutine, or nil if t is unused.
 func ThreadState(t *Thread) any {

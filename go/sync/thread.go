@@ -35,8 +35,11 @@ var errThreadGoexit = fmt.Errorf("%w: function passed to Do called runtime.Goexi
 //
 // The OS thread is never used by other goroutines: when the Thread exits,
 // the thread is terminated, so f may change its state permanently, e.g. by setns(2) on Linux.
+// The runtime never terminates the main thread of the process, so on Linux and Windows,
+// a Thread never uses it. Elsewhere a Thread may happen to; when the Thread exits,
+// the main thread is then blocked forever instead, still never used by other goroutines.
 //
-// A Thread cannot be relied on to run f on the main thread of the process, which some APIs require,
+// Thus a Thread cannot be relied on to run f on the main thread, which some APIs require,
 // e.g. Cocoa on macOS; to run code there, call runtime.LockOSThread in an init function
 // of package main, and run that code from function main.
 //
@@ -246,20 +249,49 @@ func (t *Thread) initOnce() *threadState {
 // It is atomic, as worker goroutines of other Threads may still be starting when it is set.
 var testHookThreadLoop atomic.Pointer[func(s *threadState)]
 
-// loop runs calls received from Do on the worker goroutine until the Thread is closed.
+// testHookOnStartupThread, if set, replaces onStartupThread for the worker goroutine of s.
+var testHookOnStartupThread atomic.Pointer[func(s *threadState) bool]
+
+// loop locks the worker goroutine to an OS thread, and serves calls on it until the Thread is closed.
 func (s *threadState) loop() {
 	if hook := testHookThreadLoop.Load(); hook != nil {
 		(*hook)(s)
 	}
+	runtime.LockOSThread()
+	onStartup := onStartupThread()
+	if hook := testHookOnStartupThread.Load(); hook != nil {
+		onStartup = (*hook)(s)
+	}
+	if onStartup {
+		// The runtime never terminates the startup thread, but blocks it forever
+		// once its locked goroutine exits, so the state f leaves on it would stay,
+		// e.g. visible process-wide through /proc/self on Linux.
+		// Serve on a new goroutine instead, which cannot run on this thread while it is locked,
+		// and then release this thread, which no f has run on.
+		locked := make(chan struct{})
+		go func() {
+			runtime.LockOSThread()
+			close(locked)
+			s.serve()
+		}()
+		<-locked
+		runtime.UnlockOSThread()
+		return
+	}
+	s.serve()
+}
+
+// serve runs calls received from Do on the worker goroutine,
+// which is locked to its OS thread, until the Thread is closed.
+// It never unlocks the thread: f may change its state permanently,
+// so the thread is terminated with the worker goroutine instead of running other goroutines.
+func (s *threadState) serve() {
 	// Replace the labels inherited from the goroutine calling Do first,
 	// so the worker can be found by its own label in goroutine profiles.
 	pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels(threadLabelKey, threadLabelWorker)))
 	defer close(s.done)
 	s.running.Store(true)
 	defer s.running.Store(false)
-	// Never unlock: f may change the state of the OS thread permanently,
-	// so the thread is terminated with the worker goroutine instead of running other goroutines.
-	runtime.LockOSThread()
 	s.worker.Store(callerID())
 	// Clear before the thread is terminated, as its ID may be reused by a new thread.
 	defer s.worker.Store(0)

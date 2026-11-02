@@ -24,3 +24,7 @@ func callerID() uint64 {
 	id, _ := strconv.ParseUint(string(b), 10, 64)
 	return id
 }
+
+// onStartupThread reports false, as without the ID of the calling OS thread,
+// the startup thread cannot be told apart.
+func onStartupThread() bool { return false }

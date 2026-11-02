@@ -230,7 +230,7 @@ func TestThread_PprofLabels(t *testing.T) {
 	}
 	var found bool
 	for record := range strings.SplitSeq(buf.String(), "\n\n") {
-		if !strings.Contains(record, "(*threadState).loop") {
+		if !strings.Contains(record, "(*threadState).serve") {
 			continue
 		}
 		if !strings.Contains(record, `# labels: {"sync.Thread":"worker"}`) {
@@ -545,6 +545,30 @@ func TestThread_Shutdown(t *testing.T) {
 	}
 	if err := <-doErr; err != nil {
 		t.Fatalf("Do of running f = %v, want nil", err)
+	}
+}
+
+func TestThread_StartupThread(t *testing.T) {
+	var thread sync_.Thread
+	// Pretend the worker goroutine of thread starts on the startup thread, which it must leave.
+	var startID atomic.Uint64
+	defer sync_.SetTestHookOnStartupThread(func(state any) bool {
+		if state != sync_.ThreadState(&thread) {
+			return sync_.OnStartupThread()
+		}
+		startID.Store(sync_.CallerID())
+		return true
+	})()
+
+	var workerID uint64
+	if err := thread.Do(t.Context(), func(context.Context) { workerID = sync_.CallerID() }); err != nil {
+		t.Fatalf("Do = %v, want nil", err)
+	}
+	if startID.Load() == 0 || workerID == startID.Load() {
+		t.Errorf("f ran on %d, want other than the startup thread %d", workerID, startID.Load())
+	}
+	if err := thread.Shutdown(t.Context()); err != nil {
+		t.Fatalf("Shutdown = %v, want nil", err)
 	}
 }
 
