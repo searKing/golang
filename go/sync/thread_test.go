@@ -572,6 +572,199 @@ func TestThread_StartupThread(t *testing.T) {
 	}
 }
 
+// serve calls thread.Serve on a new goroutine, which stays locked to its OS thread,
+// and returns the channel receiving the result of Serve, and one closed when the goroutine exits.
+// It also returns the callerID of the goroutine, once Serve has been called.
+func serve(thread *sync_.Thread) (errc <-chan error, exited <-chan struct{}, serving func() uint64) {
+	errCh := make(chan error, 1)
+	exitedCh := make(chan struct{})
+	idCh := make(chan uint64, 1)
+	go func() {
+		defer close(exitedCh)
+		idCh <- sync_.CallerID()
+		errCh <- thread.Serve()
+	}()
+	return errCh, exitedCh, sync.OnceValue(func() uint64 { return <-idCh })
+}
+
+func TestThread_Serve(t *testing.T) {
+	t.Run("runs f on the serving thread", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		var ran uint64
+		done := make(chan error, 1)
+		// Do before Serve waits for it, as ServeOnly is set.
+		go func() { done <- thread.Do(t.Context(), func(context.Context) { ran = sync_.CallerID() }) }()
+		errc, _, serving := serve(&thread)
+		if err := <-done; err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if ran == 0 || ran != serving() {
+			t.Errorf("f ran on %d, want the serving thread %d", ran, serving())
+		}
+		thread.Close()
+		if err := <-errc; !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Serve after Close = %v, want %v", err, sync_.ErrThreadClosed)
+		}
+	})
+
+	t.Run("Do waits for Serve", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		defer thread.Close()
+		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
+		defer cancel()
+		var called bool
+		if err := thread.Do(ctx, func(context.Context) { called = true }); !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("Do before Serve = %v, want %v", err, context.DeadlineExceeded)
+		}
+		if called {
+			t.Error("Do before Serve called f")
+		}
+		if thread.Stats().Running {
+			t.Error("Do of a ServeOnly Thread started it")
+		}
+	})
+
+	t.Run("returns after the running f", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		errc, _, _ := serve(&thread)
+		started := make(chan struct{})
+		release := make(chan struct{})
+		done := make(chan error, 1)
+		go func() {
+			done <- thread.Do(t.Context(), func(context.Context) {
+				close(started)
+				<-release
+			})
+		}()
+		<-started
+		thread.Close()
+		select {
+		case err := <-errc:
+			t.Fatalf("Serve returned %v before the running f returned", err)
+		case <-time.After(10 * time.Millisecond):
+		}
+		close(release)
+		if err := <-errc; !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Serve = %v, want %v", err, sync_.ErrThreadClosed)
+		}
+		if err := <-done; err != nil {
+			t.Errorf("Do = %v, want nil", err)
+		}
+	})
+
+	t.Run("Shutdown", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		errc, _, _ := serve(&thread)
+		if err := thread.Do(t.Context(), func(context.Context) {}); err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if err := thread.Shutdown(t.Context()); err != nil {
+			t.Fatalf("Shutdown = %v, want nil", err)
+		}
+		if err := <-errc; !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Serve after Shutdown = %v, want %v", err, sync_.ErrThreadClosed)
+		}
+	})
+
+	t.Run("nested Do", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		errc, _, _ := serve(&thread)
+		defer func() { <-errc }()
+		defer thread.Close()
+		var outer, inner uint64
+		_ = thread.Do(t.Context(), func(ctx context.Context) {
+			outer = sync_.CallerID()
+			_ = thread.Do(ctx, func(context.Context) { inner = sync_.CallerID() })
+		})
+		if inner == 0 || inner != outer {
+			t.Errorf("nested f ran on %d, want %d of the Thread", inner, outer)
+		}
+	})
+
+	t.Run("Goexit exits the serving goroutine", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		errc, exited, _ := serve(&thread)
+		if err := thread.Do(t.Context(), func(context.Context) { runtime.Goexit() }); err != nil {
+			t.Errorf("Do of f calling runtime.Goexit = %v, want nil", err)
+		}
+		<-exited
+		select {
+		case err := <-errc:
+			t.Errorf("Serve returned %v after f called runtime.Goexit", err)
+		default:
+		}
+		if !sync_.ThreadClosed(&thread) {
+			t.Error("Thread not closed after f called runtime.Goexit")
+		}
+	})
+
+	t.Run("without ServeOnly", func(t *testing.T) {
+		var thread sync_.Thread
+		errc, _, serving := serve(&thread)
+		serving()
+		for !thread.Stats().Running {
+			time.Sleep(time.Millisecond)
+		}
+		var ran uint64
+		if err := thread.Do(t.Context(), func(context.Context) { ran = sync_.CallerID() }); err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		if ran == 0 || ran != serving() {
+			t.Errorf("f ran on %d, want the serving thread %d", ran, serving())
+		}
+		thread.Close()
+		if err := <-errc; !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Serve after Close = %v, want %v", err, sync_.ErrThreadClosed)
+		}
+	})
+
+	t.Run("started by Do", func(t *testing.T) {
+		var thread sync_.Thread
+		defer thread.Shutdown(t.Context())
+		_ = thread.Do(t.Context(), func(context.Context) {})
+		err := thread.Serve()
+		if err == nil || errors.Is(err, sync_.ErrThreadClosed) || err.Error() != "sync: Thread already started" {
+			t.Errorf("Serve of a Thread started by Do = %v, want sync: Thread already started", err)
+		}
+	})
+
+	t.Run("closed", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		thread.Close()
+		if err := thread.Shutdown(t.Context()); err != nil {
+			t.Errorf("Shutdown of a never served Thread = %v, want nil", err)
+		}
+		if err := thread.Serve(); !errors.Is(err, sync_.ErrThreadClosed) {
+			t.Errorf("Serve of a closed Thread = %v, want %v", err, sync_.ErrThreadClosed)
+		}
+	})
+
+	t.Run("concurrent", func(t *testing.T) {
+		thread := sync_.Thread{ServeOnly: true}
+		errc1, _, _ := serve(&thread)
+		errc2, _, _ := serve(&thread)
+		var first error
+		select {
+		case first = <-errc1:
+		case first = <-errc2:
+		}
+		if first == nil || first.Error() != "sync: Thread already started" {
+			t.Errorf("first Serve to return = %v, want sync: Thread already started", first)
+		}
+		thread.Close()
+		select {
+		case err := <-errc1:
+			if !errors.Is(err, sync_.ErrThreadClosed) {
+				t.Errorf("other Serve = %v, want %v", err, sync_.ErrThreadClosed)
+			}
+		case err := <-errc2:
+			if !errors.Is(err, sync_.ErrThreadClosed) {
+				t.Errorf("other Serve = %v, want %v", err, sync_.ErrThreadClosed)
+			}
+		}
+	})
+}
+
 func TestThread_NilFunc(t *testing.T) {
 	var thread sync_.Thread
 	defer thread.Shutdown(t.Context())

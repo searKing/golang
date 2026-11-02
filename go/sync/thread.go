@@ -40,8 +40,7 @@ var errThreadGoexit = fmt.Errorf("%w: function passed to Do called runtime.Goexi
 // the main thread is then blocked forever instead, still never used by other goroutines.
 //
 // Thus a Thread cannot be relied on to run f on the main thread, which some APIs require,
-// e.g. Cocoa on macOS; to run code there, call runtime.LockOSThread in an init function
-// of package main, and run that code from function main.
+// e.g. Cocoa on macOS, unless it is run there by Serve.
 //
 // The zero value is ready to use. A Thread must not be copied after first use.
 //
@@ -50,9 +49,14 @@ var errThreadGoexit = fmt.Errorf("%w: function passed to Do called runtime.Goexi
 // so calling Close is not required; but, as with an os.File, it is recommended
 // to call Close or Shutdown once the Thread is no longer needed,
 // to release the OS thread at once rather than whenever the garbage collector runs.
-// The worker goroutine carries the pprof label "sync.Thread"="worker",
+// The worker goroutine started by a Thread carries the pprof label "sync.Thread"="worker",
 // so live Threads can be found in goroutine profiles.
 type Thread struct {
+	// ServeOnly, if true, makes the Thread run only on a goroutine calling Serve:
+	// Do waits for Serve to be called instead of starting a goroutine of its own.
+	// It must not be changed after first use.
+	ServeOnly bool
+
 	once   sync.Once
 	closed atomic.Bool                 // true once Close has been called
 	state  atomic.Pointer[threadState] // set by initOnce
@@ -62,7 +66,8 @@ type Thread struct {
 // It does not refer to the Thread, so the worker goroutine does not keep
 // an unreferenced Thread from being garbage collected, and thus closed.
 type threadState struct {
-	worker atomic.Uint64 // callerID of the worker goroutine, 0 if not running
+	started atomic.Bool   // set by the first of the worker goroutine, Serve and Close to claim the Thread
+	worker  atomic.Uint64 // callerID of the worker goroutine, 0 if not running
 
 	// stats
 	running      atomic.Bool
@@ -80,7 +85,7 @@ type threadState struct {
 // ThreadStats contains Thread statistics.
 type ThreadStats struct {
 	// Thread Status
-	Running bool // Whether the worker goroutine is running.
+	Running bool // Whether a goroutine, the worker or the one calling Serve, runs the Thread.
 	Active  int  // The number of calls to Do that have not returned.
 
 	// Counters
@@ -114,7 +119,8 @@ func (t *Thread) Stats() ThreadStats {
 // with ErrThreadClosed by Close or Shutdown, so a long-running f can return early.
 // The context passed to f is canceled when Do returns.
 //
-// Do waits for the Thread to finish running any other f before running f.
+// Do waits for the Thread to finish running any other f before running f,
+// and, if ServeOnly is set, for Serve to be called.
 // If the Thread is closed, or ctx is done, before f starts running,
 // Do returns an error matching ErrThreadClosed, or the cause of ctx,
 // and f is never called.
@@ -135,7 +141,7 @@ func (t *Thread) Do(ctx context.Context, f func(ctx context.Context)) error {
 	if f == nil {
 		panic("sync: Thread.Do called with nil function")
 	}
-	s := t.initOnce()
+	s := t.initOnce(!t.ServeOnly)
 	s.calls.Add(1)
 	s.active.Add(1)
 	defer s.active.Add(-1)
@@ -204,13 +210,19 @@ func (s *threadState) enqueue(ctx context.Context, c *threadCall) error {
 // future calls to Do will return ErrThreadClosed.
 // Close may be called multiple times and concurrently.
 func (t *Thread) Close() {
-	t.closed.Store(true) // must precede initOnce, so a never used Thread does not start the worker
-	t.initOnce().cancel(ErrThreadClosed)
+	t.closed.Store(true) // must precede initOnce, so a Do racing with Close does not start the worker
+	s := t.initOnce(false)
+	s.cancel(ErrThreadClosed)
+	if s.started.CompareAndSwap(false, true) {
+		// Nothing has served the Thread, and now nothing will.
+		close(s.done)
+	}
 }
 
 // Shutdown gracefully shuts down the Thread without interrupting a running f.
 // Shutdown works by first calling Close, then waiting for the running f to return
-// and the worker goroutine to exit, which terminates the OS thread.
+// and the worker goroutine to exit, which terminates the OS thread,
+// unless the Thread is run by Serve.
 // If the provided context expires before the shutdown is complete,
 // Shutdown returns the context's cause.
 //
@@ -226,21 +238,70 @@ func (t *Thread) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (t *Thread) initOnce() *threadState {
-	t.once.Do(func() {
-		s := &threadState{
-			callCh: make(chan *threadCall),
-			done:   make(chan struct{}),
+// errThreadStarted is returned by Serve if the Thread has already been started by Do or Serve.
+var errThreadStarted = errors.New("sync: Thread already started")
+
+// Serve runs the Thread on the calling goroutine instead of on a goroutine of its own:
+// it locks the calling goroutine to its current OS thread, so that f passed to Do runs on that thread.
+//
+// This lets f run on the main thread of the process, which some APIs require,
+// e.g. Cocoa on macOS. Function main is only guaranteed to be invoked on the main thread
+// if an init function has locked it there (see runtime.LockOSThread), so call
+// runtime.LockOSThread in an init function of package main, and call Serve from function main.
+//
+// Serve blocks running f passed to Do, called any number of times from any goroutine,
+// until the Thread is closed, and returns once the running f has returned.
+// Serve always returns a non-nil error. After Close or Shutdown,
+// the returned error matches ErrThreadClosed.
+//
+// If the Thread has already been started, by Do or another call to Serve,
+// Serve returns an error at once. As calls to Do may race with Serve,
+// set ServeOnly so that Do waits for Serve instead of starting the Thread.
+// Serve returns with the calling goroutine still locked to its OS thread,
+// as f may have changed the state of the thread.
+// If f calls runtime.Goexit, it exits the goroutine calling Serve.
+//
+// As Serve blocks until the Thread is closed, calling it from an init function
+// blocks the initialization of the program.
+func (t *Thread) Serve() error {
+	s := t.initOnce(false)
+	if !s.started.CompareAndSwap(false, true) {
+		if s.ctx.Err() != nil {
+			return context.Cause(s.ctx)
 		}
-		s.ctx, s.cancel = context.WithCancelCause(context.Background())
+		return errThreadStarted
+	}
+	runtime.LockOSThread()
+	s.serve()
+	// Keep t reachable while serving, so the garbage collector does not close it.
+	runtime.KeepAlive(t)
+	return context.Cause(s.ctx)
+}
+
+func newThreadState() *threadState {
+	s := &threadState{
+		callCh: make(chan *threadCall),
+		done:   make(chan struct{}),
+	}
+	s.ctx, s.cancel = context.WithCancelCause(context.Background())
+	return s
+}
+
+// initOnce initializes the state of t on first use, and, if start is true,
+// starts the worker goroutine.
+func (t *Thread) initOnce(start bool) *threadState {
+	t.once.Do(func() {
+		s := newThreadState()
 		t.state.Store(s)
 		if t.closed.Load() {
-			s.cancel(ErrThreadClosed)
-			close(s.done)
+			s.cancel(ErrThreadClosed) // Close then closes done
 			return
 		}
 		runtime.AddCleanup(t, func(s *threadState) { s.cancel(ErrThreadClosed) }, s)
-		go s.loop()
+		if start {
+			s.started.Store(true)
+			go s.loop()
+		}
 	})
 	return t.state.Load()
 }
@@ -257,6 +318,10 @@ func (s *threadState) loop() {
 	if hook := testHookThreadLoop.Load(); hook != nil {
 		(*hook)(s)
 	}
+	// Replace the labels inherited from the goroutine calling Do first,
+	// so the worker can be found by its own label in goroutine profiles;
+	// a goroutine started below inherits them.
+	pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels(threadLabelKey, threadLabelWorker)))
 	runtime.LockOSThread()
 	onStartup := onStartupThread()
 	if hook := testHookOnStartupThread.Load(); hook != nil {
@@ -286,9 +351,6 @@ func (s *threadState) loop() {
 // It never unlocks the thread: f may change its state permanently,
 // so the thread is terminated with the worker goroutine instead of running other goroutines.
 func (s *threadState) serve() {
-	// Replace the labels inherited from the goroutine calling Do first,
-	// so the worker can be found by its own label in goroutine profiles.
-	pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels(threadLabelKey, threadLabelWorker)))
 	defer close(s.done)
 	s.running.Store(true)
 	defer s.running.Store(false)

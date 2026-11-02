@@ -7,6 +7,8 @@ package sync_test
 import (
 	"context"
 	"fmt"
+	stdsync "sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/searKing/golang/go/sync"
@@ -108,6 +110,49 @@ func ExampleThread_Shutdown() {
 	// context deadline exceeded
 	// sync: Thread closed
 	// <nil>
+}
+
+func ExampleThread_Serve() {
+	// To run f on the main thread, lock it in an init function of package main,
+	// and serve the Thread from function main:
+	//
+	//	var thread = sync.Thread{ServeOnly: true}
+	//
+	//	func init() { runtime.LockOSThread() }
+	//
+	//	func main() {
+	//		go func() {
+	//			defer thread.Close()
+	//			app() // calls thread.Do
+	//		}()
+	//		if err := thread.Serve(); !errors.Is(err, sync.ErrThreadClosed) {
+	//			log.Fatal(err)
+	//		}
+	//	}
+	thread := sync.Thread{ServeOnly: true}
+	go func() {
+		defer thread.Close()
+		// Do may be called any number of times, from any goroutine,
+		// even before Serve is called, as ServeOnly is set.
+		var wg stdsync.WaitGroup
+		var count atomic.Int32
+		for range 3 {
+			wg.Go(func() {
+				_ = thread.Do(context.Background(), func(ctx context.Context) {
+					count.Add(1)
+				})
+			})
+		}
+		wg.Wait()
+		_ = thread.Do(context.Background(), func(ctx context.Context) {
+			fmt.Println(count.Load(), "calls of f ran on the thread calling Serve")
+		})
+	}()
+	err := thread.Serve()
+	fmt.Println(err)
+	// Output:
+	// 3 calls of f ran on the thread calling Serve
+	// sync: Thread closed
 }
 
 func ExampleThread_Stats() {
