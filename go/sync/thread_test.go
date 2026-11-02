@@ -221,7 +221,7 @@ func TestThread_PprofLabels(t *testing.T) {
 	}
 	var found bool
 	for record := range strings.SplitSeq(buf.String(), "\n\n") {
-		if !strings.Contains(record, "(*Thread).loop") {
+		if !strings.Contains(record, "(*threadState).loop") {
 			continue
 		}
 		if !strings.Contains(record, `# labels: {"sync.Thread":"worker"}`) {
@@ -416,8 +416,8 @@ func TestThread_Goexit(t *testing.T) {
 		if !errors.Is(err, sync_.ErrThreadClosed) {
 			t.Fatalf("Do after runtime.Goexit = %v, want %v, nested=%v", err, sync_.ErrThreadClosed, nested)
 		}
-		if !strings.Contains(err.Error(), "runtime.Goexit") {
-			t.Errorf("Do after runtime.Goexit = %v, want it to report runtime.Goexit, nested=%v", err, nested)
+		if got, want := err.Error(), "sync: Thread closed: function passed to Do called runtime.Goexit"; got != want {
+			t.Errorf("Do after runtime.Goexit = %q, want %q, nested=%v", got, want, nested)
 		}
 	}
 }
@@ -425,16 +425,16 @@ func TestThread_Goexit(t *testing.T) {
 func TestThread_ShutdownBeforeUse(t *testing.T) {
 	// Count per Thread, as worker goroutines of Threads in other tests may still be starting.
 	var mu sync.Mutex
-	starts := make(map[*sync_.Thread]int)
-	defer sync_.SetTestHookThreadLoop(func(thread *sync_.Thread) {
+	starts := make(map[any]int)
+	defer sync_.SetTestHookThreadLoop(func(state any) {
 		mu.Lock()
 		defer mu.Unlock()
-		starts[thread]++
+		starts[state]++
 	})()
 	started := func(thread *sync_.Thread) int {
 		mu.Lock()
 		defer mu.Unlock()
-		return starts[thread]
+		return starts[sync_.ThreadState(thread)]
 	}
 
 	tests := []struct {
@@ -536,5 +536,59 @@ func TestThread_Shutdown(t *testing.T) {
 	}
 	if err := <-doErr; err != nil {
 		t.Fatalf("Do of running f = %v, want nil", err)
+	}
+}
+
+func TestThread_NilFunc(t *testing.T) {
+	var thread sync_.Thread
+	defer thread.Shutdown(t.Context())
+	defer func() {
+		if r, want := recover(), "sync: Thread.Do called with nil function"; r != want {
+			t.Errorf("Do with nil f panicked in the caller's goroutine with %v, want %q", r, want)
+		}
+		if s := thread.Stats(); s.Calls != 0 {
+			t.Errorf("Stats.Calls after Do with nil f = %d, want 0", s.Calls)
+		}
+	}()
+	_ = thread.Do(t.Context(), nil)
+}
+
+func TestThread_Unreferenced(t *testing.T) {
+	done := func() <-chan struct{} {
+		thread := new(sync_.Thread)
+		if err := thread.Do(t.Context(), func(context.Context) {}); err != nil {
+			t.Fatalf("Do = %v, want nil", err)
+		}
+		return sync_.ThreadDone(thread)
+	}()
+
+	for deadline := time.Now().Add(10 * time.Second); ; {
+		runtime.GC()
+		select {
+		case <-done:
+			return
+		case <-time.After(time.Millisecond):
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("worker goroutine of an unreferenced Thread did not exit after garbage collection")
+		}
+	}
+}
+
+func TestThread_ReferencedOnlyByDo(t *testing.T) {
+	// The Thread is referenced only by the running Do, which must keep it from being closed.
+	err := new(sync_.Thread).Do(t.Context(), func(ctx context.Context) {
+		for range 20 {
+			runtime.GC()
+			select {
+			case <-ctx.Done():
+				t.Errorf("ctx passed to f canceled while f runs: %v", context.Cause(ctx))
+				return
+			case <-time.After(time.Millisecond):
+			}
+		}
+	})
+	if err != nil {
+		t.Fatalf("Do = %v, want nil", err)
 	}
 }
