@@ -193,10 +193,19 @@ func TestThread_Stats(t *testing.T) {
 	if s := thread.Stats(); !s.Running || s.Active != 1 || s.Calls != 1 {
 		t.Errorf("Stats with f running = %+v, want Running, Active 1, Calls 1", s)
 	}
+
+	// Wait while the Thread is busy, for longer than the clock resolution,
+	// which is about 15.6ms on Windows, so WaitDuration is not 0.
+	const wait = 50 * time.Millisecond
+	wg.Go(func() { _ = thread.Do(t.Context(), func(context.Context) {}) })
+	for thread.Stats().Active != 2 {
+		runtime.Gosched()
+	}
+	time.Sleep(wait)
 	close(release)
 	wg.Wait()
-	if s := thread.Stats(); !s.Running || s.Active != 0 || s.Calls != 1 || s.WaitDuration <= 0 {
-		t.Errorf("Stats after f returned = %+v, want Running, Active 0, Calls 1, WaitDuration > 0", s)
+	if s := thread.Stats(); !s.Running || s.Active != 0 || s.Calls != 2 || s.WaitDuration < wait/2 {
+		t.Errorf("Stats after f returned = %+v, want Running, Active 0, Calls 2, WaitDuration >= %v", s, wait/2)
 	}
 
 	if err := thread.Shutdown(t.Context()); err != nil {
