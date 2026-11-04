@@ -24,6 +24,10 @@ var (
 	// the resource instead of returning it to the pool.
 	ErrBadResource = errors.New("sync: bad resource")
 
+	// ErrResourcePoolInvalidKey is returned by the ResourcePool's Get, Do and Prefill
+	// methods for a key not equal to itself, such as NaN, which no lookup could find again.
+	ErrResourcePoolInvalidKey = errors.New("sync: ResourcePool: key not equal to itself")
+
 	errResourcePoolNilNew = errors.New("sync: ResourcePool.New is nil")
 	errResourcePoolFull   = errors.New("sync: ResourcePool: MaxResourcesPerKey reached")
 )
@@ -44,7 +48,9 @@ var (
 // A resource that must be used on a single OS thread can be made on a Thread
 // by New and used through it; the ResourcePool needs no knowledge of that.
 //
-// A key of an interface type holding a value that is not comparable causes a panic.
+// A key not equal to itself, such as NaN, is rejected with ErrResourcePoolInvalidKey;
+// a key of an interface type holding a value that is not comparable causes a panic.
+// Either way, the pool is left unchanged.
 //
 // A ResourcePool is safe for concurrent use by multiple goroutines.
 // The zero value with New set is ready to use.
@@ -242,8 +248,11 @@ func (p *ResourcePool[K, T]) Get(ctx context.Context, keys ...K) (*Lease[K, T], 
 
 // acquireOrEnqueue returns what is available for keys, or else a waiter queued for them.
 func (p *ResourcePool[K, T]) acquireOrEnqueue(keys []K) (g poolGrant[K, T], w *poolWaiter[K, T], err error) {
+	if !validKeys(keys...) {
+		return g, nil, ErrResourcePoolInvalidKey
+	}
 	p.mu.Lock()
-	defer p.mu.Unlock() // a key that is not hashable panics
+	defer p.mu.Unlock()
 	if p.closed {
 		return g, nil, ErrResourcePoolClosed
 	}
@@ -312,8 +321,11 @@ func (p *ResourcePool[K, T]) Prefill(ctx context.Context, key K, n int) error {
 
 // reserve reserves a slot to make a resource for key, if the limit allows it.
 func (p *ResourcePool[K, T]) reserve(key K) error {
+	if !validKeys(key) {
+		return ErrResourcePoolInvalidKey
+	}
 	p.mu.Lock()
-	defer p.mu.Unlock() // a key that is not hashable panics
+	defer p.mu.Unlock()
 	if p.closed {
 		return ErrResourcePoolClosed
 	}
@@ -709,4 +721,16 @@ func uniq[K comparable](keys []K) []K {
 		}
 	}
 	return out
+}
+
+// validKeys reports whether every key is equal to itself, so that it can be found
+// again in a map. Comparing a key of an interface type holding a value that is not
+// comparable panics, before the pool is locked.
+func validKeys[K comparable](keys ...K) bool {
+	for _, k := range keys {
+		if k != k {
+			return false
+		}
+	}
+	return true
 }

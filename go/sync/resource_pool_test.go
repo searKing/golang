@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -1043,4 +1044,87 @@ func TestResourcePool_DoNilFunc(t *testing.T) {
 		}
 	}()
 	_ = p.Do(context.Background(), nil, "a")
+}
+
+// A key not equal to itself, such as NaN, could never be found again in the pool.
+func TestResourcePool_KeyNotEqualToItself(t *testing.T) {
+	type pair struct{ a, b float64 }
+	check := func(t *testing.T, get func(ctx context.Context) error, prefill func(ctx context.Context) error, usable func(ctx context.Context) error) {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		call := func(name string, f func(ctx context.Context) error) error {
+			errc := make(chan error, 1)
+			go func() {
+				defer func() {
+					if e := recover(); e != nil {
+						errc <- fmt.Errorf("%s panicked: %v", name, e)
+					}
+				}()
+				errc <- f(ctx)
+			}()
+			select {
+			case err := <-errc:
+				return err
+			case <-ctx.Done():
+				t.Fatalf("%s blocked: the pool is stuck", name)
+				return nil
+			}
+		}
+		if err := call("Get", get); !errors.Is(err, sync_.ErrResourcePoolInvalidKey) {
+			t.Errorf("Get: err = %v, want ErrResourcePoolInvalidKey", err)
+		}
+		if err := call("Prefill", prefill); !errors.Is(err, sync_.ErrResourcePoolInvalidKey) {
+			t.Errorf("Prefill: err = %v, want ErrResourcePoolInvalidKey", err)
+		}
+		if err := call("Get of a valid key", usable); err != nil {
+			t.Errorf("Get of a valid key: %v", err)
+		}
+	}
+
+	t.Run("float64", func(t *testing.T) {
+		p := &sync_.ResourcePool[float64, int]{
+			New: func(ctx context.Context, key float64) (int, error) { return 1, nil },
+		}
+		check(t,
+			func(ctx context.Context) error { _, err := p.Get(ctx, 1, math.NaN()); return err },
+			func(ctx context.Context) error { return p.Prefill(ctx, math.NaN(), 1) },
+			func(ctx context.Context) error {
+				l, err := p.Get(ctx, 1)
+				if err == nil {
+					l.Release()
+				}
+				return err
+			})
+	})
+	t.Run("any", func(t *testing.T) {
+		p := &sync_.ResourcePool[any, int]{
+			New: func(ctx context.Context, key any) (int, error) { return 1, nil },
+		}
+		check(t,
+			func(ctx context.Context) error { _, err := p.Get(ctx, math.NaN()); return err },
+			func(ctx context.Context) error { return p.Prefill(ctx, math.NaN(), 1) },
+			func(ctx context.Context) error {
+				l, err := p.Get(ctx, "a")
+				if err == nil {
+					l.Release()
+				}
+				return err
+			})
+	})
+	t.Run("struct", func(t *testing.T) {
+		p := &sync_.ResourcePool[pair, int]{
+			New: func(ctx context.Context, key pair) (int, error) { return 1, nil },
+		}
+		check(t,
+			func(ctx context.Context) error { _, err := p.Get(ctx, pair{1, math.NaN()}); return err },
+			func(ctx context.Context) error { return p.Prefill(ctx, pair{1, math.NaN()}, 1) },
+			func(ctx context.Context) error {
+				l, err := p.Get(ctx, pair{1, 2})
+				if err == nil {
+					l.Release()
+				}
+				return err
+			})
+	})
 }
