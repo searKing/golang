@@ -27,6 +27,9 @@ COMMIT ?= HEAD
 # Modules of all module sets in versions.yaml.
 MODSET_MODULES = $(shell awk '/^[^ ]/ { found = ($$0 == "module-sets:") } found && $$1 == "-" { print $$2 }' versions.yaml)
 
+# Version of the module set MODSET in versions.yaml.
+MODSET_VERSION = $(shell awk -v set='  $(MODSET):' '$$0 == set { found = 1; next } found && /^[^ ]|^  [^ ]/ { exit } found && $$1 == "version:" { print $$2; exit }' versions.yaml)
+
 # Tags of the module set MODSET with its version in versions.yaml, as <module-dir>/<version>, or <version> for the root module.
 MODSET_TAGS = $(shell awk -v set='  $(MODSET):' ' \
 	$$0 == set { found = 1; next } \
@@ -58,8 +61,8 @@ help:
 	@echo "                verify modules providing installable tools contain no replace directives"
 	@echo "  verify-root-requires"
 	@echo "                verify the root module requires every module of module sets, against ambiguous imports"
-	@echo "  prerelease    update intra-repo requires of MODSET to its version in versions.yaml,"
-	@echo "                run 'go mod tidy' and commit to a new branch prerelease_<MODSET>_<VERSION>"
+	@echo "  prerelease    update intra-repo requires of MODSET to its version in versions.yaml, except of modules"
+	@echo "                providing installable tools, run 'go mod tidy' and commit to a new branch prerelease_<MODSET>_<VERSION>"
 	@echo "  prerelease-clone"
 	@echo "                prerelease in a clone of HEAD, then fetch the branch, if the working tree is not clean"
 	@echo "  add-tags      tag modules of MODSET at COMMIT by its version in versions.yaml"
@@ -206,8 +209,25 @@ verify-root-requires:
 	echo "PASS: Root module requires all modules of module sets."
 
 .PHONY: prerelease
+# Modules providing installable tools keep requiring released versions, for they contain no replace directives,
+# and go mod tidy fails on the version of the module set, which is not tagged until the release.
+# So skip go mod tidy of multimod, restore their go.mod, tidy the other updated modules, and amend the commit
+# on the prerelease branch, as multimod checks out the original branch after committing.
 prerelease: verify-mods
-	$(MULTIMOD) prerelease -m $(MODSET)
+	$(MULTIMOD) prerelease -m $(MODSET) -s
+	@set -e; \
+	base=$$(git symbolic-ref -q --short HEAD || git rev-parse HEAD); \
+	git checkout -q "prerelease_$(MODSET)_$(MODSET_VERSION)"; \
+	trap 'git checkout -q "$$base"' EXIT; \
+	git checkout HEAD^ -- $(LOCAL_TOOL_MOD_DIRS:%=%/go.mod); \
+	for dir in $$(git diff --name-only HEAD^ -- '*go.mod' | xargs -n1 dirname); do \
+		case " $(LOCAL_TOOL_MOD_DIRS:./%=%) " in *" $$dir "*) continue ;; esac; \
+		echo "$(GO) mod tidy in $$dir"; \
+		(cd "$$dir" && $(GO) mod tidy); \
+	done; \
+	git add -A -- '*go.mod' '*go.sum'; \
+	git commit -q --amend --no-edit; \
+	git show --stat --format='%h %s' HEAD
 
 # prerelease in a clone of HEAD, for multimod requires a clean working tree without untracked files.
 .PHONY: prerelease-clone

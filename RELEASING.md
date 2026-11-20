@@ -61,6 +61,8 @@ make verify-mods test
    ```
 
    It commits to a new branch `prerelease_stable-v1_<VERSION>`. Review and merge it.
+   Modules providing installable tools keep requiring the released versions, for they contain no replace
+   directives, and go mod tidy fails on the new version, which is not tagged until the release.
    multimod requires a clean working tree without untracked files, run `make prerelease-clone MODSET=stable-v1`
    instead to prerelease in a clone of HEAD and fetch the branch back.
 3. Tag modules of the module set at the merged commit.
