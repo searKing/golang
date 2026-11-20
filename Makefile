@@ -94,7 +94,8 @@ go-mod-tidy/%:
 		&& $(GO) mod tidy
 
 # Upgrade only modules requiring DEPS, directly by default, and leave versions of the others to go mod tidy by MVS.
-# INDIRECT=1 upgrades modules requiring them indirectly too, for fixes of vulnerabilities of indirect dependencies..PHONY: go-get
+# INDIRECT=1 upgrades modules requiring them indirectly too, for fixes of vulnerabilities of indirect dependencies.
+.PHONY: go-get
 go-get:
 	@set -e; \
 	deps="$(DEPS)"; indirect="$(INDIRECT)"; \
