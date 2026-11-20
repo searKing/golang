@@ -18,6 +18,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 
+	http_ "github.com/searKing/golang/go/net/http"
 	_ "github.com/searKing/golang/go/net/resolver/passthrough"
 	"github.com/searKing/golang/pkg/webserver"
 	httptrace_ "github.com/searKing/golang/pkg/webserver/pkg/httptrace"
@@ -332,4 +333,37 @@ func roundTripThroughDecorators(t *testing.T, fc webserver.FactoryConfig) (int, 
 	_, _ = io.Copy(io.Discard, resp.Body)
 	_ = resp.Body.Close()
 	return resp.StatusCode, buf.String()
+}
+
+func TestGrpcOrHttpHandlerDecoratorsFromGatewayOptions(t *testing.T) {
+	off, err := webserver.NewWebServer(webserver.FactoryConfig{BindAddress: "127.0.0.1:0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(off.GrpcOrHttpHandlerDecorators()); got != 0 {
+		t.Fatalf("GrpcOrHttpHandlerDecorators len = %d, want 0 by default", got)
+	}
+
+	var called bool
+	decorator := http_.HandlerDecoratorFunc(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called = true
+			next.ServeHTTP(w, r)
+		})
+	})
+	on, err := webserver.NewWebServer(webserver.FactoryConfig{
+		BindAddress:    "127.0.0.1:0",
+		GatewayOptions: []grpc_.GatewayOption{grpc_.WithGrpcOrHttpHandlerDecorators(decorator)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	decorators := on.GrpcOrHttpHandlerDecorators()
+	if got := len(decorators); got != 1 {
+		t.Fatalf("GrpcOrHttpHandlerDecorators len = %d, want 1", got)
+	}
+	decorators.WrapHandler(http.NotFoundHandler()).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+	if !called {
+		t.Fatal("decorator returned by GrpcOrHttpHandlerDecorators was not the configured one")
+	}
 }

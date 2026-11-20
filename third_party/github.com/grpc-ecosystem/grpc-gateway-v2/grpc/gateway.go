@@ -238,7 +238,7 @@ func (gw *Gateway) preServe(opts ...GatewayOption) {
 	}
 
 	// delegate to grpcServer on incoming gRPC connections or HTTP connections otherwise.
-	gw.Server.Handler = grpc_.GrpcOrDefaultHandler(gw.grpcServer, &serverHandler{gateway: gw})
+	gw.Server.Handler = grpc_.GrpcOrDefaultHandler(gw.grpcServer, &serverHandler{gateway: gw}, gw.opt.grpcOrHttpHandlerDecorators...)
 }
 
 // registerGrpcReflection registers the server reflection service on the given gRPC server.

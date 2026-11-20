@@ -121,6 +121,12 @@ func (s *WebServer) HttpInterceptorChain() http_.HandlerInterceptorChain {
 	return grpc_.ExtractHttpInterceptorChain(s.gatewayOptions...)
 }
 
+// GrpcOrHttpHandlerDecorators returns the middleware set by grpc_.WithGrpcOrHttpHandlerDecorators,
+// which wraps both native gRPC requests and HTTP requests before dispatch.
+func (s *WebServer) GrpcOrHttpHandlerDecorators() http_.HandlerDecorators {
+	return grpc_.ExtractGrpcOrHttpHandlerDecorators(s.gatewayOptions...)
+}
+
 // HttpRoundTripDecorators returns the outgoing-client middleware for access
 // logging, optional OpenTelemetry, and client traces.
 // [WebServer.NewHttpClientForTarget] applies this middleware automatically.

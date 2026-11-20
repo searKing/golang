@@ -43,6 +43,14 @@ func ExtractHttpInterceptorChain(options ...GatewayOption) http_.HandlerIntercep
 	return g.opt.httpInterceptors
 }
 
+// ExtractGrpcOrHttpHandlerDecorators extracts the [http_.HandlerDecorators] set by
+// [WithGrpcOrHttpHandlerDecorators] from the given options.
+func ExtractGrpcOrHttpHandlerDecorators(options ...GatewayOption) http_.HandlerDecorators {
+	var g Gateway
+	g.ApplyOptions(options...)
+	return g.opt.grpcOrHttpHandlerDecorators
+}
+
 // ExtractRoundTripDecorators extracts the [http_.RoundTripDecorators] from the given options.
 func ExtractRoundTripDecorators(options ...GatewayOption) http_.RoundTripDecorators {
 	var g Gateway

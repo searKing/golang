@@ -31,6 +31,9 @@ type gatewayOption struct {
 	// for http client to redirect to grpc server
 	grpcClientDialOpts []grpc.DialOption
 
+	// for the root http.Handler, wraps both native gRPC requests and HTTP requests before dispatch.
+	grpcOrHttpHandlerDecorators http_.HandlerDecorators
+
 	// for gateway
 	srvMuxOpts       []runtime.ServeMuxOption
 	httpInterceptors http_.HandlerInterceptorChain

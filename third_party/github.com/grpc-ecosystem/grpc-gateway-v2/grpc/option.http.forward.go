@@ -21,6 +21,19 @@ func WithHttpHandlerDecorators(decorators ...http_.HandlerDecorator) GatewayOpti
 		})...)
 }
 
+// WithGrpcOrHttpHandlerDecorators sets middlewares for the root http.Handler of the gateway,
+// which wraps both native gRPC requests and HTTP requests before they are dispatched
+// to the gRPC server or the gRPC-Gateway mux.
+// Unlike WithHttpHandlerDecorators, which only wraps HTTP requests to the gRPC-Gateway mux.
+//
+// A decorator wrapping the http.ResponseWriter MUST keep it implementing http.Flusher
+// and passing trailers through, otherwise gRPC requests are silently served as HTTP requests.
+func WithGrpcOrHttpHandlerDecorators(decorators ...http_.HandlerDecorator) GatewayOption {
+	return GatewayOptionFunc(func(gateway *Gateway) {
+		gateway.opt.grpcOrHttpHandlerDecorators = append(gateway.opt.grpcOrHttpHandlerDecorators, decorators...)
+	})
+}
+
 // below here for advance usage only
 
 // WithHttpHandlerInterceptor sets gRPC-Gateway server middleware for all handlers.
