@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"go.opentelemetry.io/otel/trace"
@@ -31,6 +32,9 @@ import (
 // gRPC: IncomingContext<Recv Req>、OutgoingContext<send Req>、ServerMetadataContext<Send or Recv Resp>
 //
 // middlewares:
+// 0) grpc-or-http:
+// 0.1) otelhttp.WithPropagators Extract -> Context, start a server span, inject traceparent
+//      wraps native gRPC and HTTP before dispatch; next never receives otelhttp's ResponseWriter
 // 1) otelhttp:
 // 1.1) HTTP Req Header -> Context<send or recv Req>
 // 2) otelgrpc:
@@ -80,6 +84,45 @@ func ServeMuxOptions() []runtime.ServeMuxOption {
 		runtime.WithIncomingHeaderMatcher(tracerHeaderMatcher),
 		// 2.2) gRPC OutgoingContext<send Req> -> gRPC Req Header
 		runtime.WithOutgoingHeaderMatcher(tracerHeaderMatcher)}
+}
+
+// GrpcOrHttpHandlerDecorator starts a server span on the root handler that
+// dispatches native gRPC and HTTP, so every request carries a trace.
+//
+// The incoming trace is extracted with the otelhttp propagators in opts, so
+// [otelhttp.WithPropagators] supports non-standard trace headers. The span is a
+// child of the incoming trace, or a new root if there is none. It is injected
+// into the request header with the global propagator, so downstream otelhttp
+// and otelgrpc continue the same trace.
+//
+// next receives the original ResponseWriter, not otelhttp's wrapper, which
+// writes status 200 on Flush and would break gRPC framing. The span therefore
+// always records status 200 and body size 0. Use the downstream otelhttp or
+// otelgrpc span for the response status.
+//
+// HTTP metrics stay on [HttpHandlerDecorators]. A [otelhttp.WithMeterProvider]
+// in opts is ignored.
+func GrpcOrHttpHandlerDecorator(opts ...otelhttp.Option) http_.HandlerDecorator {
+	all := []otelhttp.Option{
+		otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+			name := r.Method
+			if r.URL != nil && r.URL.Path != "" {
+				name += " " + r.URL.Path
+			}
+			return name
+		}),
+	}
+	all = append(all, opts...)
+	all = append(all, otelhttp.WithMeterProvider(noop.NewMeterProvider()))
+	mw := otelhttp.NewMiddleware("grpc-or-http", all...)
+	return http_.HandlerDecoratorFunc(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mw(http.HandlerFunc(func(_ http.ResponseWriter, rr *http.Request) {
+				otel.GetTextMapPropagator().Inject(rr.Context(), propagation.HeaderCarrier(rr.Header))
+				next.ServeHTTP(w, rr)
+			})).ServeHTTP(w, r)
+		})
+	})
 }
 
 // HttpHandlerDecorators adds metrics and tracing to requests if the incoming request is sampled.

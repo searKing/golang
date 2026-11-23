@@ -17,6 +17,10 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 
 	http_ "github.com/searKing/golang/go/net/http"
 	_ "github.com/searKing/golang/go/net/resolver/passthrough"
@@ -365,5 +369,60 @@ func TestGrpcOrHttpHandlerDecoratorsFromGatewayOptions(t *testing.T) {
 	decorators.WrapHandler(http.NotFoundHandler()).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
 	if !called {
 		t.Fatal("decorator returned by GrpcOrHttpHandlerDecorators was not the configured one")
+	}
+}
+
+func TestOtelHandlingInstallsGrpcOrHttpTraceDecorator(t *testing.T) {
+	prevLogger := slog.Default()
+	prevProvider := otel.GetTracerProvider()
+	prevPropagator := otel.GetTextMapPropagator()
+	t.Cleanup(func() {
+		slog.SetDefault(prevLogger)
+		otel.SetTracerProvider(prevProvider)
+		otel.SetTextMapPropagator(prevPropagator)
+	})
+	provider := sdktrace.NewTracerProvider()
+	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
+	otel.SetTracerProvider(provider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	srv, err := webserver.NewWebServer(webserver.FactoryConfig{
+		BindAddress:  "127.0.0.1:0",
+		OtelHandling: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(srv.GrpcOrHttpHandlerDecorators()); got != 1 {
+		t.Fatalf("GrpcOrHttpHandlerDecorators len = %d, want 1", got)
+	}
+
+	var userSawSpan bool
+	user := http_.HandlerDecoratorFunc(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userSawSpan = trace.SpanFromContext(r.Context()).SpanContext().IsValid()
+			next.ServeHTTP(w, r)
+		})
+	})
+	withUser, err := webserver.NewWebServer(webserver.FactoryConfig{
+		BindAddress:  "127.0.0.1:0",
+		OtelHandling: true,
+		GatewayOptions: []grpc_.GatewayOption{
+			grpc_.WithGrpcOrHttpHandlerDecorators(user),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	decorators := withUser.GrpcOrHttpHandlerDecorators()
+	if got := len(decorators); got != 2 {
+		t.Fatalf("GrpcOrHttpHandlerDecorators len = %d, want 2", got)
+	}
+	decorators.WrapHandler(http.NotFoundHandler()).ServeHTTP(
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodPost, "/pkg.Service/Method", nil),
+	)
+	if !userSawSpan {
+		t.Fatal("user decorator ran outside the root span")
 	}
 }

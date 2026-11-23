@@ -205,6 +205,13 @@ func (f *Factory) New() (*WebServer, error) {
 		opts = append(opts, grpc_.WithSlogLoggerConfig(slog.Default().Handler(),
 			grpc_.ExtractLoggingOptions(all...), grpc_.ExtractHttpLoggingOptions(all...)...)...)
 	}
+	if f.fc.OtelHandling {
+		// Server span for native gRPC and HTTP, so every request carries a
+		// trace. Registered before GatewayOptions so user decorators run
+		// inside the trace. OtelHttpOptions supplies otelhttp.WithPropagators.
+		// otelhttp's ResponseWriter wrapper never reaches downstream handlers.
+		opts = append(opts, grpc_.WithGrpcOrHttpHandlerDecorators(otel_.GrpcOrHttpHandlerDecorator(f.fc.OtelHttpOptions...)))
+	}
 	opts = append(opts, f.fc.GatewayOptions...)
 	grpcBackend := grpc_.NewGatewayTLS(f.fc.BindAddress, f.fc.TlsConfig, opts...)
 	{
