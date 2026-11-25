@@ -18,7 +18,8 @@ var _ driver.Valuer = Json[any]{}
 // Json represents an interface that can not be null.
 // Json implements the Scanner interface so it can be used as a scan destination, similar to sql.NullString.
 type Json[T any] struct {
-	Data T // must be set with a pointer to zero value of expect type
+	// gorm:"-" stops GORM from parsing Data as a relation. See go-gorm/datatypes#200.
+	Data T `gorm:"-"` // must be set with a pointer to zero value of expect type
 }
 
 // Scan implements the sql.Scanner interface.
