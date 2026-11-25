@@ -11,6 +11,16 @@ import (
 	"github.com/searKing/golang/go/exp/database/sql"
 )
 
+func TestJsonDataGormTag(t *testing.T) {
+	field, ok := reflect.TypeOf(sql.Json[int]{}).FieldByName("Data")
+	if !ok {
+		t.Fatal("Json.Data not found")
+	}
+	if got := field.Tag.Get("gorm"); got != "-" {
+		t.Fatalf("Json.Data gorm tag = %q, want %q", got, "-")
+	}
+}
+
 func TestJsonByteSlice(t *testing.T) {
 	for n, test := range []struct {
 		input  any
